@@ -150,6 +150,12 @@
             <div class="collapse {{ $isKunjunganActive ? 'show' : '' }}" id="kunjunganCollapse">
                 <ul class="nav flex-column mt-2">
                     <li class="nav-item">
+                        <a class="nav-link rounded py-2 px-3 {{ request()->routeIs('kunjungan.kunjungan_gabungan') ? 'active' : '' }}"
+                            href="{{ route('kunjungan.kunjungan_gabungan') }}">
+                            <i class="fas fa-file-alt me-2"></i>Kunjungan Perhari
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link rounded py-2 px-3 {{ request()->routeIs('kunjungan.tanggalTable') ? 'active' : '' }}"
                             href="{{ route('kunjungan.tanggalTable') }}">
                             <i class="fas fa-calendar-alt me-2"></i>Keseluruhan
@@ -167,6 +173,7 @@
                             <i class="fas fa-clipboard-check me-2"></i>Cek Kehadiran
                         </a>
                     </li>
+
                 </ul>
             </div>
         </li>
@@ -199,13 +206,47 @@
                     <li class="nav-item">
                         <a class="nav-link rounded py-2 px-3 {{ request()->routeIs('peminjaman.check_history') ? 'active' : '' }}"
                             href="{{ route('peminjaman.check_history') }}">
-                            <i class="fas fa-history me-2"></i>Cek Histori
+                            <i class="fas fa-history me-2"></i>Cek Peminjaman
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link rounded py-2 px-3 {{ request()->routeIs('peminjaman.berlangsung') ? 'active' : '' }}"
                             href="{{ route('peminjaman.berlangsung') }}">
                             <i class="fas fa-handshake me-2"></i>Sedang Berlangsung
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link rounded py-2 px-3 {{ request()->routeIs('peminjaman.keterpakaian_koleksi') ? 'active' : '' }}"
+                            href="{{ route('peminjaman.keterpakaian_koleksi') }}">
+                            <i class="fas fa-archive me-2"></i>Keterpakaian Koleksi
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+        {{-- Reward --}}
+        @php
+            $isRewardActive = request()->routeIs(['reward.*']);
+        @endphp
+        <li class="nav-item">
+            <a class="nav-link d-flex align-items-center rounded py-2 px-3 {{ $isRewardActive ? 'active' : '' }}"
+                data-bs-toggle="collapse" href="#rewardCollapse" id="rewardMenuBtn">
+                <i class="fas fa-gift me-3"></i>
+                <span class="nav-text">Reward</span>
+                <i class="fas fa-chevron-right ms-auto nav-arrow"></i>
+            </a>
+            <div class="collapse {{ $isRewardActive ? 'show' : '' }}" id="rewardCollapse">
+                <ul class="nav flex-column mt-2">
+                    <li class="nav-item">
+                        <a class="nav-link rounded py-2 px-3 {{ request()->routeIs('reward.pengunjung_teraktif') ? 'active' : '' }}"
+                            href="{{ route('reward.pengunjung_teraktif') }}">
+                            <i class="fas fa-trophy me-2"></i> Pengunjung Teraktif
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link rounded py-2 px-3 {{ request()->routeIs('reward.peminjam_teraktif') ? 'active' : '' }}"
+                            href="{{ route('reward.peminjam_teraktif') }}">
+                            <i class="fas fa-history me-2"></i>Peminjam Teraktif
                         </a>
                     </li>
                 </ul>

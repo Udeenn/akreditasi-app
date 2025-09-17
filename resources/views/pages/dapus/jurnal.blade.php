@@ -107,7 +107,7 @@
                                             <td>{{ $row->Judul }}</td>
                                             <td>{{ $row->Penerbit }}</td>
                                             <td>{{ $row->Nomor }}</td>
-                                            <td>{{ $row->Link }}</td>
+                                            <td>{{ $row->online_resources }}</td>
                                             {{-- <td>{{ $row->Issue }}</td> --}}
                                             {{-- <td>{{ $row->Eksemplar }}</td> --}}
                                             <td>{{ $row->Jenis }}</td>

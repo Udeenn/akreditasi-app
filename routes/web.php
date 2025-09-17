@@ -12,6 +12,7 @@ use App\Http\Controllers\StatistikController;
 use App\Http\Controllers\StatistikKoleksi;
 use App\Http\Controllers\TranskripController;
 use App\Http\Controllers\PeminjamanController;
+use App\Http\Controllers\RewardController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\VisitHistory;
 
@@ -57,6 +58,8 @@ Route::get('/koleksi/prodi', [StatistikKoleksi::class, 'koleksiPerprodi'])->name
 
 Route::get('/kunjungan/cek-kehadiran', [VisitHistory::class, 'cekKehadiran'])->name('kunjungan.cekKehadiran');
 
+Route::get('/laporan/kunjungan-gabungan', [VisitHistory::class, 'laporanKunjunganGabungan'])->name('kunjungan.kunjungan_gabungan');
+
 Route::get('/peminjaman/peminjaman-rentang-tanggal', [PeminjamanController::class, 'pertanggal'])->name('peminjaman.peminjaman_rentang_tanggal');
 
 Route::get('/peminjaman/peminjaman-prodi-chart', [PeminjamanController::class, 'peminjamanProdiChart'])->name('peminjaman.peminjaman_prodi_chart');
@@ -68,13 +71,8 @@ Route::get('/peminjaman/export-berlangsung-full-data', [PeminjamanController::cl
 
 Route::get('/peminjaman/detail', [PeminjamanController::class, 'getDetailPeminjaman'])->name('peminjaman.get_detail');
 
-// Route::get('/peminjaman/detail-peminjaman', [PeminjamanController::class, 'getDetailPeminjaman'])->name('peminjaman.detail');
-
-
-
 Route::get('/kunjungan/export-kehadiran-full-data', [VisitHistory::class, 'getKehadiranExportData'])->name('kunjungan.get_export_data');
 Route::get('/kunjungan/export-harian-full-data', [VisitHistory::class, 'getKunjunganHarianExportData'])->name('kunjungan.get_harian_export_data');
-
 
 Route::get('/kunjungan/export-prodi-full-data', [VisitHistory::class, 'getProdiExportData'])->name('kunjungan.get_prodi_export_data');
 
@@ -93,5 +91,15 @@ Route::get('/kunjungan/get_detail_pengunjung_harian', [VisitHistory::class, 'get
 Route::get('/kunjungan/export-pdf', [VisitHistory::class, 'exportPdf'])->name('kunjungan.export-pdf');
 
 Route::get('/kunjungan/get-detail-pengunjung-harian-export', [VisitHistory::class, 'getDetailPengunjungHarianExport'])->name('kunjungan.get_detail_pengunjung_harian_export');
+
+Route::get('/statistik/keterpakaian-koleksi', [PeminjamanController::class, 'keterpakaianKoleksi'])->name('peminjaman.keterpakaian_koleksi');
+
+Route::get('/statistik/keterpakaian-koleksi/detail', [PeminjamanController::class, 'getKeterpakaianDetail'])->name('statistik.keterpakaian_koleksi.detail');
+
+// Tambahkan ini di routes/web.php
+Route::get('/kunjungan/get-lokasi-detail', [VisitHistory::class, 'getLokasiDetail'])->name('kunjungan.get_lokasi_detail');
+
+Route::get('/reward/pengunjung-teraktif', [RewardController::class, 'pengunjungTeraktif'])->name('reward.pengunjung_teraktif');
+Route::get('/reward/peminjam-teraktif', [RewardController::class, 'peminjamTeraktif'])->name('reward.peminjam_teraktif');
 
 require __DIR__ . '/auth.php';

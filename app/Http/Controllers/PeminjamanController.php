@@ -185,7 +185,6 @@ class PeminjamanController extends Controller
         return $paginatedResult;
     }
 
-
     public function peminjamanProdiChart(Request $request)
     {
         // Mengambil opsi program studi dari authorized_value
@@ -442,7 +441,6 @@ class PeminjamanController extends Controller
         }
     }
 
-
     public function checkHistory(Request $request)
     {
         $cardnumber = $request->input('cardnumber');
@@ -459,22 +457,24 @@ class PeminjamanController extends Controller
                     ->first();
 
                 if ($borrower) {
+                    // Histori Peminjaman (Issue & Renew)
                     $borrowingHistory = DB::connection('mysql2')->table('statistics as s')
                         ->select(
                             's.datetime',
                             's.itemnumber',
-                            's.type', // issue, renew
+                            's.type',
                             'i.barcode',
                             'b.title',
                             'b.author'
                         )
-                        ->leftJoin('items as i', 'i.itemnumber', '=', 's.itemnumber')
-                        ->leftJoin('biblioitems as bi', 'bi.biblionumber', '=', 'i.biblionumber')
-                        ->leftJoin('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
+                        // Menggunakan JOIN untuk memastikan hanya data dengan item yang valid yang tampil
+                        ->join('items as i', 'i.itemnumber', '=', 's.itemnumber')
+                        ->join('biblioitems as bi', 'bi.biblionumber', '=', 'i.biblionumber')
+                        ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
                         ->where('s.borrowernumber', $borrower->borrowernumber)
                         ->whereIn('s.type', ['issue', 'renew'])
                         ->orderBy('s.datetime', 'desc')
-                        ->paginate(10)
+                        ->paginate(5, ['*'], 'borrowing_page') // Beri nama unik untuk paginasi
                         ->withQueryString();
 
                     // Histori Pengembalian (Return)
@@ -482,25 +482,25 @@ class PeminjamanController extends Controller
                         ->select(
                             's.datetime',
                             's.itemnumber',
-                            's.type', // return
+                            's.type',
                             'i.barcode',
                             'b.title',
                             'b.author'
                         )
-                        ->leftJoin('items as i', 'i.itemnumber', '=', 's.itemnumber')
-                        ->leftJoin('biblioitems as bi', 'bi.biblionumber', '=', 'i.biblionumber')
-                        ->leftJoin('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
+                        // Menggunakan JOIN untuk memastikan hanya data dengan item yang valid yang tampil
+                        ->join('items as i', 'i.itemnumber', '=', 's.itemnumber')
+                        ->join('biblioitems as bi', 'bi.biblionumber', '=', 'i.biblionumber')
+                        ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
                         ->where('s.borrowernumber', $borrower->borrowernumber)
                         ->where('s.type', 'return')
                         ->orderBy('s.datetime', 'desc')
-                        ->paginate(10)
+                        ->paginate(5, ['*'], 'return_page') // Beri nama unik untuk paginasi
                         ->withQueryString();
                 } else {
-                    $errorMessage = "Nomor kartu peminjam tidak ditemukan.";
+                    // Pesan ini akan ditampilkan di view jika $borrower tidak ditemukan
                 }
             } catch (\Exception $e) {
-                // \Log::error('Error checking borrowing history: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
-                $errorMessage = "Terjadi kesalahan saat mengambil histori peminjaman: " . $e->getMessage();
+                $errorMessage = "Terjadi kesalahan pada server: " . $e->getMessage();
             }
         }
 
@@ -754,5 +754,226 @@ class PeminjamanController extends Controller
             'data' => $exportData,
             'namaProdiFilter' => $namaProdiFilter,
         ]);
+    }
+
+    public function keterpakaianKoleksi(Request $request)
+    {
+        if ($request->query('export') === 'csv') {
+            return $this->exportKeterpakaianCsv($request);
+        }
+
+        $filterType = $request->input('filter_type', 'monthly');
+        $startMonth = $request->input('start_month', Carbon::now()->startOfYear()->format('Y-m'));
+        $endMonth = $request->input('end_month', Carbon::now()->format('Y-m'));
+        $startDate = $request->input('start_date', Carbon::now()->subDays(29)->format('Y-m-d'));
+        $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+
+        $dataTabel = collect();
+        $listKategori = [];
+        $ccodeDescriptions = collect();
+        $totalPenggunaan = 0;
+        $kategoriPopuler = ['nama' => 'N/A', 'jumlah' => 0];
+        $maxJumlah = 0;
+
+        // PERUBAHAN: Kondisi 'if ($request->has('filter_type'))' dihapus dari sini
+        // agar query selalu berjalan.
+
+        try {
+            $query = DB::connection('mysql2')->table('statistics')
+                ->select(
+                    DB::raw("CASE WHEN ccode LIKE 'R%' THEN 'Referensi' ELSE ccode END as kategori"),
+                    DB::raw('COUNT(*) as jumlah')
+                )
+                ->whereIn('type', ['issue', 'return', 'localuse'])
+                ->whereNotNull('ccode')
+                ->where('ccode', '!=', '');
+
+            if ($filterType == 'daily') {
+                $query->addSelect(DB::raw('DATE(datetime) as periode'))
+                    ->whereBetween('datetime', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
+                    ->groupBy('periode', 'kategori');
+            } else {
+                $query->addSelect(DB::raw("LEFT(datetime, 7) as periode"))
+                    ->whereRaw("LEFT(datetime, 7) BETWEEN ? AND ?", [$startMonth, $endMonth])
+                    ->groupBy('periode', 'kategori');
+            }
+
+            $results = $query->orderBy('periode', 'asc')->get();
+
+            $ccodeDescriptions = DB::connection('mysql2')->table('authorised_values')
+                ->where('category', 'CCODE')
+                ->pluck('lib', 'authorised_value');
+            $ccodeDescriptions['Referensi'] = 'Gabungan semua koleksi referensi (R-...)';
+
+            if (!$results->isEmpty()) {
+                $listKategori = $results->pluck('kategori')->unique()->sort()->values()->all();
+                $dataTabel = $results->groupBy('periode')->map(function ($items, $periode) use ($listKategori) {
+                    $row = ['periode' => $periode];
+                    foreach ($listKategori as $kategori) {
+                        $row[$kategori] = $items->where('kategori', $kategori)->first()->jumlah ?? 0;
+                    }
+                    return $row;
+                })->values();
+
+                $totalPenggunaan = $dataTabel->sum(fn($row) => collect($row)->only($listKategori)->sum());
+                $kategoriSums = $results->groupBy('kategori')->map(fn($items) => $items->sum('jumlah'));
+                $kategoriPopuler['nama'] = $kategoriSums->sortDesc()->keys()->first();
+                $kategoriPopuler['jumlah'] = $kategoriSums->sortDesc()->first();
+                $maxJumlah = $dataTabel->max(fn($row) => collect($row)->only($listKategori)->max());
+            }
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+        }
+
+        // Variabel $request sekarang tidak digunakan di sini, bisa dihapus jika mau
+        return view('pages.peminjaman.keterpakaian', compact(
+            'dataTabel',
+            'listKategori',
+            'ccodeDescriptions',
+            'filterType',
+            'startMonth',
+            'endMonth',
+            'startDate',
+            'endDate',
+            'totalPenggunaan',
+            'kategoriPopuler',
+            'maxJumlah'
+        ));
+    }
+
+    public function getKeterpakaianDetail(Request $request)
+    {
+        $request->validate([
+            'periode' => 'required|string',
+            'kategori' => 'required|string',
+            'filter_type' => 'required|in:daily,monthly',
+        ]);
+
+        $periode = $request->input('periode');
+        $kategori = $request->input('kategori');
+        $filterType = $request->input('filter_type');
+
+        $query = DB::connection('mysql2')->table('statistics as s')
+            ->select('bb.title as judul_buku', 's.datetime as waktu_transaksi', 's.type as tipe_transaksi')
+            ->join('items as i', 's.itemnumber', '=', 'i.itemnumber')
+            ->join('biblio as bb', 'i.biblionumber', '=', 'bb.biblionumber')
+            ->whereIn('s.type', ['issue', 'return', 'localuse'])
+            ->whereNotNull('s.ccode')->where('s.ccode', '!=', '');
+
+        // ===============================================
+        // ## PERBAIKAN LOGIKA FILTER TANGGAL DI SINI ##
+        // ===============================================
+        if ($filterType == 'daily') {
+            $startOfDay = Carbon::parse($periode)->startOfDay();
+            $endOfDay = Carbon::parse($periode)->endOfDay();
+            $query->whereBetween('s.datetime', [$startOfDay, $endOfDay]);
+        } else { // 'monthly'
+            $startOfMonth = Carbon::parse($periode)->startOfMonth();
+            $endOfMonth = Carbon::parse($periode)->endOfMonth();
+            $query->whereBetween('s.datetime', [$startOfMonth, $endOfMonth]);
+        }
+
+        if ($kategori == 'Referensi') {
+            $query->where('s.ccode', 'LIKE', 'R%');
+        } else {
+            $query->where('s.ccode', '=', $kategori);
+        }
+
+        $detailBuku = $query->orderBy('s.datetime', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
+        return $detailBuku;
+    }
+
+
+    private function exportKeterpakaianCsv(Request $request)
+    {
+        // Logika query sama persis dengan di atas untuk memastikan data yang diekspor sesuai filter
+        $filterType = $request->input('filter_type', 'monthly');
+        $startMonth = $request->input('start_month');
+        $endMonth = $request->input('end_month');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        $query = DB::connection('mysql2')->table('statistics')
+            ->select(
+                DB::raw("CASE WHEN ccode LIKE 'R%' THEN 'Referensi' ELSE ccode END as kategori"),
+                DB::raw('COUNT(*) as jumlah')
+            )
+            ->whereIn('type', ['issue', 'return', 'localuse']);
+
+        if ($filterType == 'daily') {
+            $query->addSelect(DB::raw('DATE(datetime) as periode'))
+                ->whereBetween('datetime', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
+                ->groupBy('periode', 'kategori');
+        } else { // monthly
+            $query->addSelect(DB::raw("LEFT(datetime, 7) as periode"))
+                ->whereRaw("LEFT(datetime, 7) BETWEEN ? AND ?", [$startMonth, $endMonth])
+                ->groupBy('periode', 'kategori');
+        }
+
+        $results = $query->orderBy('periode', 'asc')->get();
+
+        // Proses data untuk CSV
+        $listKategori = $results->pluck('kategori')->unique()->sort();
+        $dataTabel = $results->groupBy('periode')->map(function ($items, $periode) use ($listKategori) {
+            $row = ['periode' => $periode];
+            foreach ($listKategori as $kategori) {
+                $row[$kategori] = $items->where('kategori', $kategori)->first()->jumlah ?? 0;
+            }
+            return $row;
+        })->values();
+
+        // Logika untuk membuat file CSV dan men-downloadnya
+        $fileName = 'keterpakaian_koleksi_';
+        if ($filterType == 'daily') {
+            $start = Carbon::parse($request->input('start_date'))->format('Ymd');
+            $end = Carbon::parse($request->input('end_date'))->format('Ymd');
+            $fileName .= "harian_{$start}-{$end}.csv";
+        } else { // monthly
+            $start = Carbon::parse($request->input('start_month'))->format('Y-m');
+            $end = Carbon::parse($request->input('end_month'))->format('Y-m');
+            $fileName .= "bulanan_{$start}-{$end}.csv";
+        }
+
+        $headers = array(
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        );
+
+        $callback = function () use ($dataTabel, $listKategori, $filterType) {
+            $file = fopen('php://output', 'w');
+
+            // Tambahan: Untuk memastikan kompatibilitas encoding di Excel
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // Header
+            $headerRow = ['Periode'];
+            foreach ($listKategori as $kategori) {
+                $headerRow[] = $kategori;
+            }
+            fputcsv($file, $headerRow, ';');
+
+            // Body
+            foreach ($dataTabel as $row) {
+                $dataRow = [];
+                $periodeFormatted = ($filterType == 'daily')
+                    ? Carbon::parse($row['periode'])->format('d M Y')
+                    : Carbon::parse($row['periode'])->format('M Y');
+                $dataRow[] = $periodeFormatted;
+
+                foreach ($listKategori as $kategori) {
+                    $dataRow[] = $row[$kategori] ?? 0;
+                }
+                fputcsv($file, $dataRow, ';');
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

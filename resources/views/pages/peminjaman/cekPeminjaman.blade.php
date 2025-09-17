@@ -2,143 +2,185 @@
 
 @section('content')
 @section('title', 'Cek Histori Peminjaman')
-<div class="container">
-    <h4>Cek Histori Peminjaman</h4>
 
-    <div class="card mb-4">
-        <div class="card-header">
-            Cari Berdasarkan Nomor Kartu
+<div class="container">
+    {{-- =============================================== --}}
+    {{-- Header dengan Ikon --}}
+    {{-- =============================================== --}}
+    <div class="d-flex align-items-center mb-4">
+        <i class="fas fa-user-clock fa-2x text-primary me-3"></i>
+        <div>
+            <h4 class="mb-0">Cek Histori Peminjaman</h4>
+            <small class="text-muted">Lacak riwayat peminjaman dan pengembalian anggota.</small>
         </div>
+    </div>
+
+    {{-- =============================================== --}}
+    {{-- Form Pencarian yang Lebih Rapi --}}
+    {{-- =============================================== --}}
+    <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <form action="{{ route('peminjaman.check_history') }}" method="GET" class="row g-3 align-items-end">
-                <div class="col-md-6">
-                    <label for="cardnumber" class="form-label">Nomor Kartu Peminjam:</label>
-                    <input type="text" name="cardnumber" id="cardnumber" class="form-control"
-                        value="{{ $cardnumber ?? '' }}" placeholder="Masukkan nomor kartu">
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Cari</button>
+            <form action="{{ route('peminjaman.check_history') }}" method="GET">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" name="cardnumber" id="cardnumber" class="form-control form-control-lg"
+                        value="{{ $cardnumber ?? '' }}" placeholder="Masukkan Nomor Kartu Peminjam lalu tekan Enter...">
+                    <button type="submit" class="btn btn-primary">Cari</button>
                 </div>
             </form>
         </div>
     </div>
 
     @if ($errorMessage)
-        <div class="alert alert-danger">
-            {{ $errorMessage }}
-        </div>
+        <div class="alert alert-danger d-flex align-items-center"><i class="fas fa-exclamation-triangle me-2"></i>
+            {{ $errorMessage }}</div>
     @endif
 
     @if ($borrower)
-        <div class="card mb-4">
-            <div class="card-header">
-                Informasi Peminjam
-            </div>
-            <div class="card-body ">
-                <p><strong>Nomor Kartu:</strong> {{ $borrower->cardnumber }}</p>
-                <p><strong>Nama:</strong> {{ $borrower->firstname }} {{ $borrower->surname }}</p>
-                <p><strong>Email:</strong> {{ $borrower->email }}</p>
-                <p><strong>Telepon:</strong> {{ $borrower->phone }}</p>
-            </div>
-        </div>
+        <div class="row">
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body text-center">
+                        {{-- Bagian Avatar dan Nama (tetap sama) --}}
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode($borrower->firstname . ' ' . $borrower->surname) }}&background=0D6EFD&color=fff&size=100"
+                            class="rounded-circle mb-3" alt="Avatar">
+                        <h5 class="card-title">{{ $borrower->firstname }} {{ $borrower->surname }}</h5>
+                        <p class="card-text text-muted">{{ $borrower->cardnumber }}</p>
+                        <hr>
 
-        {{-- Histori Peminjaman --}}
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                Histori Peminjaman (Issue & Renew)
-                @if ($borrowingHistory->isNotEmpty())
-                    <button type="button" id="exportBorrowingHistory" class="btn btn-sm btn-success"><i
-                            class="fas fa-file-csv"></i> Export CSV</button>
-                @endif
-            </div>
-            <div class="card-body">
-                @if ($borrowingHistory->isEmpty())
-                    <div class="alert alert-info">Belum ada histori peminjaman atau perpanjangan untuk peminjam ini.
-                    </div>
-                @else
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-striped" id="borrowingTable">
-                            <thead>
-                                <tr>
-                                    <th>No.</th>
-                                    <th>Tanggal & Waktu</th>
-                                    <th>Tipe</th>
-                                    <th>Barcode Buku</th>
-                                    <th>Judul Buku</th>
-                                    {{-- <th>Pengarang</th> --}}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($borrowingHistory as $history)
-                                    <tr>
-                                        <td>{{ $borrowingHistory->firstItem() + $loop->index }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($history->datetime)->format('d M Y H:i:s') }}</td>
-                                        <td>{{ ucfirst($history->type) }}</td>
-                                        <td>{{ $history->barcode }}</td>
-                                        <td>{{ $history->title }}</td>
-                                        {{-- <td>{{ $history->author }}</td> --}}
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                        <div class="d-flex justify-content-end">
-                            {{ $borrowingHistory->links() }}
+                        {{-- Bagian Kontak (tetap sama) --}}
+                        <div class="text-start mb-3">
+                            <p><i class="fas fa-envelope fa-fw me-2 text-muted"></i>{{ $borrower->email ?? '-' }}</p>
+                            <p><i class="fas fa-phone fa-fw me-2 text-muted"></i>{{ $borrower->phone ?? '-' }}</p>
+                        </div>
+                        <hr>
+
+                        {{-- Bagian Total yang dipindahkan dari footer --}}
+                        <div class="d-flex justify-content-around">
+                            <div>
+                                <small class="text-muted">Total Peminjaman</small>
+                                <h4 class="mb-0 fw-bold text-success">{{ $borrowingHistory->total() }}</h4>
+                            </div>
+                            <div>
+                                <small class="text-muted">Total Pengembalian</small>
+                                <h4 class="mb-0 fw-bold text-danger">{{ $returnHistory->total() }}</h4>
+                            </div>
                         </div>
                     </div>
-                @endif
+                </div>
             </div>
-
-        </div>
-
-        {{-- Histori Pengembalian --}}
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                Histori Pengembalian (Return)
-                @if ($returnHistory->isNotEmpty())
-                    <button type="button" id="exportReturnHistory" class="btn btn-sm btn-success"><i
-                            class="fas fa-file-csv"></i> Export CSV</button>
-                @endif
-            </div>
-            <div class="card-body">
-                @if ($returnHistory->isEmpty())
-                    <div class="alert alert-info">Belum ada histori pengembalian untuk peminjam ini.</div>
-                @else
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-striped" id="returnTable">
-                            <thead>
-                                <tr>
-                                    <th>No.</th>
-                                    <th>Tanggal & Waktu</th>
-                                    <th>Tipe</th>
-                                    <th>Barcode Buku</th>
-                                    <th>Judul Buku</th>
-                                    {{-- <th>Pengarang</th> --}}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($returnHistory as $history)
-                                    <tr>
-                                        <td>{{ $returnHistory->firstItem() + $loop->index }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($history->datetime)->format('d M Y H:i:s') }}</td>
-                                        <td>{{ ucfirst($history->type) }}</td>
-                                        <td>{{ $history->barcode }}</td>
-                                        <td>{{ $history->title }}</td>
-                                        {{-- <td>{{ $history->author }}</td> --}}
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                        <div class="d-flex justify-content-end">
-                            {{ $returnHistory->links() }}
-                        </div>
+            <div class="col-lg-8">
+                {{-- Histori Peminjaman --}}
+                <div class="card shadow-sm mb-4 border-0">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 text-success"><i class="fas fa-arrow-down me-2"></i>Histori Peminjaman (Issue &
+                            Renew)</h6>
+                        @if ($borrowingHistory->isNotEmpty())
+                            <button type="button" id="exportBorrowingHistory" class="btn btn-sm btn-outline-success"><i
+                                    class="fas fa-file-csv"></i> Export</button>
+                        @endif
                     </div>
-                @endif
+                    <div class="card-body">
+                        @if ($borrowingHistory->isEmpty())
+                            <div class="alert alert-light text-center">Belum ada histori peminjaman.</div>
+                        @else
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="borrowingTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Judul Buku</th>
+                                            <th>Tipe</th>
+                                            <th>Tanggal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($borrowingHistory as $history)
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ $history->title }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">Barcode: {{ $history->barcode }}</small>
+                                                </td>
+                                                <td>
+                                                    @if (strtolower($history->type) == 'issue')
+                                                        <span class="badge bg-primary">Pinjam</span>
+                                                    @else
+                                                        <span class="badge bg-info">Perpanjang</span>
+                                                    @endif
+                                                </td>
+                                                <td>{{ \Carbon\Carbon::parse($history->datetime)->format('d M Y, H:i') }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                                <div class="d-flex justify-content-end mt-3">
+                                    {{ $borrowingHistory->links() }}
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Histori Pengembalian --}}
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 text-danger"><i class="fas fa-arrow-up me-2"></i>Histori Pengembalian (Return)
+                        </h6>
+                        @if ($returnHistory->isNotEmpty())
+                            <button type="button" id="exportReturnHistory" class="btn btn-sm btn-outline-success"><i
+                                    class="fas fa-file-csv"></i> Export</button>
+                        @endif
+                    </div>
+                    <div class="card-body">
+                        @if ($returnHistory->isEmpty())
+                            <div class="alert alert-light text-center">Belum ada histori pengembalian.</div>
+                        @else
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="returnTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Judul Buku</th>
+                                            <th>Tipe</th>
+                                            <th>Tanggal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($returnHistory as $history)
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ $history->title }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">Barcode: {{ $history->barcode }}</small>
+                                                </td>
+                                                <td>
+                                                    @if (strtolower($history->type) == 'issue')
+                                                        <span class="badge bg-primary">Pinjam Awal</span>
+                                                    @elseif(strtolower($history->type) == 'renew')
+                                                        <span class="badge bg-info text-dark">Perpanjangan</span>
+                                                    @else
+                                                        <span
+                                                            class="badge bg-secondary">{{ ucfirst($history->type) }}</span>
+                                                    @endif
+                                                </td>
+                                                <td>{{ \Carbon\Carbon::parse($history->datetime)->format('d M Y, H:i') }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                                <div class="d-flex justify-content-end mt-3">
+                                    {{ $returnHistory->links() }}
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
-    @elseif ($cardnumber && !$errorMessage)
-        <div class="alert alert-warning">
-            Nomor kartu peminjam "<strong>{{ $cardnumber }}</strong>" tidak ditemukan.
-        </div>
+    @elseif (request()->has('cardnumber') && !$errorMessage)
+        <div class="alert alert-warning d-flex align-items-center"><i class="fas fa-question-circle me-2"></i>Nomor
+            kartu peminjam "<strong>{{ $cardnumber }}</strong>" tidak ditemukan.</div>
     @endif
 </div>
 

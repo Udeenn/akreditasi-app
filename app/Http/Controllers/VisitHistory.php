@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\M_viscorner;
 use App\Models\M_vishistory;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class VisitHistory extends Controller
 {
@@ -20,7 +23,6 @@ class VisitHistory extends Controller
             ->orderBy('lib', 'asc')
             ->get()
             ->map(function ($prodi) {
-                // Membersihkan nama prodi dari prefix 'FAI/ '
                 $cleanedLib = $prodi->lib;
                 if (str_starts_with($cleanedLib, 'FAI/ ')) {
                     $cleanedLib = substr($cleanedLib, 5);
@@ -33,7 +35,8 @@ class VisitHistory extends Controller
             'DOSEN_TENDIK' => 'Dosen / Tenaga Kependidikan',
             'XA' => 'Alumni',
             // 'XC' => 'Dosen Tidak Tetap',
-            // 'TC' => 'Dosen Tetap',
+            'STAF' => 'Tenaga Kependidikan',
+            'TC' => 'Dosen',
             'KSP' => 'Sekali Kunjung',
             'LB' => 'Anggota Luar Biasa',
             'KSPMBKM' => 'Magang MBKM',
@@ -94,6 +97,12 @@ class VisitHistory extends Controller
                     case 'KSPBIPA':
                         $totalKeseluruhanQuery->whereRaw('SUBSTR(cardnumber, 1, 7) = ?', [$kodeProdiFilter]);
                         break;
+                    case 'TC':
+                        $totalKeseluruhanQuery->whereRaw('SUBSTR(cardnumber, 1, 2) = ?', ['TC']);
+                        break;
+                    case 'STAF':
+                        $totalKeseluruhanQuery->whereRaw('SUBSTR(cardnumber, 1, 4) = ?', ['STAF']);
+                        break;
                     default:
                         $totalKeseluruhanQuery->whereRaw('SUBSTR(cardnumber, 1, 4) = ?', [$kodeProdiFilter]);
                         break;
@@ -112,6 +121,8 @@ class VisitHistory extends Controller
                     WHEN SUBSTR(cardnumber, 1, 3) = "KSP" THEN "KSP"
                     WHEN SUBSTR(cardnumber, 1, 2) = "LB" THEN "LB"
                     WHEN LENGTH(cardnumber) <= 6 THEN "DOSEN_TENDIK"
+                    WHEN SUBSTR(cardnumber, 1, 4) = "STAF" THEN "STAF"
+                    WHEN SUBSTR(cardnumber, 1, 2) = "TC" THEN "TC"
                     ELSE SUBSTR(cardnumber, 1, 4)
                 END as kode_identifikasi,
                 COUNT(id) as jumlah_kunjungan_harian
@@ -134,6 +145,12 @@ class VisitHistory extends Controller
                     case 'KSPMBKM':
                     case 'KSPBIPA':
                         $baseQuery->whereRaw('SUBSTR(cardnumber, 1, 7) = ?', [$kodeProdiFilter]);
+                        break;
+                    case 'TC':
+                        $baseQuery->whereRaw('SUBSTR(cardnumber, 1, 2) = "TC"');
+                        break;
+                    case 'STAF':
+                        $baseQuery->whereRaw('SUBSTR(cardnumber, 1, 4) = "STAF"');
                         break;
                     default:
                         $baseQuery->whereRaw('SUBSTR(cardnumber, 1, 4) = ?', [$kodeProdiFilter]);
@@ -162,8 +179,7 @@ class VisitHistory extends Controller
                     $prodi->lib = trim($cleanedLib);
                     return $prodi;
                 })
-                ->pluck('lib', 'authorised_value'); // Kunci utamanya di sini!
-
+                ->pluck('lib', 'authorised_value');
             // 2. Siapkan data statis dalam bentuk array
             $staticValues = [
                 'DOSEN_TENDIK' => 'Dosen / Tenaga Kependidikan',
@@ -206,7 +222,6 @@ class VisitHistory extends Controller
 
         return view('pages.kunjungan.prodiTable', compact('data', 'listProdi', 'tanggalAwal', 'tanggalAkhir', 'filterType', 'tahunAwal', 'tahunAkhir', 'perPage', 'displayPeriod', 'chartData', 'totalKeseluruhanKunjungan', 'hasFilter'));
     }
-
 
     public function getDetailPengunjung(Request $request)
     {
@@ -444,7 +459,6 @@ class VisitHistory extends Controller
                 $tahunAwal = (int) $request->input('tahun_awal', Carbon::now()->year);
                 $tahunAkhir = (int) $request->input('tahun_akhir', Carbon::now()->year);
 
-                // Pastikan tahun awal tidak lebih besar dari tahun akhir
                 if ($tahunAwal > $tahunAkhir) {
                     return redirect()->back()->withInput($request->all())->with('error', 'Tahun awal tidak boleh lebih besar dari tahun akhir.');
                 }
@@ -641,53 +655,130 @@ class VisitHistory extends Controller
     public function cekKehadiran(Request $request)
     {
         $cardnumber = $request->input('cardnumber');
-        $tahun = $request->input('tahun'); // Ambil input tahun
+        $tahun = $request->input('tahun');
 
-        $dataKunjungan = collect();
-        $borrowerInfo = null;
         $fullBorrowerDetails = null;
         $pesan = 'Silakan masukkan Nomor Kartu Anggota (Cardnumber) untuk melihat laporan kunjungan.';
+        $dataKunjungan = collect();
 
         if ($cardnumber) {
-            $borrowerInfo = M_vishistory::where('cardnumber', $cardnumber)->first();
+            $cardnumber = trim(strtolower($cardnumber));
 
-            if ($borrowerInfo) {
-                $fullBorrowerDetails = DB::connection('mysql2')->table('borrowers')
-                    ->select('borrowernumber', 'cardnumber', 'firstname', 'surname', 'email', 'phone')
-                    ->where('cardnumber', $cardnumber)
-                    ->first();
+            $fullBorrowerDetails = DB::connection('mysql2')->table('borrowers')
+                ->select('borrowernumber', 'cardnumber', 'firstname', 'surname', 'email', 'phone')
+                ->where(DB::raw('TRIM(LOWER(cardnumber))'), $cardnumber)
+                ->first();
 
-                if ($fullBorrowerDetails) {
-                    $query = M_vishistory::selectRaw('
-                    EXTRACT(YEAR_MONTH FROM visittime) as tahun_bulan,
-                    COUNT(id) as jumlah_kunjungan
-                ')
-                        ->where('cardnumber', $cardnumber);
+            if ($fullBorrowerDetails) {
+                $tahunFilter = $tahun ? "AND YEAR(combined.visittime) = ?" : "";
+                $bindings = [$cardnumber];
+                if ($tahun) {
+                    $bindings[] = $tahun;
+                }
 
-                    // Tambahkan kondisi filter tahun
-                    if ($tahun) {
-                        $query->whereYear('visittime', $tahun);
-                    }
+                $queryString = "
+                SELECT
+                    EXTRACT(YEAR_MONTH FROM combined.visittime) AS tahun_bulan,
+                    COUNT(*) AS jumlah_kunjungan
+                FROM (
+                    (SELECT visittime, cardnumber FROM visitorhistory)
+                    UNION ALL
+                    (SELECT visittime, cardnumber FROM visitorcorner)
+                ) AS combined
+                WHERE TRIM(LOWER(combined.cardnumber)) = ? {$tahunFilter}
+                GROUP BY tahun_bulan
+                ORDER BY tahun_bulan ASC
+            ";
 
-                    $dataKunjungan = $query->groupBy(DB::raw('EXTRACT(YEAR_MONTH FROM visittime)'))
-                        ->orderBy(DB::raw('EXTRACT(YEAR_MONTH FROM visittime)'), 'asc')
-                        ->paginate(10)
-                        ->withQueryString();
+                $semuaKunjungan = DB::connection('mysql2')->select($queryString, $bindings);
 
-                    if ($dataKunjungan->isEmpty()) {
-                        $pesan = 'Tidak ada data kunjungan ditemukan untuk Nomor Kartu Anggota: ' . $cardnumber . ' (' . $fullBorrowerDetails->firstname . ' ' . $fullBorrowerDetails->surname . ').';
-                    } else {
-                        $pesan = null;
-                    }
+                $dataKunjungan = collect($semuaKunjungan);
+
+                // Manual pagination
+                $perPage = 12;
+                $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage('page');
+                $currentItems = array_slice($dataKunjungan->all(), $perPage * ($currentPage - 1), $perPage);
+                $dataKunjungan = new \Illuminate\Pagination\LengthAwarePaginator($currentItems, $dataKunjungan->count(), $perPage, $currentPage, ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]);
+                $dataKunjungan->appends(request()->query());
+
+                if ($dataKunjungan->isEmpty()) {
+                    $pesan = 'Tidak ada data kunjungan ditemukan untuk Nomor Kartu Anggota: ' . $fullBorrowerDetails->cardnumber . ' (' . $fullBorrowerDetails->firstname . ' ' . $fullBorrowerDetails->surname . ').';
                 } else {
-                    $pesan = 'Detail peminjam tidak ditemukan di database utama untuk Nomor Kartu Anggota: ' . $cardnumber . '.';
+                    $pesan = null;
                 }
             } else {
-                $pesan = 'Nomor Kartu Anggota (Cardnumber) tidak ditemukan dalam histori kunjungan.';
+                $pesan = 'Detail peminjam tidak ditemukan di database utama untuk Nomor Kartu Anggota: ' . $cardnumber . '.';
             }
         }
 
-        return view('pages.kunjungan.cekKehadiran', compact('dataKunjungan', 'borrowerInfo', 'fullBorrowerDetails', 'pesan', 'cardnumber'));
+        return view('pages.kunjungan.cekKehadiran', compact('dataKunjungan', 'fullBorrowerDetails', 'pesan', 'cardnumber', 'tahun'));
+    }
+
+    public function getLokasiDetail(Request $request)
+    {
+        $cardnumber = $request->input('cardnumber');
+        $tahunBulan = $request->input('tahun_bulan');
+        $perPage = 10; // Jumlah item per halaman
+
+        if (!$cardnumber || !$tahunBulan) {
+            return response()->json(['error' => 'Parameter tidak lengkap.'], 400);
+        }
+
+        try {
+            $lokasiMapping = [
+                'sni' => 'SNI Corner',
+                'bi' => 'Bank Indonesia Corner',
+                'mc' => 'Muhammadiyah Corner',
+                'pusat' => 'Perpustakaan Pusat',
+                'pasca' => 'Perpustakaan Pascasarjana',
+                'fk' => 'Perpustakaan Kedokteran',
+                'ref' => 'Referensi',
+                'pustak' => 'Perpustakaan Pusat',
+            ];
+
+            $cardnumber = trim(strtolower($cardnumber));
+
+            $queryString = "
+            SELECT combined.visittime AS visit_date, combined.visit_location
+            FROM (
+                (SELECT visittime, IFNULL(location, 'Manual Komputer') as visit_location, cardnumber FROM visitorhistory)
+                UNION ALL
+                (SELECT visittime, notes as visit_location, cardnumber FROM visitorcorner)
+            ) AS combined
+            WHERE TRIM(LOWER(combined.cardnumber)) = ? AND EXTRACT(YEAR_MONTH FROM combined.visittime) = ?
+            ORDER BY combined.visittime ASC
+        ";
+
+            $bindings = [$cardnumber, $tahunBulan];
+
+            $semuaData = DB::connection('mysql2')->select($queryString, $bindings);
+
+            // Paginate data mentah dari subquery
+            $lokasiData = new \Illuminate\Pagination\LengthAwarePaginator(
+                array_slice($semuaData, $perPage * (\Illuminate\Pagination\Paginator::resolveCurrentPage() - 1), $perPage),
+                count($semuaData),
+                $perPage,
+                \Illuminate\Pagination\Paginator::resolveCurrentPage(),
+                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+            );
+
+            // Ubah nama lokasi setelah di-paginate
+            $lokasiData->getCollection()->transform(function ($item) use ($lokasiMapping) {
+                $normalizedLokasi = strtolower(trim($item->visit_location));
+                $item->visit_location = $lokasiMapping[$normalizedLokasi] ?? $item->visit_location;
+                return $item;
+            });
+
+            $bulanTahunFormatted = Carbon::createFromFormat('Ym', $tahunBulan)->format('F Y');
+
+            return response()->json([
+                'lokasi' => $lokasiData->items(),
+                'pagination_data' => $lokasiData->toArray(),
+                'bulan_tahun_formatted' => $bulanTahunFormatted,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Gagal mengambil data lokasi.', 'message' => $e->getMessage()], 500);
+        }
     }
 
     public function getKehadiranExportData(Request $request)
@@ -738,85 +829,224 @@ class VisitHistory extends Controller
         ]);
     }
 
-
     public function exportPdf(Request $request)
     {
         $cardnumber = trim((string) $request->input('cardnumber', ''));
         $tahun      = $request->input('tahun');
 
-        // ==== Ambil data (contoh sesuai kode Anda) ====
-        $fullBorrowerDetails = DB::connection('mysql2')->table('borrowers')
-            ->select('cardnumber', 'firstname', 'surname', 'email', 'phone')
-            ->where('cardnumber', $cardnumber)
-            ->first();
-
-        $dataKunjungan = M_vishistory::on('mysql2')
-            ->select(DB::raw('EXTRACT(YEAR_MONTH FROM visittime) as tahun_bulan'), DB::raw('COUNT(id) as jumlah_kunjungan'))
-            ->where('cardnumber', $cardnumber)
-            ->when($tahun, fn($q, $t) => $q->whereYear('visittime', $t))
-            ->groupBy(DB::raw('EXTRACT(YEAR_MONTH FROM visittime)'))
-            ->orderBy('tahun_bulan', 'asc')
-            ->get();
-
         // ==== Validasi ====
         if ($cardnumber === '') {
             return back()->with('error', 'Nomor Kartu Anggota wajib diisi.');
         }
+
+        $normalizedCardnumber = trim(strtolower($cardnumber));
+
+        $fullBorrowerDetails = DB::connection('mysql2')->table('borrowers')
+            ->select('cardnumber', 'firstname', 'surname', 'email', 'phone')
+            ->where(DB::raw('TRIM(LOWER(cardnumber))'), $normalizedCardnumber)
+            ->first();
+
         if (!$fullBorrowerDetails) {
             return back()->with('error', 'Data anggota tidak ditemukan.');
         }
+        $tahunFilter = $tahun ? "AND YEAR(combined.visittime) = ?" : "";
+        $bindings = [$normalizedCardnumber];
+        if ($tahun) {
+            $bindings[] = $tahun;
+        }
 
-        // ==== Dompdf Options (penting!) ====
+        $queryString = "
+        SELECT
+            EXTRACT(YEAR_MONTH FROM combined.visittime) AS tahun_bulan,
+            COUNT(*) AS jumlah_kunjungan
+        FROM (
+            (SELECT visittime, cardnumber FROM visitorhistory)
+            UNION ALL
+            (SELECT visittime, cardnumber FROM visitorcorner)
+        ) AS combined
+        WHERE TRIM(LOWER(combined.cardnumber)) = ? {$tahunFilter}
+        GROUP BY tahun_bulan
+        ORDER BY tahun_bulan ASC
+    ";
+
+        $dataKunjungan = DB::connection('mysql2')->select($queryString, $bindings);
+        $dataKunjungan = collect($dataKunjungan);
+
+        if ($dataKunjungan->isEmpty()) {
+            return back()->with('error', 'Tidak ada data kunjungan yang ditemukan untuk diekspor.');
+        }
+
         $options = new Options();
-        $options->setIsRemoteEnabled(true);          // kalau nanti ada http(s) asset
-        $options->setChroot(public_path());          // aman akses lokal di /public
-
-        // Temp & cache WAJIB writable, hindari error "Path must not be empty"
-        $tempDir    = storage_path('app/dompdf_tmp');
-        $fontCache  = storage_path('app/dompdf_font_cache');
-        if (!is_dir($tempDir))   @mkdir($tempDir, 0775, true);
-        if (!is_dir($fontCache)) @mkdir($fontCache, 0775, true);
-        $options->setTempDir($tempDir);
-        $options->setFontCache($fontCache);
+        $options->setIsRemoteEnabled(true);
+        $options->setChroot(public_path());
+        $options->setFontCache(storage_path('app/dompdf_font_cache'));
+        $options->setTempDir(storage_path('app/dompdf_tmp'));
 
         $dompdf = new Dompdf($options);
 
-        // ==== Render Blade (pakai versi base64 yang sudah saya kirim sebelumnya) ====
         $html = view('pages.kunjungan.laporan_kehadiran_pdf', [
             'fullBorrowerDetails' => $fullBorrowerDetails,
             'dataKunjungan'       => $dataKunjungan,
-            // Tidak perlu kirim path logo—Blade akan ambil dari public/img/logo0.png
         ])->render();
 
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
 
-        // ==== Nama file: sanitize + fallback ====
+        // ==== Kirim PDF ====
+        $pdfContent = $dompdf->output();
+
         $cardSafe = preg_replace('/[^\w\-\.]+/', '_', (string) ($fullBorrowerDetails->cardnumber ?? 'anggota'));
         $cardSafe = $cardSafe !== '' ? $cardSafe : 'anggota';
         $fileName = "laporan_kehadiran_{$cardSafe}.pdf";
 
-        // ==== Bersihkan output buffer sebelum kirim header ====
         if (ob_get_length()) {
             @ob_end_clean();
         }
 
-        // ==== KIRIM PDF tanpa Dompdf->stream() ====
-        $pdfContent = $dompdf->output(); // string PDF siap kirim
-
-        // return response()->streamDownload(
-        //     function () use ($pdfContent) {
-        //         echo $pdfContent;
-        //     },
-        //     $fileName,
-        //     [
-        //         'Content-Type'  => 'application/pdf',
-        //         'Cache-Control' => 'private, must-revalidate, max-age=0',
-        //     ]
-        // );
-
         return response($pdfContent)
-            ->header('Content-Type', 'application/pdf');
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', "inline; filename=\"{$fileName}\"");
+    }
+
+    public function laporanKunjunganGabungan(Request $request)
+    {
+        if ($request->query('export') === 'csv') {
+            return $this->exportKunjunganCsv($request); // Pastikan method exportCsv ada
+        }
+
+        $filterType = $request->input('filter_type', 'monthly');
+        $startMonth = $request->input('start_month', Carbon::now()->startOfYear()->format('Y-m'));
+        $endMonth = $request->input('end_month', Carbon::now()->format('Y-m'));
+        $startDate = $request->input('start_date', Carbon::now()->subDays(29)->format('Y-m-d'));
+        $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+        $selectedLokasi = $request->input('lokasi');
+
+        $semuaKunjungan = new LengthAwarePaginator([], 0, 25);
+        $chartData = collect();
+        $namaPeminjamMap = collect();
+        $lokasiMapping = [
+            'sni' => 'SNI Corner',
+            'bi' => 'Bank Indonesia Corner',
+            'mc' => 'Muhammadiyah Corner',
+            'pusat' => 'Perpustakaan Pusat',
+            'pasca' => 'Perpustakaan Pascasarjana',
+            'Manual Komputer' => 'Manual Komputer',
+            'fk' => 'Perpustakaan Kedokteran',
+            'ref' => 'Referensi'
+        ];
+
+        $historyLokasi = DB::connection('mysql2')->table('koha.visitorhistory')->select(DB::raw("IFNULL(location, 'Manual Komputer') as lokasi_kunjungan"))->distinct();
+        $cornerLokasi = DB::connection('mysql2')->table('koha.visitorcorner')->select('notes as lokasi_kunjungan')->whereNotNull('notes')->where('notes', '!=', '')->distinct();
+        $lokasiOptions = $historyLokasi->get()->merge($cornerLokasi->get())->pluck('lokasi_kunjungan')->unique()->sort()->values();
+
+        if ($request->has('filter_type')) {
+            $historyQuery = DB::connection('mysql2')->table('koha.visitorhistory')
+                ->select('visittime', DB::raw("UPPER(TRIM(cardnumber)) as cardnumber"), DB::raw("IFNULL(location, 'Manual Komputer') as lokasi_kunjungan"));
+            $cornerQuery = DB::connection('mysql2')->table('koha.visitorcorner')
+                ->select('visittime', DB::raw("UPPER(TRIM(cardnumber)) as cardnumber"), 'notes as lokasi_kunjungan');
+
+            if ($filterType == 'daily') {
+                $historyQuery->whereBetween('visittime', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+                $cornerQuery->whereBetween('visittime', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+            } else {
+                $historyQuery->whereRaw("LEFT(visittime, 7) BETWEEN ? AND ?", [$startMonth, $endMonth]);
+                $cornerQuery->whereRaw("LEFT(visittime, 7) BETWEEN ? AND ?", [$startMonth, $endMonth]);
+            }
+
+            $allResults = $historyQuery->get()->merge($cornerQuery->get());
+            if ($selectedLokasi) {
+                $allResults = $allResults->where('lokasi_kunjungan', $selectedLokasi);
+            }
+            $sortedResults = $allResults->sortByDesc('visittime');
+            $cardnumbers = $sortedResults->pluck('cardnumber')->unique()->filter()->values();
+
+            if ($cardnumbers->isNotEmpty()) {
+                $borrowersData = DB::connection('mysql2')->table('koha.borrowers')
+                    ->whereIn(DB::raw('UPPER(TRIM(cardnumber))'), $cardnumbers)
+                    ->select('cardnumber', 'firstname', 'surname')->get();
+
+                foreach ($borrowersData as $borrower) {
+                    $cleanedCardnumber = strtoupper(trim($borrower->cardnumber));
+                    $fullName = trim(implode(' ', array_filter([$borrower->firstname, $borrower->surname])));
+                    $namaPeminjamMap->put($cleanedCardnumber, $fullName);
+                }
+            }
+
+            $currentPage = Paginator::resolveCurrentPage('page');
+            $perPage = 10;
+            $currentPageItems = $sortedResults->slice(($currentPage - 1) * $perPage, $perPage)->all();
+            $semuaKunjungan = new LengthAwarePaginator($currentPageItems, count($sortedResults), $perPage, $currentPage, ['path' => Paginator::resolveCurrentPath()]);
+            $semuaKunjungan->appends($request->all());
+
+            $chartData = $sortedResults->groupBy(fn($item) => Carbon::parse($item->visittime)->format($filterType == 'daily' ? 'Y-m-d' : 'Y-m'))
+                ->map(fn($group) => $group->count())->sortKeys();
+        }
+        if ($request->ajax()) {
+            return response()->json([
+                'table_body' => view('pages.kunjungan._kunjungan_gabungan_table_body', compact('semuaKunjungan', 'namaPeminjamMap', 'lokasiMapping'))->render(),
+                'pagination' => $semuaKunjungan->links()->toHtml(),
+                'total' => number_format($semuaKunjungan->total())
+            ]);
+        }
+
+        return view('pages.kunjungan.kunjungan_gabungan', [
+            'semuaKunjungan' => $semuaKunjungan,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'startMonth' => $startMonth,
+            'endMonth' => $endMonth,
+            'filterType' => $filterType,
+            'lokasiOptions' => $lokasiOptions,
+            'selectedLokasi' => $selectedLokasi,
+            'chartData' => $chartData,
+            'lokasiMapping' => $lokasiMapping,
+            'namaPeminjamMap' => $namaPeminjamMap,
+        ]);
+    }
+
+    private function exportKunjunganCsv(Request $request)
+    {
+        $filterType = $request->input('filter_type', 'monthly');
+        $startMonth = $request->input('start_month');
+        $endMonth = $request->input('end_month');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $selectedLokasi = $request->input('lokasi');
+
+        $historyQuery = DB::connection('mysql2')->table('koha.visitorhistory')->select('visittime', 'cardnumber', DB::raw("IFNULL(location, 'Manual Komputer') as lokasi_kunjungan"));
+        $cornerQuery = DB::connection('mysql2')->table('koha.visitorcorner')->select('visittime', 'cardnumber', 'notes as lokasi_kunjungan');
+
+        if ($filterType == 'daily') {
+            $historyQuery->whereBetween('visittime', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+            $cornerQuery->whereBetween('visittime', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+        } else {
+            $historyQuery->whereRaw("LEFT(visittime, 7) BETWEEN ? AND ?", [$startMonth, $endMonth]);
+            $cornerQuery->whereRaw("LEFT(visittime, 7) BETWEEN ? AND ?", [$startMonth, $endMonth]);
+        }
+
+        $allResults = $historyQuery->get()->merge($cornerQuery->get());
+        if ($selectedLokasi) {
+            $allResults = $allResults->where('lokasi_kunjungan', $selectedLokasi);
+        }
+        $dataToExport = $allResults->sortByDesc('visittime');
+
+        $fileName = 'laporan_kunjungan_gabungan_' . date('Y-m-d') . '.csv';
+        $headers = ['Content-Type' => 'text/csv', 'Content-Disposition' => "attachment; filename=\"$fileName\""];
+
+        $callback = function () use ($dataToExport) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['Waktu Kunjungan', 'Nomor Kartu', 'Lokasi Kunjungan'], ';');
+            foreach ($dataToExport as $row) {
+                fputcsv($file, [
+                    Carbon::parse($row->visittime)->format('d M Y H:i:s'),
+                    $row->cardnumber,
+                    $row->lokasi_kunjungan
+                ], ';');
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

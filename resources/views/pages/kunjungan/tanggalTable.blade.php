@@ -2,7 +2,7 @@
 
 @section('title', 'Statistik Kunjungan Keseluruhan')
 @section('content')
-    <div class="container-fluid">
+    <div class="container">
         <div class="card bg-white shadow-sm mb-4">
             <div class="card-body">
                 <h4 class="mb-0">Statistik Kunjungan Keseluruhan</h4>
