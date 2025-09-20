@@ -15,7 +15,7 @@
                 <select name="prodi" id="prodi" class="form-select">
                     @foreach ($listprodi as $p)
                         <option value="{{ $p->authorised_value }}" {{ $prodi == $p->authorised_value ? 'selected' : '' }}>
-                            {{ $p->lib }} ({{ $p->authorised_value }})
+                            {{ $p->lib }}
                         </option>
                     @endforeach
                 </select>
@@ -24,8 +24,7 @@
                 <label for="tahun" class="form-label">Tahun Terbit</label>
                 <select name="tahun" id="tahun" class="form-select">
                     <option value="all" {{ $tahunTerakhir == 'all' ? 'selected' : '' }}>Semua Tahun</option>
-                    {{-- Opsi tahun terakhir bisa disesuaikan jika diperlukan --}}
-                    @for ($i = 0; $i <= 10; $i++)
+                    @for ($i = 1; $i <= 10; $i++)
                         <option value="{{ $i }}" {{ $tahunTerakhir == $i ? 'selected' : '' }}>
                             {{ $i }} Tahun Terakhir
                         </option>
@@ -43,6 +42,7 @@
 
         <div class="card shadow mb-4">
             <div class="card-body">
+                {{-- Bagian baru untuk menampilkan total --}}
                 <div class="row">
                     <div class="col-md-4">
                         <div class="alert alert-info py-2">
@@ -81,36 +81,35 @@
                 @endif
                 <div class="card-body">
                     @if ($prodi && $prodi !== 'initial' && $data->isNotEmpty())
+                        {{-- <div id="customInfoJurnal" class="mb-2"></div> --}}
                         <div class="table-responsive">
                             <table class="table table-bordered table-hover table-striped" id="myTableJurnal">
-                                {{-- ================== PERUBAHAN BAGIAN HEADER TABEL ================== --}}
                                 <thead>
                                     <tr>
                                         <th>No</th>
-                                        <th>Kelas</th>
                                         <th>Judul</th>
                                         <th>Penerbit</th>
                                         <th>Nomor</th>
-                                        <th>Issue</th>
-                                        <th>Eksemplar</th>
-                                        <th>Jenis Koleksi</th>
-                                        <th>Jenis Item Tipe</th>
+                                        <th>Link</th>
+                                        {{-- <th>Issue</th> --}}
+                                        {{-- <th>Eksemplar</th> --}}
+                                        <th>Jenis</th>
+                                        <th>Tahun Terbit</th>
                                         <th>Lokasi</th>
                                     </tr>
                                 </thead>
-                                {{-- ================== PERUBAHAN BAGIAN BODY TABEL ================== --}}
                                 <tbody>
                                     @foreach ($data as $row)
                                         <tr>
                                             <td></td> {{-- Kolom ini akan diisi oleh DataTables --}}
-                                            <td>{{ $row->Kelas }}</td>
                                             <td>{{ $row->Judul }}</td>
                                             <td>{{ $row->Penerbit }}</td>
                                             <td>{{ $row->Nomor }}</td>
-                                            <td>{{ $row->Issue }}</td>
-                                            <td>{{ $row->Eksemplar }}</td>
-                                            <td>{{ $row->Jenis_Koleksi }}</td>
-                                            <td>{{ $row->Jenis_Item_Tipe }}</td>
+                                            <td>{{ $row->online_resources }}</td>
+                                            {{-- <td>{{ $row->Issue }}</td> --}}
+                                            {{-- <td>{{ $row->Eksemplar }}</td> --}}
+                                            <td>{{ $row->Jenis }}</td>
+                                            <td>{{ $row->tahun_terbit }}</td>
                                             <td>{{ $row->Lokasi }}</td>
                                         </tr>
                                     @endforeach
@@ -131,66 +130,62 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    {{-- Script DataTables tidak perlu diubah, sudah bagus --}}
-    @push('scripts')
-        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
-        <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-        <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
-        <script>
-            $(document).ready(function() {
-                var table = $('#myTableJurnal').DataTable({
-                    "language": {
-                        "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json"
-                    },
-                    "paging": true,
-                    "lengthChange": true,
-                    "searching": true,
-                    "ordering": true,
-                    "info": true,
-                    "autoWidth": false,
-                    "columnDefs": [{
-                        "searchable": false,
-                        "orderable": false,
-                        "targets": 0
-                    }],
-                    "order": [
-                        [2, 'asc']
-                    ], // Default sort by Judul ascending
-                    "lengthMenu": [
-                        [10, 25, 50, 100, -1],
-                        [10, 25, 50, 100, "Semua"]
-                    ],
-                    "pageLength": 10,
-                    "dom": '<"d-flex justify-content-between mb-3"lp>t<"d-flex justify-content-between mt-3"ip>',
-                });
-
-                // Penomoran otomatis
-                table.on('order.dt search.dt', function() {
-                    table.column(0, {
-                        search: 'applied',
-                        order: 'applied'
-                    }).nodes().each(function(cell, i) {
-                        cell.innerHTML = i + 1;
+        @push('scripts')
+            {{-- Memuat DataTables CSS dan JS --}}
+            <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
+            <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+            <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+            <script>
+                $(document).ready(function() {
+                    var table = $('#myTableJurnal').DataTable({
+                        "language": {
+                            "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json"
+                        },
+                        "paging": true,
+                        "lengthChange": true,
+                        "searching": true,
+                        "ordering": true,
+                        "info": true,
+                        "autoWidth": false,
+                        "columnDefs": [{
+                                "orderable": false,
+                                "targets": [0]
+                            }, // Kolom 'No' (indeks 0) tidak bisa diurutkan
+                            {
+                                "targets": 0, // Target kolom 'No'
+                                "render": function(data, type, row, meta) {
+                                    return meta.row + 1; // Menomori baris secara otomatis oleh DataTables
+                                }
+                            }
+                        ],
+                        "lengthMenu": [
+                            [10, 25, 50, 100, -1],
+                            [10, 25, 50, 100, "Semua"]
+                        ],
+                        "pageLength": 10,
+                        // "dom": 'lrtip'
+                        // "dom": '<"top"lp>t<"bottom"ip>'
+                        "dom": '<"d-flex justify-content-between mb-3"lp>t<"d-flex justify-content-between mt-3"ip>',
                     });
-                }).draw();
 
+                    // Fungsi untuk update info paginasi ke div custom
+                    function updateCustomInfo() {
+                        var pageInfo = table.page.info();
+                        let formatter = new Intl.NumberFormat('id-ID');
+                        let formattedTotal = formatter.format(pageInfo.recordsTotal);
+                        let infoText = `${formattedTotal}`;
+                        $('#customInfoJurnal').html(infoText);
+                    }
+                    // Update info saat tabel di-draw
+                    table.on('draw', updateCustomInfo);
+                    // Inisialisasi info pertama kali
+                    updateCustomInfo();
 
-                function updateCustomInfo() {
-                    var pageInfo = table.page.info();
-                    let formatter = new Intl.NumberFormat('id-ID');
-                    let formattedTotal = formatter.format(pageInfo.recordsTotal);
-                    let infoText = `${formattedTotal}`;
-                    $('#customInfoJurnal').html(infoText);
-                }
-                table.on('draw', updateCustomInfo);
-                updateCustomInfo();
-
-                $('#searchInput').on('keyup change', function() {
-                    table.search(this.value).draw();
+                    $('#searchInput').on('keyup change', function() {
+                        table.search(this.value).draw();
+                    });
                 });
-            });
-        </script>
-    @endpush
-@endsection
+            </script>
+        @endpush
+    @endsection

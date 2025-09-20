@@ -99,7 +99,9 @@ Route::get('/statistik/keterpakaian-koleksi/detail', [PeminjamanController::clas
 // Tambahkan ini di routes/web.php
 Route::get('/kunjungan/get-lokasi-detail', [VisitHistory::class, 'getLokasiDetail'])->name('kunjungan.get_lokasi_detail');
 
-Route::get('/reward/pengunjung-teraktif', [RewardController::class, 'pengunjungTeraktif'])->name('reward.pengunjung_teraktif');
+Route::get('/reward/pemustaka-teraktif', [RewardController::class, 'pemustakaTeraktif'])->name('reward.pemustaka_teraktif');
+Route::get('/reward/pemustaka-teraktif/export-csv', [RewardController::class, 'exportCsvPemustakaTeraktif'])->name('reward.export_csv_pemustaka_teraktif');
 Route::get('/reward/peminjam-teraktif', [RewardController::class, 'peminjamTeraktif'])->name('reward.peminjam_teraktif');
+Route::get('/reward/peminjam-teraktif/export-csv', [RewardController::class, 'exportCsvPeminjamTeraktif'])->name('reward.export_csv_peminjam_teraktif');
 
 require __DIR__ . '/auth.php';

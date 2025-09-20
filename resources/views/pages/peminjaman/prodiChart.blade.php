@@ -114,25 +114,25 @@
             </div>
             <div class="card-body">
                 <div class="row mb-3">
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <div class="alert alert-info py-2">
                             <i class="fas fa-book me-2"></i>Buku Terpinjam:
                             <span class="fw-bold">{{ number_format($totalBooks) }}</span>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    {{-- <div class="col-md-3">
                         <div class="alert alert-success py-2">
                             <i class="fas fa-undo-alt me-2"></i>Buku Dikembalikan:
                             <span class="fw-bold">{{ number_format($totalReturns) }}</span>
                         </div>
-                    </div>
-                    <div class="col-md-3">
+                    </div> --}}
+                    <div class="col-md-4">
                         <div class="alert alert-info py-2">
                             <i class="fas fa-users me-2"></i> Total Peminjam :
                             <span class="fw-bold">{{ number_format($totalBorrowers) }}</span>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <div class="alert alert-warning py-2">
                             <i class="fas fa-book-reader me-2"></i> Total Entri:
                             <span class="fw-bold">{{ $statistics->total() }}</span>
@@ -186,49 +186,12 @@
     @endif
 </div>
 
-{{-- <div class="modal fade" id="borrowersModal" tabindex="-1" aria-labelledby="borrowersModalLabel"
-    aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header bg-light">
-                <h5 class="modal-title" id="borrowersModalLabel">
-                    <i class="fas fa-users me-2"></i> Detail Peminjam
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                    aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="fs-6">Program Studi: <strong class="fw-bold" id="modalProdiName"></strong></span>
-                    <span class="fs-6">Periode: <strong class="fw-bold" id="modalPeriod"></strong></span>
-                </div>
-                <div id="loadingSpinner" class="text-center py-5" style="display:none;">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="text-muted mt-2">Memuat data peminjam...</p>
-                </div>
-                <div id="noDataMessage" class="alert alert-info text-center mt-3" style="display:none;">
-                    <i class="fas fa-info-circle me-2"></i> Tidak ada data peminjam untuk periode ini.
-                </div>
-                <ul id="borrowersList" class="list-group list-group-flush">
-                </ul>
-                <div id="modalPagination" class="d-flex justify-content-center mt-3">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-</div> --}}
-
 {{-- modal tabel --}}
 <div class="modal fade" id="borrowersModal" tabindex="-1" aria-labelledby="borrowersModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header bg-light">
+            <div class="modal-header">
                 <h5 class="modal-title" id="borrowersModalLabel">
                     <i class="fas fa-users me-2"></i> Detail Peminjam
                 </h5>
@@ -456,81 +419,7 @@
                 });
             });
 
-            // function fetchBorrowers(periode, prodiCode, filterType, page) {
-            //     const borrowersList = document.getElementById('borrowersList');
-            //     const loadingSpinner = document.getElementById('loadingSpinner');
-            //     const noDataMessage = document.getElementById('noDataMessage');
-            //     const modalPagination = document.getElementById('modalPagination');
 
-            //     borrowersList.innerHTML = '';
-            //     modalPagination.innerHTML = '';
-            //     loadingSpinner.style.display = 'block';
-            //     noDataMessage.style.display = 'none';
-
-            //     fetch(
-            //             `{{ route('peminjaman.peminjamDetail') }}?periode=${periode}&filter_type=${filterType}&prodi_code=${prodiCode}&page=${page}`
-            //         )
-            //         .then(response => {
-            //             if (!response.ok) {
-            //                 throw new Error('Network response was not ok');
-            //             }
-            //             return response.json();
-            //         })
-            //         .then(data => {
-            //             loadingSpinner.style.display = 'none';
-            //             if (data.success && data.data && data.data.length > 0) {
-            //                 // Buat list grup baru untuk setiap peminjam
-            //                 const borrowerItems = data.data.map(borrower => {
-            //                     // Buat detail buku sebagai card terpisah
-            //                     const bookList = borrower.buku.map(book => {
-            //                         let transaksiBadge = '';
-            //                         if (book.transaksi === 'issue') {
-            //                             transaksiBadge =
-            //                                 '<span class="badge bg-primary ms-2">Pinjam Awal</span>';
-            //                         } else if (book.transaksi === 'renew') {
-            //                             transaksiBadge =
-            //                                 '<span class="badge bg-warning ms-2">Perpanjangan</span>';
-            //                         } else if (book.transaksi === 'return') {
-            //                             transaksiBadge =
-            //                                 '<span class="badge bg-success ms-2">Pengembalian</span>';
-            //                         }
-
-            //                         return `
-        //                 <li class="list-group-item">
-        //                     <i class="fas fa-book me-2"></i> ${book.title}
-        //                     <span class="badge bg-secondary ms-2">${book.waktu_transaksi}</span>
-        //                     ${transaksiBadge}
-        //                 </li>
-        //             `;
-            //                     }).join('');
-
-            //                     return `
-        //             <li class="list-group-item d-flex justify-content-between align-items-center">
-        //                 <div class="ms-2 me-auto">
-        //                     <div class="fw-bold">${borrower.nama_peminjam} <span class="badge bg-dark ms-2">NIM: ${borrower.cardnumber}</span></div>
-        //                     <ul class="list-group list-group-flush mt-2">
-        //                         ${bookList || '<li class="list-group-item text-muted">Tidak ada buku yang tercatat.</li>'}
-        //                     </ul>
-        //                 </div>
-        //             </li>
-        //         `;
-            //                 }).join('');
-
-            //                 borrowersList.innerHTML = borrowerItems;
-            //                 createModalPagination(data.currentPage, data.totalPages, periode, prodiCode,
-            //                     filterType);
-
-            //             } else {
-            //                 noDataMessage.style.display = 'block';
-            //             }
-            //         })
-            //         .catch(error => {
-            //             console.error('Error fetching borrower details:', error);
-            //             loadingSpinner.style.display = 'none';
-            //             borrowersList.innerHTML =
-            //                 '<li class="list-group-item text-danger">Gagal memuat data peminjam.</li>';
-            //         });
-            // }
 
             function fetchBorrowers(periode, prodiCode, filterType, page) {
                 const borrowersTableBody = document.getElementById('borrowersTableBody');
@@ -552,52 +441,46 @@
                         }
                         return response.json();
                     })
-                    .then(data => {
+                    .then(result => { // Ganti 'data' menjadi 'result' agar tidak bingung
                         loadingSpinner.style.display = 'none';
-                        if (data.success && data.data && data.data.length > 0) {
-                            let rowNumber = (data.currentPage - 1) * data.perPage +
-                                1;
 
-                            data.data.forEach(borrower => {
+                        // Akses objek paginasi dari server
+                        const paginator = result.data;
+
+                        if (result.success && paginator && paginator.data && paginator.data.length > 0) {
+                            let rowNumber = paginator.from; // 'from' adalah nomor awal item
+
+                            paginator.data.forEach(borrower => {
                                 const bookList = borrower.buku.map(book => {
-                                    let transaksiBadge = '';
+                                    let badgeClass = 'bg-secondary';
+                                    let badgeText = book.transaksi;
                                     if (book.transaksi === 'issue') {
-                                        transaksiBadge =
-                                            '<span class="badge bg-primary ms-2">Pinjam Awal</span>';
+                                        badgeClass = 'bg-primary';
+                                        badgeText = 'Pinjam Awal';
                                     } else if (book.transaksi === 'renew') {
-                                        transaksiBadge =
-                                            '<span class="badge bg-warning ms-2">Perpanjangan</span>';
+                                        badgeClass = 'bg-warning';
+                                        badgeText = 'Perpanjangan';
                                     } else if (book.transaksi === 'return') {
-                                        transaksiBadge =
-                                            '<span class="badge bg-success ms-2">Pengembalian</span>';
+                                        badgeClass = 'bg-success';
+                                        badgeText = 'Pengembalian';
                                     }
 
-                                    return `
-                                <li>
-                                    <i class="fas fa-book me-2"></i> ${book.title}
-                                    <span class="badge bg-secondary ms-2">${book.waktu_transaksi}</span>
-                                    ${transaksiBadge}
-                                </li>
-                            `;
+                                    return `<li><i class="fas fa-book me-2"></i> ${book.title} <span class="badge ${badgeClass} ms-2">${badgeText}</span> <span class="badge bg-secondary ms-2">${book.waktu_transaksi}</span></li>`;
                                 }).join('');
 
                                 const rowHtml = `
-                        <tr>
-                            <td>${rowNumber++}</td>
-                            <td>${borrower.nama_peminjam}</td>
-                            <td>${borrower.cardnumber}</td>
-                            <td>
-                                <ul class="list-unstyled mb-0">
-                                    ${bookList || '<li>Tidak ada buku yang tercatat.</li>'}
-                                </ul>
-                            </td>
-                        </tr>
-                    `;
+                    <tr>
+                        <td>${rowNumber++}</td>
+                        <td>${borrower.nama_peminjam}</td>
+                        <td>${borrower.cardnumber}</td>
+                        <td><ul class="list-unstyled mb-0">${bookList || '<li>-</li>'}</ul></td>
+                    </tr>`;
                                 borrowersTableBody.innerHTML += rowHtml;
                             });
 
-                            createModalPagination(data.currentPage, data.totalPages, periode, prodiCode,
-                                filterType);
+                            // Kirim data paginator ke fungsi createModalPagination
+                            createModalPagination(paginator.current_page, paginator.last_page, periode,
+                                prodiCode, filterType);
 
                         } else {
                             noDataMessage.style.display = 'block';
@@ -607,7 +490,7 @@
                         console.error('Error fetching borrower details:', error);
                         loadingSpinner.style.display = 'none';
                         borrowersTableBody.innerHTML =
-                            '<tr><td colspan="4" class="text-center text-danger">Gagal memuat data peminjam.</td></tr>';
+                            '<tr><td colspan="4" class="text-center text-danger">Gagal memuat data peminjam. Silakan coba lagi.</td></tr>';
                     });
             }
 

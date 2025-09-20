@@ -72,7 +72,7 @@
             <div class="col-lg-8">
                 {{-- Histori Peminjaman --}}
                 <div class="card shadow-sm mb-4 border-0">
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h6 class="mb-0 text-success"><i class="fas fa-arrow-down me-2"></i>Histori Peminjaman (Issue &
                             Renew)</h6>
                         @if ($borrowingHistory->isNotEmpty())
@@ -124,7 +124,7 @@
 
                 {{-- Histori Pengembalian --}}
                 <div class="card shadow-sm border-0">
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h6 class="mb-0 text-danger"><i class="fas fa-arrow-up me-2"></i>Histori Pengembalian (Return)
                         </h6>
                         @if ($returnHistory->isNotEmpty())

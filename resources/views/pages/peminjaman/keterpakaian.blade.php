@@ -12,7 +12,7 @@
     </div>
 
     <div class="card shadow-sm mb-4">
-        <div class="card-header bg-light">
+        <div class="card-header">
             <a class="h6 mb-0 text-decoration-none" data-bs-toggle="collapse" href="#collapseFilter" role="button"
                 aria-expanded="true" aria-controls="collapseFilter">
                 <i class="fas fa-filter me-2"></i> Filter Data
@@ -73,7 +73,7 @@
                             <i class="fas fa-star fa-3x text-warning mb-3"></i>
                             <h6 class="card-subtitle mb-2 text-muted">Kategori Terpopuler</h6>
                             <h2 class="card-title fw-bold">{{ $kategoriPopuler['nama'] }}</h2>
-                            <span class="badge bg-light text-dark fs-6">{{ number_format($kategoriPopuler['jumlah']) }}
+                            <span class="badge text-bg-primary fs-6">{{ number_format($kategoriPopuler['jumlah']) }}
                                 kali</span>
                         </div>
                     </div>
@@ -82,7 +82,7 @@
 
             {{-- Chart --}}
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light">
+                <div class="card-header">
                     <h6 class="mb-0">Grafik Keterpakaian Koleksi</h6>
                 </div>
                 <div class="card-body"><canvas id="koleksiChart"></canvas></div>
@@ -90,7 +90,7 @@
 
             {{-- Tabel Hasil --}}
             <div class="card shadow-sm">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">Hasil Analisis</h6>
                     <button id="exportCsvBtn" class="btn btn-success btn-sm"><i class="fas fa-file-csv me-2"></i>Export
                         CSV</button>

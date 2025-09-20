@@ -71,7 +71,7 @@
         <div class="card mt-4">
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover table-striped" id="kunjunganTable">
+                    <table class="table table-bordered table-hover table-striped text-center" id="kunjunganTable">
                         <thead>
                             <tr>
                                 <th>No.</th>
@@ -119,7 +119,7 @@
             <div class="modal-body">
                 <p><strong>Bulan Tahun:</strong> <span id="modalBulanTahun"></span></p>
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped">
+                    <table class="table table-bordered table-striped text-center">
                         <thead>
                             <tr>
                                 <th>No.</th>
@@ -142,7 +142,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Logika untuk tombol Export ke PDF
         const downloadPdfButton = document.getElementById("downloadPdfButton");
         if (downloadPdfButton) {
             downloadPdfButton.addEventListener("click", function() {
@@ -224,7 +223,6 @@
             });
         }
 
-        // Logika Chart.js
         @if (isset($fullBorrowerDetails) && $fullBorrowerDetails && $dataKunjungan->isNotEmpty())
             const chartCanvas = document.getElementById('chartKunjungan');
             const chart = chartCanvas.getContext('2d');
@@ -253,9 +251,6 @@
             });
         @endif
 
-        // --- Logika Modal & Pagination ---
-
-        // Fungsi untuk memuat data dan pagination
         async function fetchLokasiData(cardnumber, tahunBulan, page = 1) {
             const modalBulanTahun = document.getElementById('modalBulanTahun');
             const lokasiTableBody = document.getElementById('lokasiTableBody');

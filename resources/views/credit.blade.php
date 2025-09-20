@@ -4,13 +4,12 @@
 
 @section('content')
     <div class="card shadow-lg">
-        <div class="card-header bg-white text-dark text-center py-3">
+        <div class="card-header text-center py-3">
             <h4 class="fw-bold mb-0">Tim Pengembang Aplikasi</h4>
             <p class="lead mt-1 mb-0">Akreditasi Support</p>
         </div>
         <div class="card-body p-3">
             <p class="text-center mb-4 small">Aplikasi ini dikembangkan oleh:</p>
-
             <div class="row g-3 justify-content-center">
                 <div class="col-md-6 col-lg-3 d-flex">
                     <div class="card h-100 shadow-sm border-0 developer-card p-2">

@@ -14,11 +14,9 @@
             <div class="col-md-4">
                 <label for="prodi" class="form-label">Pilih Prodi</label>
                 <select name="prodi" id="prodi" class="form-select">
-                    <option value="all" {{ $prodi == 'all' ? 'selected' : '' }}>-- Semua Program Studi --</option>
-                    @foreach ($listprodi as $itemProdi)
-                        <option value="{{ $itemProdi->kode }}" {{ $prodi == $itemProdi->kode ? 'selected' : '' }}>
-                            ({{ $itemProdi->kode }})
-                            -- {{ $itemProdi->nama }}
+                    @foreach ($listprodi as $p)
+                        <option value="{{ $p->authorised_value }}" {{ $prodi == $p->authorised_value ? 'selected' : '' }}>
+                            {{ $p->lib }} ({{ $p->authorised_value }})
                         </option>
                     @endforeach
                 </select>

@@ -1,17 +1,17 @@
 @extends('layouts.app')
 
-@section('title', 'Statistik Kunjungan Mahasiswa / Staff')
+@section('title', 'Statistik Kunjungan Civitas')
 @section('content')
     <div class="container">
         <div class="card bg-white shadow-sm mb-4">
             <div class="card-body">
-                <h4 class="mb-0">Statistik Kunjungan Mahasiswa / Staff</h4>
+                <h4 class="mb-0">Statistik Kunjungan Civitas</h4>
                 <small class="text-muted">Ringkasan data kunjungan berdasarkan program studi dan periode</small>
             </div>
         </div>
 
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
+            <div class="card-header
                 <h6 class="mb-0">Filter Data</h6>
             </div>
             <div class="card-body">
@@ -75,7 +75,7 @@
         @if ($hasFilter)
             {{-- Bagian Chart --}}
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light">
+                <div class="card-header">
                     <h5 class="mb-0 me-3">Grafik Kunjungan {{ $listProdi[request('prodi')] ?? 'Seluruh Prodi/Tipe User' }}
                     </h5>
                 </div>
@@ -86,7 +86,7 @@
 
             {{-- Bagian Tabel --}}
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 me-3">Tabel Statistik Kunjungan</h5>
                     <div class="d-flex align-items-center">
                         <div class="dropdown me-2">
@@ -124,7 +124,7 @@
                         </div>
                         <div class="col-md-5">
                             <div class="alert alert-secondary py-2 m-0">
-                                <i class="fas fa-filter me-2"></i>Periode:
+                                <i class="fas fa-filter me-2"></i>
                                 <span class="fw-bold">
                                     @if (($filterType ?? 'daily') == 'daily')
                                         @if ($tanggalAwal && $tanggalAkhir)
@@ -206,7 +206,7 @@
             aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
                 <div class="modal-content">
-                    <div class="modal-header bg-light">
+                    <div class="modal-header">
                         <h5 class="modal-title" id="detailPengunjungModalLabel">Detail Pengunjung <small
                                 id="modalPeriodeSpan"></small>
                         </h5>
@@ -249,7 +249,7 @@
 @endsection
 
 @push('scripts')
-    <script src="https://cdn.jsdelivr.es/npm/chart.js@4.4.2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/locale/id.js"></script>
     <script>

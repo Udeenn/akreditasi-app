@@ -11,7 +11,7 @@
         </div>
     </div>
     <div class="card shadow-sm mb-4">
-        <div class="card-header bg-light">
+        <div class="card-header">
             <h6 class="mb-0">Filter Data</h6>
         </div>
         <div class="card-body">
@@ -67,7 +67,7 @@
     @if (!empty($statistics) && !$statistics->isEmpty())
         {{-- Bagian Chart --}}
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
+            <div class="card-header">
                 <h5 class="mb-0">Grafik Statistik Peminjaman</h5>
             </div>
             <div class="card-body">
@@ -77,7 +77,7 @@
 
         {{-- Bagian Tabel --}}
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light py-3 d-flex justify-content-between align-items-center">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 Tabel Statistik Peminjaman
                 <button type="button" id="exportCsvBtn" class="btn btn-success btn-sm"><i class="fas fa-file-csv"></i>
                     Export CSV</button>
@@ -361,7 +361,7 @@
                         detailBukuHtml += `
                             <div class="d-flex justify-content-between align-items-start border-0 px-0 py-1">
                                 <div class="ms-2 me-auto">
-                                    <div class=""><i class="fas fa-book me-2"></i>${buku.judul_buku}<span class="badge bg-light text-dark ms-2">${formattedTime}</span></div>
+                                    <div class=""><i class="fas fa-book me-2"></i>${buku.judul_buku}<span class="badge text-dark ms-2">${formattedTime}</span></div>
                                 </div>
                                 <span class="badge ${badgeClass} rounded-pill">${badgeText}</span>
                             </div>`;

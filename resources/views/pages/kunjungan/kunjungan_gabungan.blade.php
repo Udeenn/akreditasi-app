@@ -16,7 +16,7 @@
 
     {{-- Filter Collapsible --}}
     <div class="card shadow-sm mb-4 border-0">
-        <div class="card-header bg-light">
+        <div class="card-header">
             <a class="h6 mb-0 text-decoration-none" data-bs-toggle="collapse" href="#collapseFilter" role="button"
                 aria-expanded="true">
                 <i class="fas fa-filter me-2"></i> Filter Data
@@ -121,14 +121,14 @@
     @if (request()->has('filter_type'))
         @if (!$semuaKunjungan->isEmpty())
             <div class="card shadow-sm mb-4 border-0">
-                <div class="card-header bg-light">
+                <div class="card-header">
                     <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Grafik Total Kunjungan</h6>
                 </div>
                 <div class="card-body"><canvas id="kunjunganChart"></canvas></div>
             </div>
 
             <div class="card shadow-sm border-0" id="results-container">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h6 class="mb-0"><i class="fas fa-table me-2"></i>Hasil Kunjungan (Total: <span
                             id="total-count">{{ number_format($semuaKunjungan->total()) }}</span>)</h6>
                     <button id="exportCsvBtn" class="btn btn-success btn-sm"><i
@@ -152,7 +152,7 @@
                         </table>
                     </div>
                 </div>
-                <div class="card-footer bg-light">
+                <div class="card-footer">
                     {!! $semuaKunjungan->links() !!}
                 </div>
             </div>

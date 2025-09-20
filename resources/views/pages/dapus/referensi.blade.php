@@ -14,11 +14,9 @@
             <div class="col-md-4">
                 <label for="prodi" class="form-label">Pilih Prodi</label>
                 <select name="prodi" id="prodi" class="form-select">
-                    <option value="all" {{ $prodi == 'all' ? 'selected' : '' }}>-- Semua Program Studi --</option>
-                    @foreach ($listprodi as $itemProdi)
-                        <option value="{{ $itemProdi->kode }}" {{ $prodi == $itemProdi->kode ? 'selected' : '' }}>
-                            ({{ $itemProdi->kode }})
-                            -- {{ $itemProdi->nama }}
+                    @foreach ($listprodi as $p)
+                        <option value="{{ $p->authorised_value }}" {{ $prodi == $p->authorised_value ? 'selected' : '' }}>
+                            {{ $p->lib }} ({{ $p->authorised_value }})
                         </option>
                     @endforeach
                 </select>
@@ -66,7 +64,7 @@
                     <div class="row">
                         <div class="col-md-4">
                             <div class="alert alert-info py-2">
-                                <i class="fas fa-book me-2"></i> Total Judul Buku:
+                                <i class="fas fa-book me-2"></i> Total Judul:
                                 <span class="fw-bold">{{ number_format($totalJudul, 0, ',', '.') }}</span>
                             </div>
                         </div>
