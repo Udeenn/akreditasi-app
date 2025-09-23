@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
-@section('title', 'Laporan Kunjungan Gabungan')
+@section('title', 'Laporan Kunjungan Perbagian')
 <div class="container">
     {{-- Header --}}
     <div class="card bg-white shadow-sm mb-4 border-0">
         <div class="card-body d-flex align-items-center">
-            <i class="fas fa-users fa-3x text-primary me-4"></i>
+            {{-- <i class="fas fa-users fa-3x text-primary me-4"></i> --}}
             <div>
                 <h4 class="mb-0">Laporan Kunjungan Gabungan</h4>
                 <small class="text-muted">Aktivitas kunjungan anggota di semua titik layanan perpustakaan.</small>

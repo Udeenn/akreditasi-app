@@ -19,6 +19,31 @@
             </a>
         </li>
 
+        {{-- SDM --}}
+        {{-- <li class="nav-label small text-muted text-uppercase mt-3 mb-2">SDM</li>
+        @php $isSdmActive = request()->routeIs(['sdm.*']); @endphp
+        <li class="nav-item">
+            <a class="nav-link {{ $isSdmActive ? 'active' : '' }}" href="{{ route('sdm.index') }}">
+                <i class="fas fa-users nav-icon"></i>
+                <span class="nav-text">SDM</span>
+            </a>
+            <div class="collapse {{ $isSdmActive ? 'show' : '' }}" id="sdmCollapse">
+                <ul class="nav flex-column mt-1 sub-menu">
+                    <li><a class="nav-link {{ request()->routeIs('sdm.index') ? 'active' : '' }}"
+                            href="{{ route('sdm.index') }}">Data SDM</a></li>
+                    <li><a class="nav-link {{ request()->routeIs('sdm.kualifikasi_pendidikan') ? 'active' : '' }}"
+                            href="{{ route('sdm.kualifikasi_pendidikan') }}">Kualifikasi Pendidikan</a></li>
+                    <li><a class="nav-link {{ request()->routeIs('sdm.jabatan_fungsional') ? 'active' : '' }}"
+                            href="{{ route('sdm.jabatan_fungsional') }}">Jabatan Fungsional</a></li>
+                    <li><a class="nav-link {{ request()->routeIs('sdm.pelatihan') ? 'active' : '' }}"
+                            href="{{ route('sdm.pelatihan') }}">Pelatihan</a></li>
+                    <li><a class="nav-link {{ request()->routeIs('sdm.kegiatan_ilmiah') ? 'active' : '' }}"
+                            href="{{ route('sdm.kegiatan_ilmiah') }}">Kegiatan Ilmiah</a></li>
+                    <li><a class="nav-link {{ request()->routeIs('sdm.kegiatan_lainnya') ? 'active' : '' }}"
+                            href="{{ route('sdm.kegiatan_lainnya') }}">Kegiatan Lainnya</a></li>
+                </ul>
+        </li> --}}
+
         {{-- Daftar Koleksi --}}
         <li class="nav-label small text-muted text-uppercase mt-3 mb-2">Koleksi</li>
         @php $isDaftarKoleksiActive = request()->routeIs(['koleksi.*']); @endphp

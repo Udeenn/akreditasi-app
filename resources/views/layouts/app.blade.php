@@ -47,11 +47,8 @@
             background-color: var(--main-bg);
             color: var(--text-dark);
             font-size: 0.95rem;
-            /* Transisi untuk pergantian tema yang mulus */
             transition: background-color 0.3s ease, color 0.3s ease;
         }
-
-
 
         /* === STRUKTUR UTAMA (dan elemen lain agar transisinya mulus) === */
         .main-wrapper,
@@ -101,6 +98,8 @@
             padding: 2rem;
             margin-left: var(--sidebar-width);
             transition: margin-left 0.3s ease-in-out, background-color 0.3s ease;
+            width: calc(100% - var(--sidebar-width));
+            /* [PENTING] Agar content area tidak overflow */
         }
 
         /* === HEADER APLIKASI === */
@@ -110,14 +109,21 @@
             align-items: center;
             padding: 1rem 2rem;
             background-color: color-mix(in srgb, var(--sidebar-bg) 80%, transparent);
-            /* Efek kaca */
             backdrop-filter: blur(8px);
             border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
             z-index: 1000;
-            margin-left: var(--sidebar-width);
-            transition: margin-left 0.3s ease-in-out, background-color 0.3s ease;
+            /* Dihapus margin-left agar mengikuti content-area */
+            transition: background-color 0.3s ease;
+        }
+
+        /* [BARU] Tombol Toggle Sidebar */
+        .header-left .sidebar-toggle-btn {
+            display: none;
+            /* Sembunyikan di desktop */
+            font-size: 1.25rem;
+            color: var(--text-light);
         }
 
         .header-left .page-title {
@@ -227,6 +233,7 @@
             background-color: var(--primary-color);
         }
 
+        /* DARK MODE STYLES (TIDAK PERLU DIUBAH) */
         body.dark-mode .text-muted {
             color: var(--text-light) !important;
         }
@@ -255,14 +262,12 @@
 
         body.dark-mode .card-header {
             background-color: #1e293b;
-            /* Warna header sedikit beda agar ada kontras */
             border-bottom-color: var(--border-color) !important;
         }
 
         body.dark-mode .form-control::placeholder {
             color: var(--text-light);
             opacity: 1;
-            /* Beberapa browser membuat placeholder transparan, ini untuk menormalkannya */
         }
 
         body.dark-mode .card-header {
@@ -303,7 +308,6 @@
             color: #c7d2fe;
         }
 
-        /* [STRATEGI BARU] Override variabel internal Bootstrap */
         body.dark-mode .table {
             --bs-table-color: var(--text-dark);
             --bs-table-bg: transparent;
@@ -345,11 +349,7 @@
             background-color: transparent;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | [BARU] CSS UNTUK TOMBOL DARK MODE MELAYANG (FAB)
-        |--------------------------------------------------------------------------
-        */
+        /* FAB Dark Mode (TIDAK PERLU DIUBAH) */
         .theme-fab {
             position: fixed;
             bottom: 2rem;
@@ -419,7 +419,7 @@
             filter: invert(1) grayscale(100%) brightness(200%);
         }
 
-        /* === FOOTER MODERN === */
+        /* FOOTER (TIDAK PERLU DIUBAH) */
         .app-footer {
             margin-top: 2rem;
             padding-top: 1.5rem;
@@ -442,6 +442,13 @@
             .content-area,
             .app-header {
                 margin-left: 0;
+                width: 100%;
+                /* Pastikan lebar penuh */
+            }
+
+            /* [PENTING] Tampilkan tombol toggle hanya di mobile */
+            .header-left .sidebar-toggle-btn {
+                display: block;
             }
 
             .sidebar-backdrop {
@@ -463,15 +470,6 @@
             }
         }
     </style>
-
-    <script>
-        (function() {
-            const theme = localStorage.getItem('theme');
-            if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark-mode'); // Terapkan di <html>
-            }
-        })();
-    </script>
 </head>
 
 <body class="{{ isset($_COOKIE['theme']) && $_COOKIE['theme'] == 'dark' ? 'dark-mode' : '' }}">
@@ -481,28 +479,40 @@
             @include('partials.sidebar')
         </aside>
 
-        {{-- Main Content Area --}}
-        <div class="content-area d-flex flex-column">
-            {{-- Greeting dan Waktu --}}
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h5 class="m-0 fw-normal" id="greeting-header">
-                    <span id="greeting-icon"></span>
-                    <span id="greeting-text"></span>
-                </h5>
-                <div class="text-end">
-                    <div id="current-date" class="small text-muted"></div>
-                    <div id="current-time" class="fw-bold"></div>
+        {{-- [DIUBAH] Wrapper untuk Header dan Konten --}}
+        <div class="flex-grow-1 d-flex flex-column">
+            {{-- [BARU] Header Aplikasi --}}
+            <header class="app-header">
+                <div class="header-left d-flex align-items-center gap-3">
+                    {{-- [INI TOMBOLNYA] Tombol untuk menampilkan sidebar di mobile --}}
+                    <button class="btn p-0 sidebar-toggle-btn" id="toggleSidebarBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+
+                    {{-- Greeting dan Waktu --}}
+                    <h5 class="m-0 fw-normal" id="greeting-header">
+                        <span id="greeting-icon"></span>
+                        <span id="greeting-text"></span>
+                    </h5>
                 </div>
+                <div class="header-right">
+                    <div class="text-end">
+                        <div id="current-date" class="small text-muted"></div>
+                        <div id="current-time" class="fw-bold"></div>
+                    </div>
+                </div>
+            </header>
+
+            {{-- Main Content Area --}}
+            <div class="content-area">
+                <main class="flex-grow-1">
+                    @yield('content')
+                </main>
+
+                @include('partials.footer')
             </div>
-
-            <main class="flex-grow-1">
-                @yield('content')
-            </main>
-
-            @include('partials.footer')
         </div>
     </div>
-
 
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
@@ -518,9 +528,10 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     @stack('scripts')
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Skrip untuk Greeting dan Waktu
+            // Skrip untuk Greeting dan Waktu (TIDAK BERUBAH)
             function updateGreeting() {
                 const now = new Date();
                 const hour = now.getHours();
@@ -560,7 +571,8 @@
                     hour12: false
                 };
                 const formattedDate = new Intl.DateTimeFormat('id-ID', dateOptions).format(now);
-                const formattedTime = new Intl.DateTimeFormat('id-ID', timeOptions).format(now).replace(/\./g, ':');
+                const formattedTime = new Intl.DateTimeFormat('id-ID', timeOptions).format(now).replace(/\./g,
+                    ':');
 
                 $('#current-date').text(formattedDate);
                 $('#current-time').text(formattedTime);
@@ -570,7 +582,7 @@
             updateTime();
             setInterval(updateTime, 1000);
 
-            // Skrip untuk Sidebar Toggle di Mobile
+            // Skrip untuk Sidebar Toggle di Mobile (TIDAK BERUBAH)
             const sidebar = document.getElementById('sidebar');
             const toggleBtn = document.getElementById('toggleSidebarBtn');
             const sidebarBackdrop = document.getElementById('sidebarBackdrop');
@@ -589,11 +601,10 @@
                 });
             }
 
-            // Skrip untuk Dark Mode Toggle
+            // Skrip untuk Dark Mode Toggle (TIDAK BERUBAH)
             const themeToggle = document.getElementById('theme-toggle');
             const body = document.body;
 
-            // Terapkan tema dari localStorage saat halaman dimuat
             if (localStorage.getItem('theme') === 'dark') {
                 body.classList.add('dark-mode');
             }

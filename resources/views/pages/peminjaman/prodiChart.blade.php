@@ -5,8 +5,6 @@
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800"> Statistik Peminjaman per Program Studi</h1>
     </div>
-
-    {{-- ... (Opsi Filter Data) tetap sama ... --}}
     <div class="card shadow mb-4">
         <div class="card-header py-3">
             <h6 class="m-0 font-weight-bold"><i class="fas fa-filter"></i> Opsi Filter Data</h6>

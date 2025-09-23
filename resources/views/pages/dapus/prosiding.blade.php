@@ -17,7 +17,7 @@
                 <select name="prodi" id="prodi" class="form-select">
                     @foreach ($listprodi as $p)
                         <option value="{{ $p->authorised_value }}" {{ $prodi == $p->authorised_value ? 'selected' : '' }}>
-                            {{ $p->lib }}
+                            {{ $p->lib }} ({{ $p->authorised_value }})
                         </option>
                     @endforeach
                 </select>
@@ -88,8 +88,8 @@
                                 <thead>
                                     <tr>
                                         <th>No</th> {{-- Tambah kolom No untuk DataTables --}}
+                                        <th>Kelas</th>
                                         <th>Judul</th>
-                                        {{-- <th>Kelas</th> --}}
                                         <th>Author</th>
                                         <th>Penerbit</th>
                                         <th>Tahun Terbit</th>
@@ -103,7 +103,8 @@
                                 <tbody>
                                     @foreach ($data as $index => $row)
                                         <tr>
-                                            <td>{{ $index + 1 }}</td> 
+                                            <td>{{ $index + 1 }}</td>
+                                            <td>{{ $row->Kelas }}</td>
                                             <td>
                                                 {!! $row->Judul_a !!}
                                                 @if (!empty($row->Judul_b))
@@ -111,12 +112,13 @@
                                                 @endif
 
                                             </td>
+
                                             <td>{{ $row->Pengarang }}
                                                 @if (!empty($row->Judul_c))
                                                     {{ $row->Judul_c }}
                                                 @endif
                                             </td>
-                                            {{-- <td>{{ $row->Kelas }}</td> --}}
+
                                             <td>{{ $row->Penerbit }}</td>
                                             <td>{{ $row->TahunTerbit }}</td>
                                             {{-- <td>{{ $row->Nomor }}</td> --}}
