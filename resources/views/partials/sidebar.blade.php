@@ -138,6 +138,14 @@
                 </ul>
             </div>
         </li>
+        {{-- Cek Histori Buku --}}
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('buku.cek_histori') ? 'active' : '' }}"
+                href="{{ route('buku.cek_histori') }}">
+                <i class="fas fa-history nav-icon"></i>
+                <span class="nav-text">Cek Histori Buku</span>
+            </a>
+        </li>
     </ul>
 
     <ul class="nav flex-column mt-auto py-3 border-top border-light-subtle">

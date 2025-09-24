@@ -104,4 +104,7 @@ Route::get('/reward/pemustaka-teraktif/export-csv', [RewardController::class, 'e
 Route::get('/reward/peminjam-teraktif', [RewardController::class, 'peminjamTeraktif'])->name('reward.peminjam_teraktif');
 Route::get('/reward/peminjam-teraktif/export-csv', [RewardController::class, 'exportCsvPeminjamTeraktif'])->name('reward.export_csv_peminjam_teraktif');
 
+Route::get('/cek-histori-buku', [PeminjamanController::class, 'cekBuku'])->name('buku.cek_histori');
+
+
 require __DIR__ . '/auth.php';
