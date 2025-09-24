@@ -15,18 +15,31 @@
                 buku.</small>
         </div>
     </div>
-
-    {{-- =============================================== --}}
-    {{-- Form Pencarian Barcode --}}
-    {{-- =============================================== --}}
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <form action="{{ route('buku.cek_histori') }}" method="GET">
-                <div class="input-group">
-                    <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    <input type="text" name="barcode" id="barcode" class="form-control form-control-lg"
-                        value="{{ $barcode ?? '' }}" placeholder="Masukkan Barcode Buku lalu tekan Enter..." required>
-                    <button type="submit" class="btn btn-primary">Cari Histori</button>
+                <div class="row g-2 align-items-center">
+                    <div class="col-lg">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" name="barcode" id="barcode" class="form-control form-control-lg"
+                                value="{{ $barcode ?? '' }}" placeholder="Masukkan Barcode Buku..." required>
+                        </div>
+                    </div>
+                    <div class="col-lg-auto">
+                        <select name="type_filter" class="form-select form-select-lg">
+                            <option value="all" @if (isset($typeFilter) && $typeFilter == 'all') selected @endif>Semua Transaksi
+                            </option>
+                            <option value="issue" @if (isset($typeFilter) && $typeFilter == 'issue') selected @endif>Peminjaman</option>
+                            <option value="return" @if (isset($typeFilter) && $typeFilter == 'return') selected @endif>Pengembalian
+                            </option>
+                            <option value="localuse" @if (isset($typeFilter) && $typeFilter == 'localuse') selected @endif>Di Tempat
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-lg-auto">
+                        <button type="submit" class="btn btn-primary btn-lg w-100">Cari Histori</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -37,7 +50,7 @@
             {{ $errorMessage }}</div>
     @endif
 
-    {{-- Tampilkan hasil hanya jika ada pencarian --}}
+    {{-- Tampilkan hasil hanya jika ada pencarian dan tidak ada error --}}
     @if ($barcode && !$errorMessage)
         @if ($book)
             <div class="row">
@@ -58,6 +71,7 @@
                                 <h1 class="display-4 fw-bold text-primary mb-0">{{ $totalUsage }}</h1>
                                 <small class="text-muted">Kali Digunakan</small>
                             </div>
+
                             <h6 class="card-subtitle mb-2 text-muted mt-4">Rincian Penggunaan</h6>
                             <div class="row text-center">
                                 <div class="col-4">
@@ -128,6 +142,7 @@
                                 </table>
                             </div>
                         </div>
+                        {{-- Tampilkan pagination jika ada lebih dari 1 halaman --}}
                         @if ($history->hasPages())
                             <div class="card-footer">
                                 {{ $history->links() }}

@@ -975,30 +975,101 @@ class PeminjamanController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    // public function cekBuku(Request $request)
+    // {
+    //     $barcode = $request->input('barcode');
+    //     $history = collect();
+    //     $book = null;
+    //     $totalUsage = 0;
+    //     $errorMessage = null;
+    //     // Variabel baru untuk menampung hitungan per tipe
+    //     $issueCount = 0;
+    //     $returnCount = 0;
+    //     $localuseCount = 0;
+
+    //     if ($barcode) {
+    //         try {
+
+    //             // 1. Buat query dasar untuk efisiensi
+    //             $baseQuery = DB::connection('mysql2')->table('statistics as s')
+    //                 ->leftJoin('items as i', 's.itemnumber', '=', 'i.itemnumber')
+    //                 ->whereRaw('TRIM(i.barcode) = ?', [trim($barcode)]);
+
+    //             // 2. Hitung jumlah untuk setiap tipe secara terpisah
+    //             $issueCount = (clone $baseQuery)->where('s.type', 'issue')->count();
+    //             $returnCount = (clone $baseQuery)->where('s.type', 'return')->count();
+    //             $localuseCount = (clone $baseQuery)->where('s.type', 'localuse')->count();
+
+    //             // 3. Query utama untuk mengambil daftar histori dengan pagination
+    //             $query = DB::connection('mysql2')->table('statistics as s')
+    //                 ->select(
+    //                     's.datetime',
+    //                     'i.barcode',
+    //                     'b.title AS Judul',
+    //                     'b.author AS Pengarang',
+    //                     's.type'
+    //                 )
+    //                 ->leftJoin('items as i', 's.itemnumber', '=', 'i.itemnumber')
+    //                 ->leftJoin('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
+    //                 ->whereIn('s.type', ['issue', 'return', 'localuse'])
+    //                 ->whereRaw('TRIM(i.barcode) = ?', [trim($barcode)])
+    //                 ->orderBy('s.datetime', 'desc');
+
+
+    //             $history = $query->paginate(10)->appends(['barcode' => trim($barcode)]);
+
+    //             if ($history->isNotEmpty()) {
+    //                 $book = $history->first();
+    //                 // --- PERUBAHAN DI SINI ---
+    //                 // Total penggunaan sekarang adalah hasil penjumlahan rinciannya.
+    //                 // Ini menjamin konsistensi dan lebih efisien.
+    //                 $totalUsage = $issueCount + $returnCount + $localuseCount;
+    //             }
+    //         } catch (\Exception $e) {
+    //             \Log::error('Error saat query histori buku: ' . $e->getMessage());
+    //             $errorMessage = 'Terjadi kesalahan pada server saat mengambil data.';
+    //         }
+    //     }
+
+    //     // Pastikan path view sudah benar dan tambahkan variabel baru
+    //     return view('pages.peminjaman.cekBuku', compact(
+    //         'barcode',
+    //         'history',
+    //         'book',
+    //         'totalUsage',
+    //         'errorMessage',
+    //         'issueCount',
+    //         'returnCount',
+    //         'localuseCount'
+    //     ));
+    // }
+
     public function cekBuku(Request $request)
     {
         $barcode = $request->input('barcode');
+        // Ambil input filter tipe, defaultnya 'all'
+        $typeFilter = $request->input('type_filter', 'all');
+
         $history = collect();
         $book = null;
         $totalUsage = 0;
         $errorMessage = null;
-        // Variabel baru untuk menampung hitungan per tipe
         $issueCount = 0;
         $returnCount = 0;
         $localuseCount = 0;
 
         if ($barcode) {
             try {
+                // Query dasar untuk menghitung total per tipe tetap sama
                 $baseQuery = DB::connection('mysql2')->table('statistics as s')
                     ->leftJoin('items as i', 's.itemnumber', '=', 'i.itemnumber')
                     ->whereRaw('TRIM(i.barcode) = ?', [trim($barcode)]);
 
-                // 2. Hitung jumlah untuk setiap tipe secara terpisah
                 $issueCount = (clone $baseQuery)->where('s.type', 'issue')->count();
                 $returnCount = (clone $baseQuery)->where('s.type', 'return')->count();
                 $localuseCount = (clone $baseQuery)->where('s.type', 'localuse')->count();
 
-                // 3. Query utama untuk mengambil daftar histori dengan pagination
+                // Query utama untuk mengambil daftar histori
                 $query = DB::connection('mysql2')->table('statistics as s')
                     ->select(
                         's.datetime',
@@ -1009,17 +1080,29 @@ class PeminjamanController extends Controller
                     )
                     ->leftJoin('items as i', 's.itemnumber', '=', 'i.itemnumber')
                     ->leftJoin('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
-                    ->whereIn('s.type', ['issue', 'return', 'localuse'])
                     ->whereRaw('TRIM(i.barcode) = ?', [trim($barcode)])
                     ->orderBy('s.datetime', 'desc');
 
+                // --- PERUBAHAN DI SINI ---
+                // Terapkan filter tipe jika user memilih selain 'Semua'
+                if ($typeFilter && $typeFilter !== 'all') {
+                    $query->where('s.type', $typeFilter);
+                } else {
+                    // Jika 'Semua', ambil semua tipe yang relevan
+                    $query->whereIn('s.type', ['issue', 'return', 'localuse']);
+                }
                 // --- AKHIR PERUBAHAN ---
 
-                $history = $query->paginate(10)->appends(['barcode' => trim($barcode)]);
+                // Tambahkan filter ke link pagination agar tidak hilang saat pindah halaman
+                $history = $query->paginate(10)->appends([
+                    'barcode' => trim($barcode),
+                    'type_filter' => $typeFilter
+                ]);
 
                 if ($history->isNotEmpty()) {
                     $book = $history->first();
-                    $totalUsage = $history->total();
+                    // Total penggunaan tetap hasil penjumlahan agar konsisten
+                    $totalUsage = $issueCount + $returnCount + $localuseCount;
                 }
             } catch (\Exception $e) {
                 \Log::error('Error saat query histori buku: ' . $e->getMessage());
@@ -1027,7 +1110,7 @@ class PeminjamanController extends Controller
             }
         }
 
-        // Pastikan path view sudah benar dan tambahkan variabel baru
+        // Kirim variabel $typeFilter ke view
         return view('pages.peminjaman.cekBuku', compact(
             'barcode',
             'history',
@@ -1036,7 +1119,8 @@ class PeminjamanController extends Controller
             'errorMessage',
             'issueCount',
             'returnCount',
-            'localuseCount'
+            'localuseCount',
+            'typeFilter'
         ));
     }
 }
