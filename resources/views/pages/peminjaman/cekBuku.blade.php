@@ -54,7 +54,6 @@
     @if ($barcode && !$errorMessage)
         @if ($book)
             <div class="row">
-                {{-- Kolom Kiri: Detail Buku & Jumlah Penggunaan --}}
                 <div class="col-lg-4 mb-4">
                     <div class="card shadow-sm h-100">
                         <div class="card-header">
@@ -68,7 +67,7 @@
                             <hr>
                             <h6 class="card-subtitle mb-2 text-muted">Total Penggunaan</h6>
                             <div class="card p-3 text-center mb-3">
-                                <h1 class="display-4 fw-bold text-primary mb-0">{{ $totalUsage }}</h1>
+                                <h1 class="display-4 fw-bold text-primary mb-0">{{ $usageStats->total }}</h1>
                                 <small class="text-muted">Kali Digunakan</small>
                             </div>
 
@@ -77,7 +76,8 @@
                                 <div class="col-4">
                                     <div class="card bg-primary text-white h-100">
                                         <div class="card-body p-2">
-                                            <h5 class="mb-0">{{ $issueCount }}</h5>
+                                            {{-- Diubah --}}
+                                            <h5 class="mb-0">{{ $usageStats->issue }}</h5>
                                             <small>Dipinjam</small>
                                         </div>
                                     </div>
@@ -85,7 +85,8 @@
                                 <div class="col-4">
                                     <div class="card bg-success text-white h-100">
                                         <div class="card-body p-2">
-                                            <h5 class="mb-0">{{ $returnCount }}</h5>
+                                            {{-- Diubah --}}
+                                            <h5 class="mb-0">{{ $usageStats->return }}</h5>
                                             <small>Kembali</small>
                                         </div>
                                     </div>
@@ -93,24 +94,32 @@
                                 <div class="col-4">
                                     <div class="card bg-info text-dark h-100">
                                         <div class="card-body p-2">
-                                            <h5 class="mb-0">{{ $localuseCount }}</h5>
+                                            {{-- Diubah --}}
+                                            <h5 class="mb-0">{{ $usageStats->localuse }}</h5>
                                             <small>Di Tempat</small>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 </div>
 
-                {{-- Kolom Kanan: Tabel Histori --}}
+                {{-- Ganti bagian Tabel Histori --}}
                 <div class="col-lg-8">
                     <div class="card shadow-sm">
                         <div class="card-header">
                             <h6 class="mb-0"><i class="fas fa-history me-2"></i>Riwayat Transaksi</h6>
                         </div>
                         <div class="card-body p-0">
+                            @php
+                                // Array ini bisa juga dibuat di controller dan di-pass ke view
+                                $badgeMap = [
+                                    'issue' => ['class' => 'bg-primary', 'text' => 'Peminjaman'],
+                                    'return' => ['class' => 'bg-success', 'text' => 'Pengembalian'],
+                                    'localuse' => ['class' => 'bg-info text-dark', 'text' => 'Digunakan di Tempat'],
+                                ];
+                            @endphp
                             <div class="table-responsive">
                                 <table class="table table-hover mb-0">
                                     <thead>
@@ -120,29 +129,33 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach ($history as $item)
+                                        @forelse ($history as $item)
                                             <tr>
                                                 <td>{{ \Carbon\Carbon::parse($item->datetime)->format('d M Y, H:i:s') }}
                                                 </td>
                                                 <td>
-                                                    @if (strtolower($item->type) == 'issue')
-                                                        <span class="badge bg-primary">Peminjaman</span>
-                                                    @elseif(strtolower($item->type) == 'return')
-                                                        <span class="badge bg-success">Pengembalian</span>
-                                                    @elseif(strtolower($item->type) == 'localuse')
-                                                        <span class="badge bg-info text-dark">Digunakan di Tempat</span>
-                                                    @else
-                                                        <span
-                                                            class="badge bg-secondary">{{ ucfirst($item->type) }}</span>
-                                                    @endif
+                                                    @php
+                                                        $type = strtolower($item->type);
+                                                        $badge = $badgeMap[$type] ?? [
+                                                            'class' => 'bg-secondary',
+                                                            'text' => ucfirst($type),
+                                                        ];
+                                                    @endphp
+                                                    <span
+                                                        class="badge {{ $badge['class'] }}">{{ $badge['text'] }}</span>
                                                 </td>
                                             </tr>
-                                        @endforeach
+                                        @empty
+                                            <tr>
+                                                <td colspan="2" class="text-center text-muted py-4">
+                                                    Tidak ada riwayat transaksi untuk filter ini.
+                                                </td>
+                                            </tr>
+                                        @endforelse
                                     </tbody>
                                 </table>
                             </div>
                         </div>
-                        {{-- Tampilkan pagination jika ada lebih dari 1 halaman --}}
                         @if ($history->hasPages())
                             <div class="card-footer">
                                 {{ $history->links() }}
@@ -150,6 +163,7 @@
                         @endif
                     </div>
                 </div>
+
             </div>
         @else
             {{-- Tampilan jika barcode tidak ditemukan --}}
