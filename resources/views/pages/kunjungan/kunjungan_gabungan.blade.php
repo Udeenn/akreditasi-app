@@ -1,20 +1,17 @@
 @extends('layouts.app')
 
 @section('content')
-@section('title', 'Laporan Kunjungan Perbagian')
+@section('title', 'Laporan Kunjungan Perpustakaan')
 <div class="container">
-    {{-- Header --}}
     <div class="card bg-white shadow-sm mb-4 border-0">
         <div class="card-body d-flex align-items-center">
-            {{-- <i class="fas fa-users fa-3x text-primary me-4"></i> --}}
             <div>
-                <h4 class="mb-0">Laporan Kunjungan Gabungan</h4>
+                <h4 class="mb-0">Laporan Kunjungan Perpustakaan</h4>
                 <small class="text-muted">Aktivitas kunjungan anggota di semua titik layanan perpustakaan.</small>
             </div>
         </div>
     </div>
 
-    {{-- Filter Collapsible --}}
     <div class="card shadow-sm mb-4 border-0">
         <div class="card-header">
             <a class="h6 mb-0 text-decoration-none" data-bs-toggle="collapse" href="#collapseFilter" role="button"
@@ -29,12 +26,26 @@
                     <div class="col-md-3">
                         <label for="filter_type" class="form-label">Tampilkan per:</label>
                         <select name="filter_type" id="filter_type" class="form-select">
-                            <option value="monthly" {{ $filterType == 'monthly' ? 'selected' : '' }}>Bulan</option>
-                            <option value="daily" {{ $filterType == 'daily' ? 'selected' : '' }}>Hari</option>
+                            <option value="yearly" {{ $filterType == 'yearly' ? 'selected' : '' }}>Tahun</option>
+                            <option value="monthly" {{ $filterType == 'monthly' ? 'selected' : '' }}>Bulan (Rentang)
+                            </option>
+                            <option value="date_range" {{ $filterType == 'date_range' ? 'selected' : '' }}>Rentang Hari
+                            </option>
                         </select>
                     </div>
-                    <div class="col-md-4" id="monthlyFilter"
-                        style="{{ $filterType == 'monthly' ? '' : 'display: none;' }}">
+
+                    <div class="col-md-4 filter-input" id="yearlyFilter" style="display: none;">
+                        <label class="form-label">Pilih Tahun:</label>
+                        <select name="year" class="form-select">
+                            @for ($y = date('Y'); $y >= date('Y') - 10; $y--)
+                                <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>
+                                    {{ $y }}</option>
+                            @endfor
+                        </select>
+                    </div>
+
+                    {{-- INPUT FILTER BULANAN (RANGE) --}}
+                    <div class="col-md-4 filter-input" id="monthlyFilter" style="display: none;">
                         <label class="form-label">Rentang Bulan:</label>
                         <div class="input-group">
                             <input type="month" name="start_month" class="form-control" value="{{ $startMonth }}">
@@ -42,7 +53,8 @@
                             <input type="month" name="end_month" class="form-control" value="{{ $endMonth }}">
                         </div>
                     </div>
-                    <div class="col-md-4" id="dailyFilter" style="{{ $filterType == 'daily' ? '' : 'display: none;' }}">
+
+                    <div class="col-md-4 filter-input" id="date_rangeFilter" style="display: none;">
                         <label class="form-label">Rentang Tanggal:</label>
                         <div class="input-group">
                             <input type="date" name="start_date" class="form-control" value="{{ $startDate }}">
@@ -50,14 +62,15 @@
                             <input type="date" name="end_date" class="form-control" value="{{ $endDate }}">
                         </div>
                     </div>
+
+                    {{-- INPUT FILTER LOKASI --}}
                     <div class="col-md-3">
                         <label for="lokasi" class="form-label">Lokasi Kunjungan:</label>
                         <select name="lokasi" id="lokasi" class="form-select">
                             <option value="">Semua Lokasi</option>
-                            @foreach ($lokasiOptions as $lokasi)
-                                <option value="{{ $lokasi }}" {{ $selectedLokasi == $lokasi ? 'selected' : '' }}>
-                                    {{ $lokasiMapping[$lokasi] ?? $lokasi }}
-                                </option>
+                            @foreach ($lokasiMapping as $lokasi)
+                                <option value="{{ $lokasi }}"
+                                    {{ $selectedLokasi == $lokasi ? 'selected' : '' }}>{{ $lokasi }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -70,129 +83,142 @@
         </div>
     </div>
 
-    <div class="row mb-4">
-        <div class="col-md-6 mb-3 mb-md-0">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="flex-shrink-0 me-3">
-                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-                            style="width: 60px; height: 60px;">
-                            <i class="fas fa-clipboard-list fa-2x"></i>
-                        </div>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1">Total Kunjungan Tercatat</h6>
-                        {{-- Diberi nilai default '0' jika variabel belum ada --}}
-                        <h2 class="fw-bold mb-0">{{ number_format($semuaKunjungan->total() ?? 0) }}</h2>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="flex-shrink-0 me-3">
-                        <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center"
-                            style="width: 60px; height: 60px;">
-                            <i class="fas fa-map-marker-alt fa-2x"></i>
-                        </div>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1">Lokasi</h6>
-                        @php
-                            // Logika ini hanya berjalan jika ada data kunjungan
-                            if (isset($semuaKunjungan) && !$semuaKunjungan->isEmpty()) {
-                                $lokasiPopuler = collect($semuaKunjungan->items())
-                                    ->countBy('lokasi_kunjungan')
-                                    ->sortDesc()
-                                    ->keys()
-                                    ->first();
-                            } else {
-                                $lokasiPopuler = 'N/A';
-                            }
-                        @endphp
-                        {{-- Diberi nilai default jika tidak ada --}}
-                        <h2 class="fw-bold mb-0">{{ $lokasiMapping[$lokasiPopuler] ?? $lokasiPopuler }}</h2>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
     @if (request()->has('filter_type'))
-        @if (!$semuaKunjungan->isEmpty())
+        @if (!$dataHasil->isEmpty())
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-users fa-3x text-primary mb-3"></i>
+
+                            <h6 class="text-muted mb-1">Total Kunjungan Tercatat</h6>
+                            <h2 class="fw-bold mb-0">{{ number_format($totalKunjungan) }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center"
+                                    style="width: 60px; height: 60px;">
+                                    <i class="fas fa-trophy fa-2x"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="text-muted mb-2">Lokasi Terpopuler</h6>
+
+                                @if ($topLokasi->isEmpty())
+                                    <span class="text-muted fst-italic">Data lokasi tidak tersedia</span>
+                                @else
+                                    <ul class="list-unstyled mb-0">
+                                        @foreach ($topLokasi as $lokasi => $jumlah)
+                                            <li class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="fw-medium">
+                                                    @if ($loop->first)
+                                                        <i class="fas fa-medal me-2" style="color: #FFD700;"></i>
+                                                        {{-- Emas --}}
+                                                    @elseif($loop->iteration == 2)
+                                                        <i class="fas fa-medal me-2" style="color: #C0C0C0;"></i>
+                                                        {{-- Perak --}}
+                                                    @else
+                                                        <i class="fas fa-medal me-2" style="color: #CD7F32;"></i>
+                                                        {{-- Perunggu --}}
+                                                    @endif
+
+                                                    {{ $lokasiMapping[$lokasi] ?? $lokasi }}
+                                                </span>
+                                                <span
+                                                    class="badge bg-primary rounded-pill">{{ number_format($jumlah) }}</span>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="card shadow-sm mb-4 border-0">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Grafik Total Kunjungan</h6>
+                    <h6 class="mb-0">Grafik Total Kunjungan</h6>
                 </div>
                 <div class="card-body"><canvas id="kunjunganChart"></canvas></div>
             </div>
 
-            <div class="card shadow-sm border-0" id="results-container">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0"><i class="fas fa-table me-2"></i>Hasil Kunjungan (Total: <span
-                            id="total-count">{{ number_format($semuaKunjungan->total()) }}</span>)</h6>
-                    <button id="exportCsvBtn" class="btn btn-success btn-sm"><i
-                            class="fas fa-file-csv me-2"></i>Export
-                        CSV</button>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-3">No</th>
-                                    <th>Waktu Kunjungan</th>
-                                    <th>Nomor Kartu & Nama</th>
-                                    <th>Lokasi Kunjungan</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @include('pages.kunjungan._kunjungan_gabungan_table_body')
-                            </tbody>
-                        </table>
+            @if ($filterType == 'yearly')
+                @include('pages.kunjungan._kunjungan_tahunan_summary', [
+                    'dataHasil' => $dataHasil,
+                    'maxKunjunganBulanan' => $maxKunjunganBulanan,
+                ])
+            @else
+                <div class="card shadow-sm border-0" id="results-container">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Hasil Kunjungan (Total: <span
+                                id="total-count">{{ number_format($totalKunjungan) }}</span>)</h6>
+                        <button id="exportCsvBtn" class="btn btn-success btn-sm"><i
+                                class="fas fa-file-csv me-2"></i>Export CSV</button>
                     </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-3">No</th>
+                                        <th>Waktu Kunjungan</th>
+                                        <th>Nomor Kartu & Nama</th>
+                                        <th>Lokasi Kunjungan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @include('pages.kunjungan._kunjungan_gabungan_table_body', [
+                                        'semuaKunjungan' => $dataHasil,
+                                    ])
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    @if ($dataHasil->hasPages())
+                        <div class="card-footer">
+                            {!! $dataHasil->links() !!}
+                        </div>
+                    @endif
                 </div>
-                <div class="card-footer">
-                    {!! $semuaKunjungan->links() !!}
-                </div>
-            </div>
+            @endif
         @else
-            <div class="alert alert-warning text-center">Tidak ada data kunjungan yang cocok dengan filter yang
-                dipilih.
-            </div>
+            <div class="alert alert-warning text-center">Tidak ada data kunjungan yang cocok dengan filter.</div>
         @endif
     @else
-        <div class="alert alert-info text-center">Silakan pilih filter dan tekan "Tampilkan" untuk melihat data.</div>
+        <div class="alert alert-info text-center">Silakan pilih filter untuk menampilkan data.</div>
     @endif
 </div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // 1. Logika untuk Filter Toggle
         const filterTypeSelect = document.getElementById('filter_type');
-        const dailyFilterDiv = document.getElementById('dailyFilter');
-        const monthlyFilterDiv = document.getElementById('monthlyFilter');
+        const filterInputs = document.querySelectorAll('.filter-input');
 
         function handleFilterChange() {
-            const dailyInputs = dailyFilterDiv.querySelectorAll('input');
-            const monthlyInputs = monthlyFilterDiv.querySelectorAll('input');
-            if (filterTypeSelect.value === 'daily') {
-                dailyFilterDiv.style.display = 'block';
-                monthlyFilterDiv.style.display = 'none';
-                monthlyInputs.forEach(input => input.disabled = true);
-                dailyInputs.forEach(input => input.disabled = false);
-            } else {
-                dailyFilterDiv.style.display = 'none';
-                monthlyFilterDiv.style.display = 'block';
-                dailyInputs.forEach(input => input.disabled = true);
-                monthlyInputs.forEach(input => input.disabled = false);
+            // Sembunyikan semua input dulu
+            filterInputs.forEach(div => div.style.display = 'none');
+            // Nonaktifkan semua input di dalamnya
+            filterInputs.forEach(div => div.querySelectorAll('input, select').forEach(input => input.disabled =
+                true));
+
+            // Tampilkan yang dipilih dan aktifkan inputnya
+            const selectedFilterId = filterTypeSelect.value + 'Filter';
+            const activeFilterDiv = document.getElementById(selectedFilterId);
+            if (activeFilterDiv) {
+                activeFilterDiv.style.display = 'block';
+                activeFilterDiv.querySelectorAll('input, select').forEach(input => input.disabled = false);
             }
         }
         if (filterTypeSelect) {
             filterTypeSelect.addEventListener('change', handleFilterChange);
-            handleFilterChange();
+            handleFilterChange(); // Panggil saat halaman dimuat
         }
 
         // 2. Logika untuk Export CSV
@@ -207,10 +233,15 @@
 
         // 3. Logika untuk Chart
         const chartData = @json($chartData ?? []);
+        const filterType = '{{ $filterType }}';
         if (Object.keys(chartData).length > 0) {
             const ctx = document.getElementById('kunjunganChart').getContext('2d');
             const labels = Object.keys(chartData).map(periode => {
-                const format = (filterTypeSelect.value === 'daily') ? 'D MMM YYYY' : 'MMM YYYY';
+                let format = 'MMM YYYY'; // Default untuk bulanan & tahunan
+                if (filterType === 'daily') format = 'D MMM YYYY';
+                // Khusus untuk tahunan, format hanya nama bulan
+                if (filterType === 'yearly') return moment(periode).format('MMMM');
+
                 return moment(periode).format(format);
             });
             const data = Object.values(chartData);

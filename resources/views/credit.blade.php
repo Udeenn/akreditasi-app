@@ -18,7 +18,7 @@
                             <h6 class="fw-bold mb-0">Muhammad Asharul Maali, S.Kom</h6>
                             <p class="text-muted small mb-1">Lead Developer</p>
                             <div>
-                                <a href="#" class="btn btn-outline-dark btn-sm me-1" target="_blank"
+                                <a href="#" class="btn btn-outline-primary btn-sm me-1" target="_blank"
                                     data-bs-toggle="tooltip" title="GitHub">
                                     <i class="fab fa-github"></i>
                                 </a>
@@ -38,7 +38,7 @@
                             <h6 class="fw-bold mb-0">Ammar Miftahudin Anshori</h6>
                             <p class="text-muted small mb-1">Web Developer / UI/UX</p>
                             <div>
-                                <a href="#" class="btn btn-outline-dark btn-sm me-1" target="_blank"
+                                <a href="#" class="btn btn-outline-primary btn-sm me-1" target="_blank"
                                     data-bs-toggle="tooltip" title="GitHub">
                                     <i class="fab fa-github"></i>
                                 </a>
@@ -58,7 +58,7 @@
                             <h6 class="fw-bold mb-0">Khoiruddin Nur Wahid, S.Pd</h6>
                             <p class="text-muted small mb-1">Database Administrator / Support</p>
                             <div>
-                                <a href="#" class="btn btn-outline-dark btn-sm me-1" target="_blank"
+                                <a href="#" class="btn btn-outline-primary btn-sm me-1" target="_blank"
                                     data-bs-toggle="tooltip" title="GitHub">
                                     <i class="fab fa-github"></i>
                                 </a>

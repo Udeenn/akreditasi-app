@@ -12,6 +12,7 @@ use App\Http\Controllers\StatistikController;
 use App\Http\Controllers\StatistikKoleksi;
 use App\Http\Controllers\TranskripController;
 use App\Http\Controllers\PeminjamanController;
+use App\Http\Controllers\PenggunaanController;
 use App\Http\Controllers\RewardController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\VisitHistory;
@@ -92,9 +93,9 @@ Route::get('/kunjungan/export-pdf', [VisitHistory::class, 'exportPdf'])->name('k
 
 Route::get('/kunjungan/get-detail-pengunjung-harian-export', [VisitHistory::class, 'getDetailPengunjungHarianExport'])->name('kunjungan.get_detail_pengunjung_harian_export');
 
-Route::get('/statistik/keterpakaian-koleksi', [PeminjamanController::class, 'keterpakaianKoleksi'])->name('peminjaman.keterpakaian_koleksi');
+Route::get('/statistik/keterpakaian-koleksi', [PenggunaanController::class, 'keterpakaianKoleksi'])->name('penggunaan.keterpakaian_koleksi');
 
-Route::get('/statistik/keterpakaian-koleksi/detail', [PeminjamanController::class, 'getKeterpakaianDetail'])->name('statistik.keterpakaian_koleksi.detail');
+Route::get('/statistik/keterpakaian-koleksi/detail', [PenggunaanController::class, 'getKeterpakaianDetail'])->name('statistik.keterpakaian_koleksi.detail');
 
 // Tambahkan ini di routes/web.php
 Route::get('/kunjungan/get-lokasi-detail', [VisitHistory::class, 'getLokasiDetail'])->name('kunjungan.get_lokasi_detail');
@@ -104,7 +105,8 @@ Route::get('/reward/pemustaka-teraktif/export-csv', [RewardController::class, 'e
 Route::get('/reward/peminjam-teraktif', [RewardController::class, 'peminjamTeraktif'])->name('reward.peminjam_teraktif');
 Route::get('/reward/peminjam-teraktif/export-csv', [RewardController::class, 'exportCsvPeminjamTeraktif'])->name('reward.export_csv_peminjam_teraktif');
 
-Route::get('/cek-histori-buku', [PeminjamanController::class, 'cekBuku'])->name('buku.cek_histori');
+Route::get('/cek-histori-buku', [PenggunaanController::class, 'cekBuku'])->name('penggunaan.cek_histori');
+Route::get('/statistik/sering-dibaca', [PenggunaanController::class, 'seringDibaca'])->name('penggunaan.sering_dibaca');
 
 
 require __DIR__ . '/auth.php';

@@ -3,17 +3,31 @@
 @section('title', '404 - Halaman Tidak Ditemukan')
 
 @section('content')
-    <div class="d-flex mt-5 align-items-center justify-content-center max-vh-100 bg-gradient"
-        style="background: linear-gradient(135deg, #f8fafc 60%, #e0e7ff 100%);">
-        <div class="text-center animate__animated animate__bounceIn">
-            <img src="https://media.tenor.com/2uyENRmiUt0AAAAC/cat-computer.gif" alt="404 Cat" style="max-width:220px;"
-                class="mb-4">
-            <h1 class="display-3 fw-bold mb-2 text-indigo">404</h1>
-            <h4 class="mb-3 text-secondary">Oops! Halaman tidak ditemukan.</h4>
-            <a href="{{ url('/') }}" class="btn btn-lg" style="background: #6366f1; color: #fff;"><i
-                    class="fas fa-home me-2"></i>Kembali ke Beranda</a>
-            <div class="mt-4">
-                <span class="text-muted">Atau coba refresh</span>
+    <div class="container py-5">
+        <div class="row d-flex align-items-center justify-content-center">
+            <div class="col-md-10">
+                <div class="card shadow-lg border-0 rounded-4">
+                    <div class="card-body p-5">
+                        <div class="row align-items-center">
+                            <div class="col-md-6 text-center animate__animated animate__fadeInLeft">
+                                <img src="https://cdni.iconscout.com/illustration/premium/thumb/404-error-3702339-3119148.png"
+                                    alt="Buku tidak ditemukan" class="img-fluid" style="max-width: 350px;">
+                            </div>
+
+                            <div class="col-md-6 text-center text-md-start animate__animated animate__fadeInRight">
+                                <h1 class="display-1 fw-bolder text-primary">404</h1>
+                                <h2 class="fw-bold">Halaman Tidak Ditemukan</h2>
+                                <p class="text-muted mb-4 fs-5">
+                                    Sepertinya yang Anda cari tidak ada di website kami. Mungkin salah ketik atau
+                                    sudah dipindahkan.
+                                </p>
+                                <a href="{{ url('/') }}" class="btn btn-md btn-outline-primary">
+                                    <i class="fas fa-home me-2"></i>Kembali ke Beranda
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

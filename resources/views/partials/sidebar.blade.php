@@ -81,15 +81,15 @@
             <a class="nav-link {{ $isKunjunganActive ? 'active' : '' }}" data-bs-toggle="collapse"
                 href="#kunjunganCollapse">
                 <i class="fas fa-users nav-icon"></i>
-                <span class="nav-text">Data Kunjungan</span>
+                <span class="nav-text">Kunjungan</span>
                 <i class="fas fa-chevron-down ms-auto nav-arrow-small"></i>
             </a>
             <div class="collapse {{ $isKunjunganActive ? 'show' : '' }}" id="kunjunganCollapse">
                 <ul class="nav flex-column mt-1 sub-menu">
-                    <li><a class="nav-link {{ request()->routeIs('kunjungan.tanggalTable') ? 'active' : '' }}"
-                            href="{{ route('kunjungan.tanggalTable') }}">Perpustakaan</a></li>
+                    {{-- <li><a class="nav-link {{ request()->routeIs('kunjungan.tanggalTable') ? 'active' : '' }}"
+                            href="{{ route('kunjungan.tanggalTable') }}">Perpustakaan</a></li> --}}
                     <li><a class="nav-link {{ request()->routeIs('kunjungan.kunjungan_gabungan') ? 'active' : '' }}"
-                            href="{{ route('kunjungan.kunjungan_gabungan') }}">Perpustakaan Perbagian</a></li>
+                            href="{{ route('kunjungan.kunjungan_gabungan') }}">Perpustakaan</a></li>
                     <li><a class="nav-link {{ request()->routeIs('kunjungan.prodiTable') ? 'active' : '' }}"
                             href="{{ route('kunjungan.prodiTable') }}">Civitas Akademika</a></li>
                     <li><a class="nav-link {{ request()->routeIs('kunjungan.cekKehadiran') ? 'active' : '' }}"
@@ -104,7 +104,7 @@
             <a class="nav-link {{ $isPeminjamanActive ? 'active' : '' }}" data-bs-toggle="collapse"
                 href="#peminjamanCollapse">
                 <i class="fas fa-book-reader nav-icon"></i>
-                <span class="nav-text">Data Peminjaman</span>
+                <span class="nav-text">Peminjaman</span>
                 <i class="fas fa-chevron-down ms-auto nav-arrow-small"></i>
             </a>
             <div class="collapse {{ $isPeminjamanActive ? 'show' : '' }}" id="peminjamanCollapse">
@@ -117,8 +117,30 @@
                             href="{{ route('peminjaman.check_history') }}">Cek Peminjaman</a></li>
                     <li><a class="nav-link {{ request()->routeIs('peminjaman.berlangsung') ? 'active' : '' }}"
                             href="{{ route('peminjaman.berlangsung') }}">Sedang Berlangsung</a></li>
-                    <li><a class="nav-link {{ request()->routeIs('peminjaman.keterpakaian_koleksi') ? 'active' : '' }}"
-                            href="{{ route('peminjaman.keterpakaian_koleksi') }}">Keterpakaian Koleksi</a></li>
+                </ul>
+            </div>
+        </li>
+
+        {{-- Data Penggunaan --}}
+        @php $isPenggunaanActive = request()->routeIs(['penggunaan.*']); @endphp
+        <li class="nav-item">
+            <a class="nav-link {{ $isPenggunaanActive ? 'active' : '' }}" data-bs-toggle="collapse"
+                href="#penggunaanCollapse">
+                <i class="fas fa-barcode nav-icon"></i>
+                <span class="nav-text">Penggunaan Buku</span>
+                <i class="fas fa-chevron-down ms-auto nav-arrow-small"></i>
+            </a>
+            <div class="collapse {{ $isPenggunaanActive ? 'show' : '' }}" id="penggunaanCollapse">
+                <ul class="nav flex-column mt-1 sub-menu">
+                    <li><a class="nav-link {{ request()->routeIs('penggunaan.keterpakaian_koleksi') ? 'active' : '' }}"
+                            href="{{ route('penggunaan.keterpakaian_koleksi') }}">Keterpakaian Koleksi</a>
+                    </li>
+                    <li><a class="nav-link {{ request()->routeIs('penggunaan.cek_histori') ? 'active' : '' }}"
+                            href="{{ route('penggunaan.cek_histori') }}">Cek Histori Buku</a>
+                    </li>
+                    <li><a class="nav-link {{ request()->routeIs('penggunaan.sering_dibaca') ? 'active' : '' }}"
+                            href="{{ route('penggunaan.sering_dibaca') }}">Buku Sering Dibaca</a>
+                    </li>
                 </ul>
             </div>
         </li>
@@ -137,14 +159,6 @@
                             href="{{ route('reward.pemustaka_teraktif') }}">Pemustaka Teraktif</a></li>
                 </ul>
             </div>
-        </li>
-        {{-- Cek Histori Buku --}}
-        <li class="nav-item">
-            <a class="nav-link {{ request()->routeIs('buku.cek_histori') ? 'active' : '' }}"
-                href="{{ route('buku.cek_histori') }}">
-                <i class="fas fa-history nav-icon"></i>
-                <span class="nav-text">Cek Histori Buku</span>
-            </a>
         </li>
     </ul>
 

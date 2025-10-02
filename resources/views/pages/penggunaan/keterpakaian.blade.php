@@ -20,7 +20,7 @@
         </div>
         <div class="collapse show" id="collapseFilter">
             <div class="card-body">
-                <form method="GET" action="{{ route('peminjaman.keterpakaian_koleksi') }}"
+                <form method="GET" action="{{ route('penggunaan.keterpakaian_koleksi') }}"
                     class="row g-3 align-items-end">
                     <div class="col-md-auto">
                         <label for="filter_type" class="form-label">Tampilkan per:</label>
@@ -122,13 +122,13 @@
                                                 $opacity = $maxJumlah > 0 ? ($jumlah / $maxJumlah) * 0.8 + 0.1 : 0;
                                             @endphp
                                             <td class="text-center"
-                                                style="background-color: rgba(54, 162, 235, {{ $opacity }}); color: {{ $opacity > 0.6 ? '#fff' : '#000' }};">
+                                                style="background-color: rgba(54, 162, 235, {{ $opacity }}); {{ $opacity > 0.6 ? 'color: #fff;' : '' }}">
                                                 @if ($jumlah > 0)
                                                     <a href="#" class="detail-link" data-bs-toggle="modal"
                                                         data-bs-target="#detailBukuModal"
                                                         data-periode="{{ $row['periode'] }}"
                                                         data-kategori="{{ $kategori }}"
-                                                        style="color: inherit; text-decoration: none;">{{ number_format($jumlah) }}</a>
+                                                        style="text-decoration: none;">{{ number_format($jumlah) }}</a>
                                                 @else
                                                     0
                                                 @endif
@@ -166,9 +166,10 @@
                 <table class="table table-striped table-sm">
                     <thead>
                         <tr>
-                            <th>Judul Buku</th>
+                            <th style="width: 45%;">Judul Buku</th>
+                            <th>Barcode</th>
                             <th style="width: 25%;">Waktu Transaksi</th>
-                            <th style="width: 20%;">Tipe</th>
+                            <th>Tipe</th>
                         </tr>
                     </thead>
                     <tbody id="detailBukuTbody"></tbody>
@@ -286,7 +287,6 @@
             }
         }
 
-        // Function to render the modal content
         function renderDetailBukuContent(result) {
             if (result.data && result.data.length > 0) {
                 let allRowsHtml = '';
@@ -294,8 +294,9 @@
                     allRowsHtml += `
                 <tr>
                     <td>${item.judul_buku}</td>
+                    <td>${item.barcode}</td>
                     <td>${moment(item.waktu_transaksi).format('DD MMM YYYY, HH:mm')}</td>
-                    <td><span class="badge bg-info">${item.tipe_transaksi}</span></td>
+                    <td><span class="badge bg-primary">${item.tipe_transaksi}</span></td>
                 </tr>
             `;
                 });
@@ -332,12 +333,24 @@
                 return moment(row.periode).format(format);
             });
 
-            const datasets = listKategori.map(kategori => {
+            const colorPalette = [
+                'rgba(54, 162, 235, 0.8)', // Biru
+                'rgba(255, 99, 132, 0.8)', // Merah
+                'rgba(75, 192, 192, 0.8)', // Hijau
+                'rgba(255, 206, 86, 0.8)', // Kuning
+                'rgba(153, 102, 255, 0.8)', // Ungu
+                'rgba(255, 159, 64, 0.8)', // Oranye
+                'rgba(201, 203, 207, 0.8)', // Abu-abu
+                'rgba(231, 84, 128, 0.8)', // Pink
+                'rgba(0, 204, 153, 0.8)', // Teal
+                'rgba(102, 178, 255, 0.8)', // Biru Langit
+            ];
+
+            const datasets = listKategori.map((kategori, index) => {
                 const data = dataTabel.map(row => row[kategori] || 0);
-                const r = Math.floor(Math.random() * 200);
-                const g = Math.floor(Math.random() * 200);
-                const b = Math.floor(Math.random() * 200);
-                const color = `rgba(${r}, ${g}, ${b}, 0.8)`;
+
+                // Ambil warna dari palet secara berurutan
+                const color = colorPalette[index % colorPalette.length];
 
                 return {
                     label: kategori,

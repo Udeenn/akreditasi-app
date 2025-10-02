@@ -4,9 +4,6 @@
 @section('title', 'Cek Histori Buku')
 
 <div class="container">
-    {{-- =============================================== --}}
-    {{-- Header Halaman --}}
-    {{-- =============================================== --}}
     <div class="d-flex align-items-center mb-4">
         <i class="fas fa-barcode fa-2x text-primary me-3"></i>
         <div>
@@ -17,7 +14,7 @@
     </div>
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <form action="{{ route('buku.cek_histori') }}" method="GET">
+            <form action="{{ route('penggunaan.cek_histori') }}" method="GET">
                 <div class="row g-2 align-items-center">
                     <div class="col-lg">
                         <div class="input-group">
@@ -50,7 +47,6 @@
             {{ $errorMessage }}</div>
     @endif
 
-    {{-- Tampilkan hasil hanya jika ada pencarian dan tidak ada error --}}
     @if ($barcode && !$errorMessage)
         @if ($book)
             <div class="row">
@@ -120,10 +116,11 @@
                                     'localuse' => ['class' => 'bg-info text-dark', 'text' => 'Digunakan di Tempat'],
                                 ];
                             @endphp
-                            <div class="table-responsive">
+                            <div class="table-responsive table-bordered table">
                                 <table class="table table-hover mb-0">
                                     <thead>
                                         <tr>
+                                            <th>No</th>
                                             <th>Tanggal & Waktu</th>
                                             <th>Tipe Transaksi</th>
                                         </tr>
@@ -131,6 +128,7 @@
                                     <tbody>
                                         @forelse ($history as $item)
                                             <tr>
+                                                <td>{{ $loop->iteration }}</td>
                                                 <td>{{ \Carbon\Carbon::parse($item->datetime)->format('d M Y, H:i:s') }}
                                                 </td>
                                                 <td>

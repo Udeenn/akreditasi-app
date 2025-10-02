@@ -242,6 +242,7 @@
             color: var(--text-dark);
         }
 
+
         body.dark-mode span.badge {
             color: var(--text-dark);
         }

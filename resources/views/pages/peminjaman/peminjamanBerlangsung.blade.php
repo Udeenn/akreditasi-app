@@ -95,7 +95,7 @@
                                         if (response.ok && result.data && result.data.length > 0) {
                                             const delimiter = ';';
                                             const headers = ['No.', 'Buku Dipinjam Saat', 'Judul Buku', 'Barcode Buku',
-                                                'Kode Prodi', 'Peminjam', 'Batas Waktu Pengembalian'
+                                                'Peminjam', 'Batas Waktu Pengembalian'
                                             ];
                                             let csv = [headers.join(delimiter)];
                                             result.data.forEach((row, idx) => {
@@ -104,7 +104,7 @@
                                                     row.BukuDipinjamSaat,
                                                     `"${row.JudulBuku.replace(/"/g, '""')}"`,
                                                     row.BarcodeBuku,
-                                                    row.KodeProdi,
+                                                    // row.KodeProdi,
                                                     `"${row.Peminjam.replace(/"/g, '""')}"`,
                                                     row.BatasWaktuPengembalian
                                                 ].join(delimiter));

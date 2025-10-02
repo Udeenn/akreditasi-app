@@ -4,7 +4,6 @@
     <div class="container mt-4">
         <div class="row">
             <div class="col-md-12">
-                {{-- Untuk tahun --}}
                 <h2 class="text-center mb-4">Statistik Perpustakaan Tahun {{ date('Y') }}</h2>
             </div>
             <div class="row">
@@ -13,7 +12,6 @@
                         <div class="card-body d-flex flex-column justify-content-between">
                             <div>
                                 <small class="text-muted">Total Jurnal</small>
-                                {{-- <h4 class="card-title mt-2 mb-0">2.741</h4> --}}
                                 <h4 class="card-title mt-2 mb-0">{{ $formatTotalJurnal }}</h4>
                             </div>
                             <div class="text-end mt-3">
@@ -27,7 +25,6 @@
                         <div class="card-body d-flex flex-column justify-content-between">
                             <div>
                                 <small class="text-muted">Total Judul Buku</small>
-                                {{-- <h4 class="card-title mt-2 mb-0">48.411</h4> --}}
                                 <h4 class="card-title mt-2 mb-0">{{ $formatTotalJudulBuku }}</h4>
                             </div>
                             <div class="text-end mt-3">
@@ -41,7 +38,6 @@
                         <div class="card-body d-flex flex-column justify-content-between">
                             <div>
                                 <small class="text-muted">Total Eksemplar</small>
-                                {{-- <h4 class="card-title mt-2 mb-0">111.892</h4> --}}
                                 <h4 class="card-title mt-2 mb-0">{{ $formatTotalEksemplar }}</h4>
                             </div>
                             <div class="text-end mt-3">
@@ -55,7 +51,6 @@
                         <div class="card-body d-flex flex-column justify-content-between">
                             <div>
                                 <small class="text-muted">Jumlah Ebook</small>
-                                {{-- <h4 class="card-title mt-2 mb-0">1.389</h4> --}}
                                 <h4 class="card-title mt-2 mb-0">{{ $formatTotalEbooks }}</h4>
                             </div>
                             <div class="text-end mt-3">
