@@ -1,0 +1,53 @@
+# Dockerfile.prod
+
+# ---- STAGE 1: BUILDER ----
+# Di stage ini kita install semua dependensi, termasuk dev-dependencies
+FROM php:8.2-fpm as builder
+WORKDIR /var/www/html
+
+# Install dependensi sistem dan ekstensi PHP
+RUN apt-get update && apt-get install -y git zip unzip libzip-dev libpq-dev \
+    && docker-php-ext-install pdo_mysql pdo_pgsql zip
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Copy file composer & install dependensi
+# Ini memanfaatkan layer caching Docker. `composer install` hanya akan jalan
+# jika composer.json atau composer.lock berubah.
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --no-scripts --optimize-autoloader
+
+# Copy sisa kode aplikasi
+COPY . .
+
+# Hapus cache setelah build
+RUN rm -rf /root/.composer
+
+# Optimasi Laravel untuk production
+RUN php artisan config:cache && php artisan route:cache && php artisan view:cache
+
+
+# ---- STAGE 2: FINAL PRODUCTION IMAGE ----
+# Di stage ini kita hanya mengambil hasil yang diperlukan dari stage builder
+FROM php:8.2-fpm-alpine
+WORKDIR /var/www/html
+
+# Install ekstensi PHP yang HANYA dibutuhkan saat runtime
+RUN docker-php-ext-install pdo_mysql pdo_pgsql
+
+# Copy vendor & kode aplikasi dari stage builder
+COPY --from=builder /var/www/html/vendor ./vendor
+COPY --from=builder /var/www/html .
+
+# Set permission untuk folder storage dan bootstrap/cache
+RUN chown -R www-data:www-data storage bootstrap/cache
+
+USER www-data
+
+EXPOSE 9000
+CMD ["php-fpm"]
+
+
+# setelah itu run
+# docker build -f Dockerfile.prod -t my-laravel-app:latest .

@@ -15,7 +15,6 @@ class VisitHistory extends Controller
 {
     public function kunjunganProdiTable(Request $request)
     {
-        // Mengambil daftar prodi dari DB, tidak ada perubahan di sini
         $listProdiFromDb = DB::connection('mysql2')->table('authorised_values')
             ->select('authorised_value', 'lib')
             ->where('category', 'PRODI')
@@ -32,7 +31,6 @@ class VisitHistory extends Controller
             })
             ->pluck('lib', 'authorised_value');
 
-        // --- PERUBAHAN 1: Memisahkan 'DOSEN_TENDIK' menjadi dua ---
         $staticValues = [
             'DOSEN' => 'Dosen',
             'TENDIK' => 'Tenaga Kependidikan',
@@ -73,7 +71,6 @@ class VisitHistory extends Controller
                 $displayPeriod = "Periode " . Carbon::parse($tanggalAwal)->locale('id')->isoFormat('D MMMM Y') . " s.d. " . Carbon::parse($tanggalAkhir)->locale('id')->isoFormat('D MMMM Y');
             }
 
-            // --- REFACTOR: Membuat fungsi filter untuk menghindari duplikasi kode ---
             $applyProdiFilter = function ($query, $filterCode) {
                 if (empty($filterCode) || strtolower($filterCode) === 'semua') {
                     return;
@@ -839,14 +836,14 @@ class VisitHistory extends Controller
         }
 
         $filterType = $request->input('filter_type', 'yearly');
-        $year = $request->input('year', Carbon::now()->format('Y'));
+        $startYear = $request->input('start_year', Carbon::now()->format('Y'));
+        $endYear = $request->input('end_year', Carbon::now()->format('Y'));
         $date = $request->input('date', Carbon::now()->format('Y-m-d'));
         $startMonth = $request->input('start_month', Carbon::now()->startOfYear()->format('Y-m'));
         $endMonth = $request->input('end_month', Carbon::now()->format('Y-m'));
         $startDate = $request->input('start_date', Carbon::now()->subDays(14)->format('Y-m-d'));
         $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
         $selectedLokasi = $request->input('lokasi');
-
 
         $dataHasil = collect();
         $namaPeminjamMap = collect();
@@ -873,12 +870,12 @@ class VisitHistory extends Controller
             if ($filterType == 'yearly') {
                 $historyQuery = DB::connection('mysql2')->table('visitorhistory')
                     ->select(DB::raw("LEFT(visittime, 7) as bulan"), DB::raw("COUNT(*) as jumlah"))
-                    ->whereYear('visittime', $year)
+                    ->whereBetween(DB::raw('YEAR(visittime)'), [$startYear, $endYear])
                     ->groupBy('bulan');
 
                 $cornerQuery = DB::connection('mysql2')->table('visitorcorner')
                     ->select(DB::raw("LEFT(visittime, 7) as bulan"), DB::raw("COUNT(*) as jumlah"))
-                    ->whereYear('visittime', $year)
+                    ->whereBetween(DB::raw('YEAR(visittime)'), [$startYear, $endYear])
                     ->groupBy('bulan');
 
                 if ($selectedLokasi) {
@@ -896,8 +893,8 @@ class VisitHistory extends Controller
                 $maxKunjunganBulanan = $dataHasil->max('jumlah') ?? 0;
                 $chartData = $dataHasil->pluck('jumlah', 'bulan');
 
-                $historyLokasiQuery = DB::connection('mysql2')->table('visitorhistory')->select(DB::raw("IFNULL(location, 'pusat') as lokasi"), DB::raw("COUNT(*) as jumlah"))->whereYear('visittime', $year)->groupBy('lokasi');
-                $cornerLokasiQuery = DB::connection('mysql2')->table('visitorcorner')->select(DB::raw("COALESCE(NULLIF(notes, ''), 'pusat') as lokasi"), DB::raw("COUNT(*) as jumlah"))->whereYear('visittime', $year)->groupBy('lokasi');
+                $historyLokasiQuery = DB::connection('mysql2')->table('visitorhistory')->select(DB::raw("IFNULL(location, 'pusat') as lokasi"), DB::raw("COUNT(*) as jumlah"))->whereBetween(DB::raw('YEAR(visittime)'), [$startYear, $endYear])->groupBy('lokasi');
+                $cornerLokasiQuery = DB::connection('mysql2')->table('visitorcorner')->select(DB::raw("COALESCE(NULLIF(notes, ''), 'pusat') as lokasi"), DB::raw("COUNT(*) as jumlah"))->whereBetween(DB::raw('YEAR(visittime)'), [$startYear, $endYear])->groupBy('lokasi');
                 $allLokasiResults = $historyLokasiQuery->get()->merge($cornerLokasiQuery->get());
                 $topLokasi = $allLokasiResults->groupBy('lokasi')->map(fn($item, $key) => $item->sum('jumlah'))->sortDesc()->take(3);
             } else {
@@ -912,7 +909,7 @@ class VisitHistory extends Controller
                 } elseif ($filterType == 'monthly') {
                     $historyQuery->whereRaw("LEFT(visittime, 7) BETWEEN ? AND ?", [$startMonth, $endMonth]);
                     $cornerQuery->whereRaw("LEFT(visittime, 7) BETWEEN ? AND ?", [$startMonth, $endMonth]);
-                } elseif ($filterType == 'date_range') { 
+                } elseif ($filterType == 'date_range') {
                     $historyQuery->whereBetween('visittime', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
                     $cornerQuery->whereBetween('visittime', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
                 }
@@ -949,8 +946,13 @@ class VisitHistory extends Controller
 
                 $totalKunjungan = $dataHasil->total();
 
-                $chartData = $sortedResults->groupBy(fn($item) => Carbon::parse($item->visittime)->format($filterType == 'daily' ? 'Y-m-d' : 'Y-m'))
-                    ->map(fn($group) => $group->count())->sortKeys();
+                $chartData = $sortedResults->groupBy(function ($item) use ($filterType) {
+                    $date = Carbon::parse($item->visittime);
+                    if ($filterType == 'date_range') {
+                        return $date->format('Y-m-d');
+                    }
+                    return $date->format('Y-m');
+                })->map(fn($group) => $group->count())->sortKeys();
             }
         }
 
@@ -962,9 +964,8 @@ class VisitHistory extends Controller
             ]);
         }
 
-        return view('pages.kunjungan.kunjungan_gabungan', compact('filterType', 'year', 'date', 'startMonth', 'endMonth', 'selectedLokasi', 'dataHasil', 'lokasiMapping', 'lokasiOptions', 'namaPeminjamMap', 'chartData', 'totalKunjungan', 'startDate', 'endDate', 'maxKunjunganBulanan', 'topLokasi'));
+        return view('pages.kunjungan.kunjungan_gabungan', compact('filterType', 'startYear', 'endYear', 'date', 'startMonth', 'endMonth', 'selectedLokasi', 'dataHasil', 'lokasiMapping', 'lokasiOptions', 'namaPeminjamMap', 'chartData', 'totalKunjungan', 'startDate', 'endDate', 'maxKunjunganBulanan', 'topLokasi'));
     }
-
 
     private function exportKunjunganCsv(Request $request)
     {

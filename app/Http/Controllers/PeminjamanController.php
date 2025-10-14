@@ -12,13 +12,11 @@ class PeminjamanController extends Controller
 
     public function pertanggal(Request $request)
     {
-        // Mengambil input dari request dengan nilai default
         $filterType = $request->input('filter_type', 'daily');
         $startDate = $request->input('start_date', Carbon::now()->subDays(30)->format('Y-m-d'));
         $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
         $selectedYear = $request->input('selected_year', Carbon::now()->year);
 
-        // Inisialisasi variabel total
         $totalBooks = 0;
         $totalReturns = 0;
         $totalBorrowers = 0;
@@ -28,7 +26,6 @@ class PeminjamanController extends Controller
 
         if ($request->filled('start_date') || $request->filled('end_date') || $request->filled('selected_year')) {
             try {
-                // Tentukan rentang tanggal/tahun terlebih dahulu
                 $dateRange = [];
                 if ($filterType == 'daily') {
                     $start = Carbon::parse($startDate)->startOfDay();
@@ -37,7 +34,7 @@ class PeminjamanController extends Controller
                         [$start, $end] = [$end, $start];
                     }
                     $dateRange = [$start, $end];
-                } else { // monthly
+                } else {
                     $yearStart = Carbon::create($selectedYear)->startOfYear();
                     $yearEnd = Carbon::create($selectedYear)->endOfYear();
                     $dateRange = [$yearStart, $yearEnd];
@@ -57,7 +54,6 @@ class PeminjamanController extends Controller
                     $totalBorrowers = $summaryData->total_borrowers;
                 }
 
-                // --- Query utama untuk tabel & chart (tetap sama) ---
                 $mainQuery = DB::connection('mysql2')->table('statistics as s')
                     ->whereIn('s.type', ['issue', 'renew'])
                     ->whereBetween('s.datetime', $dateRange);
@@ -70,7 +66,7 @@ class PeminjamanController extends Controller
                     )
                         ->groupBy('periode')
                         ->orderBy('periode', 'asc');
-                } else { // monthly
+                } else {
                     $mainQuery->select(
                         DB::raw('DATE_FORMAT(s.datetime, "%Y-%m") as periode'),
                         DB::raw('COUNT(s.itemnumber) as jumlah_peminjaman_buku'),
@@ -105,7 +101,6 @@ class PeminjamanController extends Controller
         $periode = $request->input('periode');
         $filterType = $request->input('filter_type');
 
-        // 1. Dapatkan halaman saat ini dari request, default-nya halaman 1
         $currentPage = $request->input('page', 1);
         $perPage = 10;
 
@@ -113,7 +108,6 @@ class PeminjamanController extends Controller
             return response()->json(['error' => 'Parameter periode tidak ditemukan.'], 400);
         }
 
-        // Query dasar untuk mendapatkan transaksi dalam rentang waktu yang dipilih
         $baseQuery = DB::connection('mysql2')->table('statistics as s')
             ->join('borrowers as b', 's.borrowernumber', '=', 'b.borrowernumber')
             ->whereIn('s.type', ['issue', 'renew', 'return']);
@@ -122,16 +116,14 @@ class PeminjamanController extends Controller
             $startOfDay = Carbon::parse($periode)->startOfDay();
             $endOfDay = Carbon::parse($periode)->endOfDay();
             $baseQuery->whereBetween('s.datetime', [$startOfDay, $endOfDay]);
-        } else { // 'monthly'
+        } else {
             $startOfMonth = Carbon::parse($periode)->startOfMonth();
             $endOfMonth = Carbon::parse($periode)->endOfMonth();
             $baseQuery->whereBetween('s.datetime', [$startOfMonth, $endOfMonth]);
         }
 
-        // 2. Hitung total PEMINJAM UNIK secara eksplisit dan akurat
         $totalUniqueBorrowers = (clone $baseQuery)->distinct()->count('b.borrowernumber');
 
-        // 3. Ambil data PEMINJAM UNIK HANYA untuk halaman saat ini
         $borrowersOnPage = (clone $baseQuery)
             ->select('b.borrowernumber', 'b.cardnumber as nim', DB::raw("CONCAT_WS(' ', b.firstname, b.surname) as nama_peminjam"))
             ->distinct()
@@ -141,10 +133,9 @@ class PeminjamanController extends Controller
 
         $borrowerNumbersOnPage = $borrowersOnPage->pluck('borrowernumber');
 
-        $structuredData = collect(); // Siapkan koleksi kosong
+        $structuredData = collect();
 
         if ($borrowerNumbersOnPage->isNotEmpty()) {
-            // 4. Ambil SEMUA transaksi HANYA untuk peminjam yang ada di halaman ini
             $allTransactions = (clone $baseQuery)
                 ->select('bb.title as judul_buku', 's.borrowernumber', 's.datetime as waktu_transaksi', 's.type as tipe_transaksi')
                 ->join('items as i', 's.itemnumber', '=', 'i.itemnumber')
@@ -153,10 +144,8 @@ class PeminjamanController extends Controller
                 ->orderBy('s.datetime', 'asc')
                 ->get();
 
-            // 5. Kelompokkan transaksi berdasarkan borrowernumber
             $groupedTransactions = $allTransactions->groupBy('borrowernumber');
 
-            // 6. Gabungkan data peminjam dengan detail transaksinya
             $structuredData = $borrowersOnPage->map(function ($borrower) use ($groupedTransactions) {
                 $transactions = $groupedTransactions->get($borrower->borrowernumber, collect());
                 $borrower->detail_buku = $transactions->map(function ($transaction) {
@@ -170,7 +159,6 @@ class PeminjamanController extends Controller
             });
         }
 
-        // 7. Buat instance LengthAwarePaginator secara manual dengan total yang sudah benar
         $paginatedResult = new \Illuminate\Pagination\LengthAwarePaginator(
             $structuredData,
             $totalUniqueBorrowers,
@@ -187,7 +175,6 @@ class PeminjamanController extends Controller
 
     public function peminjamanProdiChart(Request $request)
     {
-        // Mengambil opsi program studi dari DB
         $prodiFromDb = DB::connection('mysql2')->table('authorised_values')
             ->select('authorised_value', 'lib')
             ->where('category', 'PRODI')
@@ -203,24 +190,20 @@ class PeminjamanController extends Controller
                 return (object) ['authorised_value' => $prodi->authorised_value, 'lib' => $prodi->lib];
             });
 
-        // --- PERUBAHAN 1: Tambahkan Dosen & Staff (Tendik) ke daftar opsi ---
         $staticOptions = collect([
             (object) ['authorised_value' => 'DOSEN', 'lib' => 'Dosen'],
             (object) ['authorised_value' => 'STAFF', 'lib' => 'Tenaga Kependidikan (Staff)'],
         ]);
 
-        // Gabungkan opsi statis dengan prodi dari database
         $prodiOptions = $staticOptions->concat($prodiFromDb);
 
-        // Tentukan filter
         $hasFilter = $request->hasAny(['filter_type', 'selected_year', 'start_date', 'end_date', 'selected_prodi']);
         $filterType = $request->input('filter_type', 'yearly');
         $selectedYear = $request->input('selected_year', Carbon::now()->year);
         $startDate = $request->input('start_date', Carbon::now()->subDays(30)->format('Y-m-d'));
         $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
-        $selectedProdiCode = $request->input('selected_prodi', 'DOSEN'); // Default ke Dosen
+        $selectedProdiCode = $request->input('selected_prodi', 'DOSEN');
 
-        // Inisialisasi variabel lain
         $statistics = collect();
         $allStatistics = collect();
         $chartLabels = collect();
@@ -232,15 +215,10 @@ class PeminjamanController extends Controller
 
         try {
             if ($hasFilter) {
-                // --- PERUBAHAN 2: Modifikasi Query Dasar ---
                 $baseQuery = DB::connection('mysql2')->table('statistics as s')
                     ->leftJoin('borrowers as b', 'b.borrowernumber', '=', 's.borrowernumber')
                     ->whereIn('s.type', ['issue', 'renew', 'return']);
 
-                // Hapus join ke borrower_attributes dan authorised_values yang lama
-                // karena kita akan menggunakan logika filter yang baru
-
-                // --- PERUBAHAN 3: Terapkan logika filter yang baru ---
                 switch (strtoupper($selectedProdiCode)) {
                     case 'DOSEN':
                         $baseQuery->where('b.categorycode', 'like', 'TC%');
@@ -249,7 +227,6 @@ class PeminjamanController extends Controller
                         $baseQuery->where('b.categorycode', 'like', 'STAF%');
                         break;
                     default:
-                        // Logika untuk prodi mahasiswa
                         $baseQuery->leftJoin('borrower_attributes as ba', 'ba.borrowernumber', '=', 'b.borrowernumber')
                             ->where('ba.code', '=', 'PRODI')
                             ->where('ba.attribute', '=', $selectedProdiCode);
@@ -258,10 +235,9 @@ class PeminjamanController extends Controller
 
                 $queryForTotals = clone $baseQuery;
 
-                // Logika filter tanggal (yearly/daily) tidak perlu diubah, sudah bagus
                 if ($filterType == 'daily') {
                     if (Carbon::parse($startDate)->greaterThan(Carbon::parse($endDate))) {
-                        [$startDate, $endDate] = [$endDate, $startDate]; // Cara singkat tukar variabel
+                        [$startDate, $endDate] = [$endDate, $startDate];
                     }
                     $queryForBoth = (clone $baseQuery)
                         ->select(
@@ -294,11 +270,8 @@ class PeminjamanController extends Controller
 
                 $allStatistics = (clone $queryForBoth)->get();
 
-                // --- GANTI BLOK DI BAWAH INI ---
                 if ($allStatistics->isNotEmpty()) {
                     $dataExists = true;
-
-                    // Hitung total dari SEMUA data, BUKAN dari data yang dipaginasi
                     $totalsQuery = (clone $queryForTotals)->select(
                         DB::raw('COUNT(CASE WHEN s.type IN ("issue", "renew") THEN s.itemnumber ELSE NULL END) as total_buku'),
                         DB::raw('COUNT(DISTINCT s.borrowernumber) as total_peminjam'),
@@ -311,10 +284,8 @@ class PeminjamanController extends Controller
                     $totalReturns = $totals->total_kembali;
                 }
 
-                // Paginasi dilakukan di luar blok if agar konsisten
                 $statistics = (clone $queryForBoth)->paginate(10);
 
-                // Proses data chart tetap sama
                 $chartLabels = $allStatistics->pluck('periode')->map(function ($periode) use ($filterType) {
                     return $filterType == 'yearly'
                         ? Carbon::createFromFormat('Y-m', $periode)->format('M Y')
@@ -336,7 +307,6 @@ class PeminjamanController extends Controller
 
     public function getPeminjamDetail(Request $request)
     {
-        // Validasi input
         $periode = $request->input('periode');
         $prodiCode = $request->input('prodi_code');
         $filterType = $request->input('filter_type');
@@ -348,13 +318,11 @@ class PeminjamanController extends Controller
         }
 
         try {
-            // === LANGKAH 1: Ambil daftar peminjam unik yang sudah DIPAGINASI dari database ===
             $borrowersQuery = DB::connection('mysql2')->table('statistics as s')
                 ->select('b.borrowernumber', 'b.cardnumber', DB::raw("CONCAT(b.firstname, ' ', b.surname) as nama_peminjam"))
                 ->join('borrowers as b', 'b.borrowernumber', '=', 's.borrowernumber')
                 ->whereIn('s.type', ['issue', 'renew', 'return']);
 
-            // Terapkan filter prodi/kategori
             switch (strtoupper($prodiCode)) {
                 case 'DOSEN':
                     $borrowersQuery->where('b.categorycode', 'like', 'TC%');
@@ -362,7 +330,7 @@ class PeminjamanController extends Controller
                 case 'STAFF':
                     $borrowersQuery->where('b.categorycode', 'like', 'STAF%');
                     break;
-                default: // Mahasiswa
+                default:
                     $borrowersQuery->whereExists(function ($query) use ($prodiCode) {
                         $query->select(DB::raw(1))
                             ->from('borrower_attributes as ba')
@@ -373,21 +341,17 @@ class PeminjamanController extends Controller
                     break;
             }
 
-            // Terapkan filter periode
             if ($filterType === 'daily') {
                 $borrowersQuery->whereDate('s.datetime', $periode);
             } elseif ($filterType === 'yearly') {
                 $borrowersQuery->where(DB::raw('DATE_FORMAT(s.datetime, "%Y-%m")'), $periode);
             }
 
-            // Paginasi dilakukan di sini, pada query peminjam unik
             $paginatedBorrowers = $borrowersQuery->groupBy('b.borrowernumber', 'b.cardnumber', 'nama_peminjam')
                 ->paginate($perPage, ['*'], 'page', $page);
 
-            // Ambil borrowernumber HANYA dari hasil paginasi
             $borrowerNumbersOnPage = $paginatedBorrowers->pluck('borrowernumber');
 
-            // === LANGKAH 2: Ambil detail transaksi HANYA untuk peminjam di halaman ini ===
             $details = [];
             if ($borrowerNumbersOnPage->isNotEmpty()) {
                 $detailsQuery = DB::connection('mysql2')->table('statistics as s')
@@ -397,7 +361,6 @@ class PeminjamanController extends Controller
                     ->whereIn('s.borrowernumber', $borrowerNumbersOnPage)
                     ->whereIn('s.type', ['issue', 'renew', 'return']);
 
-                // Terapkan lagi filter periode yang sama
                 if ($filterType === 'daily') {
                     $detailsQuery->whereDate('s.datetime', $periode);
                 } elseif ($filterType === 'yearly') {
@@ -407,7 +370,6 @@ class PeminjamanController extends Controller
                 $details = $detailsQuery->orderBy('s.datetime', 'asc')->get()->groupBy('borrowernumber');
             }
 
-            // === LANGKAH 3: Gabungkan data peminjam dengan transaksinya ===
             $finalData = $paginatedBorrowers->map(function ($borrower) use ($details) {
                 $borrowerTransactions = $details->get($borrower->borrowernumber, collect());
 
@@ -424,7 +386,6 @@ class PeminjamanController extends Controller
                 ];
             });
 
-            // Buat ulang objek paginator dengan data yang sudah digabungkan
             $finalPaginator = new LengthAwarePaginator(
                 $finalData,
                 $paginatedBorrowers->total(),
@@ -465,14 +426,13 @@ class PeminjamanController extends Controller
                             'b.title',
                             'b.author'
                         )
-                        // Menggunakan JOIN untuk memastikan hanya data dengan item yang valid yang tampil
                         ->join('items as i', 'i.itemnumber', '=', 's.itemnumber')
                         ->join('biblioitems as bi', 'bi.biblionumber', '=', 'i.biblionumber')
                         ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
                         ->where('s.borrowernumber', $borrower->borrowernumber)
                         ->whereIn('s.type', ['issue', 'renew'])
                         ->orderBy('s.datetime', 'desc')
-                        ->paginate(5, ['*'], 'borrowing_page') // Beri nama unik untuk paginasi
+                        ->paginate(5, ['*'], 'borrowing_page')
                         ->withQueryString();
 
                     // Histori Pengembalian (Return)
@@ -485,17 +445,15 @@ class PeminjamanController extends Controller
                             'b.title',
                             'b.author'
                         )
-                        // Menggunakan JOIN untuk memastikan hanya data dengan item yang valid yang tampil
                         ->join('items as i', 'i.itemnumber', '=', 's.itemnumber')
                         ->join('biblioitems as bi', 'bi.biblionumber', '=', 'i.biblionumber')
                         ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
                         ->where('s.borrowernumber', $borrower->borrowernumber)
                         ->where('s.type', 'return')
                         ->orderBy('s.datetime', 'desc')
-                        ->paginate(5, ['*'], 'return_page') // Beri nama unik untuk paginasi
+                        ->paginate(5, ['*'], 'return_page')
                         ->withQueryString();
                 } else {
-                    // Pesan ini akan ditampilkan di view jika $borrower tidak ditemukan
                 }
             } catch (\Exception $e) {
                 $errorMessage = "Terjadi kesalahan pada server: " . $e->getMessage();
@@ -581,7 +539,7 @@ class PeminjamanController extends Controller
         $returnHistory = DB::connection('mysql2')->table('statistics as s')
             ->select(
                 's.datetime',
-                's.type', 
+                's.type',
                 'i.barcode',
                 'b.title',
                 'b.author'

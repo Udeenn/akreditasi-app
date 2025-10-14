@@ -97,7 +97,6 @@ Route::get('/statistik/keterpakaian-koleksi', [PenggunaanController::class, 'ket
 
 Route::get('/statistik/keterpakaian-koleksi/detail', [PenggunaanController::class, 'getKeterpakaianDetail'])->name('statistik.keterpakaian_koleksi.detail');
 
-// Tambahkan ini di routes/web.php
 Route::get('/kunjungan/get-lokasi-detail', [VisitHistory::class, 'getLokasiDetail'])->name('kunjungan.get_lokasi_detail');
 
 Route::get('/reward/pemustaka-teraktif', [RewardController::class, 'pemustakaTeraktif'])->name('reward.pemustaka_teraktif');

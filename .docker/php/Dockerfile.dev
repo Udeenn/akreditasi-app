@@ -1,0 +1,47 @@
+# .docker/php/Dockerfile.dev
+
+# 1. Mulai dari image resmi PHP 8.2 FPM
+FROM php:8.3-fpm
+
+# 2. Set working directory di dalam container
+WORKDIR /var/www/html/datapustaka
+
+# 3. Install dependensi sistem dan ekstensi PHP yang umum untuk Laravel
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+    libzip-dev \
+    libpq-dev \
+    && docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip
+
+# 4. Install Composer (dependency manager untuk PHP)
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+RUN git config --global --add safe.directory /var/www/html/datapustaka
+
+# 5. Set user agar tidak running sebagai root
+RUN groupadd -g 1000 www
+RUN useradd -u 1000 -ms /bin/bash -g www www
+USER www
+
+# 6. Expose port 9000 untuk PHP-FPM
+EXPOSE 9000
+CMD ["php-fpm"]
+
+
+#Jalankan Docker Compose
+#docker-compose up -d --build
+
+# Install Dependensi Composer
+#docker-compose exec app composer install
+
+# Generate key aplikasi
+#docker-compose exec app php artisan key:generate
+
+# Jalankan migrasi database
+#docker-compose exec app php artisan migrate

@@ -28,9 +28,6 @@ class PenggunaanController extends Controller
         $kategoriPopuler = ['nama' => 'N/A', 'jumlah' => 0];
         $maxJumlah = 0;
 
-        // PERUBAHAN: Kondisi 'if ($request->has('filter_type'))' dihapus dari sini
-        // agar query selalu berjalan.
-
         try {
             $query = DB::connection('mysql2')->table('statistics')
                 ->select(
@@ -78,7 +75,6 @@ class PenggunaanController extends Controller
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
 
-        // Variabel $request sekarang tidak digunakan di sini, bisa dihapus jika mau
         return view('pages.penggunaan.keterpakaian', compact(
             'dataTabel',
             'listKategori',
@@ -153,7 +149,7 @@ class PenggunaanController extends Controller
                 DB::raw('COUNT(*) as jumlah')
             )
             ->whereIn('type', ['issue', 'return', 'localuse'])
-            ->whereNotNull('ccode')      // <-- TAMBAHKAN INI
+            ->whereNotNull('ccode')
             ->where('ccode', '!=', '');
         if ($filterType == 'daily') {
             $query->addSelect(DB::raw('DATE(datetime) as periode'))
@@ -200,7 +196,6 @@ class PenggunaanController extends Controller
         $callback = function () use ($dataTabel, $listKategori, $filterType) {
             $file = fopen('php://output', 'w');
 
-            // Tambahan: Untuk memastikan kompatibilitas encoding di Excel
             fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
             // Header

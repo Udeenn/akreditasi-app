@@ -1,6 +1,4 @@
-# Dockerfile
 
-# Gunakan base image PHP 8.1 dengan FPM (sesuaikan versi jika perlu)
 FROM php:8.1-fpm-alpine
 
 # Set working directory

@@ -27,23 +27,32 @@
                         <label for="filter_type" class="form-label">Tampilkan per:</label>
                         <select name="filter_type" id="filter_type" class="form-select">
                             <option value="yearly" {{ $filterType == 'yearly' ? 'selected' : '' }}>Tahun</option>
-                            <option value="monthly" {{ $filterType == 'monthly' ? 'selected' : '' }}>Bulan (Rentang)
+                            <option value="monthly" {{ $filterType == 'monthly' ? 'selected' : '' }}>Rentang Bulan
                             </option>
                             <option value="date_range" {{ $filterType == 'date_range' ? 'selected' : '' }}>Rentang Hari
                             </option>
                         </select>
                     </div>
-
                     <div class="col-md-4 filter-input" id="yearlyFilter" style="display: none;">
-                        <label class="form-label">Pilih Tahun:</label>
-                        <select name="year" class="form-select">
-                            @for ($y = date('Y'); $y >= date('Y') - 10; $y--)
-                                <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>
-                                    {{ $y }}</option>
-                            @endfor
-                        </select>
+                        <label class="form-label">Rentang Tahun:</label>
+                        <div class="input-group">
+                            <select name="start_year" class="form-select">
+                                @for ($y = date('Y'); $y >= date('Y') - 10; $y--)
+                                    <option value="{{ $y }}" {{ $startYear == $y ? 'selected' : '' }}>
+                                        {{ $y }}
+                                    </option>
+                                @endfor
+                            </select>
+                            <span class="input-group-text">s/d</span>
+                            <select name="end_year" class="form-select">
+                                @for ($y = date('Y'); $y >= date('Y') - 10; $y--)
+                                    <option value="{{ $y }}" {{ $endYear == $y ? 'selected' : '' }}>
+                                        {{ $y }}
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
                     </div>
-
                     {{-- INPUT FILTER BULANAN (RANGE) --}}
                     <div class="col-md-4 filter-input" id="monthlyFilter" style="display: none;">
                         <label class="form-label">Rentang Bulan:</label>
@@ -63,7 +72,6 @@
                         </div>
                     </div>
 
-                    {{-- INPUT FILTER LOKASI --}}
                     <div class="col-md-3">
                         <label for="lokasi" class="form-label">Lokasi Kunjungan:</label>
                         <select name="lokasi" id="lokasi" class="form-select">
@@ -107,7 +115,6 @@
                             </div>
                             <div class="flex-grow-1">
                                 <h6 class="text-muted mb-2">Lokasi Terpopuler</h6>
-
                                 @if ($topLokasi->isEmpty())
                                     <span class="text-muted fst-italic">Data lokasi tidak tersedia</span>
                                 @else
@@ -125,7 +132,6 @@
                                                         <i class="fas fa-medal me-2" style="color: #CD7F32;"></i>
                                                         {{-- Perunggu --}}
                                                     @endif
-
                                                     {{ $lokasiMapping[$lokasi] ?? $lokasi }}
                                                 </span>
                                                 <span
@@ -237,10 +243,15 @@
         if (Object.keys(chartData).length > 0) {
             const ctx = document.getElementById('kunjunganChart').getContext('2d');
             const labels = Object.keys(chartData).map(periode => {
-                let format = 'MMM YYYY'; // Default untuk bulanan & tahunan
-                if (filterType === 'daily') format = 'D MMM YYYY';
+                let format = 'MMM YYYY'; // Default untuk bulanan
+                // Jika filter adalah rentang tanggal, ubah format label menjadi harian
+                if (filterType === 'date_range') {
+                    format = 'D MMM YYYY';
+                }
                 // Khusus untuk tahunan, format hanya nama bulan
-                if (filterType === 'yearly') return moment(periode).format('MMMM');
+                if (filterType === 'yearly') {
+                    return moment(periode).format('MMMM');
+                }
 
                 return moment(periode).format(format);
             });
