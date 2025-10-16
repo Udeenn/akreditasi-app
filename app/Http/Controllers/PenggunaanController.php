@@ -173,7 +173,7 @@ class PenggunaanController extends Controller
             return $row;
         })->values();
 
-        // Logika untuk membuat file CSV dan men-downloadnya
+        
         $fileName = 'keterpakaian_koleksi_';
         if ($filterType == 'daily') {
             $start = Carbon::parse($request->input('start_date'))->format('Ymd');

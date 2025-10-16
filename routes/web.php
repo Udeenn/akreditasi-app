@@ -16,7 +16,7 @@ use App\Http\Controllers\PenggunaanController;
 use App\Http\Controllers\RewardController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\VisitHistory;
-
+use Illuminate\Support\Facades\Artisan;
 
 Route::get('/', [DashboardController::class, 'totalStatistik'])->name('dashboard');
 
@@ -107,5 +107,9 @@ Route::get('/reward/peminjam-teraktif/export-csv', [RewardController::class, 'ex
 Route::get('/cek-histori-buku', [PenggunaanController::class, 'cekBuku'])->name('penggunaan.cek_histori');
 Route::get('/statistik/sering-dibaca', [PenggunaanController::class, 'seringDibaca'])->name('penggunaan.sering_dibaca');
 
+Route::get('/clear-cache', function () {
+    Artisan::call('cache:clear');
+    dd('clear');
+});
 
 require __DIR__ . '/auth.php';

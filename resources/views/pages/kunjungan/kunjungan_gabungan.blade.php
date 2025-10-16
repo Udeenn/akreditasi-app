@@ -224,7 +224,7 @@
         }
         if (filterTypeSelect) {
             filterTypeSelect.addEventListener('change', handleFilterChange);
-            handleFilterChange(); // Panggil saat halaman dimuat
+            handleFilterChange();
         }
 
         // 2. Logika untuk Export CSV
@@ -243,12 +243,10 @@
         if (Object.keys(chartData).length > 0) {
             const ctx = document.getElementById('kunjunganChart').getContext('2d');
             const labels = Object.keys(chartData).map(periode => {
-                let format = 'MMM YYYY'; // Default untuk bulanan
-                // Jika filter adalah rentang tanggal, ubah format label menjadi harian
+                let format = 'MMM YYYY';
                 if (filterType === 'date_range') {
                     format = 'D MMM YYYY';
                 }
-                // Khusus untuk tahunan, format hanya nama bulan
                 if (filterType === 'yearly') {
                     return moment(periode).format('MMMM');
                 }
