@@ -855,7 +855,7 @@ class StatistikKoleksi extends Controller
             $prodiMapping = $listprodi->pluck('lib', 'authorised_value')->toArray();
             $namaProdi = $prodiMapping[$prodi] ?? 'Tidak Ditemukan';
 
-            $periodicalTypes = ['JR', 'JRA', 'MJA', 'MJI', 'MJIP', 'MJP'];
+            $periodicalTypes = ['MJA', 'MJI', 'MJIP', 'MJP'];
 
             // Query utama untuk rekapitulasi data periodikal
             $query = M_items::select(
