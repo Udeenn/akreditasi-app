@@ -1,9 +1,49 @@
 @extends('layouts.app')
 @section('title', 'Statistik Koleksi Text Book')
+@push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 
+    <style>
+        html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection {
+            background-color: #2b3035;
+            border: 1px solid #495057;
+        }
+
+        html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+            color: #dee2e6;
+        }
+
+        html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow b {
+            border-color: #adb5bd transparent transparent transparent;
+        }
+
+        html[data-bs-theme="dark"] .select2-dropdown {
+            background-color: #2b3035;
+            border: 1px solid #495057;
+        }
+
+        html[data-bs-theme="dark"] .select2-search--dropdown .select2-search__field {
+            background-color: #212529;
+            color: #dee2e6;
+            border: 1px solid #495057;
+        }
+
+        html[data-bs-theme="dark"] .select2-results__option {
+            color: #dee2e6;
+        }
+
+        html[data-bs-theme="dark"] .select2-results__option--highlighted {
+            background-color: #0d6efd;
+            color: white;
+        }
+    </style>
+@endpush
 @section('content')
     <div class="container">
-        <h4>Statistik Koleksi Text Book @if ($prodi && $prodi !== 'all')
+        <h4>Statistik Koleksi Text Book
+            @if ($prodi && $prodi !== 'all')
                 - {{ $namaProdi }}
             @elseif ($prodi === 'all')
                 - Semua Program Studi
@@ -16,7 +56,8 @@
                 <select name="prodi" id="prodi" class="form-select">
                     @foreach ($listprodi as $p)
                         <option value="{{ $p->authorised_value }}" {{ $prodi == $p->authorised_value ? 'selected' : '' }}>
-                            {{ $p->lib }} ({{ $p->authorised_value }})
+                            ({{ $p->authorised_value }})
+                            - {{ $p->lib }}
                         </option>
                     @endforeach
                 </select>
@@ -36,12 +77,6 @@
                 <button type="submit" class="btn btn-primary w-100">Tampilkan</button>
             </div>
         </form>
-
-        {{-- Input Search Langsung untuk DataTables --}}
-        <div class="mb-3">
-            <input type="text" class="form-control" id="searchInput" placeholder="Cari judul, pengarang, penerbit...">
-        </div>
-
         <div class="card shadow mb-4">
             <div class="card-body">
                 <div class="row">
@@ -129,75 +164,76 @@
             </div>
         </div>
     </div>
+@endsection
 
-    @push('scripts')
-        {{-- Memuat DataTables CSS dan JS --}}
-        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
-        <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-        <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
-        <script>
-            $(document).ready(function() {
-                // Inisialisasi DataTables jika tabel ada
+@push('scripts')
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Cek jika tabel ada di halaman
+            $('#prodi').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Ketik untuk mencari prodi...'
+            });
+            $('#prodi').on('select2:open', function() {
+                if ($('body').hasClass('dark-mode')) {
+                    setTimeout(function() {
+                        $('.select2-dropdown').addClass('select2-dark-theme');
+                    }, 0);
+                }
+            });
+            if ($('#myTableTextbook').length) {
+
                 var table = $('#myTableTextbook').DataTable({
                     "language": {
                         "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json",
                     },
-                    "paging": true, // Aktifkan paginasi
-                    "lengthChange": true, // Aktifkan pilihan jumlah item per halaman
-                    "searching": true, // Aktifkan fitur pencarian bawaan DataTables
-                    "ordering": true, // Aktifkan pengurutan kolom
-                    "info": true, // Tampilkan informasi "Showing X to Y of Z entries"
-                    "autoWidth": false, // Nonaktifkan penyesuaian lebar kolom otomatis
+                    "paging": true,
+                    "lengthChange": true,
+                    "searching": true,
+                    "ordering": true,
+                    "info": true,
+                    "autoWidth": false,
+                    "responsive": true,
+                    "dom": '<"d-flex justify-content-between mb-3"lp>rt<"d-flex justify-content-between mt-3"ip>',
                     "columnDefs": [{
-                            "orderable": false,
-                            "targets": [0]
-                        }, // Kolom 'No' (index 0) tidak bisa diurutkan
-                        {
-                            "targets": 0, // Kolom 'No'
-                            "render": function(data, type, row, meta) {
-                                return meta.row + 1; // Menomori baris secara otomatis oleh DataTables
-                            }
-                        }
+                        "searchable": false,
+                        "orderable": false,
+                        "targets": 0
+                    }],
+                    "order": [
+                        [1, 'asc']
                     ],
-                    "lengthMenu": [
-                        [10, 25, 50, 100, -1],
-                        [10, 25, 50, 100, "Semua"]
-                    ],
-                    "pageLength": 10,
-                    // "dom": 'lrtip'
-                    // "dom": '<"top"lp>t<"bottom"ip>'
-                    "dom": '<"d-flex justify-content-between mb-3"lp>t<"d-flex justify-content-between mt-3"ip>',
-                    // "infoCallback": function(settings, start, end, max, total, pre) {
-                    //     // Gunakan Intl.NumberFormat untuk memformat angka total
-                    //     let formatter = new Intl.NumberFormat(
-                    //         'id-ID'); // 'id-ID' untuk format Indonesia (titik sebagai pemisah ribuan)
-                    //     let formattedTotal = formatter.format(total);
-                    //     let formattedStart = formatter.format(start);
-                    //     let formattedEnd = formatter.format(end);
+                    "fnDrawCallback": function(oSettings) {
+                        this.api().column(0, {
+                            search: 'applied',
+                            order: 'applied'
+                        }).nodes().each(function(cell, i) {
+                            cell.innerHTML = i + 1;
+                        });
+                    }
+                });
 
-                    //     // Sesuaikan string sesuai dengan format DataTables default (atau sesuaikan jika kamu punya teks sendiri)
-                    //     return `Menampilkan ${formattedStart} sampai ${formattedEnd} dari ${formattedTotal} entri`;
-                    // },
-                    // "dom": 'lrtip' // Menghilangkan input search bawaan DataTables
+                $('#searchInput').on('keyup change', function() {
+                    table.search(this.value).draw();
                 });
 
                 function updateCustomInfo() {
                     var pageInfo = table.page.info();
                     let formatter = new Intl.NumberFormat('id-ID');
-                    let formattedTotal = formatter.format(pageInfo.recordsTotal);
-                    let infoText = `${formattedTotal}`;
-                    $('#customInfoJurnal').html(infoText);
+                    let formattedTotal = formatter.format(pageInfo
+                        .recordsDisplay);
+                    $('#customInfoJurnal').html(formattedTotal);
                 }
-                // Update info saat tabel di-draw
-                table.on('draw', updateCustomInfo);
-                // Inisialisasi info pertama kali
-                updateCustomInfo();
 
-                // Sinkronkan input search kustom dengan pencarian DataTables
-                $('#searchInput').on('keyup change', function() {
-                    table.search(this.value).draw();
-                });
-            });
-        </script>
-    @endpush
-@endsection
+                table.on('draw', updateCustomInfo);
+
+                updateCustomInfo();
+            }
+        });
+    </script>
+@endpush

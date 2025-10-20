@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\M_biblio;
 use App\Models\M_eprodi;
 use App\Models\M_items;
+use App\Models\M_viscorner;
 use App\Models\M_vishistory;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -18,8 +19,15 @@ class DashboardController extends Controller
         $totalJurnal = 100;
         // $totalKunjungan = M_vishistory::where;
 
-        $kunjunganHarian = M_vishistory::whereDate('visittime', Carbon::today())->count();
+        // $kunjunganHarian = M_vishistory::whereDate('visittime', Carbon::today())->count();
 
+        $historyCount = M_vishistory::whereDate('visittime', Carbon::today())->count();
+
+        // Count visits from the corner table for today
+        $cornerCount = M_viscorner::whereDate('visittime', Carbon::today())->count();
+
+        // Add the two counts together for the total
+        $kunjunganHarian = $historyCount + $cornerCount;
 
         // https://koha.lib.ums.ac.id/cgi-bin/koha/reports/guided_reports.pl?reports=577&phase=Run%20this%20report#
 

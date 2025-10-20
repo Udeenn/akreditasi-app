@@ -2,6 +2,46 @@
 
 @section('title', 'Statistik Koleksi Jurnal')
 @section('content')
+    @push('styles')
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <link rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+
+        <style>
+            html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection {
+                background-color: #2b3035;
+                border: 1px solid #495057;
+            }
+
+            html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+                color: #dee2e6;
+            }
+
+            html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow b {
+                border-color: #adb5bd transparent transparent transparent;
+            }
+
+            html[data-bs-theme="dark"] .select2-dropdown {
+                background-color: #2b3035;
+                border: 1px solid #495057;
+            }
+
+            html[data-bs-theme="dark"] .select2-search--dropdown .select2-search__field {
+                background-color: #212529;
+                color: #dee2e6;
+                border: 1px solid #495057;
+            }
+
+            html[data-bs-theme="dark"] .select2-results__option {
+                color: #dee2e6;
+            }
+
+            html[data-bs-theme="dark"] .select2-results__option--highlighted {
+                background-color: #0d6efd;
+                color: white;
+            }
+        </style>
+    @endpush
     <div class="container">
         <h4>Statistik Koleksi Jurnal @if ($prodi && $prodi !== 'all')
                 - {{ $namaProdi }}
@@ -9,13 +49,15 @@
                 - Semua Program Studi
             @endif
         </h4>
-        <form method="GET" action="{{ route('koleksi.jurnal') }}" class="row g-3 mb-4 align-items-end" id="filterFormJurnal">
+        <form method="GET" action="{{ route('koleksi.jurnal') }}" class="row g-3 mb-4 align-items-end"
+            id="filterFormJurnal">
             <div class="col-md-4">
                 <label for="prodi" class="form-label">Pilih Prodi</label>
                 <select name="prodi" id="prodi" class="form-select">
                     @foreach ($listprodi as $p)
                         <option value="{{ $p->authorised_value }}" {{ $prodi == $p->authorised_value ? 'selected' : '' }}>
-                            {{ $p->lib }} ({{ $p->authorised_value }})
+                            ({{ $p->authorised_value }})
+                            - {{ $p->lib }}
                         </option>
                     @endforeach
                 </select>
@@ -24,7 +66,6 @@
                 <label for="tahun" class="form-label">Tahun Terbit</label>
                 <select name="tahun" id="tahun" class="form-select">
                     <option value="all" {{ $tahunTerakhir == 'all' ? 'selected' : '' }}>Semua Tahun</option>
-                    {{-- Opsi tahun terakhir bisa disesuaikan jika diperlukan --}}
                     @for ($i = 0; $i <= 10; $i++)
                         <option value="{{ $i }}" {{ $tahunTerakhir == $i ? 'selected' : '' }}>
                             {{ $i }} Tahun Terakhir
@@ -36,13 +77,12 @@
                 <button type="submit" class="btn btn-primary w-100">Tampilkan</button>
             </div>
         </form>
-
-        <div class="mb-3">
-            <input type="text" class="form-control" id="searchInput" placeholder="Cari judul, penerbit, atau nomor...">
-        </div>
-
         <div class="card shadow mb-4">
             <div class="card-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="searchInput"
+                        placeholder="Cari judul, penerbit, atau nomor...">
+                </div>
                 <div class="row">
                     <div class="col-md-4">
                         <div class="alert alert-info py-2">
@@ -83,11 +123,10 @@
                     @if ($prodi && $prodi !== 'initial' && $data->isNotEmpty())
                         <div class="table-responsive">
                             <table class="table table-bordered table-hover table-striped" id="myTableJurnal">
-                                {{-- ================== PERUBAHAN BAGIAN HEADER TABEL ================== --}}
                                 <thead>
                                     <tr>
                                         <th>No</th>
-                                        <th>Kelas</th>
+                                        {{-- <th>Kelas</th> --}}
                                         <th>Judul</th>
                                         <th>Penerbit</th>
                                         <th>Nomor</th>
@@ -98,12 +137,11 @@
                                         <th>Lokasi</th>
                                     </tr>
                                 </thead>
-                                {{-- ================== PERUBAHAN BAGIAN BODY TABEL ================== --}}
                                 <tbody>
                                     @foreach ($data as $row)
                                         <tr>
-                                            <td></td> {{-- Kolom ini akan diisi oleh DataTables --}}
-                                            <td>{{ $row->Kelas }}</td>
+                                            <td></td>
+                                            {{-- <td>{{ $row->Kelas }}</td> --}}
                                             <td>{{ $row->Judul }}</td>
                                             <td>{{ $row->Penerbit }}</td>
                                             <td>{{ $row->Nomor }}</td>
@@ -133,13 +171,25 @@
         </div>
     </div>
 
-    {{-- Script DataTables tidak perlu diubah, sudah bagus --}}
     @push('scripts')
-        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
-        <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-        <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <script>
             $(document).ready(function() {
+                // Cek jika tabel ada di halaman
+                $('#prodi').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'Ketik untuk mencari prodi...'
+                });
+                $('#prodi').on('select2:open', function() {
+                    if ($('body').hasClass('dark-mode')) {
+                        setTimeout(function() {
+                            $('.select2-dropdown').addClass('select2-dark-theme');
+                        }, 0);
+                    }
+                });
                 var table = $('#myTableJurnal').DataTable({
                     "language": {
                         "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json"

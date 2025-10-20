@@ -1331,7 +1331,7 @@ class StatistikKoleksi extends Controller
             fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF)); // Untuk kompatibilitas Excel
 
             // Bagian judul file CSV, tidak ada perubahan
-            $judulProdi = 'Laporan Koleksi Jurnal - ' . ($namaProdi ?: 'Semua Program Studi');
+            $judulProdi = 'Daftar Koleksi Jurnal - ' . ($namaProdi ?: 'Semua Program Studi');
             $judulTahun = ($tahunTerakhir !== 'all') ? ('Tahun Terbit: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun Terbit';
             fputcsv($file, [$judulProdi . ' - ' . $judulTahun], ';');
             fputcsv($file, [''], ';'); // Baris kosong sebagai pemisah
@@ -1400,7 +1400,7 @@ class StatistikKoleksi extends Controller
             fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF));
 
             // Judul file CSV
-            $judulProdi = 'Laporan Koleksi Referensi - ' . ($namaProdi ?: 'Semua Program Studi');
+            $judulProdi = 'Daftar Koleksi Referensi - ' . ($namaProdi ?: 'Semua Program Studi');
             $judulTahun = ($tahunTerakhir !== 'all') ? ('Tahun Terbit: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun Terbit';
             fputcsv($file, [$judulProdi . ' - ' . $judulTahun], ';');
             fputcsv($file, [''], ';'); // Baris kosong
@@ -1466,8 +1466,8 @@ class StatistikKoleksi extends Controller
             $file = fopen('php://output', 'w');
             fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-            // --- PERBAIKAN 2: Judul laporan disamakan formatnya ---
-            $judulProdi = 'Laporan Koleksi Buku Teks - ' . ($namaProdi ?: 'Semua Program Studi');
+            // --- PERBAIKAN 2: Judul daftar disamakan formatnya ---
+            $judulProdi = 'Daftar Koleksi Buku Teks - ' . ($namaProdi ?: 'Semua Program Studi');
             $judulTahun = ($tahunTerakhir !== 'all') ? ('Tahun Terbit: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun Terbit';
             fputcsv($file, [$judulProdi . ' - ' . $judulTahun], ';');
             fputcsv($file, [''], ';'); // Baris kosong
@@ -1531,8 +1531,8 @@ class StatistikKoleksi extends Controller
             $file = fopen('php://output', 'w');
             fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-            // --- PERBAIKAN 2: Judul laporan disamakan formatnya ---
-            $judulProdi = 'Laporan Koleksi E-Book - ' . ($namaProdi ?: 'Semua Program Studi');
+            // --- PERBAIKAN 2: Judul daftar disamakan formatnya ---
+            $judulProdi = 'Daftar Koleksi E-Book - ' . ($namaProdi ?: 'Semua Program Studi');
             $judulTahun = ($tahunTerakhir !== 'all') ? ('Tahun Terbit: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun Terbit';
             fputcsv($file, [$judulProdi . ' - ' . $judulTahun], ';');
             fputcsv($file, [''], ';'); // Baris kosong
@@ -1599,8 +1599,8 @@ class StatistikKoleksi extends Controller
             $file = fopen('php://output', 'w');
             fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-            // Penyesuaian minor pada judul laporan
-            $judulProdi = 'Laporan Koleksi Prosiding - ' . ($namaProdi ?: 'Semua Program Studi');
+            // Penyesuaian minor pada judul daftar
+            $judulProdi = 'Daftar Koleksi Prosiding - ' . ($namaProdi ?: 'Semua Program Studi');
             $judulTahun = ($tahunTerakhir !== 'all') ? ('Tahun Terbit: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun Terbit';
             fputcsv($file, [$judulProdi . ' - ' . $judulTahun], ';');
             fputcsv($file, [''], ';'); // Baris kosong
@@ -1670,8 +1670,8 @@ class StatistikKoleksi extends Controller
             $file = fopen('php://output', 'w');
             fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-            // Penyesuaian minor pada judul laporan
-            $judulProdi = 'Laporan Koleksi Periodikal - ' . ($namaProdi ?: 'Semua Program Studi');
+            // Penyesuaian minor pada judul daftar
+            $judulProdi = 'Daftar Koleksi Periodikal - ' . ($namaProdi ?: 'Semua Program Studi');
             $judulTahun = ($tahunTerakhir !== 'all') ? ('Tahun Terbit: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun Terbit';
             fputcsv($file, [$judulProdi . ' - ' . $judulTahun], ';');
             fputcsv($file, [''], ';'); // Baris kosong

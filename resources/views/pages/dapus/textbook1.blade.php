@@ -1,64 +1,22 @@
 @extends('layouts.app')
-@section('title', 'Statistik Koleksi Prosiding')
+@section('title', 'Statistik Koleksi Text Book')
 
 @section('content')
-    @push('styles')
-        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-        <link rel="stylesheet"
-            href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
-
-        <style>
-            html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection {
-                background-color: #2b3035;
-                border: 1px solid #495057;
-            }
-
-            html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
-                color: #dee2e6;
-            }
-
-            html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow b {
-                border-color: #adb5bd transparent transparent transparent;
-            }
-
-            html[data-bs-theme="dark"] .select2-dropdown {
-                background-color: #2b3035;
-                border: 1px solid #495057;
-            }
-
-            html[data-bs-theme="dark"] .select2-search--dropdown .select2-search__field {
-                background-color: #212529;
-                color: #dee2e6;
-                border: 1px solid #495057;
-            }
-
-            html[data-bs-theme="dark"] .select2-results__option {
-                color: #dee2e6;
-            }
-
-            html[data-bs-theme="dark"] .select2-results__option--highlighted {
-                background-color: #0d6efd;
-                color: white;
-            }
-        </style>
-    @endpush
     <div class="container">
-        <h4>Statistik Koleksi Prosiding @if ($prodi && $prodi !== 'all')
+        <h4>Statistik Koleksi Text Book @if ($prodi && $prodi !== 'all')
                 - {{ $namaProdi }}
             @elseif ($prodi === 'all')
                 - Semua Program Studi
             @endif
         </h4>
-
-        <form method="GET" action="{{ route('koleksi.prosiding') }}" class="row g-3 mb-4 align-items-end"
-            id="filterFormProsiding">
+        <form method="GET" action="{{ route('koleksi.textbook') }}" class="row g-3 mb-4 align-items-end"
+            id="filterFormTextbook">
             <div class="col-md-4">
                 <label for="prodi" class="form-label">Pilih Prodi</label>
                 <select name="prodi" id="prodi" class="form-select">
                     @foreach ($listprodi as $p)
                         <option value="{{ $p->authorised_value }}" {{ $prodi == $p->authorised_value ? 'selected' : '' }}>
-                            ({{ $p->authorised_value }})
-                            - {{ $p->lib }}
+                            {{ $p->lib }} ({{ $p->authorised_value }})
                         </option>
                     @endforeach
                 </select>
@@ -81,7 +39,7 @@
 
         {{-- Input Search Langsung untuk DataTables --}}
         <div class="mb-3">
-            <input type="text" class="form-control" id="searchInput" placeholder="Cari judul, penerbit, nomor...">
+            <input type="text" class="form-control" id="searchInput" placeholder="Cari judul, pengarang, penerbit...">
         </div>
 
         <div class="card shadow mb-4">
@@ -109,7 +67,7 @@
                 @if ($prodi && $prodi !== 'initial' && $dataExists)
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-primary">
-                            Daftar Koleksi Prosiding @if ($namaProdi && $prodi !== 'all')
+                            Daftar Koleksi Text Book @if ($namaProdi && $prodi !== 'all')
                                 ({{ $namaProdi }})
                             @elseif ($prodi === 'all')
                                 (Semua Program Studi)
@@ -118,60 +76,42 @@
                                 - {{ $tahunTerakhir }} Tahun Terakhir
                             @endif
                         </h6>
-                        <button type="submit" form="filterFormProsiding" name="export_csv" value="1"
+                        <button type="submit" form="filterFormTextbook" name="export_csv" value="1"
                             class="btn btn-success btn-sm"><i class="fas fa-file-csv"></i> Export CSV</button>
                     </div>
                 @endif
                 <div class="card-body">
                     @if ($prodi && $prodi !== 'initial' && $data->isNotEmpty())
                         <div class="table-responsive">
-                            <table class="table table-bordered table-hover table-striped" id="myTableProsiding">
+                            <table class="table table-bordered table-hover table-striped" id="myTableTextbook">
                                 <thead>
                                     <tr>
-                                        <th>No</th> {{-- Tambah kolom No untuk DataTables --}}
-                                        <th>Kelas</th>
+                                        <th>No</th>
                                         <th>Judul</th>
-                                        <th>Author</th>
+                                        <th>Pengarang</th>
+                                        <th>Kota Terbit</th>
                                         <th>Penerbit</th>
                                         <th>Tahun Terbit</th>
-                                        {{-- <th>Nomor</th> --}}
-                                        {{-- <th>Issue</th> --}}
-                                        {{-- <th>Jumlah</th> --}}
+                                        <th>Eksemplar</th>
                                         <th>Lokasi</th>
-                                        {{-- <th>Link</th> --}}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($data as $index => $row)
+                                        {{-- Gunakan $index untuk nomor, atau biarkan DataTables yang generate --}}
                                         <tr>
-                                            <td>{{ $index + 1 }}</td>
-                                            <td>{{ $row->Kelas }}</td>
-                                            <td>
-                                                {!! $row->Judul_a !!}
-                                                @if (!empty($row->Judul_b))
-                                                    : {!! $row->Judul_b !!}
-                                                @endif
-
-                                            </td>
-
-                                            <td>{{ $row->Pengarang }}
-                                                @if (!empty($row->Judul_c))
-                                                    {{ $row->Judul_c }}
-                                                @endif
-                                            </td>
-
+                                            <td>{{ $index + 1 }}</td> {{-- Ini hanya akan menomori data per halaman Laravel, tidak ideal untuk DataTables --}}
+                                            <td>{{ $row->Judul }}</td>
+                                            <td>{{ $row->Pengarang }}</td>
+                                            <td>{{ $row->Kota_Terbit }}</td>
                                             <td>{{ $row->Penerbit }}</td>
-                                            <td>{{ $row->TahunTerbit }}</td>
-                                            {{-- <td>{{ $row->Nomor }}</td> --}}
-                                            {{-- <td>{{ $row->Issue }}</td> --}}
-                                            {{-- <td>{{ $row->Eksemplar }}</td> --}}
+                                            <td>{{ $row->Tahun_Terbit }}</td>
+                                            <td>{{ $row->Eksemplar }}</td>
                                             <td>{{ $row->Lokasi }}</td>
-                                            {{-- <td><a href="{{ $row->Link }}" target="_blank">Lihat</a></td> --}}
                                         </tr>
                                     @endforeach
                                 </tbody>
                             </table>
-
                         </div>
                         {{-- Pagination DataTables akan otomatis muncul di sini --}}
                     @elseif ($prodi && $prodi !== 'initial' && $data->isEmpty())
@@ -182,7 +122,7 @@
                         </div>
                     @else
                         <div class="alert alert-info text-center" role="alert">
-                            Silakan pilih program studi dan filter tahun untuk menampilkan data prosiding.
+                            Silakan pilih program studi dan filter tahun untuk menampilkan data Text Book.
                         </div>
                     @endif
                 </div>
@@ -191,26 +131,16 @@
     </div>
 
     @push('scripts')
-        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
-        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-        <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        {{-- Memuat DataTables CSS dan JS --}}
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
+        <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+        <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
         <script>
             $(document).ready(function() {
-                $('#prodi').select2({
-                    theme: 'bootstrap-5',
-                    placeholder: 'Ketik untuk mencari prodi...'
-                });
-                $('#prodi').on('select2:open', function() {
-                    if ($('body').hasClass('dark-mode')) {
-                        setTimeout(function() {
-                            $('.select2-dropdown').addClass('select2-dark-theme');
-                        }, 0);
-                    }
-                });
-                var table = $('#myTableProsiding').DataTable({
+                // Inisialisasi DataTables jika tabel ada
+                var table = $('#myTableTextbook').DataTable({
                     "language": {
-                        "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json" // Bahasa Indonesia
+                        "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json",
                     },
                     "paging": true, // Aktifkan paginasi
                     "lengthChange": true, // Aktifkan pilihan jumlah item per halaman
@@ -234,6 +164,8 @@
                         [10, 25, 50, 100, "Semua"]
                     ],
                     "pageLength": 10,
+                    // "dom": 'lrtip'
+                    // "dom": '<"top"lp>t<"bottom"ip>'
                     "dom": '<"d-flex justify-content-between mb-3"lp>t<"d-flex justify-content-between mt-3"ip>',
                     // "infoCallback": function(settings, start, end, max, total, pre) {
                     //     // Gunakan Intl.NumberFormat untuk memformat angka total
@@ -246,7 +178,7 @@
                     //     // Sesuaikan string sesuai dengan format DataTables default (atau sesuaikan jika kamu punya teks sendiri)
                     //     return `Menampilkan ${formattedStart} sampai ${formattedEnd} dari ${formattedTotal} entri`;
                     // },
-                    // "dom": 'Blfrtip' // Tampilkan semua kontrol DataTables
+                    // "dom": 'lrtip' // Menghilangkan input search bawaan DataTables
                 });
 
                 function updateCustomInfo() {

@@ -56,17 +56,17 @@
             </a>
             <div class="collapse {{ $isDaftarKoleksiActive ? 'show' : '' }}" id="daftarKoleksiCollapse">
                 <ul class="nav flex-column mt-1 sub-menu">
-                    {{-- Semua link koleksi di sini... --}}
+                    <li><a class="nav-link {{ request()->routeIs('koleksi.textbook') ? 'active' : '' }}"
+                            href="{{ route('koleksi.textbook') }}">Text Book</a></li>
                     <li><a class="nav-link {{ request()->routeIs('koleksi.jurnal') ? 'active' : '' }}"
                             href="{{ route('koleksi.jurnal') }}">Journal</a></li>
                     <li><a class="nav-link {{ request()->routeIs('koleksi.ebook') ? 'active' : '' }}"
                             href="{{ route('koleksi.ebook') }}">E-Book</a></li>
-                    <li><a class="nav-link {{ request()->routeIs('koleksi.textbook') ? 'active' : '' }}"
-                            href="{{ route('koleksi.textbook') }}">Text Book</a></li>
+
                     <li><a class="nav-link {{ request()->routeIs('koleksi.prosiding') ? 'active' : '' }}"
                             href="{{ route('koleksi.prosiding') }}">Prosiding</a></li>
-                    <li><a class="nav-link {{ request()->routeIs('koleksi.periodikal') ? 'active' : '' }}"
-                            href="{{ route('koleksi.periodikal') }}">Majalah</a></li>
+                    {{-- <li><a class="nav-link {{ request()->routeIs('koleksi.periodikal') ? 'active' : '' }}"
+                            href="{{ route('koleksi.periodikal') }}">Majalah</a></li> --}}
                     <li><a class="nav-link {{ request()->routeIs('koleksi.referensi') ? 'active' : '' }}"
                             href="{{ route('koleksi.referensi') }}">Referensi</a></li>
                 </ul>
@@ -93,7 +93,7 @@
                     <li><a class="nav-link {{ request()->routeIs('kunjungan.prodiTable') ? 'active' : '' }}"
                             href="{{ route('kunjungan.prodiTable') }}">Civitas Akademika</a></li>
                     <li><a class="nav-link {{ request()->routeIs('kunjungan.cekKehadiran') ? 'active' : '' }}"
-                            href="{{ route('kunjungan.cekKehadiran') }}">Cek Kehadiran</a></li>
+                            href="{{ route('kunjungan.cekKehadiran') }}">Cek Kunjungan</a></li>
                 </ul>
             </div>
         </li>
@@ -127,7 +127,7 @@
             <a class="nav-link {{ $isPenggunaanActive ? 'active' : '' }}" data-bs-toggle="collapse"
                 href="#penggunaanCollapse">
                 <i class="fas fa-barcode nav-icon"></i>
-                <span class="nav-text">Penggunaan Buku</span>
+                <span class="nav-text">Statistik Sirkulasi</span>
                 <i class="fas fa-chevron-down ms-auto nav-arrow-small"></i>
             </a>
             <div class="collapse {{ $isPenggunaanActive ? 'show' : '' }}" id="penggunaanCollapse">
@@ -147,7 +147,7 @@
 
         {{-- Reward --}}
         @php $isRewardActive = request()->routeIs(['reward.*']); @endphp
-        <li class="nav-item">
+        {{-- <li class="nav-item">
             <a class="nav-link {{ $isRewardActive ? 'active' : '' }}" data-bs-toggle="collapse" href="#rewardCollapse">
                 <i class="fas fa-gift nav-icon"></i>
                 <span class="nav-text">Reward</span>
@@ -159,6 +159,13 @@
                             href="{{ route('reward.pemustaka_teraktif') }}">Pemustaka Teraktif</a></li>
                 </ul>
             </div>
+        </li> --}}
+        <li class="nav-item">
+            <a class="nav-link {{ request()->is('reward.pemustaka_teraktif') ? 'active' : '' }}"
+                href="{{ route('reward.pemustaka_teraktif') }}">
+                <i class="fas fa-gift nav-icon"></i>
+                <span class="nav-text">Pemustaka Teraktif</span>
+            </a>
         </li>
     </ul>
 

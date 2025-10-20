@@ -2,6 +2,46 @@
 @section('title', 'Statistik Koleksi Referensi')
 
 @section('content')
+    @push('styles')
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <link rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+
+        <style>
+            html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection {
+                background-color: #2b3035;
+                border: 1px solid #495057;
+            }
+
+            html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+                color: #dee2e6;
+            }
+
+            html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow b {
+                border-color: #adb5bd transparent transparent transparent;
+            }
+
+            html[data-bs-theme="dark"] .select2-dropdown {
+                background-color: #2b3035;
+                border: 1px solid #495057;
+            }
+
+            html[data-bs-theme="dark"] .select2-search--dropdown .select2-search__field {
+                background-color: #212529;
+                color: #dee2e6;
+                border: 1px solid #495057;
+            }
+
+            html[data-bs-theme="dark"] .select2-results__option {
+                color: #dee2e6;
+            }
+
+            html[data-bs-theme="dark"] .select2-results__option--highlighted {
+                background-color: #0d6efd;
+                color: white;
+            }
+        </style>
+    @endpush
     <div class="container">
         <h4>Statistik Koleksi Referensi @if ($prodi && $prodi !== 'all')
                 - {{ $namaProdi }}
@@ -16,7 +56,8 @@
                 <select name="prodi" id="prodi" class="form-select">
                     @foreach ($listprodi as $p)
                         <option value="{{ $p->authorised_value }}" {{ $prodi == $p->authorised_value ? 'selected' : '' }}>
-                            {{ $p->lib }} ({{ $p->authorised_value }})
+                            ({{ $p->authorised_value }})
+                            - {{ $p->lib }}
                         </option>
                     @endforeach
                 </select>
@@ -25,7 +66,7 @@
                 <label for="tahun" class="form-label">Tahun Terbit</label>
                 <select name="tahun" id="tahun" class="form-select">
                     <option value="all" {{ $tahunTerakhir == 'all' ? 'selected' : '' }}>Semua Tahun</option>
-                    @for ($i = 1; $i <= 10; $i++)
+                    @for ($i = 0; $i <= 10; $i++)
                         <option value="{{ $i }}" {{ $tahunTerakhir == $i ? 'selected' : '' }}>
                             {{ $i }} Tahun Terakhir
                         </option>
@@ -131,12 +172,23 @@
     </div>
 
     @push('scripts')
-        {{-- Memuat DataTables CSS dan JS --}}
-        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
-        <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-        <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <script>
             $(document).ready(function() {
+                $('#prodi').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'Ketik untuk mencari prodi...'
+                });
+                $('#prodi').on('select2:open', function() {
+                    if ($('body').hasClass('dark-mode')) {
+                        setTimeout(function() {
+                            $('.select2-dropdown').addClass('select2-dark-theme');
+                        }, 0);
+                    }
+                });
                 // Inisialisasi DataTables jika tabel ada
                 var table = $('#myTableReferensi').DataTable({
                     "language": {
