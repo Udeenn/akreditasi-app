@@ -79,13 +79,11 @@
             </div>
         </form>
 
-        {{-- Input Search Langsung untuk DataTables --}}
-        <div class="mb-3">
-            <input type="text" class="form-control" id="searchInput" placeholder="Cari judul, penerbit, nomor...">
-        </div>
-
         <div class="card shadow mb-4">
             <div class="card-body">
+                <div class="mb-3">
+            <input type="text" class="form-control" id="searchInput" placeholder="Cari judul, penerbit, nomor...">
+        </div>
                 <div class="row">
                     <div class="col-md-4">
                         <div class="alert alert-info py-2">
@@ -128,10 +126,10 @@
                             <table class="table table-bordered table-hover table-striped" id="myTableProsiding">
                                 <thead>
                                     <tr>
-                                        <th>No</th> {{-- Tambah kolom No untuk DataTables --}}
-                                        <th>Kelas</th>
+                                        <th>No</th>
+                                        {{-- <th>Kelas</th> --}}
                                         <th>Judul</th>
-                                        <th>Author</th>
+                                        <th>Pengarang</th>
                                         <th>Penerbit</th>
                                         <th>Tahun Terbit</th>
                                         {{-- <th>Nomor</th> --}}
@@ -145,7 +143,7 @@
                                     @foreach ($data as $index => $row)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
-                                            <td>{{ $row->Kelas }}</td>
+                                            {{-- <td>{{ $row->Kelas }}</td> --}}
                                             <td>
                                                 {!! $row->Judul_a !!}
                                                 @if (!empty($row->Judul_b))
@@ -173,7 +171,7 @@
                             </table>
 
                         </div>
-                        {{-- Pagination DataTables akan otomatis muncul di sini --}}
+
                     @elseif ($prodi && $prodi !== 'initial' && $data->isEmpty())
                         <div class="alert alert-info text-center" role="alert">
                             Data tidak ditemukan untuk program studi ini @if ($tahunTerakhir !== 'all')

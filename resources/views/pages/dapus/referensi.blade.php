@@ -130,8 +130,8 @@
                                         <th>No</th>
                                         <th>Judul</th>
                                         <th>Pengarang</th>
-                                        <th>Penerbit</th>
                                         <th>Kota Terbit</th>
+                                        <th>Penerbit</th>
                                         <th>Tahun Terbit</th>
                                         {{-- Kolom 'Kelas' dihapus di sini --}}
                                         <th>Eksemplar</th>
@@ -144,8 +144,8 @@
                                             <td></td> {{-- Kolom ini akan diisi oleh DataTables --}}
                                             <td>{{ $row->Judul }}</td>
                                             <td>{{ $row->Pengarang }}</td>
-                                            <td>{{ $row->Penerbit }}</td>
                                             <td>{{ $row->Kota_Terbit }}</td>
+                                            <td>{{ $row->Penerbit }}</td>
                                             <td>{{ $row->Tahun_Terbit }}</td>
                                             {{-- $row->Kelas tidak dipanggil lagi di sini --}}
                                             <td>{{ $row->Eksemplar }}</td>

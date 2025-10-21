@@ -100,7 +100,7 @@
         @endphp
         <div class="col-lg-6 col-md-6 mb-4">
             <div class="card shadow-sm border-0 h-100 pb-3">
-                <div class="card-header border-0 pt-3">
+                <div class=" border-0 py-3">
                     <h5 class="mb-0 d-flex justify-content-center align-items-center">
                         <i class="fa-solid fa-globe fa-2x me-2" style="color: #8914d7;"></i>
                         <span>Kunjungan Online Bulanan (Website)</span>
@@ -111,7 +111,7 @@
                         <tbody>
                             @foreach ($kunjunganWebsite as $bulan => $jumlah)
                                 <tr>
-                                    <td class="text-muted">{{ $bulan }}</td>
+                                    <td class="text-muted">{{ $bulan }} {{ date('Y') }}</td>
                                     <td class="text-end fw-bold">{{ number_format($jumlah) }}</td>
                                 </tr>
                             @endforeach
@@ -137,14 +137,14 @@
                 'Juli' => 8239,
                 'Agustus' => 9452,
                 'September' => 10623,
-                'Oktober' => 0, // Ganti '' menjadi 0
-                'November' => 0, // Ganti '' menjadi 0
-                'Desember' => 0, // Ganti '' menjadi 0
+                'Oktober' => 0,
+                'November' => 0,
+                'Desember' => 0,
             ];
         @endphp
         <div class="col-lg-6 col-md-6 mb-4">
             <div class="card shadow-sm border-0 h-100 pb-3">
-                <div class="card-header border-0 pt-3">
+                <div class=" border-0 py-3">
                     <h5 class="mb-0 d-flex justify-content-center align-items-center">
                         <i class="fa-solid fa-globe fa-2x me-2" style="color: #04833b;"></i>
                         <span>Kunjungan Online Bulanan (Repository)</span>
@@ -155,7 +155,7 @@
                         <tbody>
                             @foreach ($kunjunganRepository as $bulan => $jumlah)
                                 <tr>
-                                    <td class="text-muted">{{ $bulan }}</td>
+                                    <td class="text-muted">{{ $bulan }} {{ date('Y') }}</td>
                                     <td class="text-end fw-bold">{{ number_format($jumlah) }}</td>
                                 </tr>
                             @endforeach

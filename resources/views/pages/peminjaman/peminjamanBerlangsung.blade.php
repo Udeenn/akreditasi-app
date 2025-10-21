@@ -4,10 +4,18 @@
 
 @section('content')
     <div class="container">
-        <h4 class="mb-3">Daftar Peminjaman Berlangsung @if ($selectedProdiCode)
+        {{-- <h4 class="mb-3">Daftar Peminjaman Berlangsung @if ($selectedProdiCode)
                 - {{ $namaProdiFilter }}
             @endif
-        </h4>
+        </h4> --}}
+        <div class="card bg-white shadow-sm mb-4">
+        <div class="card-body">
+            <h4 class="mb-0">Daftar Peminjaman Berlangsung</h4>
+            <small class="text-muted">@if ($selectedProdiCode)
+                 {{ $namaProdiFilter }}
+            @endif</small>
+        </div>
+    </div>
         <form method="GET" action="{{ route('peminjaman.berlangsung') }}" class="row g-3 mb-4 align-items-end"
             id="filterPeminjamanBerlangsungForm">
             <div class="col-md-4">
@@ -17,7 +25,7 @@
                     @foreach ($listProdi as $prodi)
                         <option value="{{ $prodi->authorised_value }}"
                             {{ $selectedProdiCode == $prodi->authorised_value ? 'selected' : '' }}>
-                            {{ $prodi->lib }}
+                            ({{$prodi->authorised_value}}) - {{ $prodi->lib }}
                         </option>
                     @endforeach
                 </select>
@@ -42,12 +50,12 @@
                             <thead>
                                 <tr>
                                     <th>No.</th>
-                                    <th>Buku Dipinjam Saat</th>
-                                    <th>Judul Buku</th>
-                                    <th>Barcode Buku</th>
+                                    <th>Waktu Peminjaman</th>
+                                    <th>Barcode</th>
+                                    <th class="text-center">Judul Buku</th>
                                     {{-- <th>Kode Prodi</th> --}}
-                                    <th>Peminjam</th>
-                                    <th>Batas Waktu Pengembalian</th>
+                                    <th class="text-center">Peminjam</th>
+                                    <th>Batas Pengembalian</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -55,11 +63,11 @@
                                     <tr>
                                         <td>{{ $activeLoans->firstItem() + $index }}</td>
                                         <td>{{ \Carbon\Carbon::parse($loan->BukuDipinjamSaat)->format('d F Y H:i:s') }}</td>
+                                        <td style="width: 100px">{{ $loan->BarcodeBuku }}</td>
                                         <td>{{ $loan->JudulBuku }}</td>
-                                        <td>{{ $loan->BarcodeBuku }}</td>
                                         {{-- <td>{{ $loan->KodeProdi }}</td>  --}}
                                         <td>{{ $loan->Peminjam }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($loan->BatasWaktuPengembalian)->format('d F Y') }}
+                                        <td style="color: rgb(199, 43, 43)">{{ \Carbon\Carbon::parse($loan->BatasWaktuPengembalian)->format('d F Y') }}
                                         </td>
                                     </tr>
                                 @endforeach

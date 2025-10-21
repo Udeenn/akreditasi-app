@@ -79,6 +79,10 @@
         </form>
         <div class="card shadow mb-4">
             <div class="card-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="searchInput"
+                        placeholder="Cari judul, penerbit, atau nomor...">
+                </div>
                 <div class="row">
                     <div class="col-md-4">
                         <div class="alert alert-info py-2">

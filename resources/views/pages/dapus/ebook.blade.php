@@ -78,11 +78,12 @@
             </div>
         </form>
 
-        <div class="mb-3">
-            <input type="text" class="form-control" id="searchInput" placeholder="Cari judul, pengarang, penerbit...">
-        </div>
+
         <div class="card shadow mb-4">
             <div class="card-body">
+                <div class="mb-3">
+            <input type="text" class="form-control" id="searchInput" placeholder="Cari judul, pengarang, penerbit...">
+        </div>
                 <div class="row">
                     <div class="col-md-4">
                         <div class="alert alert-info py-2">
@@ -128,10 +129,11 @@
                                         <th>No</th> {{-- Tambahkan kolom No --}}
                                         <th>Judul</th>
                                         <th>Pengarang</th>
-                                        <th>Penerbit</th>
                                         <th>Kota Terbit</th>
+                                        <th>Penerbit</th>
                                         <th>Tahun Terbit</th>
                                         <th>Eksemplar</th>
+                                        <th>Link</th>
                                         {{-- <th>Lokasi</th> --}}
                                     </tr>
                                 </thead>
@@ -142,10 +144,18 @@
                                             {{-- <td>{{ $row->Judul }}</td> --}}
                                             <td>{!! $row->Judul !!}</td>
                                             <td>{{ $row->Pengarang }}</td>
-                                            <td>{{ $row->Penerbit }}</td>
                                             <td>{{ $row->Kota_Terbit }}</td>
+                                            <td>{{ $row->Penerbit }}</td>
                                             <td>{{ $row->Tahun_Terbit }}</td>
                                             <td>{{ $row->Eksemplar }}</td>
+                                            <td>
+                                                @if (!empty($row->Link_Ebook))
+                                                    <a href="{{ $row->Link_Ebook }}" target="_blank" class="btn btn-primary"
+                                                        rel="noopener noreferrer">Link</a>
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>
                                             {{-- <td>{{ $row->Lokasi }}</td> --}}
                                         </tr>
                                     @endforeach

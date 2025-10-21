@@ -129,12 +129,12 @@
                                         {{-- <th>Kelas</th> --}}
                                         <th>Judul</th>
                                         <th>Penerbit</th>
-                                        <th>Nomor</th>
-                                        <th>Issue</th>
+                                        <th>Nomor Edisi</th>
                                         <th>Eksemplar</th>
                                         <th>Jenis Koleksi</th>
                                         <th>Jenis Item Tipe</th>
                                         <th>Lokasi</th>
+                                        <th>Link</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -145,11 +145,17 @@
                                             <td>{{ $row->Judul }}</td>
                                             <td>{{ $row->Penerbit }}</td>
                                             <td>{{ $row->Nomor }}</td>
-                                            <td>{{ $row->Issue }}</td>
                                             <td>{{ $row->Eksemplar }}</td>
                                             <td>{{ $row->Jenis_Koleksi }}</td>
                                             <td>{{ $row->Jenis_Item_Tipe }}</td>
                                             <td>{{ $row->Lokasi }}</td>
+                                            <td>
+                                                @if (!empty($row->Link_Jurnal))
+                                                    <a href="{{ $row->Link_Jurnal }}" target="_blank"
+                                                        class="btn btn-primary" rel="noopener noreferrer">Link</a>
+                                                @else
+                                                    -
+                                                @endif
                                         </tr>
                                     @endforeach
                                 </tbody>

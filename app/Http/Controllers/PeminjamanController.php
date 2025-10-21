@@ -576,7 +576,7 @@ class PeminjamanController extends Controller
             ->select('authorised_value', 'lib')
             ->where('category', 'PRODI')
             ->whereRaw('CHAR_LENGTH(lib) >= 13')
-            ->orderBy('lib', 'asc')
+            ->orderBy('authorised_value', 'asc')
             ->get()
             ->map(function ($prodi) {
                 $cleanedLib = $prodi->lib;

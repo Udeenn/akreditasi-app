@@ -49,8 +49,8 @@ class StatistikKoleksi extends Controller
             $namaProdi = $prodiMapping[$prodi] ?? 'Tidak Ditemukan';
 
             $query = M_items::selectRaw(
+                // bi.cn_class as Kelas,
                 "
-                bi.cn_class as Kelas,
                 EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"a\"]') as Judul_a,
                 EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]') as Judul_b,
                 EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"c\"]') as Judul_c,
@@ -58,10 +58,29 @@ class StatistikKoleksi extends Controller
                 MAX(CONCAT(COALESCE(bi.publishercode,''), ' ', COALESCE(bi.place,''))) AS Penerbit,
                 bi.publicationyear AS TahunTerbit,
                 items.enumchron AS Nomor,
-                CONCAT('https://search-lib.ums.ac.id/cgi-bin/koha/opac-detail.pl?biblionumber=', b.biblionumber) AS Link,
                 COUNT(DISTINCT items.itemnumber) AS Issue,
                 SUM(items.copynumber) AS Eksemplar,
-                items.homebranch as Lokasi"
+                CASE
+                WHEN items.homebranch = 'PUSAT' THEN 'Perpustakaan Pusat'
+                WHEN items.homebranch = 'GIZI' THEN 'Perpustakaan Gizi'
+                WHEN items.homebranch = 'FKG' THEN 'Perpustakaan Kedokteran Gigi'
+                WHEN items.homebranch = 'PSIKO' THEN 'Perpustakaan Psikologi'
+                WHEN items.homebranch = 'INF' THEN 'Perpustakaan Informatika'
+                WHEN items.homebranch = 'FIK' THEN 'Perpustakaan FIK'
+                WHEN items.homebranch = 'MATH' THEN 'Perpustakaan Matematika FKIP'
+                WHEN items.homebranch = 'LIPK' THEN 'LIPK'
+                WHEN items.homebranch = 'TILIB' THEN 'Perpustakaan Teknik Industri'
+                WHEN items.homebranch = 'MAPRO' THEN 'Perpustakaan Magister Psikologi'
+                WHEN items.homebranch = 'MEDLIB' THEN 'Perpustakaan Kedokteran'
+                WHEN items.homebranch = 'PAUD' THEN 'Perpustakaan PAUD'
+                WHEN items.homebranch = 'POG' THEN 'Perpustakaan Pendidikan Olahraga'
+                WHEN items.homebranch = 'PESMA' THEN 'Perpustakaan Pesma Haji Mas Mansyur'
+                WHEN items.homebranch = 'PGSDKRA' THEN 'Perpustakaan PGSD'
+                WHEN items.homebranch = 'PASCA' THEN 'Perpustakaan Pasca Sarjana'
+                WHEN items.homebranch = 'RSGM' THEN 'Perpustakaan Rumah Sakit Gigi dan Mulut'
+                WHEN items.homebranch = 'PSI' THEN 'Perpustakaan Pusat Studi Psikologi Islam'
+                ELSE items.homebranch
+                END AS Lokasi"
             )
                 ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
                 ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
@@ -70,21 +89,17 @@ class StatistikKoleksi extends Controller
                 ->where('items.withdrawn', 0)
                 ->whereRaw('LEFT(items.itype,2) = "PR"');
 
-            // --- PERUBAHAN DI SINI ---
             if ($prodi !== 'all') {
-                // 1. Ambil aturan dari CnClassHelper
                 $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                // 2. Terapkan aturan ke query menggunakan QueryHelper
                 QueryHelper::applyCnClassRules($query, $cnClasses);
             }
-            // --- AKHIR PERUBAHAN ---
 
             if ($tahunTerakhir !== 'all') {
                 $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
             }
 
             $query->orderBy('TahunTerbit', 'desc');
-            $query->groupBy('Judul_a', 'Judul_b', 'Judul_c', 'Pengarang', 'Nomor', 'Kelas', 'TahunTerbit', 'Lokasi', 'Link');
+            $query->groupBy('Judul_a', 'Judul_b', 'Judul_c', 'Pengarang', 'Nomor',  'TahunTerbit', 'Lokasi', 'Link');
 
             $processedData = $query->get()->map(function ($row) {
                 $fullJudul = $row->Judul_a;
@@ -179,12 +194,33 @@ class StatistikKoleksi extends Controller
                     DB::raw("CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]')) AS Judul"),
                     DB::raw("MAX(CONCAT(COALESCE(bi.publishercode,''), ' ', COALESCE(bi.place,''))) AS Penerbit"),
                     'i.enumchron AS Nomor',
+
                     'av.lib AS Jenis_Koleksi',
                     'it.description AS Jenis_Item_Tipe',
-                    // Fungsi agregat untuk menghitung total per judul
                     DB::raw('COUNT(DISTINCT i.enumchron) AS Issue'),
                     DB::raw('COUNT(*) AS Eksemplar'),
-                    'i.homebranch AS Lokasi'
+                    DB::raw("CASE
+                    WHEN i.homebranch = 'PUSAT' THEN 'Perpustakaan Pusat'
+                    WHEN i.homebranch = 'GIZI' THEN 'Perpustakaan Gizi'
+                    WHEN i.homebranch = 'FKG' THEN 'Perpustakaan Kedokteran Gigi'
+                    WHEN i.homebranch = 'PSIKO' THEN 'Perpustakaan Psikologi'
+                    WHEN i.homebranch = 'INF' THEN 'Perpustakaan Informatika'
+                    WHEN i.homebranch = 'FIK' THEN 'Perpustakaan FIK'
+                    WHEN i.homebranch = 'MATH' THEN 'Perpustakaan Matematika FKIP'
+                    WHEN i.homebranch = 'LIPK' THEN 'LIPK'
+                    WHEN i.homebranch = 'TILIB' THEN 'Perpustakaan Teknik Industri'
+                    WHEN i.homebranch = 'MAPRO' THEN 'Perpustakaan Magister Psikologi'
+                    WHEN i.homebranch = 'MEDLIB' THEN 'Perpustakaan Kedokteran'
+                    WHEN i.homebranch = 'PAUD' THEN 'Perpustakaan PAUD'
+                    WHEN i.homebranch = 'POG' THEN 'Perpustakaan Pendidikan Olahraga'
+                    WHEN i.homebranch = 'PESMA' THEN 'Perpustakaan Pesma Haji Mas Mansyur'
+                    WHEN i.homebranch = 'PGSDKRA' THEN 'Perpustakaan PGSD'
+                    WHEN i.homebranch = 'PASCA' THEN 'Perpustakaan Pasca Sarjana'
+                    WHEN i.homebranch = 'RSGM' THEN 'Perpustakaan Rumah Sakit Gigi dan Mulut'
+                    WHEN i.homebranch = 'PSI' THEN 'Perpustakaan Pusat Studi Psikologi Islam'
+                    ELSE i.homebranch
+                    END AS Lokasi"),
+                    DB::raw("EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"u\"]') as Link_Jurnal")
                 )
                 ->join('biblio as b', 'b.biblionumber', '=', 'i.biblionumber')
                 ->join('biblioitems as bi', 'bi.biblionumber', '=', 'i.biblionumber')
@@ -204,14 +240,13 @@ class StatistikKoleksi extends Controller
                 QueryHelper::applyCnClassRules($query, $cnClasses);
             }
 
-            // Filter tahun dinamis
             if ($tahunTerakhir !== 'all') {
-                // Menggunakan publicationyear untuk filter tahun terbit jurnalnya
-                $query->where('bi.publicationyear', '>=', date('Y') - (int)$tahunTerakhir);
+                $query->whereRaw('RIGHT(i.enumchron, 4) >= ?', [date('Y') - (int)$tahunTerakhir]);
             }
 
+
             // KUNCI UTAMA: Group by untuk semua kolom non-agregat
-            $query->groupBy('Judul', 'Kelas', 'Jenis_Koleksi', 'Jenis_Item_Tipe', 'i.enumchron', 'av.lib', 'it.description', 'i.homebranch');
+            $query->groupBy('Judul', 'Kelas', 'Jenis_Koleksi', 'Jenis_Item_Tipe', 'i.enumchron', 'av.lib', 'it.description', 'i.homebranch', 'Link_Jurnal');
 
             // Urutkan berdasarkan judul
             $query->orderBy('Judul', 'asc');
@@ -392,6 +427,7 @@ class StatistikKoleksi extends Controller
                 MAX(CONCAT(COALESCE(bi.publishercode,''), ' ', COALESCE(bi.place,''))) AS Penerbit,
                 bi.publicationyear AS Tahun_Terbit,
                 COUNT(items.itemnumber) AS Eksemplar,
+                EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"u\"]') as Link_Ebook,
                 MAX(items.biblionumber) as biblionumber
             ")
                 ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
@@ -414,7 +450,7 @@ class StatistikKoleksi extends Controller
             }
 
             $query->orderBy('Tahun_Terbit', 'desc');
-            $query->groupBy('Judul_a', 'Judul_b', 'Pengarang', 'Kota_Terbit', 'Tahun_Terbit');
+            $query->groupBy('Judul_a', 'Judul_b', 'Pengarang', 'Kota_Terbit', 'Tahun_Terbit', 'Link_Ebook');
 
             $processedData = $query->get()->map(function ($row) {
                 $fullJudul = $row->Judul_a;
@@ -1083,16 +1119,14 @@ class StatistikKoleksi extends Controller
 
     public function referensi(Request $request)
     {
-        // 1. Mengambil data prodi dari tabel authorised_values dengan kategori 'PRODI'
+
         $listprodi = M_Auv::where('category', 'PRODI')->whereRaw('CHAR_LENGTH(lib) >= 13')
             ->orderBy('authorised_value', 'asc')->get();
 
-        // 2. Membuat objek untuk opsi "Semua Program Studi"
         $prodiOptionAll = new \stdClass();
         $prodiOptionAll->authorised_value = 'all';
         $prodiOptionAll->lib = 'Semua Program Studi';
 
-        // Tambahkan opsi "Semua" ke awal list
         $listprodi->prepend($prodiOptionAll);
 
         $prodi = $request->input('prodi', 'initial');
@@ -1105,7 +1139,6 @@ class StatistikKoleksi extends Controller
         $totalEksemplar = 0;
 
         if ($prodi && $prodi !== 'initial') {
-            // 3. Menyesuaikan pluck dengan nama kolom yang baru
             $prodiMapping = $listprodi->pluck('lib', 'authorised_value')->toArray();
             $namaProdi = $prodiMapping[$prodi] ?? 'Tidak Ditemukan';
 
@@ -1120,8 +1153,29 @@ class StatistikKoleksi extends Controller
                 MAX(CONCAT(COALESCE(bi.publishercode,''), ' ', COALESCE(bi.place,''))) AS Penerbit,
                 bi.publicationyear AS Tahun_Terbit,
                 COUNT(i.itemnumber) AS Eksemplar,
-                i.homebranch as Lokasi
-            ")
+                CASE
+                WHEN i.homebranch = 'PUSAT' THEN 'Perpustakaan Pusat'
+                WHEN i.homebranch = 'GIZI' THEN 'Perpustakaan Gizi'
+                WHEN i.homebranch = 'FKG' THEN 'Perpustakaan Kedokteran Gigi'
+                WHEN i.homebranch = 'PSIKO' THEN 'Perpustakaan Psikologi'
+                WHEN i.homebranch = 'INF' THEN 'Perpustakaan Informatika'
+                WHEN i.homebranch = 'FIK' THEN 'Perpustakaan FIK'
+                WHEN i.homebranch = 'MATH' THEN 'Perpustakaan Matematika FKIP'
+                WHEN i.homebranch = 'LIPK' THEN 'LIPK'
+                WHEN i.homebranch = 'TILIB' THEN 'Perpustakaan Teknik Industri'
+                WHEN i.homebranch = 'MAPRO' THEN 'Perpustakaan Magister Psikologi'
+                WHEN i.homebranch = 'MEDLIB' THEN 'Perpustakaan Kedokteran'
+                WHEN i.homebranch = 'PAUD' THEN 'Perpustakaan PAUD'
+                WHEN i.homebranch = 'POG' THEN 'Perpustakaan Pendidikan Olahraga'
+                WHEN i.homebranch = 'PESMA' THEN 'Perpustakaan Pesma Haji Mas Mansyur'
+                WHEN i.homebranch = 'PGSDKRA' THEN 'Perpustakaan PGSD'
+                WHEN i.homebranch = 'PASCA' THEN 'Perpustakaan Postgraduate'
+                WHEN i.homebranch = 'RSGM' THEN 'Perpustakaan Rumah Sakit Gigi dan Mulut'
+                WHEN i.homebranch = 'PSI' THEN 'Perpustakaan Pusat Studi Psikologi Islam'
+                ELSE i.homebranch
+                END AS Lokasi
+                ")
+                // i.homebranch as Lokasi
                 ->from('items as i')
                 ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
                 ->join('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
@@ -1131,12 +1185,10 @@ class StatistikKoleksi extends Controller
                 ->whereRaw('LEFT(i.itype,3) = "BKS"')
                 ->whereRaw('LEFT(i.ccode,1) = "R"');
 
-            // --- PERUBAHAN UTAMA DI SINI (BLOK 1) ---
             if ($prodi !== 'all') {
                 $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
                 QueryHelper::applyCnClassRules($query, $cnClasses);
             }
-            // --- AKHIR PERUBAHAN ---
 
             if ($tahunTerakhir !== 'all') {
                 $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
@@ -1388,8 +1440,8 @@ class StatistikKoleksi extends Controller
             'No',
             'Judul',
             'Pengarang',
-            'Penerbit',
             'Kota Terbit',
+            'Penerbit',
             'Tahun Terbit',
             'Eksemplar',
             'Lokasi',
@@ -1403,7 +1455,7 @@ class StatistikKoleksi extends Controller
             $judulProdi = 'Daftar Koleksi Referensi - ' . ($namaProdi ?: 'Semua Program Studi');
             $judulTahun = ($tahunTerakhir !== 'all') ? ('Tahun Terbit: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun Terbit';
             fputcsv($file, [$judulProdi . ' - ' . $judulTahun], ';');
-            fputcsv($file, [''], ';'); // Baris kosong
+            fputcsv($file, [''], ';');
             fputcsv($file, $headers, ';');
 
             $i = 1;
@@ -1412,8 +1464,8 @@ class StatistikKoleksi extends Controller
                     $i++,
                     $row->Judul,
                     $row->Pengarang,
+                    $row->Kota_Terbit,
                     $row->Penerbit,
-                    $row->Kota_Terbit, // <-- Data baru
                     (int) $row->Tahun_Terbit,
                     (int) $row->Eksemplar,
                     $row->Lokasi
@@ -1423,7 +1475,6 @@ class StatistikKoleksi extends Controller
             fclose($file);
         };
 
-        // Bagian response tidak perlu diubah.
         return response()->streamDownload($callback, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
@@ -1450,7 +1501,6 @@ class StatistikKoleksi extends Controller
         $filename .= "_" . ($tahunTerakhir !== 'all' ? $tahunTerakhir . "_tahun_terakhir" : "semua_tahun");
         $filename .= "_" . Carbon::now()->format('Ymd_His') . ".csv";
 
-        // Header sudah benar, tidak perlu diubah
         $headers = [
             'No',
             'Judul',
@@ -1466,15 +1516,13 @@ class StatistikKoleksi extends Controller
             $file = fopen('php://output', 'w');
             fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-            // --- PERBAIKAN 2: Judul daftar disamakan formatnya ---
             $judulProdi = 'Daftar Koleksi Buku Teks - ' . ($namaProdi ?: 'Semua Program Studi');
             $judulTahun = ($tahunTerakhir !== 'all') ? ('Tahun Terbit: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun Terbit';
             fputcsv($file, [$judulProdi . ' - ' . $judulTahun], ';');
-            fputcsv($file, [''], ';'); // Baris kosong
+            fputcsv($file, [''], ';');
             fputcsv($file, $headers, ';');
 
             $i = 1;
-            // Data per baris sudah benar, tidak perlu diubah
             foreach ($data as $row) {
                 $rowData = [
                     $i++,
@@ -1507,7 +1555,6 @@ class StatistikKoleksi extends Controller
      */
     private function exportCsvEbook($data, $namaProdi, $tahunTerakhir)
     {
-
         $filename = "koleksi_ebook";
         if ($namaProdi && $namaProdi !== 'Pilih Program Studi' && $namaProdi !== 'Semua Program Studi') {
             $cleanProdiName = preg_replace('/[^a-zA-Z0-9 ]/', '', str_replace(' ', '_', $namaProdi));
@@ -1516,7 +1563,6 @@ class StatistikKoleksi extends Controller
         $filename .= "_" . ($tahunTerakhir !== 'all' ? $tahunTerakhir . "_tahun_terakhir" : "semua_tahun");
         $filename .= "_" . Carbon::now()->format('Ymd_His') . ".csv";
 
-        // Header sudah benar, tidak perlu diubah
         $headers = [
             'No',
             'Judul',
@@ -1525,21 +1571,20 @@ class StatistikKoleksi extends Controller
             'Penerbit',
             'Tahun Terbit',
             'Eksemplar',
+            'Link'
         ];
 
         $callback = function () use ($data, $headers, $namaProdi, $tahunTerakhir) {
             $file = fopen('php://output', 'w');
             fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-            // --- PERBAIKAN 2: Judul daftar disamakan formatnya ---
             $judulProdi = 'Daftar Koleksi E-Book - ' . ($namaProdi ?: 'Semua Program Studi');
             $judulTahun = ($tahunTerakhir !== 'all') ? ('Tahun Terbit: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun Terbit';
             fputcsv($file, [$judulProdi . ' - ' . $judulTahun], ';');
-            fputcsv($file, [''], ';'); // Baris kosong
+            fputcsv($file, [''], ';');
             fputcsv($file, $headers, ';');
 
             $i = 1;
-            // Data per baris sudah benar, tidak perlu diubah
             foreach ($data as $row) {
                 $rowData = [
                     $i++,
@@ -1549,6 +1594,7 @@ class StatistikKoleksi extends Controller
                     $row->Penerbit,
                     (int) $row->Tahun_Terbit,
                     (int) $row->Eksemplar,
+                    $row->Link
                 ];
                 fputcsv($file, $rowData, ';');
             }
