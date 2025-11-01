@@ -1,5 +1,3 @@
-{{-- Simpan sebagai: resources/views/pages/kunjungan/_kunjungan_gabungan_table_body.blade.php --}}
-
 @forelse ($semuaKunjungan as $kunjungan)
     <tr>
         <td class="ps-3">{{ $semuaKunjungan->firstItem() + $loop->index }}</td>

@@ -11,7 +11,6 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
     <link rel="stylesheet" type="text/css"
         href="https://cdn.datatables.net/buttons/3.0.2/css/buttons.dataTables.min.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/colvis/1.0.4/css/dataTables.colVis.css" />
     <title>ACCREDITATION SUPPORT</title>
 </head>
 

@@ -18,18 +18,10 @@ class DashboardController extends Controller
         // TOTAL statistik
         $totalJurnal = 100;
         // $totalKunjungan = M_vishistory::where;
-
         // $kunjunganHarian = M_vishistory::whereDate('visittime', Carbon::today())->count();
-
         $historyCount = M_vishistory::whereDate('visittime', Carbon::today())->count();
-
-        // Count visits from the corner table for today
         $cornerCount = M_viscorner::whereDate('visittime', Carbon::today())->count();
-
-        // Add the two counts together for the total
         $kunjunganHarian = $historyCount + $cornerCount;
-
-        // https://koha.lib.ums.ac.id/cgi-bin/koha/reports/guided_reports.pl?reports=577&phase=Run%20this%20report#
 
         $totalJudulBuku = M_items::on('mysql2')
             ->select(

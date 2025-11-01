@@ -1,10 +1,11 @@
 <?php
 
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IjazahController;
 use App\Http\Controllers\MouController;
 use App\Http\Controllers\PelatihanController;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SertifikasiController;
 use App\Http\Controllers\SkpController;
 use App\Http\Controllers\StaffController;
@@ -17,32 +18,49 @@ use App\Http\Controllers\RewardController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\VisitHistory;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Auth;
 
 Route::get('/', [DashboardController::class, 'totalStatistik'])->name('dashboard');
 
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
+});
 
+Route::middleware('auth')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+});
 
 Route::get('/credit', function () {
     return view('credit');
 })->name('credit.index');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+Route::get('/test', function () {
+    dd(Auth::check()); // true jika login, false jika tidak
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::resources([
-        'ijazah' => IjazahController::class,
-        'staff' => StaffController::class,
-        'transkrip' => TranskripController::class,
-        'sertifikasi' => SertifikasiController::class,
-        'skp' => SkpController::class,
-        'pelatihan' => PelatihanController::class,
-        'mou' => MouController::class,
+Route::get('/debug-session', function () {
+    dd([
+        'is_logged_in' => Auth::check(),
+        'user_id' => Auth::id(),
+        'session_data' => session()->all()
     ]);
 });
+
+
+// Route::middleware(['auth', 'verified'])->group(function () {
+//     Route::resources([
+//         'ijazah' => IjazahController::class,
+//         'staff' => StaffController::class,
+//         'transkrip' => TranskripController::class,
+//         'sertifikasi' => SertifikasiController::class,
+//         'skp' => SkpController::class,
+//         'pelatihan' => PelatihanController::class,
+//         'mou' => MouController::class,
+//     ]);
+// });
 
 Route::get('/kunjungan/prodiChart', [VisitHistory::class, 'kunjunganProdiChart'])->name('kunjungan.prodiChart');
 Route::get('/kunjungan/prodiTable', [VisitHistory::class, 'kunjunganProdiTable'])->name('kunjungan.prodiTable');
@@ -99,17 +117,17 @@ Route::get('/statistik/keterpakaian-koleksi/detail', [PenggunaanController::clas
 
 Route::get('/kunjungan/get-lokasi-detail', [VisitHistory::class, 'getLokasiDetail'])->name('kunjungan.get_lokasi_detail');
 
-Route::get('/reward/pemustaka-teraktif', [RewardController::class, 'pemustakaTeraktif'])->name('reward.pemustaka_teraktif');
-Route::get('/reward/pemustaka-teraktif/export-csv', [RewardController::class, 'exportCsvPemustakaTeraktif'])->name('reward.export_csv_pemustaka_teraktif');
-Route::get('/reward/peminjam-teraktif', [RewardController::class, 'peminjamTeraktif'])->name('reward.peminjam_teraktif');
-Route::get('/reward/peminjam-teraktif/export-csv', [RewardController::class, 'exportCsvPeminjamTeraktif'])->name('reward.export_csv_peminjam_teraktif');
+Route::get('/reward/pemustaka-teraktif', [RewardController::class, 'pemustakaTeraktif'])->name('reward.pemustaka_teraktif')->middleware('auth');
+Route::get('/reward/pemustaka-teraktif/export-csv', [RewardController::class, 'exportCsvPemustakaTeraktif'])->name('reward.export_csv_pemustaka_teraktif')->middleware('auth');
+Route::get('/reward/peminjam-teraktif', [RewardController::class, 'peminjamTeraktif'])->name('reward.peminjam_teraktif')->middleware('auth');
+Route::get('/reward/peminjam-teraktif/export-csv', [RewardController::class, 'exportCsvPeminjamTeraktif'])->name('reward.export_csv_peminjam_teraktif')->middleware('auth');
 
 Route::get('/cek-histori-buku', [PenggunaanController::class, 'cekBuku'])->name('penggunaan.cek_histori');
-Route::get('/statistik/sering-dibaca', [PenggunaanController::class, 'seringDibaca'])->name('penggunaan.sering_dibaca');
+Route::get('/statistik/sering-dibaca', [PenggunaanController::class, 'seringDibaca'])->name('penggunaan.sering_dibaca')->middleware('auth');
+
+Route::get('/koleksi/rekap-fakultas', [StatistikKoleksi::class, 'rekapPerFakultas'])->name('koleksi.rekap_fakultas');
 
 Route::get('/clear-cache', function () {
     Artisan::call('cache:clear');
     dd('clear');
 });
-
-require __DIR__ . '/auth.php';

@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Log;
 
 class PenggunaanController extends Controller
 {
@@ -173,7 +175,7 @@ class PenggunaanController extends Controller
             return $row;
         })->values();
 
-        
+
         $fileName = 'keterpakaian_koleksi_';
         if ($filterType == 'daily') {
             $start = Carbon::parse($request->input('start_date'))->format('Ymd');
@@ -303,79 +305,139 @@ class PenggunaanController extends Controller
 
     public function seringDibaca(Request $request)
     {
-        if ($request->query('export') === 'csv') {
-            return $this->exportSeringDibacaCsv($request);
-        }
-
-        // Ambil input filter untuk dikirim kembali ke view (agar pilihan tetap ada)
+        // Ambil input filter
         $tahun = $request->input('tahun', date('Y'));
         $bulan = $request->input('bulan');
 
-        // Inisialisasi koleksi kosong untuk menampung data
-        $dataBuku = collect();
+        $perPage = 10;
 
-        // Hanya jalankan query jika ada input 'tahun' dari form (artinya tombol 'Terapkan' sudah diklik)
+        // Inisialisasi Paginator kosong untuk Fiksi
+        $dataFiksi = new LengthAwarePaginator(
+            [],
+            0,
+            $perPage,
+            Paginator::resolveCurrentPage('fiksi_page'),
+            ['path' => $request->url(), 'pageName' => 'fiksi_page']
+        );
+
+        // Inisialisasi Paginator kosong untuk Non-Fiksi
+        $dataNonFiksi = new LengthAwarePaginator(
+            [],
+            0,
+            $perPage,
+            Paginator::resolveCurrentPage('nonfiksi_page'),
+            ['path' => $request->url(), 'pageName' => 'nonfiksi_page']
+        );
+
         if ($request->has('tahun')) {
-            // Buat rentang tanggal berdasarkan filter
-            if ($bulan) {
-                $start_date = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
-                $end_date = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
-            } else {
-                $start_date = Carbon::createFromDate($tahun, 1, 1)->startOfYear();
-                $end_date = Carbon::createFromDate($tahun, 12, 31)->endOfYear();
+            try {
+                if ($bulan) {
+                    $start_date = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
+                    $end_date = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
+                } else {
+                    $start_date = Carbon::createFromDate($tahun, 1, 1)->startOfYear();
+                    $end_date = Carbon::createFromDate($tahun, 12, 31)->endOfYear();
+                }
+
+                $baseQuery = DB::connection('mysql2')->table('statistics as s')
+                    ->select(
+                        DB::raw("MAX(CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]'))) AS judul_buku"),
+                        DB::raw("MAX(b.author) as pengarang"),
+                        DB::raw('COUNT(s.itemnumber) as jumlah_penggunaan')
+                    )
+                    ->join('items as i', 's.itemnumber', '=', 'i.itemnumber')
+                    ->join('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
+                    ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
+                    ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
+                    ->whereIn('s.type', ['issue', 'return', 'localuse'])
+                    ->whereBetween('s.datetime', [$start_date, $end_date]);
+
+                if ($request->query('export') === 'fiksi') {
+                    return $this->exportSeringDibacaCsv(clone $baseQuery, 'fiksi', $tahun, $bulan);
+                }
+                if ($request->query('export') === 'nonfiksi') {
+                    return $this->exportSeringDibacaCsv(clone $baseQuery, 'nonfiksi', $tahun, $bulan);
+                }
+
+                // --- Query 1: Fiksi (Paginasi) ---
+                $queryFiksi = (clone $baseQuery)
+                    ->where(function ($q) {
+                        $q->where('bi.cn_class', 'LIKE', '812%')
+                            ->orWhere('bi.cn_class', 'LIKE', '813%')
+                            ->orWhere('bi.cn_class', 'LIKE', '899%');
+                    })
+                    ->groupBy('i.biblionumber')
+                    ->orderBy('jumlah_penggunaan', 'desc')
+                    ->paginate($perPage, ['*'], 'fiksi_page')
+                    ->onEachSide(1);
+
+                // --- Query 2: Non-Fiksi (Paginasi) ---
+                $queryNonFiksi = (clone $baseQuery)
+                    ->where(function ($q) {
+                        $q->where('bi.cn_class', 'NOT LIKE', '812%')
+                            ->where('bi.cn_class', 'NOT LIKE', '813%')
+                            ->where('bi.cn_class', 'NOT LIKE', '899%');
+                    })
+                    ->groupBy('i.biblionumber')
+                    ->orderBy('jumlah_penggunaan', 'desc')
+                    ->paginate($perPage, ['*'], 'nonfiksi_page')
+                    ->onEachSide(1); // Gunakan paginate di sini
+
+                $dataFiksi = $queryFiksi->appends($request->except('nonfiksi_page'));
+                $dataNonFiksi = $queryNonFiksi->appends($request->except('fiksi_page'));
+            } catch (\Exception $e) {
+                Log::error('Error fetching seringDibaca: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+                return redirect()->back()->with('error', 'Terjadi kesalahan saat mengambil data: ' . $e->getMessage());
             }
-
-            $query = DB::connection('mysql2')->table('statistics as s')
-                ->select(
-                    'b.title as judul_buku',
-                    'b.author as pengarang',
-                    DB::raw('COUNT(s.itemnumber) as jumlah_penggunaan')
-                )
-                ->join('items as i', 's.itemnumber', '=', 'i.itemnumber')
-                ->join('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
-                ->whereIn('s.type', ['issue', 'return', 'localuse'])
-                ->whereBetween('s.datetime', [$start_date, $end_date]);
-
-            // Jalankan query dan pagination, lalu masukkan hasilnya ke variabel
-            $dataBuku = $query->groupBy('b.biblionumber', 'b.title', 'b.author')
-                ->orderBy('jumlah_penggunaan', 'desc')
-                ->paginate(20);
         }
 
         // Kirim data ke view
-        return view('pages.penggunaan.sering_dibaca', compact('dataBuku', 'tahun', 'bulan'));
+        return view('pages.penggunaan.sering_dibaca', compact(
+            'dataFiksi',
+            'dataNonFiksi',
+            'tahun',
+            'bulan'
+        ));
     }
 
-    private function exportSeringDibacaCsv(Request $request)
+    private function exportSeringDibacaCsv($baseQuery, string $kategori, $tahun, $bulan)
     {
-        // Logika query sama persis dengan fungsi utama, hanya tanpa pagination
-        $tahun = $request->input('tahun', date('Y'));
-        $bulan = $request->input('bulan');
+        $query = $baseQuery;
+        $kategoriLabel = "";
+        $kategoriTitle = "";
 
-        if ($bulan) {
-            $start_date = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
-            $end_date = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
-            $periode = $start_date->format('F Y');
-        } else {
-            $start_date = Carbon::createFromDate($tahun, 1, 1)->startOfYear();
-            $end_date = Carbon::createFromDate($tahun, 12, 31)->endOfYear();
-            $periode = $start_date->format('Y');
+        if ($kategori === 'fiksi') {
+            $query->where(function ($q) {
+                $q->where('bi.cn_class', 'LIKE', '812%')
+                    ->orWhere('bi.cn_class', 'LIKE', '813%')
+                    ->orWhere('bi.cn_class', 'LIKE', '899%');
+            });
+            $kategoriLabel = "fiksi";
+            $kategoriTitle = "Fiksi";
+        } else { // Asumsi 'nonfiksi'
+            $query->where(function ($q) {
+                $q->where('bi.cn_class', 'NOT LIKE', '812%')
+                    ->where('bi.cn_class', 'NOT LIKE', '813%')
+                    ->where('bi.cn_class', 'NOT LIKE', '899%');
+            });
+            $kategoriLabel = "nonfiksi";
+            $kategoriTitle = "Non-Fiksi";
         }
 
-        $query = DB::connection('mysql2')->table('statistics as s')
-            ->select('b.title as judul_buku', 'b.author as pengarang', DB::raw('COUNT(b.biblionumber) as jumlah_penggunaan'))
-            ->join('items as i', 's.itemnumber', '=', 'i.itemnumber')
-            ->join('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
-            ->whereIn('s.type', ['issue', 'return', 'localuse'])
-            ->whereBetween('s.datetime', [$start_date, $end_date]);
-
-        // Ambil semua data (tanpa limit/paginate) untuk di-export
-        $dataExport = $query->groupBy('b.biblionumber', 'b.title')
+        $data = $query->groupBy('i.biblionumber')
             ->orderBy('jumlah_penggunaan', 'desc')
             ->get();
 
-        // Logika untuk membuat & men-download file CSV
-        $fileName = "buku_sering_dibaca_{$periode}.csv";
+        $bulanTitle = $bulan ? \Carbon\Carbon::create()->month($bulan)->format('F') : "Satu Tahun Penuh";
+        $laporanTitle = "Laporan Buku Sering Dibaca - Kategori: $kategoriTitle";
+        $periodeTitle = "Periode: $bulanTitle $tahun";
+
+        $fileName = "export_sering_dibaca_${kategoriLabel}_${tahun}";
+        if ($bulan) {
+            $fileName .= "_" . str_pad($bulan, 2, '0', STR_PAD_LEFT);
+        }
+        $fileName .= ".csv";
+
         $headers = [
             "Content-type"        => "text/csv",
             "Content-Disposition" => "attachment; filename=$fileName",
@@ -384,18 +446,20 @@ class PenggunaanController extends Controller
             "Expires"             => "0"
         ];
 
-        $callback = function () use ($dataExport) {
+        $callback = function () use ($data, $laporanTitle, $periodeTitle) {
+            $delimiter = ';';
             $file = fopen('php://output', 'w');
-            // Header
-            fputcsv($file, ['No', 'Judul Buku', 'Pengarang', 'Jumlah Penggunaan'], ';');
-            // Body
-            foreach ($dataExport as $index => $row) {
+            fputcsv($file, [$laporanTitle], $delimiter);
+            fputcsv($file, [$periodeTitle], $delimiter);
+            fputcsv($file, [], $delimiter);
+            fputcsv($file, ['No', 'Judul Buku', 'Pengarang', 'Jumlah Penggunaan'], $delimiter);
+            foreach ($data as $index => $row) {
                 fputcsv($file, [
                     $index + 1,
                     $row->judul_buku,
                     $row->pengarang,
                     $row->jumlah_penggunaan
-                ], ';');
+                ], $delimiter);
             }
             fclose($file);
         };

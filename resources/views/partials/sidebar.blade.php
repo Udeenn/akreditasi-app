@@ -1,10 +1,8 @@
-{{-- resources/views/partials/sidebar.blade.php --}}
-
 <div class="sidebar-header d-flex align-items-center">
     <a href="{{ route('dashboard') }}" class="d-flex align-items-center text-decoration-none w-100">
         <i class="fas fa-chart-pie fs-4 me-3 text-primary my-3"></i>
         {{-- <img src="{{ asset('img/sidebar.png') }}" alt="Logo" class="sidebar-logo" style="max-height: 100px;"> --}}
-        <h5 class="sidebar-title m-0">Data Pustaka</h5>
+        <h5 class="sidebar-title m-0">Data Perpustakaan</h5>
     </a>
 </div>
 
@@ -13,10 +11,12 @@
         <li class="nav-label small text-muted text-uppercase mt-2 mb-2">Utama</li>
         {{-- Dashboard --}}
         <li class="nav-item">
-            <a class="nav-link {{ request()->is('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+            <a class="nav-link {{ Route::currentRouteName() === 'dashboard' ? 'active' : '' }}"
+                href="{{ route('dashboard') }}">
                 <i class="fas fa-home nav-icon"></i>
                 <span class="nav-text">Dashboard</span>
             </a>
+            
         </li>
 
         {{-- SDM --}}
@@ -48,21 +48,24 @@
         <li class="nav-label small text-muted text-uppercase mt-3 mb-2">Koleksi</li>
         @php $isDaftarKoleksiActive = request()->routeIs(['koleksi.*']); @endphp
         <li class="nav-item">
-            <a class="nav-link {{ $isDaftarKoleksiActive ? 'active' : '' }}" data-bs-toggle="collapse"
-                href="#daftarKoleksiCollapse">
+            <button class="nav-link {{ $isDaftarKoleksiActive ? 'active' : '' }}" type="button"
+                data-bs-toggle="collapse" data-bs-target="#daftarKoleksiCollapse"
+                aria-expanded="{{ $isDaftarKoleksiActive ? 'true' : 'false' }}" data-bs-auto-close="outside"
+                aria-controls="daftarKoleksiCollapse">
                 <i class="fas fa-book nav-icon"></i>
                 <span class="nav-text">Daftar Koleksi</span>
                 <i class="fas fa-chevron-down ms-auto nav-arrow-small"></i>
-            </a>
+            </button>
             <div class="collapse {{ $isDaftarKoleksiActive ? 'show' : '' }}" id="daftarKoleksiCollapse">
                 <ul class="nav flex-column mt-1 sub-menu">
+                    <li><a class="nav-link {{ request()->routeIs('koleksi.rekap_fakultas') ? 'active' : '' }}"
+                            href="{{ route('koleksi.rekap_fakultas') }}">Per Fakultas</a></li>
                     <li><a class="nav-link {{ request()->routeIs('koleksi.textbook') ? 'active' : '' }}"
                             href="{{ route('koleksi.textbook') }}">Text Book</a></li>
-                    <li><a class="nav-link {{ request()->routeIs('koleksi.jurnal') ? 'active' : '' }}"
-                            href="{{ route('koleksi.jurnal') }}">Journal</a></li>
                     <li><a class="nav-link {{ request()->routeIs('koleksi.ebook') ? 'active' : '' }}"
                             href="{{ route('koleksi.ebook') }}">E-Book</a></li>
-
+                    <li><a class="nav-link {{ request()->routeIs('koleksi.jurnal') ? 'active' : '' }}"
+                            href="{{ route('koleksi.jurnal') }}">Journal</a></li>
                     <li><a class="nav-link {{ request()->routeIs('koleksi.prosiding') ? 'active' : '' }}"
                             href="{{ route('koleksi.prosiding') }}">Prosiding</a></li>
                     {{-- <li><a class="nav-link {{ request()->routeIs('koleksi.periodikal') ? 'active' : '' }}"
@@ -78,12 +81,13 @@
         {{-- Data Kunjungan --}}
         @php $isKunjunganActive = request()->routeIs(['kunjungan.*']); @endphp
         <li class="nav-item">
-            <a class="nav-link {{ $isKunjunganActive ? 'active' : '' }}" data-bs-toggle="collapse"
-                href="#kunjunganCollapse">
+            <button class="nav-link {{ $isKunjunganActive ? 'active' : '' }}" type="button" data-bs-toggle="collapse"
+                data-bs-target="#kunjunganCollapse" aria-expanded="{{ $isKunjunganActive ? 'true' : 'false' }}"
+                data-bs-auto-close="outside" aria-controls="kunjunganCollapse">
                 <i class="fas fa-users nav-icon"></i>
                 <span class="nav-text">Kunjungan</span>
                 <i class="fas fa-chevron-down ms-auto nav-arrow-small"></i>
-            </a>
+            </button>
             <div class="collapse {{ $isKunjunganActive ? 'show' : '' }}" id="kunjunganCollapse">
                 <ul class="nav flex-column mt-1 sub-menu">
                     {{-- <li><a class="nav-link {{ request()->routeIs('kunjungan.tanggalTable') ? 'active' : '' }}"
@@ -101,12 +105,13 @@
         {{-- Data Peminjaman --}}
         @php $isPeminjamanActive = request()->routeIs(['peminjaman.*']); @endphp
         <li class="nav-item">
-            <a class="nav-link {{ $isPeminjamanActive ? 'active' : '' }}" data-bs-toggle="collapse"
-                href="#peminjamanCollapse">
+            <button class="nav-link {{ $isPeminjamanActive ? 'active' : '' }}" type="button" data-bs-toggle="collapse"
+                data-bs-target="#peminjamanCollapse" aria-expanded="{{ $isPeminjamanActive ? 'true' : 'false' }}"
+                data-bs-auto-close="outside" aria-controls="peminjamanCollapse">
                 <i class="fas fa-book-reader nav-icon"></i>
                 <span class="nav-text">Peminjaman</span>
                 <i class="fas fa-chevron-down ms-auto nav-arrow-small"></i>
-            </a>
+            </button>
             <div class="collapse {{ $isPeminjamanActive ? 'show' : '' }}" id="peminjamanCollapse">
                 <ul class="nav flex-column mt-1 sub-menu">
                     <li><a class="nav-link {{ request()->routeIs('peminjaman.peminjaman_rentang_tanggal') ? 'active' : '' }}"
@@ -124,12 +129,13 @@
         {{-- Data Penggunaan --}}
         @php $isPenggunaanActive = request()->routeIs(['penggunaan.*']); @endphp
         <li class="nav-item">
-            <a class="nav-link {{ $isPenggunaanActive ? 'active' : '' }}" data-bs-toggle="collapse"
-                href="#penggunaanCollapse">
+            <button class="nav-link {{ $isPenggunaanActive ? 'active' : '' }}" type="button" data-bs-toggle="collapse"
+                data-bs-target="#penggunaanCollapse" aria-expanded="{{ $isPenggunaanActive ? 'true' : 'false' }}"
+                data-bs-auto-close="outside" aria-controls="penggunaanCollapse">
                 <i class="fas fa-barcode nav-icon"></i>
                 <span class="nav-text">Statistik Sirkulasi</span>
                 <i class="fas fa-chevron-down ms-auto nav-arrow-small"></i>
-            </a>
+            </button>
             <div class="collapse {{ $isPenggunaanActive ? 'show' : '' }}" id="penggunaanCollapse">
                 <ul class="nav flex-column mt-1 sub-menu">
                     <li><a class="nav-link {{ request()->routeIs('penggunaan.keterpakaian_koleksi') ? 'active' : '' }}"
@@ -161,7 +167,7 @@
             </div>
         </li> --}}
         <li class="nav-item">
-            <a class="nav-link {{ request()->is('reward.pemustaka_teraktif') ? 'active' : '' }}"
+            <a class="nav-link {{ Route::currentRouteName() === 'reward.pemustaka_teraktif' ? 'active' : '' }}"
                 href="{{ route('reward.pemustaka_teraktif') }}">
                 <i class="fas fa-gift nav-icon"></i>
                 <span class="nav-text">Pemustaka Teraktif</span>
@@ -174,7 +180,7 @@
             <a class="nav-link {{ request()->routeIs('credit.index') ? 'active' : '' }}"
                 href="{{ route('credit.index') }}">
                 <i class="fas fa-info-circle nav-icon"></i>
-                <span class="nav-text">Developers</span>
+                <span class="nav-text">Pengembang</span>
             </a>
         </li>
     </ul>

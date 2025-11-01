@@ -8,37 +8,50 @@
             href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 
         <style>
-            html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection {
-                background-color: #2b3035;
-                border: 1px solid #495057;
+            .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+            .select2-container--bootstrap-5.select2-container--open .select2-selection {
+                box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
             }
 
-            html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
-                color: #dee2e6;
+            /* Dark Mode Select2 Styles */
+            body.dark-mode .select2-container--bootstrap-5 .select2-selection {
+                background-color: var(--sidebar-bg) !important;
+                /* Warna input gelap */
+                border-color: var(--border-color) !important;
+                color: #ffffff !important;
             }
 
-            html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow b {
-                border-color: #adb5bd transparent transparent transparent;
+            body.dark-mode .select2-container--bootstrap-5 .select2-selection__rendered {
+                color: #ffffff !important;
             }
 
-            html[data-bs-theme="dark"] .select2-dropdown {
-                background-color: #2b3035;
-                border: 1px solid #495057;
+            body.dark-mode .select2-container--bootstrap-5 .select2-selection__arrow b {
+                border-color: #adb5bd transparent transparent transparent !important;
             }
 
-            html[data-bs-theme="dark"] .select2-search--dropdown .select2-search__field {
-                background-color: #212529;
-                color: #dee2e6;
-                border: 1px solid #495057;
+            body.dark-mode .select2-container--bootstrap-5 .select2-dropdown {
+                background-color: var(--sidebar-bg) !important;
+                border-color: var(--border-color) !important;
             }
 
-            html[data-bs-theme="dark"] .select2-results__option {
-                color: #dee2e6;
+            body.dark-mode .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
+                background-color: #334155 !important;
+                border-color: var(--border-color) !important;
+                color: var(--text-dark) !important;
             }
 
-            html[data-bs-theme="dark"] .select2-results__option--highlighted {
-                background-color: #0d6efd;
-                color: white;
+            body.dark-mode .select2-results__option {
+                color: #ffffff !important;
+            }
+
+            body.dark-mode .select2-results__option--highlighted {
+                background-color: var(--primary-color) !important;
+                color: white !important;
+            }
+
+            body.dark-mode .select2-results__option[aria-selected=true] {
+                background-color: rgba(var(--bs-primary-rgb), 0.2) !important;
+                color: #ffffff !important;
             }
         </style>
     @endpush
@@ -49,8 +62,7 @@
                 - Semua Program Studi
             @endif
         </h4>
-        <form method="GET" action="{{ route('koleksi.jurnal') }}" class="row g-3 mb-4 align-items-end"
-            id="filterFormJurnal">
+        <form method="GET" action="{{ route('koleksi.jurnal') }}" class="row g-3 mb-4 align-items-end" id="filterFormJurnal">
             <div class="col-md-4">
                 <label for="prodi" class="form-label">Pilih Prodi</label>
                 <select name="prodi" id="prodi" class="form-select">
@@ -84,24 +96,24 @@
                         placeholder="Cari judul, penerbit, atau nomor...">
                 </div>
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="alert alert-info py-2">
                             <i class="fas fa-book me-2"></i> Total Judul:
                             <span class="fw-bold">{{ number_format($totalJudul, 0, ',', '.') }}</span>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="alert alert-success py-2">
                             <i class="fas fa-copy me-2"></i> Total Eksemplar:
                             <span class="fw-bold">{{ number_format($totalEksemplar, 0, ',', '.') }}</span>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    {{-- <div class="col-md-4">
                         <div class="alert alert-danger py-2">
                             <i class="fas fa-database me-2"></i> Total Entri:
                             <span class="fw-bold" id="customInfoJurnal"></span>
                         </div>
-                    </div>
+                    </div> --}}
                 </div>
                 @if ($prodi && $prodi !== 'initial' && $dataExists)
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
@@ -126,7 +138,7 @@
                                 <thead>
                                     <tr>
                                         <th>No</th>
-                                        {{-- <th>Kelas</th> --}}
+                                        <th>Kelas</th>
                                         <th>Judul</th>
                                         <th>Penerbit</th>
                                         <th>Nomor Edisi</th>
@@ -141,7 +153,7 @@
                                     @foreach ($data as $row)
                                         <tr>
                                             <td></td>
-                                            {{-- <td>{{ $row->Kelas }}</td> --}}
+                                            <td>{{ $row->Kelas }}</td>
                                             <td>{{ $row->Judul }}</td>
                                             <td>{{ $row->Penerbit }}</td>
                                             <td>{{ $row->Nomor }}</td>
@@ -184,18 +196,11 @@
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <script>
             $(document).ready(function() {
-                // Cek jika tabel ada di halaman
                 $('#prodi').select2({
                     theme: 'bootstrap-5',
                     placeholder: 'Ketik untuk mencari prodi...'
                 });
-                $('#prodi').on('select2:open', function() {
-                    if ($('body').hasClass('dark-mode')) {
-                        setTimeout(function() {
-                            $('.select2-dropdown').addClass('select2-dark-theme');
-                        }, 0);
-                    }
-                });
+
                 var table = $('#myTableJurnal').DataTable({
                     "language": {
                         "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json"
@@ -212,7 +217,7 @@
                         "targets": 0
                     }],
                     "order": [
-                        [2, 'asc']
+                        [1, 'asc']
                     ], // Default sort by Judul ascending
                     "lengthMenu": [
                         [10, 25, 50, 100, -1],

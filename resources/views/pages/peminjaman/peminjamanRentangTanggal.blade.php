@@ -3,7 +3,6 @@
 @section('content')
 @section('title', 'Statistik Peminjaman')
 <div class="container">
-    {{-- Bagian Header dan Filter (Tidak ada perubahan) --}}
     <div class="card bg-white shadow-sm mb-4">
         <div class="card-body">
             <h4 class="mb-0">Statistik Peminjaman</h4>
@@ -37,19 +36,33 @@
                             value="{{ $endDate ?? \Carbon\Carbon::now()->format('Y-m-d') }}">
                     </div>
                 </div>
-                <div class="col-md-3" id="monthlyFilter"
+                <div class="col-md-4" id="monthlyFilter"
                     style="{{ ($filterType ?? '') == 'monthly' ? '' : 'display: none;' }}">
-                    <label for="selected_year" class="form-label">Pilih Tahun:</label>
-                    <select name="selected_year" id="selected_year" class="form-control">
+                    <label for="start_year" class="form-label">Rentang Tahun:</label>
+                    <div class="input-group">
                         @php
                             $currentYear = date('Y');
-                            for ($year = $currentYear; $year >= 2000; $year--) {
-                                echo "<option value='{$year}' " .
-                                    (($selectedYear ?? $currentYear) == $year ? 'selected' : '') .
-                                    ">{$year}</option>";
-                            }
+                            $loopStartYear = $currentYear - 10; // Mundur 10 tahun
+                            $loopEndYear = $currentYear;
                         @endphp
-                    </select>
+                        <select name="start_year" id="start_year" class="form-select">
+                            @for ($year = $loopStartYear; $year <= $loopEndYear; $year++)
+                                <option value="{{ $year }}"
+                                    {{ ($startYear ?? $currentYear) == $year ? 'selected' : '' }}>
+                                    {{ $year }}
+                                </option>
+                            @endfor
+                        </select>
+                        <span class="input-group-text">s/d</span>
+                        <select name="end_year" id="end_year" class="form-select">
+                            @for ($year = $loopStartYear; $year <= $loopEndYear; $year++)
+                                <option value="{{ $year }}"
+                                    {{ ($endYear ?? $currentYear) == $year ? 'selected' : '' }}>
+                                    {{ $year }}
+                                </option>
+                            @endfor
+                        </select>
+                    </div>
                 </div>
                 <div class="col-md-auto">
                     <button type="submit" class="btn btn-primary">Tampilkan</button>
@@ -216,7 +229,6 @@
             }
         });
 
-        // Di Controller, variabel $fullStatisticsForChart diganti namanya
         const fullStatistics = @json($fullStatisticsForChart ?? []);
         const filterType = "{{ $filterType ?? 'daily' }}";
 
@@ -298,8 +310,6 @@
                     moment(periode).format('D MMMM YYYY') :
                     moment(periode, 'YYYY-MM').format('MMMM YYYY');
                 modalPeriodeDisplay.innerText = periodeText;
-
-                // Simpan URL dasar untuk paginasi dan panggil halaman pertama
                 currentDetailUrl =
                     `{{ route('peminjaman.get_detail') }}?periode=${periode}&filter_type=${filterType}`;
                 fetchDetailData(currentDetailUrl);
@@ -307,8 +317,6 @@
             });
         });
 
-
-        // Event listener untuk klik pada link paginasi di dalam modal
         modalPaginationContainer.addEventListener('click', function(event) {
             if (event.target.tagName === 'A' && event.target.classList.contains('page-link')) {
                 event.preventDefault(); // Mencegah link me-reload halaman
@@ -319,16 +327,15 @@
             }
         });
 
-        // Fungsi untuk mengambil dan merender data
         async function fetchDetailData(url) {
             detailTbody.innerHTML = `<tr><td colspan="4" class="text-center">Memuat data...</td></tr>`;
-            modalPaginationContainer.innerHTML = ''; // Kosongkan paginasi lama
+            modalPaginationContainer.innerHTML = '';
 
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const result = await response.json();
-                renderModalContent(result); // Panggil fungsi render
+                renderModalContent(result);
             } catch (error) {
                 console.error('Error fetching detail data:', error);
                 detailTbody.innerHTML =
@@ -336,7 +343,6 @@
             }
         }
 
-        // Fungsi untuk merender konten modal
         function renderModalContent(result) {
             if (result.data && result.data.length > 0) {
                 let allRowsHtml = '';
@@ -361,7 +367,7 @@
                         detailBukuHtml += `
                             <div class="d-flex justify-content-between align-items-start border-0 px-0 py-1">
                                 <div class="ms-2 me-auto">
-                                    <div class=""><i class="fas fa-book me-2"></i>${buku.judul_buku}<span class="badge text-dark ms-2">${formattedTime}</span></div>
+                                    <div class=""><i class="fas fa-book me-2"></i>${buku.judul_buku}<span class="badge text-dark ms-2 bg-white">${formattedTime}</span></div>
                                 </div>
                                 <span class="badge ${badgeClass} rounded-pill">${badgeText}</span>
                             </div>`;
@@ -377,8 +383,7 @@
                         </tr>`;
                 });
                 detailTbody.innerHTML = allRowsHtml;
-
-                // Render link paginasi
+                
                 let paginationHtml = '<ul class="pagination pagination-sm mb-0">';
                 if (result.links) {
                     result.links.forEach(link => {
@@ -399,19 +404,12 @@
             }
         }
 
-        // =======================================================
-        // ## KODE BARU UNTUK EKSPOR CSV DARI AJAX (CLIENT-SIDE) ##
-        // =======================================================
-
-        // FIX #1: Deklarasikan variabel tombolnya terlebih dahulu
         const exportCsvBtn = document.getElementById('exportCsvBtn');
 
         if (exportCsvBtn) {
             exportCsvBtn.addEventListener('click', function() {
-                // FIX #2: Gunakan data dari variabel $fullStatisticsForChart, BUKAN $statistics
                 const dataToExport = @json($fullStatisticsForChart ?? []);
 
-                // FIX #3: Cek data dengan benar. Sekarang .length akan berfungsi
                 if (!dataToExport || dataToExport.length === 0) {
                     alert("Tidak ada data untuk diekspor.");
                     return;
@@ -419,20 +417,19 @@
 
                 let csv = [];
                 const delimiter = ';';
-                // Variabel filterType sudah ada di bagian atas script, kita bisa pakai lagi
                 let title = "Laporan Statistik Peminjaman";
 
-                // Tentukan judul berdasarkan filter
                 if (filterType === 'daily') {
                     const startDate = document.getElementById('start_date').value;
                     const endDate = document.getElementById('end_date').value;
                     title += ` Harian: ${startDate} sampai ${endDate}`;
                 } else {
-                    const selectedYear = document.getElementById('selected_year').value;
-                    title += ` Bulanan Tahun ${selectedYear}`;
+                    const startYear = document.getElementById('start_year').value;
+                    const endYear = document.getElementById('end_year').value;
+                    title += ` Bulanan Tahun ${startYear} s.d. ${endYear}`;
                 }
                 csv.push(title);
-                csv.push(''); // Baris kosong
+                csv.push('');
 
                 // Header tabel
                 let headers = ['No', 'Periode', 'Jumlah Buku Terpinjam', 'Jumlah Peminjam'];
@@ -441,28 +438,23 @@
                 // Tambahkan data baris per baris
                 dataToExport.forEach((row, index) => {
                     let periode;
-
-                    // FIX #4: Gunakan moment.js (sudah ada) untuk format tanggal yang lebih andal
-                    // dan hapus pengecekan row.tanggal yang sudah tidak relevan
                     if (filterType === 'daily') {
                         periode = moment(row.periode).format('DD MMMM YYYY');
                     } else {
-                        // Tambahkan 'YYYY-MM' agar moment.js tahu format inputnya
                         periode = moment(row.periode, 'YYYY-MM').format('MMMM YYYY');
                     }
 
                     let rowData = [
                         index + 1,
-                        `"${periode}"`, // Bungkus dengan kutip untuk keamanan
+                        `"${periode}"`,
                         row.jumlah_peminjaman_buku,
                         row.jumlah_peminjam_unik
                     ];
                     csv.push(rowData.join(delimiter));
                 });
 
-                // --- Sisa logika untuk membuat dan men-download file (tetap sama) ---
                 const csvString = csv.join('\n');
-                const BOM = "\uFEFF"; // Untuk memastikan karakter encoding benar di Excel
+                const BOM = "\uFEFF";
                 const blob = new Blob([BOM + csvString], {
                     type: 'text/csv;charset=utf-8;'
                 });
@@ -475,10 +467,12 @@
                     const endDate = document.getElementById('end_date').value;
                     fileName += `_harian_${startDate}_sampai_${endDate}`;
                 } else {
-                    const selectedYear = document.getElementById('selected_year').value;
-                    fileName += `_bulanan_${selectedYear}`;
+                    const startYear = document.getElementById('start_year').value;
+                    const endYear = document.getElementById('end_year').value;
+                    fileName += `_bulanan_${startYear}-${endYear}`;
                 }
-                fileName += '.csv';
+                // --- AKHIR PERBAIKAN ---
+                fileName += `_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.csv`;
 
                 if (navigator.msSaveBlob) {
                     navigator.msSaveBlob(blob, fileName);

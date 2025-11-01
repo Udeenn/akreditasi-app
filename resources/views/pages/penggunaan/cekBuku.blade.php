@@ -100,8 +100,6 @@
                         </div>
                     </div>
                 </div>
-
-                {{-- Ganti bagian Tabel Histori --}}
                 <div class="col-lg-8">
                     <div class="card shadow-sm">
                         <div class="card-header">
@@ -109,7 +107,6 @@
                         </div>
                         <div class="card-body p-0">
                             @php
-                                // Array ini bisa juga dibuat di controller dan di-pass ke view
                                 $badgeMap = [
                                     'issue' => ['class' => 'bg-primary', 'text' => 'Peminjaman'],
                                     'return' => ['class' => 'bg-success', 'text' => 'Pengembalian'],
@@ -164,7 +161,6 @@
 
             </div>
         @else
-            {{-- Tampilan jika barcode tidak ditemukan --}}
             <div class="alert alert-warning text-center"><i class="fas fa-question-circle me-2"></i>Buku dengan barcode
                 "<strong>{{ $barcode }}</strong>" tidak ditemukan dalam histori.</div>
         @endif

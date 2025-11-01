@@ -3,7 +3,6 @@
 @section('content')
 @section('title', 'Statistik Keterpakaian Koleksi')
 <div class="container">
-    {{-- Header --}}
     <div class="card bg-white shadow-sm mb-4">
         <div class="card-body">
             <h4 class="mb-0">Statistik Keterpakaian Koleksi</h4>
@@ -201,7 +200,6 @@
         const dailyFilterDiv = document.getElementById('dailyFilter');
         const monthlyFilterDiv = document.getElementById('monthlyFilter');
 
-        // Fungsi untuk mengatur visibilitas dan status input filter
         function handleFilterChange() {
             const dailyInputs = dailyFilterDiv.querySelectorAll('input');
             const monthlyInputs = monthlyFilterDiv.querySelectorAll('input');
@@ -221,15 +219,12 @@
             }
         }
 
-        // Tambahkan event listener ke dropdown
         if (filterTypeSelect) {
             filterTypeSelect.addEventListener('change', handleFilterChange);
 
-            // Panggil fungsi sekali saat halaman dimuat untuk mengatur kondisi awal
             handleFilterChange();
         }
 
-        // --- Logika untuk Modal Detail Buku ---
         const detailBukuModal = new bootstrap.Modal(document.getElementById('detailBukuModal'));
         const detailBukuTbody = document.getElementById('detailBukuTbody');
         const detailBukuPaginationContainer = document.getElementById('detailBukuPagination');
@@ -237,7 +232,7 @@
 
         if (mainTable) {
             mainTable.addEventListener('click', function(event) {
-                const target = event.target.closest('.detail-link'); // Find the closest link
+                const target = event.target.closest('.detail-link');
                 if (target) {
                     event.preventDefault();
 
@@ -258,7 +253,6 @@
             });
         }
 
-        // Event listener for pagination clicks inside the modal
         detailBukuPaginationContainer.addEventListener('click', function(event) {
             const target = event.target.closest('.page-link');
             if (target) {
@@ -270,7 +264,6 @@
             }
         });
 
-        // Function to fetch and render book details
         async function fetchDetailBuku(url) {
             detailBukuTbody.innerHTML = '<tr><td colspan="3" class="text-center">Memuat data...</td></tr>';
             detailBukuPaginationContainer.innerHTML = '';
@@ -368,9 +361,6 @@
                     labels: labels,
                     datasets: datasets
                 },
-                // ===============================================
-                // 4. POLES TAMPILAN CHART
-                // ===============================================
                 options: {
                     responsive: true,
                     interaction: {

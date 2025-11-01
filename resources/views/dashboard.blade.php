@@ -1,7 +1,12 @@
 @extends('layouts.app')
 @section('title', 'Dashboard')
 @section('content')
+
     <div class="container-fluid">
+        {{-- <pre>
+Current Route: {{ Route::currentRouteName() }}
+Current Path: {{ request()->path() }}
+</pre> --}}
         <div class="row">
             <div class="col-md-12">
                 <h2 class="text-center mb-4">Statistik Perpustakaan Tahun {{ date('Y') }}</h2>
@@ -10,7 +15,7 @@
         <div class="row">
             <div class="col-md-3 col-sm-6 mb-4">
                 <div class="card shadow-sm h-100">
-                    <div class="card-body d-flex flex-column justify-content-between">
+                    <div class="card-body d-flex flex-column justify-content-around">
                         <div>
                             <small class="text-muted">Total Jurnal</small>
                             <h4 class="card-title mt-2 mb-0">{{ $formatTotalJurnal }}</h4>
@@ -83,6 +88,7 @@
     </div>
     <div class="row">
         @php
+            // --- Data Kunjungan Website ---
             $kunjunganWebsite = [
                 'Januari' => 18900,
                 'Februari' => 28087,
@@ -93,40 +99,36 @@
                 'Juli' => 18876,
                 'Agustus' => 22164,
                 'September' => 21580,
-                'Oktober' => 0,
+                'Oktober' => 18424,
                 'November' => 0,
                 'Desember' => 0,
             ];
-        @endphp
-        <div class="col-lg-6 col-md-6 mb-4">
-            <div class="card shadow-sm border-0 h-100 pb-3">
-                <div class=" border-0 py-3">
-                    <h5 class="mb-0 d-flex justify-content-center align-items-center">
-                        <i class="fa-solid fa-globe fa-2x me-2" style="color: #8914d7;"></i>
-                        <span>Kunjungan Online Bulanan (Website)</span>
-                    </h5>
-                </div>
-                <div class="card-body pt-2">
-                    <table class="table table-sm table-borderless">
-                        <tbody>
-                            @foreach ($kunjunganWebsite as $bulan => $jumlah)
-                                <tr>
-                                    <td class="text-muted">{{ $bulan }} {{ date('Y') }}</td>
-                                    <td class="text-end fw-bold">{{ number_format($jumlah) }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                <div class="border-0 text-center pt-0">
-                    <a href="http://statcounter.com/p13060651/summary/?guest=1" target="_blank"
-                        class="btn btn-outline-primary btn-sm px-3">
-                        Lihat Detail
-                    </a>
-                </div>
-            </div>
-        </div>
-        @php
+            $bulanLengkap = [
+                'Januari',
+                'Februari',
+                'Maret',
+                'April',
+                'Mei',
+                'Juni',
+                'Juli',
+                'Agustus',
+                'September',
+                'Oktober',
+                'November',
+                'Desember',
+            ];
+            foreach ($bulanLengkap as $bln) {
+                if (!isset($kunjunganWebsite[$bln])) {
+                    $kunjunganWebsite[$bln] = 0;
+                }
+            }
+            $totalKunjunganWebsite = array_sum($kunjunganWebsite);
+            $tahunSekarang = date('Y');
+
+            $websiteCol1 = array_slice($kunjunganWebsite, 0, 6, true); // Jan-Jun
+            $websiteCol2 = array_slice($kunjunganWebsite, 6, 6, true); // Jul-Des
+
+            // --- Data Kunjungan Repository ---
             $kunjunganRepository = [
                 'Januari' => 10161,
                 'Februari' => 13389,
@@ -137,35 +139,118 @@
                 'Juli' => 8239,
                 'Agustus' => 9452,
                 'September' => 10623,
-                'Oktober' => 0,
+                'Oktober' => 9849,
                 'November' => 0,
                 'Desember' => 0,
             ];
+            foreach ($bulanLengkap as $bln) {
+                if (!isset($kunjunganRepository[$bln])) {
+                    $kunjunganRepository[$bln] = 0;
+                }
+            }
+            $totalKunjunganRepository = array_sum($kunjunganRepository);
+
+            $repoCol1 = array_slice($kunjunganRepository, 0, 6, true);
+            $repoCol2 = array_slice($kunjunganRepository, 6, 6, true);
         @endphp
+
+        {{-- Card Kunjungan Website (Layout 2 Kolom) --}}
         <div class="col-lg-6 col-md-6 mb-4">
-            <div class="card shadow-sm border-0 h-100 pb-3">
-                <div class=" border-0 py-3">
-                    <h5 class="mb-0 d-flex justify-content-center align-items-center">
-                        <i class="fa-solid fa-globe fa-2x me-2" style="color: #04833b;"></i>
-                        <span>Kunjungan Online Bulanan (Repository)</span>
-                    </h5>
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header d-flex align-items-center">
+                    <i class="fas fa-globe fa-lg me-2" style="color: #8914d7;"></i>
+                    <h6 class="mb-0 fw-bold">Kunjungan Website <span
+                            class="text-muted fw-normal">({{ $tahunSekarang }})</span></h6>
                 </div>
-                <div class="card-body pt-2">
-                    <table class="table table-sm table-borderless">
-                        <tbody>
-                            @foreach ($kunjunganRepository as $bulan => $jumlah)
-                                <tr>
-                                    <td class="text-muted">{{ $bulan }} {{ date('Y') }}</td>
-                                    <td class="text-end fw-bold">{{ number_format($jumlah) }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <ul class="list-group list-group-flush">
+                                @foreach ($websiteCol1 as $bulan => $jumlah)
+                                    <li
+                                        class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 list-group-item-action">
+                                        <span class="text-body-emphasis">{{ $bulan }}</span>
+                                        <span
+                                            class="badge bg-primary rounded-pill px-2 py-1">{{ number_format($jumlah) }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        <div class="col-6">
+                            <ul class="list-group list-group-flush">
+                                @foreach ($websiteCol2 as $bulan => $jumlah)
+                                    <li
+                                        class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 list-group-item-action">
+                                        <span class="text-body-emphasis">{{ $bulan }}</span>
+                                        <span
+                                            class="badge bg-primary rounded-pill px-2 py-1">{{ number_format($jumlah) }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-                <div class="border-0 text-center pt-0">
+
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted">Total Tahun Ini:</small>
+                        <strong
+                            class="d-block fs-5 text-body-emphasis">{{ number_format($totalKunjunganWebsite) }}</strong>
+                    </div>
+                    <a href="http://statcounter.com/p13060651/summary/?guest=1" target="_blank"
+                        class="btn btn-outline-primary btn-sm px-3">
+                        <i class="fas fa-external-link-alt me-1"></i> Lihat Detail
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header d-flex align-items-center">
+                    <i class="fas fa-database fa-lg me-2" style="color: #04833b;"></i>
+                    <h6 class="mb-0 fw-bold">Kunjungan Repository <span
+                            class="text-muted fw-normal">({{ $tahunSekarang }})</span></h6>
+                </div>
+
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <ul class="list-group list-group-flush">
+                                @foreach ($repoCol1 as $bulan => $jumlah)
+                                    <li
+                                        class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 list-group-item-action">
+                                        <span class="text-body-emphasis">{{ $bulan }}</span>
+                                        <span
+                                            class="badge bg-success rounded-pill px-2 py-1">{{ number_format($jumlah) }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        <div class="col-6">
+                            <ul class="list-group list-group-flush">
+                                @foreach ($repoCol2 as $bulan => $jumlah)
+                                    <li
+                                        class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 list-group-item-action">
+                                        <span class="text-body-emphasis">{{ $bulan }}</span>
+                                        <span
+                                            class="badge bg-success rounded-pill px-2 py-1">{{ number_format($jumlah) }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted">Total Tahun Ini:</small>
+                        <strong
+                            class="d-block fs-5 text-body-emphasis">{{ number_format($totalKunjunganRepository) }}</strong>
+                    </div>
                     <a href="http://statcounter.com/p13060683/summary/?guest=1" target="_blank"
                         class="btn btn-outline-primary btn-sm px-3">
-                        Lihat Detail
+                        <i class="fas fa-external-link-alt me-1"></i> Lihat Detail
                     </a>
                 </div>
             </div>
@@ -269,8 +354,8 @@
         integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" href="{{ asset('/css/dashboard.css') }}">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/3.0.2/css/buttons.dataTables.min.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/colvis/1.0.4/css/dataTables.colVis.css" />
+    <link rel="stylesheet" type="text/css"
+        href="https://cdn.datatables.net/buttons/3.0.2/css/buttons.dataTables.min.css">
 @endpush
 
 @push('scripts')

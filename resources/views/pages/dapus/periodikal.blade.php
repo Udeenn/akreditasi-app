@@ -36,8 +36,6 @@
                 <button type="submit" class="btn btn-primary w-100">Tampilkan</button>
             </div>
         </form>
-
-        {{-- Input Search Langsung untuk DataTables --}}
         <div class="mb-3">
             <input type="text" class="form-control" id="searchInput" placeholder="Cari jenis, judul, nomor...">
         </div>
@@ -133,7 +131,6 @@
     </div>
 
     @push('scripts')
-        {{-- Memuat DataTables CSS dan JS --}}
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
         <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
         <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
@@ -142,23 +139,22 @@
                 // Inisialisasi DataTables jika tabel ada
                 var table = $('#myTablePeriodikal').DataTable({
                     "language": {
-                        "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json" // Bahasa Indonesia
-                        // Hapus "decimal" dan "thousands" di sini
+                        "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json"
                     },
-                    "paging": true, // Aktifkan paginasi
-                    "lengthChange": true, // Aktifkan pilihan jumlah item per halaman
-                    "searching": true, // Aktifkan fitur pencarian bawaan DataTables
-                    "ordering": true, // Aktifkan pengurutan kolom
-                    "info": true, // Tampilkan informasi "Showing X to Y of Z entries"
-                    "autoWidth": false, // Nonaktifkan penyesuaian lebar kolom otomatis
+                    "paging": true,
+                    "lengthChange": true,
+                    "searching": true,
+                    "ordering": true,
+                    "info": true,
+                    "autoWidth": false,
                     "columnDefs": [{
                             "orderable": false,
                             "targets": [0]
-                        }, // Kolom 'No' (indeks 0) tidak bisa diurutkan
+                        },
                         {
-                            "targets": 0, // Kolom 'No'
+                            "targets": 0,
                             "render": function(data, type, row, meta) {
-                                return meta.row + 1; // Menomori baris secara otomatis oleh DataTables
+                                return meta.row + 1;
                             }
                         }
                     ],
@@ -168,17 +164,7 @@
                     ],
                     "pageLength": 10,
                     "dom": '<"d-flex justify-content-between mb-3"lp>t<"d-flex justify-content-between mt-3"ip>',
-                    // Tambahkan infoCallback di sini untuk format angka
-                    // "infoCallback": function(settings, start, end, max, total, pre) {
-                    //     let formatter = new Intl.NumberFormat(
-                    //         'id-ID'); // 'id-ID' untuk format Indonesia (titik sebagai pemisah ribuan)
-                    //     let formattedTotal = formatter.format(total);
-                    //     let formattedStart = formatter.format(start);
-                    //     let formattedEnd = formatter.format(end);
-
-                    //     return `Menampilkan ${formattedStart} sampai ${formattedEnd} dari ${formattedTotal} entri`;
-                    // },
-                    // "dom": 'lrtip' // Menghilangkan input search bawaan DataTables
+                    "dom": 'lrtip'
                 });
 
                 function updateCustomInfo() {
@@ -188,11 +174,8 @@
                     let infoText = `${formattedTotal}`;
                     $('#customInfoJurnal').html(infoText);
                 }
-                // Update info saat tabel di-draw
                 table.on('draw', updateCustomInfo);
-                // Inisialisasi info pertama kali
                 updateCustomInfo();
-                // Sinkronkan input search kustom dengan pencarian DataTables
                 $('#searchInput').on('keyup change', function() {
                     table.search(this.value).draw();
                 });

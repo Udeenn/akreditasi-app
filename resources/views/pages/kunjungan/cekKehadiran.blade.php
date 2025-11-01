@@ -1,9 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
-@section('title', 'Cek Kehadiran Per Bulan')
+@section('title', 'Cek Kunjungan Per Bulan')
 <div class="container">
-    <h4>Cek Kehadiran Per Bulan</h4>
+    <h4>Cek Kunjungan Per Bulan</h4>
     <form method="GET" action="{{ route('kunjungan.cekKehadiran') }}" class="row g-3 mb-4 align-items-end">
         <div class="col-md-3">
             <label for="cardnumber" class="form-label">Nomor Kartu Anggota (Cardnumber)</label>
@@ -313,7 +313,6 @@
                         navHtml += `</ul></nav>`;
                         paginationLinks.innerHTML = navHtml;
 
-                        // Tambahkan event listener ke tombol pagination
                         paginationLinks.querySelectorAll('.page-link').forEach(link => {
                             link.addEventListener('click', (e) => {
                                 e.preventDefault();
@@ -336,17 +335,12 @@
             }
         }
 
-        // Logika awal untuk tombol Modal Lokasi
         document.querySelectorAll('.btn-modal-lokasi').forEach(button => {
             button.addEventListener('click', function() {
                 const cardnumber = this.getAttribute('data-cardnumber');
                 const tahunBulan = this.getAttribute('data-tahun-bulan');
-
-                // Tampilkan modal terlebih dahulu
                 const lokasiModal = new bootstrap.Modal(document.getElementById('lokasiModal'));
                 lokasiModal.show();
-
-                // Panggil fungsi untuk memuat data
                 fetchLokasiData(cardnumber, tahunBulan);
             });
         });

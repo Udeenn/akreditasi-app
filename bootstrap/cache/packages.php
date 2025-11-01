@@ -11,13 +11,6 @@
       0 => 'Barryvdh\\DomPDF\\ServiceProvider',
     ),
   ),
-  'laravel/breeze' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Laravel\\Breeze\\BreezeServiceProvider',
-    ),
-  ),
   'laravel/pail' => 
   array (
     'providers' => 

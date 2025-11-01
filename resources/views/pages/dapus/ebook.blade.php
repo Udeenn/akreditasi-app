@@ -8,37 +8,49 @@
             href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 
         <style>
-            html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection {
-                background-color: #2b3035;
-                border: 1px solid #495057;
+            .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+            .select2-container--bootstrap-5.select2-container--open .select2-selection {
+                box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
             }
 
-            html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
-                color: #dee2e6;
+            /* Dark Mode Select2 Styles */
+            body.dark-mode .select2-container--bootstrap-5 .select2-selection {
+                background-color: var(--sidebar-bg) !important;
+                border-color: var(--border-color) !important;
+                color: #ffffff !important;
             }
 
-            html[data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow b {
-                border-color: #adb5bd transparent transparent transparent;
+            body.dark-mode .select2-container--bootstrap-5 .select2-selection__rendered {
+                color: #ffffff !important;
             }
 
-            html[data-bs-theme="dark"] .select2-dropdown {
-                background-color: #2b3035;
-                border: 1px solid #495057;
+            body.dark-mode .select2-container--bootstrap-5 .select2-selection__arrow b {
+                border-color: #adb5bd transparent transparent transparent !important;
             }
 
-            html[data-bs-theme="dark"] .select2-search--dropdown .select2-search__field {
-                background-color: #212529;
-                color: #dee2e6;
-                border: 1px solid #495057;
+            body.dark-mode .select2-container--bootstrap-5 .select2-dropdown {
+                background-color: var(--sidebar-bg) !important;
+                border-color: var(--border-color) !important;
             }
 
-            html[data-bs-theme="dark"] .select2-results__option {
-                color: #dee2e6;
+            body.dark-mode .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
+                background-color: #334155 !important;
+                border-color: var(--border-color) !important;
+                color: var(--text-dark) !important;
             }
 
-            html[data-bs-theme="dark"] .select2-results__option--highlighted {
-                background-color: #0d6efd;
-                color: white;
+            body.dark-mode .select2-results__option {
+                color: #ffffff !important;
+            }
+
+            body.dark-mode .select2-results__option--highlighted {
+                background-color: var(--primary-color) !important;
+                color: white !important;
+            }
+
+            body.dark-mode .select2-results__option[aria-selected=true] {
+                background-color: rgba(var(--bs-primary-rgb), 0.2) !important;
+                color: #ffffff !important;
             }
         </style>
     @endpush
@@ -49,8 +61,7 @@
                 - Semua Program Studi
             @endif
         </h4>
-        <form method="GET" action="{{ route('koleksi.ebook') }}" class="row g-3 mb-4 align-items-end"
-            id="filterFormEbook">
+        <form method="GET" action="{{ route('koleksi.ebook') }}" class="row g-3 mb-4 align-items-end" id="filterFormEbook">
             <div class="col-md-4">
                 <label for="prodi" class="form-label">Pilih Prodi</label>
                 <select name="prodi" id="prodi" class="form-select">
@@ -82,27 +93,28 @@
         <div class="card shadow mb-4">
             <div class="card-body">
                 <div class="mb-3">
-            <input type="text" class="form-control" id="searchInput" placeholder="Cari judul, pengarang, penerbit...">
-        </div>
+                    <input type="text" class="form-control" id="searchInput"
+                        placeholder="Cari judul, pengarang, penerbit...">
+                </div>
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="alert alert-info py-2">
                             <i class="fas fa-book me-2"></i> Total Judul Ebook:
                             <span class="fw-bold">{{ number_format($totalJudul, 0, ',', '.') }}</span>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="alert alert-success py-2">
                             <i class="fas fa-copy me-2"></i> Total Eksemplar:
                             <span class="fw-bold">{{ number_format($totalEksemplar, 0, ',', '.') }}</span>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    {{-- <div class="col-md-4">
                         <div class="alert alert-danger py-2">
                             <i class="fas fa-database me-2"></i> Total Entri:
                             <span class="fw-bold" id="customInfoJurnal"></span>
                         </div>
-                    </div>
+                    </div> --}}
                 </div>
                 @if ($prodi && $prodi !== 'initial' && $dataExists)
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
@@ -126,7 +138,7 @@
                             <table class="table table-bordered table-hover table-striped" id="myTableEbook">
                                 <thead>
                                     <tr>
-                                        <th>No</th> {{-- Tambahkan kolom No --}}
+                                        <th>No</th>
                                         <th>Judul</th>
                                         <th>Pengarang</th>
                                         <th>Kota Terbit</th>
@@ -140,8 +152,7 @@
                                 <tbody>
                                     @foreach ($data as $row)
                                         <tr>
-                                            <td></td> {{-- Kolom ini akan diisi oleh DataTables --}}
-                                            {{-- <td>{{ $row->Judul }}</td> --}}
+                                            <td></td>
                                             <td>{!! $row->Judul !!}</td>
                                             <td>{{ $row->Pengarang }}</td>
                                             <td>{{ $row->Kota_Terbit }}</td>
@@ -150,8 +161,8 @@
                                             <td>{{ $row->Eksemplar }}</td>
                                             <td>
                                                 @if (!empty($row->Link_Ebook))
-                                                    <a href="{{ $row->Link_Ebook }}" target="_blank" class="btn btn-primary"
-                                                        rel="noopener noreferrer">Link</a>
+                                                    <a href="{{ $row->Link_Ebook }}" target="_blank"
+                                                        class="btn btn-primary" rel="noopener noreferrer">Link</a>
                                                 @else
                                                     -
                                                 @endif
@@ -189,13 +200,7 @@
                     theme: 'bootstrap-5',
                     placeholder: 'Ketik untuk mencari prodi...'
                 });
-                $('#prodi').on('select2:open', function() {
-                    if ($('body').hasClass('dark-mode')) {
-                        setTimeout(function() {
-                            $('.select2-dropdown').addClass('select2-dark-theme');
-                        }, 0);
-                    }
-                });
+
                 var table = $('#myTableEbook').DataTable({
                     "language": {
                         "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json"
@@ -209,11 +214,11 @@
                     "columnDefs": [{
                             "orderable": false,
                             "targets": [0]
-                        }, // Kolom 'No' (indeks 0) tidak bisa diurutkan
+                        },
                         {
-                            "targets": 0, // Target kolom 'No'
+                            "targets": 0,
                             "render": function(data, type, row, meta) {
-                                return meta.row + 1; // Menomori baris secara otomatis oleh DataTables
+                                return meta.row + 1;
                             }
                         }
                     ],
@@ -222,23 +227,9 @@
                         [10, 25, 50, 100, "Semua"]
                     ],
                     "pageLength": 10,
-                    // "dom": 'lrtip'
-                    // "dom": '<"top"lp>t<"bottom"ip>'
                     "dom": '<"d-flex justify-content-between mb-3"lp>t<"d-flex justify-content-between mt-3"ip>',
-                    // "infoCallback": function(settings, start, end, max, total, pre) {
-                    //     // Gunakan Intl.NumberFormat untuk memformat angka total
-                    //     let formatter = new Intl.NumberFormat(
-                    //         'id-ID'); // 'id-ID' untuk format Indonesia (titik sebagai pemisah ribuan)
-                    //     let formattedTotal = formatter.format(total);
-                    //     let formattedStart = formatter.format(start);
-                    //     let formattedEnd = formatter.format(end);
 
-                    //     // Sesuaikan string sesuai dengan format DataTables default (atau sesuaikan jika kamu punya teks sendiri)
-                    //     return `Menampilkan ${formattedStart} sampai ${formattedEnd} dari ${formattedTotal} entri`;
-                    // },
-                    // "dom": 'lrtip'
                 });
-                // Fungsi untuk update info paginasi ke div custom
                 function updateCustomInfo() {
                     var pageInfo = table.page.info();
                     let formatter = new Intl.NumberFormat('id-ID');
@@ -246,9 +237,7 @@
                     let infoText = `${formattedTotal}`;
                     $('#customInfoJurnal').html(infoText);
                 }
-                // Update info saat tabel di-draw
                 table.on('draw', updateCustomInfo);
-                // Inisialisasi info pertama kali
                 updateCustomInfo();
 
                 $('#searchInput').on('keyup change', function() {

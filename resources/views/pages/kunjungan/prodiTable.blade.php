@@ -1,3 +1,49 @@
+@push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    <style>
+        .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+        .select2-container--bootstrap-5.select2-container--open .select2-selection {
+            box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+        }
+
+        body.dark-mode .select2-container--bootstrap-5 .select2-selection {
+            background-color: var(--sidebar-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-dark) !important;
+        }
+
+        body.dark-mode .select2-container--bootstrap-5 .select2-dropdown {
+            background-color: var(--sidebar-bg) !important;
+            border-color: var(--border-color) !important;
+        }
+
+        body.dark-mode .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
+            background-color: #334155 !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-dark) !important;
+        }
+
+        body.dark-mode .select2-container--bootstrap-5 .select2-selection__rendered {
+            color: #ffffff !important;
+        }
+
+        body.dark-mode .select2-results__option {
+            color: #ffffff !important;
+        }
+
+        body.dark-mode .select2-results__option--highlighted {
+            background-color: var(--primary-color) !important;
+            color: white !important;
+        }
+
+        body.dark-mode .select2-results__option[aria-selected=true] {
+            background-color: rgba(var(--bs-primary-rgb), 0.2) !important;
+            color: var(--text-dark);
+        }
+    </style>
+@endpush
 @extends('layouts.app')
 
 @section('title', 'Statistik Kunjungan Civitas')
@@ -29,13 +75,14 @@
                     <div class="col-md-4">
                         <label for="prodi" class="form-label">Pilih Prodi/Tipe User</label>
                         <select name="prodi" id="prodi" class="form-select">
-                            <option value="semua" {{ request('prodi', 'semua') == 'semua' ? 'selected' : '' }}>
+                            {{-- <option value="semua" {{ request('prodi', 'semua') == 'semua' ? 'selected' : '' }}>
                                 (Semua) -- Seluruh Prodi
-                            </option>
+                            </option> --}}
                             @foreach ($listProdi as $kode => $nama)
                                 <option class="custom-option" value="{{ $kode }}"
                                     {{ request('prodi') == $kode ? 'selected' : '' }}>
-                                    {{ $nama }} ({{ $kode }})
+                                    ({{ $kode }})
+                                    - {{ $nama }}
                                 </option>
                             @endforeach
                         </select>
@@ -381,11 +428,7 @@
                     }
                 });
             }
-            // --- Akhir Logika untuk Chart ---
-
-            // --- Fungsi Utama untuk memuat dan menampilkan detail pengunjung ---
             async function loadDetailData(page = 1) {
-                // Tampilkan pesan loading dan bersihkan konten lama
                 tbodyDetailPengunjung.innerHTML = loadingMessage;
                 modalPagination.innerHTML = '';
                 modalTotalSpan.textContent = '...';
@@ -396,8 +439,6 @@
                 } else {
                     tanggalParam = `tanggal=${currentDetailTanggal}`;
                 }
-
-                // Buat URL yang lengkap dengan semua parameter
                 const url =
                     `{{ route('kunjungan.get_detail_pengunjung') }}?${tanggalParam}&kode_identifikasi=${currentKodeIdentifikasi}&per_page=10&page=${page}`;
 
@@ -437,7 +478,6 @@
                 }
             }
 
-            // --- Fungsi untuk merender tombol paginasi ---
             function renderPagination(data) {
                 const ul = document.createElement('ul');
                 ul.classList.add('pagination', 'pagination-sm', 'm-0');
@@ -486,7 +526,6 @@
 
                 modalPagination.appendChild(ul);
 
-                // Tambahkan event listener untuk tombol-tombol yang baru dibuat
                 if (data.prev_page_url) {
                     prevLi.addEventListener('click', function(e) {
                         e.preventDefault();
@@ -675,6 +714,19 @@
                     }
                 });
             }
+        });
+    </script>
+@endpush
+@push('scripts')
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            $('#prodi').select2({
+                theme: 'bootstrap-5',
+            });
         });
     </script>
 @endpush

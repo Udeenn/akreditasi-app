@@ -4,9 +4,6 @@
 @section('title', 'Cek Histori Peminjaman')
 
 <div class="container">
-    {{-- =============================================== --}}
-    {{-- Header dengan Ikon --}}
-    {{-- =============================================== --}}
     <div class="d-flex align-items-center mb-4">
         <i class="fas fa-user-clock fa-2x text-primary me-3"></i>
         <div>
@@ -14,10 +11,6 @@
             <small class="text-muted">Lacak riwayat peminjaman dan pengembalian anggota.</small>
         </div>
     </div>
-
-    {{-- =============================================== --}}
-    {{-- Form Pencarian yang Lebih Rapi --}}
-    {{-- =============================================== --}}
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <form action="{{ route('peminjaman.check_history') }}" method="GET">
@@ -41,21 +34,16 @@
             <div class="col-lg-4 mb-4">
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-body text-center">
-                        {{-- Bagian Avatar dan Nama (tetap sama) --}}
                         <img src="https://ui-avatars.com/api/?name={{ urlencode($borrower->firstname . ' ' . $borrower->surname) }}&background=0D6EFD&color=fff&size=100"
                             class="rounded-circle mb-3" alt="Avatar">
                         <h5 class="card-title">{{ $borrower->firstname }} {{ $borrower->surname }}</h5>
                         <p class="card-text text-muted">{{ $borrower->cardnumber }}</p>
                         <hr>
-
-                        {{-- Bagian Kontak (tetap sama) --}}
                         <div class="text-start mb-3">
                             <p><i class="fas fa-envelope fa-fw me-2 text-muted"></i>{{ $borrower->email ?? '-' }}</p>
                             <p><i class="fas fa-phone fa-fw me-2 text-muted"></i>{{ $borrower->phone ?? '-' }}</p>
                         </div>
                         <hr>
-
-                        {{-- Bagian Total yang dipindahkan dari footer --}}
                         <div class="d-flex justify-content-around">
                             <div>
                                 <small class="text-muted">Total Peminjaman</small>
@@ -212,9 +200,9 @@
                     result.data.forEach(row => {
                         const rowData = headers.map(header => {
                             const key = header.toLowerCase().replace(/ & /g, '_').replace(
-                                / /g, '_'); // Konversi header ke key yang sesuai
+                                / /g, '_');
                             let text = row[key] !== undefined ? String(row[key]) :
-                                ''; // Pastikan tidak undefined
+                                '';
                             text = text.replace(/"/g, '""');
                             if (text.includes(delimiter) || text.includes('"') || text
                                 .includes('\n')) {

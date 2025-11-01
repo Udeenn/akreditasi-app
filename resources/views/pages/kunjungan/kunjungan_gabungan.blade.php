@@ -3,7 +3,6 @@
 @section('content')
 @section('title', 'Laporan Kunjungan Perpustakaan')
 <div class="container">
-    {{-- HEADER HALAMAN --}}
     <div class="card bg-white shadow-sm mb-4 border-0">
         <div class="card-body d-flex align-items-center">
             <div>
@@ -14,7 +13,6 @@
         </div>
     </div>
 
-    {{-- FORM FILTER --}}
     <div class="card shadow-sm mb-4 border-0">
         <div class="card-header">
             <a class="h6 mb-0 text-decoration-none" data-bs-toggle="collapse" href="#collapseFilter" role="button"
@@ -220,7 +218,6 @@
     @endif
 </div>
 
-{{-- SCRIPT JAVASCRIPT (DISEDERHANAKAN) --}}
 <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -245,7 +242,6 @@
             handleFilterChange(); // Jalankan saat halaman pertama kali dimuat
         }
 
-        // 2. Logika untuk tombol Export CSV
         const exportCsvButton = document.getElementById('exportCsvBtn');
         if (exportCsvButton) {
             exportCsvButton.addEventListener('click', function() {
@@ -255,7 +251,6 @@
                 currentUrl.searchParams.set('export', 'csv');
                 window.location.href = currentUrl.toString();
 
-                // Kembalikan tombol ke keadaan normal setelah beberapa saat
                 setTimeout(() => {
                     this.disabled = false;
                     this.innerHTML = '<i class="fas fa-file-csv me-2"></i>Export CSV';
@@ -263,7 +258,6 @@
             });
         }
 
-        // 3. Logika untuk Chart
         const chartData = @json($chartData ?? []);
         const filterType = '{{ $filterType }}';
         if (Object.keys(chartData).length > 0) {
