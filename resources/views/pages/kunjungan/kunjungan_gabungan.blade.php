@@ -90,7 +90,7 @@
         @if (!$dataHasil->isEmpty())
             {{-- KARTU STATISTIK & GRAFIK --}}
             <div class="row mb-4">
-                <div class="col-md-6 mb-3 mb-md-0">
+                <div class="col-md-4 mb-3 mb-md-0">
                     <div class="card shadow-sm border-0 h-100">
                         <div class="card-body text-center">
                             <i class="fas fa-users fa-3x text-primary mb-3"></i>
@@ -99,15 +99,26 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                            <h6 class="text-muted mb-1">
+                                Rerata Kunjungan / {{ $filterType == 'yearly' ? 'Bulan' : 'Hari' }}
+                            </h6>
+                            <h2 class="fw-bold mb-0">{{ number_format($rerataKunjungan, 1) }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
                     <div class="card shadow-sm border-0 h-100">
                         <div class="card-body d-flex align-items-center">
-                            <div class="flex-shrink-0 me-3">
+                            {{-- <div class="flex-shrink-0 me-3">
                                 <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center"
                                     style="width: 60px; height: 60px;">
                                     <i class="fas fa-trophy fa-2x"></i>
                                 </div>
-                            </div>
+                            </div> --}}
                             <div class="flex-grow-1">
                                 <h6 class="text-muted mb-2">Lokasi Terpopuler</h6>
                                 @forelse ($topLokasi as $lokasi => $jumlah)

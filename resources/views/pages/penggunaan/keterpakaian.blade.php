@@ -57,7 +57,7 @@
         @if (!empty($dataTabel) && !$dataTabel->isEmpty())
             {{-- Kartu Ringkasan (Summary Cards) --}}
             <div class="row mb-4">
-                <div class="col-md-6 mb-3 mb-md-0">
+                <div class="col-md-4 mb-3 mb-md-0">
                     <div class="card shadow-sm border-0 h-100">
                         <div class="card-body text-center">
                             <i class="fas fa-book-open fa-3x text-primary mb-3"></i>
@@ -66,7 +66,18 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                            <h6 class="text-muted mb-1">
+                                Rerata Penggunaan / {{ $filterType == 'daily' ? 'Hari' : 'Bulan' }}
+                            </h6>
+                            <h2 class="fw-bold mb-0">{{ number_format($rerataPenggunaan, 1) }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
                     <div class="card shadow-sm border-0 h-100">
                         <div class="card-body text-center">
                             <i class="fas fa-star fa-3x text-warning mb-3"></i>

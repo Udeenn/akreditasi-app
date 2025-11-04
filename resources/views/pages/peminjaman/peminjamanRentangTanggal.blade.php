@@ -97,22 +97,29 @@
             </div>
             <div class="card-body">
                 <div class="row mb-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="alert alert-info py-2">
                             <i class="fas fa-book me-2"></i> Total Buku Terpinjam:
                             <span class="fw-bold">{{ number_format($totalBooks) }}</span>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="alert alert-info py-2">
                             <i class="fas fa-users me-2"></i> Total Peminjam :
                             <span class="fw-bold">{{ number_format($totalBorrowers) }}</span>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="alert alert-warning py-2">
                             <i class="fas fa-book-reader me-2"></i> Total Entri:
                             <span class="fw-bold">{{ $statistics->total() }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="alert alert-success py-2">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Rerata {{ ($filterType ?? 'daily') == 'daily' ? 'Hari' : 'Bulan' }}:
+                            <span class="fw-bold">{{ number_format($rerataPeminjaman, 1) }}</span>
                         </div>
                     </div>
                 </div>
@@ -383,7 +390,7 @@
                         </tr>`;
                 });
                 detailTbody.innerHTML = allRowsHtml;
-                
+
                 let paginationHtml = '<ul class="pagination pagination-sm mb-0">';
                 if (result.links) {
                     result.links.forEach(link => {

@@ -842,17 +842,18 @@ class VisitHistory extends Controller
         $dataHasil = collect();
         $chartData = collect();
         $totalKunjungan = 0;
+        $rerataKunjungan = 0;
         $maxKunjungan = 0;
         $topLokasi = collect();
 
         $lokasiMapping = [
-            'sni' => 'SNI Corner',
-            'bi' => 'Bank Indonesia Corner',
-            'mc' => 'Muhammadiyah Corner',
+            // 'sni' => 'SNI Corner',
+            // 'bi' => 'Bank Indonesia Corner',
+            // 'mc' => 'Muhammadiyah Corner',
             'pusat' => 'Perpustakaan Pusat',
             'pasca' => 'Perpustakaan Pascasarjana',
             'fk' => 'Perpustakaan Kedokteran',
-            'ref' => 'Referensi Perpustakaan Pusat',
+            // 'ref' => 'Referensi Perpustakaan Pusat',
         ];
 
         $historyLokasi = DB::connection('mysql2')->table('visitorhistory')->select(DB::raw("IFNULL(location, 'pusat') as lokasi_kunjungan"))->distinct();
@@ -891,6 +892,9 @@ class VisitHistory extends Controller
             })->sortBy('periode')->values();
 
             $totalKunjungan = $allSummarizedResults->sum('jumlah');
+            $jumlahPeriode = $allSummarizedResults->count();
+            $rerataKunjungan = ($jumlahPeriode > 0) ? ($totalKunjungan / $jumlahPeriode) : 0;
+
             $maxKunjungan = $allSummarizedResults->max('jumlah') ?? 0;
             $chartData = $allSummarizedResults->pluck('jumlah', 'periode');
 
@@ -910,7 +914,6 @@ class VisitHistory extends Controller
 
             $dataHasil->appends($request->all());
 
-            // --- MODIFIKASI DIMULAI DI SINI ---
             // Query Top Lokasi yang Dinamis
             $historyLokasiQuery = DB::connection('mysql2')->table('visitorhistory')
                 ->select(DB::raw("IFNULL(location, 'pusat') as lokasi"), DB::raw("COUNT(*) as jumlah"))
@@ -930,12 +933,13 @@ class VisitHistory extends Controller
             }
 
             $allLokasiResults = $historyLokasiQuery->get()->merge($cornerLokasiQuery->get());
-            $topLokasi = $allLokasiResults->groupBy('lokasi')->map(fn($item, $key) => $item->sum('jumlah'))->sortDesc()->take(3);
-            // --- MODIFIKASI SELESAI ---
+            $topLokasi = $allLokasiResults
+                ->whereNotIn('lokasi', ['sni', 'bi', 'mc', 'ref'])
+                ->groupBy('lokasi')->map(fn($item, $key) => $item->sum('jumlah'))->sortDesc()->take(3);
         }
 
         // Kirim variabel 'maxKunjungan' bukan 'maxKunjunganBulanan'
-        return view('pages.kunjungan.kunjungan_gabungan', compact('filterType', 'startYear', 'endYear', 'startDate', 'endDate', 'selectedLokasi', 'dataHasil', 'lokasiMapping', 'lokasiOptions', 'chartData', 'totalKunjungan', 'maxKunjungan', 'topLokasi'));
+        return view('pages.kunjungan.kunjungan_gabungan', compact('filterType', 'rerataKunjungan', 'startYear', 'endYear', 'startDate', 'endDate', 'selectedLokasi', 'dataHasil', 'lokasiMapping', 'lokasiOptions', 'chartData', 'totalKunjungan', 'maxKunjungan', 'topLokasi'));
     }
 
 

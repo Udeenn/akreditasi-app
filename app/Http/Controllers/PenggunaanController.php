@@ -27,6 +27,7 @@ class PenggunaanController extends Controller
         $listKategori = [];
         $ccodeDescriptions = collect();
         $totalPenggunaan = 0;
+        $rerataPenggunaan = 0;
         $kategoriPopuler = ['nama' => 'N/A', 'jumlah' => 0];
         $maxJumlah = 0;
 
@@ -68,6 +69,10 @@ class PenggunaanController extends Controller
                 })->values();
 
                 $totalPenggunaan = $dataTabel->sum(fn($row) => collect($row)->only($listKategori)->sum());
+
+                $jumlahPeriode = $dataTabel->count();
+                $rerataPenggunaan = ($jumlahPeriode > 0) ? ($totalPenggunaan / $jumlahPeriode) : 0;
+
                 $kategoriSums = $results->groupBy('kategori')->map(fn($items) => $items->sum('jumlah'));
                 $kategoriPopuler['nama'] = $kategoriSums->sortDesc()->keys()->first();
                 $kategoriPopuler['jumlah'] = $kategoriSums->sortDesc()->first();
@@ -88,7 +93,8 @@ class PenggunaanController extends Controller
             'endDate',
             'totalPenggunaan',
             'kategoriPopuler',
-            'maxJumlah'
+            'maxJumlah',
+            'rerataPenggunaan',
         ));
     }
 

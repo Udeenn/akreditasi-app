@@ -179,9 +179,10 @@
                                             <td>{{ $row->Eksemplar }}</td>
                                             <td>{{ $row->Lokasi }}</td>
                                             <td>
-                                                @if (!empty($row->Link_Ebook))
+                                                {{-- Cek apakah kolom Link_Prosiding berisi nilai. --}}
+                                                @if (!empty($row->Link_Prosiding))
                                                     <a href="{{ $row->Link_Prosiding }}" target="_blank"
-                                                        class="btn btn-primary" rel="noopener noreferrer">Link</a>
+                                                        class="btn btn-primary btn-sm" rel="noopener noreferrer">Link</a>
                                                 @else
                                                     -
                                                 @endif

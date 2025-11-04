@@ -23,6 +23,7 @@ class PeminjamanController extends Controller
         $totalBooks = 0;
         $totalReturns = 0;
         $totalBorrowers = 0;
+        $rerataPeminjaman = 0;
         $fullStatisticsForChart = collect();
         $statistics = new LengthAwarePaginator([], 0, 10, 1, [
             'path' => Paginator::resolveCurrentPath(),
@@ -101,6 +102,11 @@ class PeminjamanController extends Controller
                 }
 
                 $fullStatisticsForChart = $mainQuery->get();
+
+                $jumlahPeriode = $fullStatisticsForChart->count();
+                $rerataPeminjaman = ($jumlahPeriode > 0) ? ($totalBooks / $jumlahPeriode) : 0;
+
+                $fullStatisticsForChart = $mainQuery->get();
                 if ($fullStatisticsForChart->isNotEmpty()) {
 
                     $statistics = (clone $mainQuery)->paginate(10)->withQueryString();
@@ -120,7 +126,8 @@ class PeminjamanController extends Controller
             'filterType',
             'totalBooks',
             'totalReturns',
-            'totalBorrowers'
+            'totalBorrowers',
+            'rerataPeminjaman'
         ));
     }
 
