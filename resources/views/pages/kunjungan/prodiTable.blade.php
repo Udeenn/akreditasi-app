@@ -550,7 +550,7 @@
                 });
             }
 
-            // --- Event listener untuk tombol "Lihat Detail" ---
+
             document.querySelectorAll('.view-detail-btn').forEach(button => {
                 button.addEventListener('click', async function() {
                     // Ambil data dari atribut `data-*` di tombol
@@ -559,9 +559,12 @@
 
                     let periodeText = '';
                     if (currentFilterType === 'yearly') {
-                        const bulanTahun = this.dataset.tanggal;
+                        const bulanTahun = this.dataset
+                            .tanggal; // Format dari Controller: "2025-08-01"
                         currentDetailTanggal = bulanTahun;
-                        periodeText = new Date(`${bulanTahun}-01`).toLocaleDateString('id-ID', {
+
+                        // PERBAIKAN DISINI: Hapus penambahan "-01" karena datanya sudah lengkap
+                        periodeText = new Date(bulanTahun).toLocaleDateString('id-ID', {
                             month: 'long',
                             year: 'numeric'
                         });
@@ -583,7 +586,6 @@
                     loadDetailData(1);
                 });
             });
-
             const downloadFullCsvBtn = document.getElementById('downloadFullCsvBtn');
             const exportDetailPengunjungCsvBtn = document.getElementById('exportDetailPengunjungCsvBtn');
 
@@ -654,12 +656,32 @@
                         return;
                     }
 
+                    // 1. Ambil Mapping Nama Prodi
+                    const prodiMapping = @json($listProdi);
+                    const namaProdiDisplay = prodiMapping[currentKodeIdentifikasi] ||
+                        currentKodeIdentifikasi;
+
+                    // 2. Format Periode
                     let tanggalParam = '';
+                    let periodeDisplay = '';
+                    const dateObj = new Date(currentDetailTanggal);
+
                     if (currentFilterType === 'yearly') {
                         tanggalParam = `bulan=${currentDetailTanggal.substring(0, 7)}`;
+                        periodeDisplay = dateObj.toLocaleDateString('id-ID', {
+                            month: 'long',
+                            year: 'numeric'
+                        });
                     } else {
                         tanggalParam = `tanggal=${currentDetailTanggal}`;
+                        periodeDisplay = dateObj.toLocaleDateString('id-ID', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                        });
                     }
+
                     const url =
                         `{{ route('kunjungan.get_detail_pengunjung') }}?${tanggalParam}&kode_identifikasi=${currentKodeIdentifikasi}&export=true`;
 
@@ -670,26 +692,52 @@
                         if (response.ok) {
                             if (result.length === 0) {
                                 alert(
-                                    "Tidak ada data detail pengunjung untuk diekspor pada periode ini."
-                                );
+                                    "Tidak ada data detail pengunjung untuk diekspor pada periode ini.");
                                 return;
                             }
 
                             let csv = [];
                             const delimiter = ';';
+
+                            // --- HEADER LAPORAN ---
+                            csv.push([`"Laporan Statistik Kunjungan: ${namaProdiDisplay}"`].join(
+                                delimiter));
+                            csv.push([`"Periode: ${periodeDisplay}"`].join(delimiter));
+                            csv.push("");
+
+                            // --- HEADER TABEL ---
                             const headers = ['No', 'Nama', 'Cardnumber', 'Jumlah Kunjungan'];
                             csv.push(headers.map(h => `"${h}"`).join(delimiter));
 
+                            // --- ISI DATA TABEL ---
                             let counter = 1;
+                            // Hitung Total Kunjungan Sekalian
+                            let totalVisits = 0;
+
                             result.forEach(pengunjung => {
+                                // Tambahkan ke total (pastikan tipe data number)
+                                const visitCount = parseInt(pengunjung.visit_count) || 0;
+                                totalVisits += visitCount;
+
                                 const rowData = [
                                     `"${counter++}"`,
                                     `"${(pengunjung.nama || '').replace(/"/g, '""')}"`,
                                     `"${(pengunjung.cardnumber || '').replace(/"/g, '""')}"`,
-                                    `"${pengunjung.visit_count}"`
+                                    `"${visitCount}"`
                                 ];
                                 csv.push(rowData.join(delimiter));
                             });
+
+                            // --- BARIS TOTAL (PENAMBAHAN DISINI) ---
+                            // Kosongkan kolom 1 & 2, Tulis label di kolom 3, Nilai di kolom 4
+                            const totalRow = [
+                                "", // Kolom No (Kosong)
+                                "", // Kolom Nama (Kosong)
+                                `"TOTAL"`, // Kolom Cardnumber (Label TOTAL)
+                                `"${totalVisits}"` // Kolom Jumlah (Nilai Total)
+                            ];
+                            csv.push(totalRow.join(delimiter));
+                            // --------------------------------------
 
                             const BOM = "\uFEFF";
                             const csvString = csv.join('\n');
@@ -699,8 +747,10 @@
 
                             const link = document.createElement("a");
                             link.href = URL.createObjectURL(blob);
-                            link.download =
-                                `detail_kunjungan_${currentKodeIdentifikasi}_${currentDetailTanggal}.csv`;
+                            const safeProdiName = namaProdiDisplay.replace(/[^a-zA-Z0-9]/g, '_')
+                                .substring(0, 30);
+                            link.download = `Detail_${safeProdiName}_${currentDetailTanggal}.csv`;
+
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);

@@ -82,11 +82,11 @@
                             <option value="semua" {{ request('prodi', 'semua') == 'semua' ? 'selected' : '' }}>
                                 (Semua) - Seluruh Prodi
                             </option>
-                            @foreach ($listProdi as $prodi)
-                                <option value="{{ $prodi->authorised_value }}"
-                                    {{ $selectedProdiCode == $prodi->authorised_value ? 'selected' : '' }}>
-                                    ({{ $prodi->authorised_value }})
-                                    - {{ $prodi->lib }}
+                            @foreach ($listProdi as $kode => $nama)
+                                <option value="{{ $kode }}"
+                                    {{ ($selectedProdiCode ?? '') == $kode ? 'selected' : '' }}>
+                                    ({{ $kode }})
+                                    - {{ $nama }}
                                 </option>
                             @endforeach
                         </select>
@@ -111,6 +111,22 @@
 
             <div class="card-body">
                 @if ($dataExists)
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <div class="alert alert-info d-flex justify-content-between align-items-center py-2">
+                                <div>
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Menampilkan data untuk: <strong>{{ $namaProdiFilter }}</strong>
+                                </div>
+                                <div class="fs-5">
+                                    Total Peminjaman Berlangsung:
+                                    <span class="badge bg-primary rounded-pill ms-2">
+                                        {{ number_format($activeLoans->total(), 0, ',', '.') }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="table-responsive">
                         <table class="table table-hover table-striped mb-0">
                             <thead class="table-bordered">

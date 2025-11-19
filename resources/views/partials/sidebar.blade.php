@@ -16,7 +16,7 @@
                 <i class="fas fa-home nav-icon"></i>
                 <span class="nav-text">Dashboard</span>
             </a>
-            
+
         </li>
 
         {{-- SDM --}}
@@ -90,6 +90,9 @@
             </button>
             <div class="collapse {{ $isKunjunganActive ? 'show' : '' }}" id="kunjunganCollapse">
                 <ul class="nav flex-column mt-1 sub-menu">
+                    <li><a class="nav-link {{ request()->routeIs('kunjungan.fakultasTable') ? 'active' : '' }}"
+                            href="{{ route('kunjungan.fakultasTable') }}">Per Fakultas</a>
+                    </li>
                     {{-- <li><a class="nav-link {{ request()->routeIs('kunjungan.tanggalTable') ? 'active' : '' }}"
                             href="{{ route('kunjungan.tanggalTable') }}">Perpustakaan</a></li> --}}
                     <li><a class="nav-link {{ request()->routeIs('kunjungan.kunjungan_gabungan') ? 'active' : '' }}"

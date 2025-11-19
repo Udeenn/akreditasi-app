@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use App\Models\M_Auv;
 use Illuminate\Support\Facades\Log;
 
 class PeminjamanController extends Controller
@@ -800,12 +801,12 @@ class PeminjamanController extends Controller
         ]);
     }
 
+
     public function peminjamanBerlangsung(Request $request)
     {
-        $listProdi = DB::connection('mysql2')->table('authorised_values')
-            ->select('authorised_value', 'lib')
-            ->where('category', 'PRODI')
+        $listProdiFromDb = M_Auv::where('category', 'PRODI')
             ->whereRaw('CHAR_LENGTH(lib) >= 13')
+            ->onlyProdiTampil()
             ->orderBy('authorised_value', 'asc')
             ->get()
             ->map(function ($prodi) {
@@ -815,10 +816,21 @@ class PeminjamanController extends Controller
                 }
                 $prodi->lib = trim($cleanedLib);
                 return $prodi;
-            });
+            })
+            ->pluck('lib', 'authorised_value')
+            ->toArray();
+
+        // 2. Tambahkan Static Values (Dosen & Tendik)
+        $staticValues = [
+            'DOSEN'  => 'Dosen',
+            'TENDIK' => 'Tenaga Kependidikan',
+            // Bisa tambah 'XA' => 'Alumni' dst jika mau konsisten dgn fitur lain
+        ];
+
+        // Gabungkan Static + DB
+        $listProdi = $staticValues + $listProdiFromDb;
 
         $selectedProdiCode = $request->input('prodi', '');
-
         $namaProdiFilter = 'Semua Program Studi';
 
         try {
@@ -848,27 +860,29 @@ class PeminjamanController extends Controller
                 ->orderBy('BukuDipinjamSaat', 'desc')
                 ->orderBy('BatasWaktuPengembalian', 'desc');
 
+            // 3. Logika Filter Prodi yang Diperbarui
             if ($selectedProdiCode && $selectedProdiCode !== 'semua') {
-                $query->whereRaw('LEFT(br.cardnumber, 4) = ?', [$selectedProdiCode]);
+                $fc = strtoupper($selectedProdiCode);
 
-                $foundProdi = $listProdi->firstWhere('authorised_value', $selectedProdiCode);
-                if ($foundProdi) {
-                    $namaProdiFilter = $foundProdi->lib;
+                if ($fc === 'DOSEN') {
+                    $query->where('br.categorycode', 'like', 'TC%');
+                    $namaProdiFilter = 'Dosen';
+                } elseif ($fc === 'TENDIK') {
+                    $query->where('br.categorycode', 'like', 'STAF%');
+                    $namaProdiFilter = 'Tenaga Kependidikan';
+                } else {
+                    // Filter Prodi Biasa (4 digit pertama cardnumber/NIM)
+                    $query->whereRaw('LEFT(br.cardnumber, 4) = ?', [$fc]);
+
+                    // Cari nama prodi dari array gabungan tadi
+                    $namaProdiFilter = $listProdi[$fc] ?? $fc;
                 }
             }
 
             $activeLoans = $query->paginate(10)->withQueryString();
             $dataExists = $activeLoans->isNotEmpty();
-
-            // Logika untuk export CSV
-            // if ($request->has('export_csv')) {
-            //     $dataToExport = $query->get();
-            //     return $this->exportCsvPeminjamanBerlangsung($dataToExport, $namaProdiFilter);
-            // }
         } catch (\Exception $e) {
-            // Log the error for debugging
-            // \Log::error('Error fetching active loans: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat mengambil data peminjaman berlangsung: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
 
         return view('pages.peminjaman.peminjamanBerlangsung', compact(
@@ -882,31 +896,51 @@ class PeminjamanController extends Controller
 
     public function getBerlangsungExportData(Request $request)
     {
-        $selectedProdiCode = $request->input('prodi', '');
-        $listProdi = DB::connection('mysql2')->table('authorised_values')
-            ->select('authorised_value', 'lib')
-            ->where('category', 'PRODI')
+        // 1. Setup Data Prodi & Static Values (Konsisten dengan peminjamanBerlangsung)
+        $listProdiFromDb = M_Auv::where('category', 'PRODI')
             ->whereRaw('CHAR_LENGTH(lib) >= 13')
-            ->orderBy('lib', 'asc')
-            ->get();
+            ->onlyProdiTampil()
+            ->orderBy('authorised_value', 'asc')
+            ->get()
+            ->map(function ($prodi) {
+                $cleanedLib = $prodi->lib;
+                if (str_starts_with($cleanedLib, 'FAI/ ')) {
+                    $cleanedLib = substr($cleanedLib, 5);
+                }
+                $prodi->lib = trim($cleanedLib);
+                return $prodi;
+            })
+            ->pluck('lib', 'authorised_value')
+            ->toArray();
 
+        $staticValues = [
+            'DOSEN'  => 'Dosen',
+            'TENDIK' => 'Tenaga Kependidikan',
+        ];
+
+        $listProdi = $staticValues + $listProdiFromDb;
+
+        $selectedProdiCode = $request->input('prodi', '');
         $namaProdiFilter = 'Semua Program Studi';
+
+        // 2. Build Query
         $query = DB::connection('mysql2')->table('issues as i')
             ->select(
                 'i.issuedate AS BukuDipinjamSaat',
-                'b.title AS JudulBuku',
+                // Judul buku diambil lengkap dari biblio + metadata (subtitle)
+                DB::raw("CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]')) AS JudulBuku"),
                 'it.barcode AS BarcodeBuku',
-                // 'av.authorised_value AS KodeProdi',
                 DB::raw("CONCAT(
-                    COALESCE(br.cardnumber, ''),
-                    CASE WHEN br.cardnumber IS NOT NULL THEN ' - ' ELSE '' END,
-                    TRIM(CONCAT(COALESCE(br.firstname, ''), ' ', COALESCE(br.surname, '')))
-                ) AS Peminjam"),
+                COALESCE(br.cardnumber, ''),
+                CASE WHEN br.cardnumber IS NOT NULL THEN ' - ' ELSE '' END,
+                TRIM(CONCAT(COALESCE(br.firstname, ''), ' ', COALESCE(br.surname, '')))
+            ) AS Peminjam"),
                 'i.date_due AS BatasWaktuPengembalian'
             )
             ->join('items as it', 'i.itemnumber', '=', 'it.itemnumber')
             ->join('biblio as b', 'it.biblionumber', '=', 'b.biblionumber')
             ->join('borrowers as br', 'i.borrowernumber', '=', 'br.borrowernumber')
+            ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
             ->leftJoin('borrower_attributes as ba', 'br.borrowernumber', '=', 'ba.borrowernumber')
             ->leftJoin('authorised_values as av', function ($join) {
                 $join->on('av.category', '=', 'ba.code')
@@ -916,23 +950,34 @@ class PeminjamanController extends Controller
             ->orderBy('BukuDipinjamSaat', 'desc')
             ->orderBy('BatasWaktuPengembalian', 'desc');
 
-        if ($selectedProdiCode) {
-            $query->whereRaw('LEFT(br.cardnumber, 4) = ?', [$selectedProdiCode]);
-            $foundProdi = $listProdi->firstWhere('authorised_value', $selectedProdiCode);
-            if ($foundProdi) {
-                $namaProdiFilter = $foundProdi->lib;
+        // 3. Terapkan Filter (Logic Baru: Dosen/Tendik/Prodi)
+        if ($selectedProdiCode && $selectedProdiCode !== 'semua') {
+            $fc = strtoupper($selectedProdiCode);
+
+            if ($fc === 'DOSEN') {
+                $query->where('br.categorycode', 'like', 'TC%');
+                $namaProdiFilter = 'Dosen';
+            } elseif ($fc === 'TENDIK') {
+                $query->where('br.categorycode', 'like', 'STAF%');
+                $namaProdiFilter = 'Tenaga Kependidikan';
+            } else {
+                // Filter Prodi Biasa (4 digit pertama cardnumber/NIM)
+                $query->whereRaw('LEFT(br.cardnumber, 4) = ?', [$fc]);
+
+                // Cari nama prodi dari array gabungan
+                $namaProdiFilter = $listProdi[$fc] ?? $fc;
             }
         }
 
+        // 4. Ambil Data & Format untuk JSON
         $data = $query->get();
 
         $exportData = $data->map(function ($row) {
             return [
-                'BukuDipinjamSaat' => Carbon::parse($row->BukuDipinjamSaat)->format('d M Y H:i:s'),
-                'JudulBuku' => $row->JudulBuku,
-                'BarcodeBuku' => $row->BarcodeBuku,
-                // 'KodeProdi' => $row->KodeProdi,
-                'Peminjam' => $row->Peminjam,
+                'BukuDipinjamSaat'       => Carbon::parse($row->BukuDipinjamSaat)->format('d M Y H:i:s'),
+                'JudulBuku'              => $row->JudulBuku,
+                'BarcodeBuku'            => $row->BarcodeBuku,
+                'Peminjam'               => $row->Peminjam,
                 'BatasWaktuPengembalian' => Carbon::parse($row->BatasWaktuPengembalian)->format('d M Y'),
             ];
         });

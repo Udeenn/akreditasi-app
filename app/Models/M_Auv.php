@@ -21,7 +21,6 @@ class M_Auv extends Model
 
     public function scopeExcludeProdi($query)
     {
-        // Daftar KODE prodi yang ingin DIKECUALIKAN
         $excludedCodes = [
             // 'O200',
             // 'G108',

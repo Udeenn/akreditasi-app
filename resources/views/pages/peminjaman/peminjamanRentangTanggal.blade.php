@@ -78,7 +78,6 @@
     @endif
 
     @if (!empty($statistics) && !$statistics->isEmpty())
-        {{-- Bagian Chart --}}
         <div class="card shadow-sm mb-4">
             <div class="card-header">
                 <h5 class="mb-0">Grafik Statistik Peminjaman</h5>
@@ -88,7 +87,6 @@
             </div>
         </div>
 
-        {{-- Bagian Tabel --}}
         <div class="card shadow-sm mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 Tabel Statistik Peminjaman

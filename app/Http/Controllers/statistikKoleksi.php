@@ -114,25 +114,6 @@ class StatistikKoleksi extends Controller
                         $cnClasses = $cnClasses[0];
                     }
 
-                    // 1. JURNAL
-                    // $queryJurnal = M_items::query()
-                    //     ->from('items as i')
-                    //     ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
-                    //     ->join('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
-                    //     ->where('i.itemlost', 0)->where('i.withdrawn', 0)
-                    //     ->whereIn('i.itype', ['EJ', 'JR', 'JRA', 'JRT'])
-                    //     ->whereRaw("TRIM(i.enumchron) REGEXP '[0-9]{4}$'");
-                    // QueryHelper::applyCnClassRules($queryJurnal, $cnClasses);
-                    // if ($tahunTerakhir !== 'all') {
-                    //     $queryJurnal->whereRaw('RIGHT(i.enumchron, 4) >= ?', [date('Y') - (int)$tahunTerakhir]);
-                    // }
-
-                    // $totalsJurnal = $queryJurnal->selectRaw("COUNT(DISTINCT i.biblionumber) as total_judul, COUNT(i.itemnumber) as total_eksemplar")->first();
-                    // if ($totalsJurnal && ($totalsJurnal->total_judul > 0 || $totalsJurnal->total_eksemplar > 0)) {
-                    //     $prodiCounts['Jurnal'] = ['judul' => $totalsJurnal->total_judul, 'eksemplar' => $totalsJurnal->total_eksemplar];
-                    // }
-
-                    //JURNAL BARU
                     $queryJurnal = M_items::query()
                         ->from('items as i')
                         ->select(
@@ -183,7 +164,6 @@ class StatistikKoleksi extends Controller
                             'eksemplar' => $totalEksemplarJurnal,
                         ];
                     }
-
 
                     // 2. TEXTBOOK
                     $queryTextbook = M_items::query()
@@ -311,7 +291,7 @@ class StatistikKoleksi extends Controller
                 EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"a\"]') <> '',
                 EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"a\"]'),
                 EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"u\"]')
-            ) AS Link_Prosiding,
+                ) AS Link_Prosiding,
                 CASE
                 WHEN items.homebranch = 'PUSAT' THEN 'Perpustakaan Pusat'
                 WHEN items.homebranch = 'GIZI' THEN 'Perpustakaan Gizi'
@@ -339,7 +319,6 @@ class StatistikKoleksi extends Controller
                 ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
                 ->where('items.itemlost', 0)
                 ->where('items.withdrawn', 0)
-                // ->whereRaw('LEFT(items.itype,2) = "PR"')
                 ->whereIn('items.itype', ['EPR', 'PR']);
 
             if ($prodi !== 'all') {
@@ -637,12 +616,10 @@ class StatistikKoleksi extends Controller
         $listprodi = M_Auv::where('category', 'PRODI')->whereRaw('CHAR_LENGTH(lib) >= 13')->onlyProdiTampil()
             ->orderBy('authorised_value', 'asc')->get();
 
-        // 2. Membuat objek untuk opsi "Semua Program Studi"
         $prodiOptionAll = new \stdClass();
         $prodiOptionAll->authorised_value = 'all';
         $prodiOptionAll->lib = 'Semua Program Studi';
 
-        // Tambahkan opsi "Semua" ke awal list
         $listprodi->prepend($prodiOptionAll);
 
         $prodi = $request->input('prodi', 'initial');
@@ -664,9 +641,7 @@ class StatistikKoleksi extends Controller
                 EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]') as Judul_b,
                 b.author as Pengarang,
                 bi.place AS Kota_Terbit,
-                MAX(bi.publishercode) AS Penerbit_Raw,
-                MAX(bi.place) AS Place_Raw,
-                MAX(CONCAT(COALESCE(bi.publishercode,''), ' ', COALESCE(bi.place,''))) AS Penerbit,
+                bi.publishercode AS Penerbit,
                 bi.publicationyear AS Tahun_Terbit,
                 COUNT(items.itemnumber) AS Eksemplar,
                 CASE
@@ -699,7 +674,6 @@ class StatistikKoleksi extends Controller
                 ->whereIn('items.itype', ['BKS', 'BKSA', 'BKSCA', 'BKSC'])
                 ->whereRaw('LEFT(items.ccode, 1) <> "R"');
 
-            // --- PERUBAHAN UTAMA DI SINI (BLOK 1) ---
             if ($prodi !== 'all') {
                 $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
                 QueryHelper::applyCnClassRules($query, $cnClasses);
@@ -711,7 +685,7 @@ class StatistikKoleksi extends Controller
             }
 
             $query->orderBy('Tahun_Terbit', 'desc');
-            $query->groupBy('Judul_a', 'Judul_b', 'Pengarang', 'Kota_Terbit', 'Tahun_Terbit', 'Lokasi');
+            $query->groupBy('Judul_a', 'Judul_b', 'Pengarang', 'Kota_Terbit', 'Tahun_Terbit', 'Lokasi', 'Penerbit');
 
             $processedData = $query->get()->map(function ($row) {
                 $fullJudul = $row->Judul_a;
@@ -737,12 +711,10 @@ class StatistikKoleksi extends Controller
                 ->whereRaw('LEFT(items.itype, 3) = "BKS"')
                 ->whereRaw('LEFT(items.ccode, 1) <> "R"');
 
-            // --- PERUBAHAN UTAMA DI SINI (BLOK 2) ---
             if ($prodi !== 'all') {
                 $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
                 QueryHelper::applyCnClassRules($totalQuery, $cnClasses);
             }
-            // --- AKHIR PERUBAHAN ---
 
             if ($tahunTerakhir !== 'all') {
                 $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
@@ -1164,9 +1136,6 @@ class StatistikKoleksi extends Controller
             foreach ($data as $row) {
                 $rowData = [];
 
-                $url = $row->Link_Jurnal ?? '';
-                $linkFormula = $url ? sprintf('=HYPERLINK("%s", "%s")', $url, $url) : '';
-
                 if ($row->Judul !== $previousJudul) {
                     $rowData = [
                         $i++,
@@ -1178,7 +1147,7 @@ class StatistikKoleksi extends Controller
                         $row->Jenis_Koleksi,
                         $row->Jenis_Item_Tipe,
                         $row->Lokasi,
-                        $row->LinkFormula ?? '',
+                        $row->Link_Jurnal ?? '',
                     ];
                     $previousJudul = $row->Judul;
                 } else {
@@ -1192,7 +1161,7 @@ class StatistikKoleksi extends Controller
                         $row->Jenis_Koleksi,
                         $row->Jenis_Item_Tipe,
                         $row->Lokasi,
-                        $row->LinkFormula ?? '',
+                        $row->Link_Jurnal ?? '',
                     ];
                 }
                 if (count($rowData) == count($headers)) {
@@ -1423,7 +1392,7 @@ class StatistikKoleksi extends Controller
         // --- PERUBAHAN 1: Sesuaikan Headers CSV agar lengkap ---
         $headers = [
             'No',
-            // 'Kelas',
+            //'Kelas',
             'Judul',
             'Pengarang',
             'Penerbit',
@@ -1451,7 +1420,7 @@ class StatistikKoleksi extends Controller
                 // --- PERUBAHAN 2: Sesuaikan Data per Baris agar lengkap ---
                 $rowData = [
                     $i++,
-                    // $row->Kelas,
+                    //$row->Kelas,
                     $row->Judul,
                     $row->Pengarang,
                     $row->Penerbit,

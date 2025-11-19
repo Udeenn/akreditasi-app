@@ -91,50 +91,49 @@
             </div>
         </form>
 
-
         <div class="card shadow mb-4">
-            @if ($prodi && $prodi !== 'initial' && $dataExists)
-                <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        Daftar Koleksi Referensi @if ($namaProdi && $prodi !== 'all')
-                            ({{ $namaProdi }})
-                        @elseif ($prodi === 'all')
-                            (Semua Program Studi)
-                        @endif
-                        @if ($tahunTerakhir !== 'all')
-                            - {{ $tahunTerakhir }} Tahun Terakhir
-                        @endif
-                    </h6>
-                    <button type="submit" form="filterFormReferensi" name="export_csv" value="1"
-                        class="btn btn-success btn-sm"><i class="fas fa-file-csv"></i> Export CSV</button>
-                </div>
-            @endif
             <div class="card-body">
-                <div class="card-body">
-                    <div class="mb-3">
-                        <input type="text" class="form-control" id="searchInput"
-                            placeholder="Cari judul, pengarang, penerbit...">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="searchInput"
+                        placeholder="Cari judul, pengarang, penerbit...">
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="alert alert-info py-2">
+                            <i class="fas fa-book me-2"></i> Total Judul:
+                            <span class="fw-bold">{{ number_format($totalJudul, 0, ',', '.') }}</span>
+                        </div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="alert alert-info py-2">
-                                <i class="fas fa-book me-2"></i> Total Judul:
-                                <span class="fw-bold">{{ number_format($totalJudul, 0, ',', '.') }}</span>
-                            </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-success py-2">
+                            <i class="fas fa-copy me-2"></i> Total Eksemplar:
+                            <span class="fw-bold">{{ number_format($totalEksemplar, 0, ',', '.') }}</span>
                         </div>
-                        <div class="col-md-6">
-                            <div class="alert alert-success py-2">
-                                <i class="fas fa-copy me-2"></i> Total Eksemplar:
-                                <span class="fw-bold">{{ number_format($totalEksemplar, 0, ',', '.') }}</span>
-                            </div>
-                        </div>
-                        {{-- <div class="col-md-4">
+                    </div>
+                    {{-- <div class="col-md-4">
                             <div class="alert alert-danger py-2">
                                 <i class="fas fa-database me-2"></i> Total Entri:
                                 <span class="fw-bold" id="customInfoJurnal"></span>
                             </div>
                         </div> --}}
+                </div>
+                @if ($prodi && $prodi !== 'initial' && $dataExists)
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            Daftar Koleksi Referensi @if ($namaProdi && $prodi !== 'all')
+                                ({{ $namaProdi }})
+                            @elseif ($prodi === 'all')
+                                (Semua Program Studi)
+                            @endif
+                            @if ($tahunTerakhir !== 'all')
+                                - {{ $tahunTerakhir }} Tahun Terakhir
+                            @endif
+                        </h6>
+                        <button type="submit" form="filterFormReferensi" name="export_csv" value="1"
+                            class="btn btn-success btn-sm"><i class="fas fa-file-csv"></i> Export CSV</button>
                     </div>
+                @endif
+                <div class="card-body">
                     @if ($prodi && $prodi !== 'initial' && $data->isNotEmpty())
                         <div class="table-responsive">
                             <table class="table table-bordered table-hover table-striped" id="myTableReferensi">
@@ -154,7 +153,7 @@
                                 <tbody>
                                     @foreach ($data as $index => $row)
                                         <tr>
-                                            <td></td> 
+                                            <td></td>
                                             <td>{{ $row->Judul }}</td>
                                             <td>{{ $row->Pengarang }}</td>
                                             <td>{{ $row->Kota_Terbit }}</td>
