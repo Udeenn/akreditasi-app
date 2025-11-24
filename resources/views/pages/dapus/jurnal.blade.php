@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Statistik Koleksi Jurnal')
+@section('title', 'Statistik Koleksi Journal')
 @section('content')
     @push('styles')
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -56,7 +56,7 @@
         </style>
     @endpush
     <div class="container">
-        <h4>Statistik Koleksi Jurnal @if ($prodi && $prodi !== 'all')
+        <h4>Statistik Koleksi Journal @if ($prodi && $prodi !== 'all')
                 - {{ $namaProdi }}
             @elseif ($prodi === 'all')
                 - Semua Program Studi
@@ -117,8 +117,8 @@
                 </div>
                 @if ($prodi && $prodi !== 'initial' && $dataExists)
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold text-primary">
-                            Daftar Koleksi Jurnal @if ($namaProdi && $prodi !== 'all')
+                        <h6 class="m-0 fw-bold">
+                            Daftar Koleksi Journal @if ($namaProdi && $prodi !== 'all')
                                 ({{ $namaProdi }})
                             @elseif ($prodi === 'all')
                                 (Semua Program Studi)
@@ -138,7 +138,8 @@
                                 <thead>
                                     <tr>
                                         <th>No</th>
-                                        <th>Kelas</th>
+                                        {{-- <th>Kelas</th> --}}
+                                        {{-- <th>Barcode</th> --}}
                                         <th>Judul</th>
                                         <th>Penerbit</th>
                                         <th>Nomor Edisi</th>
@@ -153,7 +154,8 @@
                                     @foreach ($data as $row)
                                         <tr>
                                             <td></td>
-                                            <td>{{ $row->Kelas }}</td>
+                                            {{-- <td>{{ $row->Kelas }}</td> --}}
+                                            {{-- <td>{{ $row->Barcode }}</td> --}}
                                             <td>{{ $row->Judul }}</td>
                                             <td>{{ $row->Penerbit }}</td>
                                             <td>{{ $row->Nomor }}</td>
@@ -181,7 +183,7 @@
                         </div>
                     @else
                         <div class="alert alert-info text-center" role="alert">
-                            Silakan pilih program studi dan filter tahun untuk menampilkan data jurnal.
+                            Silakan pilih program studi dan filter tahun untuk menampilkan data journal.
                         </div>
                     @endif
                 </div>

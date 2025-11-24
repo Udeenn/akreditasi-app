@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-@section('title', 'Statistik Buku Sering Dibaca')
+@section('title', 'Statistik Buku Terlaris')
 
 <style>
     .badge-bronze {
@@ -13,7 +13,7 @@
 <div class="container">
     <div class="card bg-white shadow-sm mb-4 border-0">
         <div class="card-body p-4">
-            <h4 class="mb-1"><i class="fas fa-chart-line me-2 text-primary"></i>Statistik Buku Sering Dibaca</h4>
+            <h4 class="mb-1"><i class="fas fa-chart-line me-2 text-primary"></i>Statistik Buku Terlaris</h4>
             <p class="text-muted mb-0">Menampilkan daftar buku Fiksi dan Non-Fiksi yang paling sering digunakan
                 berdasarkan filter.</p>
         </div>
@@ -85,6 +85,7 @@
                                             <th>Judul Buku</th>
                                             <th>Pengarang</th>
                                             <th class="text-center">Jml. Pakai</th>
+                                            <th class="text-center">Jml. Eksemplar</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -116,6 +117,8 @@
                                                 <td class="text-center fw-bold">
                                                     {{ number_format($buku->jumlah_penggunaan) }}
                                                 </td>
+                                                <td class="text-center fw-bold">
+                                                    {{ number_format($buku->jumlah_eksemplar) }}
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -162,6 +165,7 @@
                                             <th>Judul Buku</th>
                                             <th>Pengarang</th>
                                             <th class="text-center">Jml. Pakai</th>
+                                            <th class="text-center">Jml. Eksemplar</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -192,6 +196,9 @@
                                                 <td>{{ $buku->pengarang }}</td>
                                                 <td class="text-center fw-bold">
                                                     {{ number_format($buku->jumlah_penggunaan) }}
+                                                </td>
+                                                <td class="text-center fw-bold">
+                                                    {{ number_format($buku->jumlah_eksemplar) }}
                                                 </td>
                                             </tr>
                                         @endforeach

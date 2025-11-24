@@ -349,7 +349,8 @@ class PenggunaanController extends Controller
                     ->select(
                         DB::raw("MAX(CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]'))) AS judul_buku"),
                         DB::raw("MAX(b.author) as pengarang"),
-                        DB::raw('COUNT(s.itemnumber) as jumlah_penggunaan')
+                        DB::raw('COUNT(s.itemnumber) as jumlah_penggunaan'),
+                        DB::raw("(SELECT COUNT(*) FROM items WHERE items.biblionumber = b.biblionumber AND items.withdrawn = 0) as jumlah_eksemplar")
                     )
                     ->join('items as i', 's.itemnumber', '=', 'i.itemnumber')
                     ->join('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
@@ -372,7 +373,7 @@ class PenggunaanController extends Controller
                             ->orWhere('bi.cn_class', 'LIKE', '813%')
                             ->orWhere('bi.cn_class', 'LIKE', '899%');
                     })
-                    ->groupBy('i.biblionumber')
+                    ->groupBy('i.biblionumber', 'b.biblionumber')
                     ->orderBy('jumlah_penggunaan', 'desc')
                     ->paginate($perPage, ['*'], 'fiksi_page')
                     ->onEachSide(1);
@@ -384,7 +385,7 @@ class PenggunaanController extends Controller
                             ->where('bi.cn_class', 'NOT LIKE', '813%')
                             ->where('bi.cn_class', 'NOT LIKE', '899%');
                     })
-                    ->groupBy('i.biblionumber')
+                    ->groupBy('i.biblionumber', 'b.biblionumber')
                     ->orderBy('jumlah_penggunaan', 'desc')
                     ->paginate($perPage, ['*'], 'nonfiksi_page')
                     ->onEachSide(1); // Gunakan paginate di sini
@@ -435,7 +436,7 @@ class PenggunaanController extends Controller
             ->get();
 
         $bulanTitle = $bulan ? \Carbon\Carbon::create()->month($bulan)->format('F') : "Satu Tahun Penuh";
-        $laporanTitle = "Laporan Buku Sering Dibaca - Kategori: $kategoriTitle";
+        $laporanTitle = "Laporan Buku Terlaris - Kategori: $kategoriTitle";
         $periodeTitle = "Periode: $bulanTitle $tahun";
 
         $fileName = "export_sering_dibaca_${kategoriLabel}_${tahun}";

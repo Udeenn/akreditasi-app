@@ -41,7 +41,7 @@
                         <hr>
                         <div class="text-start mb-3">
                             <p><i class="fas fa-envelope fa-fw me-2 text-muted"></i>{{ $borrower->email ?? '-' }}</p>
-                            <p><i class="fas fa-phone fa-fw me-2 text-muted"></i>{{ $borrower->phone ?? '-' }}</p>
+                            {{-- <p><i class="fas fa-phone fa-fw me-2 text-muted"></i>{{ $borrower->phone ?? '-' }}</p> --}}
                         </div>
                         <hr>
                         <div class="d-flex justify-content-around">

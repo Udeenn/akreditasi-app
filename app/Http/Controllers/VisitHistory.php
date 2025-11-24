@@ -127,7 +127,6 @@ class VisitHistory extends Controller
             }
         }
 
-        // <--- PERBAIKAN 2: Tambahkan variabel ke compact()
         return view('pages.kunjungan.fakultasTable', compact(
             'listFakultas',
             'tanggalAwal',
@@ -1285,9 +1284,9 @@ class VisitHistory extends Controller
         $topLokasi = collect();
 
         $lokasiMapping = [
-            // 'sni' => 'SNI Corner',
-            // 'bi' => 'Bank Indonesia Corner',
-            // 'mc' => 'Muhammadiyah Corner',
+            'sni' => 'SNI Corner',
+            'bi' => 'Bank Indonesia Corner',
+            'mc' => 'Muhammadiyah Corner',
             'pusat' => 'Perpustakaan Pusat',
             'pasca' => 'Perpustakaan Pascasarjana',
             'fk' => 'Perpustakaan Kedokteran',
@@ -1403,15 +1402,18 @@ class VisitHistory extends Controller
 
         $lokasiText = 'Semua_Lokasi';
         if ($selectedLokasi) {
-            $lokasiText = preg_replace('/[^A-Za-z0-9\-]/', '_', $selectedLokasi);
+            // Mengganti nama lokasi menjadi format file yang aman
+            $lokasiText = preg_replace('/[^A-Za-z0-9\-]/', '_', array_search($selectedLokasi, $lokasiMapping) ?: $selectedLokasi);
         }
 
         $groupByFormat = $filterType == 'yearly' ? 'LEFT(visittime, 7)' : 'DATE(visittime)';
 
+        // Query untuk visitorhistory
         $historyQuery = DB::connection('mysql2')->table('visitorhistory')
             ->select(DB::raw("{$groupByFormat} as periode"), DB::raw("COUNT(*) as jumlah"))
             ->groupBy('periode');
 
+        // Query untuk visitorcorner
         $cornerQuery = DB::connection('mysql2')->table('visitorcorner')
             ->select(DB::raw("{$groupByFormat} as periode"), DB::raw("COUNT(*) as jumlah"))
             ->groupBy('periode');
@@ -1432,41 +1434,57 @@ class VisitHistory extends Controller
             $cornerQuery->where(DB::raw("COALESCE(NULLIF(notes, ''), 'pusat')"), $dbLokasi);
         }
 
-        $callback = function () use ($historyQuery, $cornerQuery, $filterType, $startYear, $endYear, $startDate, $endDate, $selectedLokasi) {
+        $callback = function () use ($historyQuery, $cornerQuery, $filterType, $startYear, $endYear, $startDate, $endDate, $selectedLokasi, $lokasiMapping) {
 
             $file = fopen('php://output', 'w');
+
+            // Menambahkan Byte Order Mark (BOM) untuk memastikan Excel membaca UTF-8 dengan benar
             fputs($file, $bom = (chr(0xEF) . chr(0xBB) . chr(0xBF)));
 
+            // --- Bagian Header Laporan ---
+
+            // Judul Laporan
             fputcsv($file, ['Laporan Rekapitulasi Kunjungan Perpustakaan'], ';');
+
+            // Periode
             if ($filterType == 'yearly') {
                 fputcsv($file, ["Periode Tahunan:", "{$startYear} - {$endYear}"], ';');
                 $headerPeriode = 'Bulan';
             } else { // date_range
-                $start = Carbon::parse($startDate)->isoFormat('D MMMM YYYY');
-                $end = Carbon::parse($endDate)->isoFormat('D MMMM YYYY');
+                // MENGGUNAKAN locale('id') untuk format bahasa Indonesia
+                $start = Carbon::parse($startDate)->locale('id')->isoFormat('D MMMM YYYY');
+                $end = Carbon::parse($endDate)->locale('id')->isoFormat('D MMMM YYYY');
                 fputcsv($file, ["Periode Harian:", "{$start} - {$end}"], ';');
                 $headerPeriode = 'Tanggal';
             }
-            fputcsv($file, ["Lokasi:", $selectedLokasi ?: 'Semua Lokasi'], ';');
-            fputcsv($file, [], ';');
 
-            // Eksekusi query dan proses data
+            // Lokasi
+            $displayLokasi = $selectedLokasi ? ($lokasiMapping[$selectedLokasi] ?? $selectedLokasi) : 'Semua Lokasi';
+            fputcsv($file, ["Lokasi:", $displayLokasi], ';');
+
+            fputcsv($file, [], ';'); // Baris kosong
+
+            // --- Eksekusi Query dan Proses Data ---
+
             $allResults = $historyQuery->get()->merge($cornerQuery->get());
             $dataToExport = $allResults->groupBy('periode')->map(fn($item, $key) => (object)['periode' => $key, 'jumlah' => $item->sum('jumlah')])->sortBy('periode')->values();
 
             // Tulis header tabel
             fputcsv($file, [$headerPeriode, 'Jumlah Kunjungan'], ';');
 
-            // Tulis baris data
+            // --- Tulis Baris Data ---
+
             foreach ($dataToExport as $row) {
+                // MENGGUNAKAN locale('id') untuk format bahasa Indonesia
                 $formattedPeriode = $filterType == 'yearly'
-                    ? Carbon::parse($row->periode)->isoFormat('MMMM YYYY')
-                    : Carbon::parse($row->periode)->isoFormat('dddd, D MMMM YYYY');
+                    ? Carbon::parse($row->periode)->locale('id')->isoFormat('MMMM YYYY')
+                    : Carbon::parse($row->periode)->locale('id')->isoFormat('dddd, D MMMM YYYY');
                 fputcsv($file, [$formattedPeriode, $row->jumlah], ';');
             }
 
-            // Tulis total di akhir
-            fputcsv($file, [], ';');
+            // --- Total ---
+
+            fputcsv($file, [], ';'); // Baris kosong
             fputcsv($file, ['Total Keseluruhan', $dataToExport->sum('jumlah')], ';');
 
             fclose($file);

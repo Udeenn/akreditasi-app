@@ -64,7 +64,7 @@
                 </div>
                 @if ($prodi && $prodi !== 'initial' && $dataExists)
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold text-primary">
+                        <h6 class="m-0 font-weight-bold">
                             Daftar Koleksi Majalah @if ($namaProdi && $prodi !== 'all')
                                 ({{ $namaProdi }})
                             @elseif ($prodi === 'all')

@@ -94,8 +94,8 @@
                                 <dt class="col-sm-5 text-nowrap">Email</dt>
                                 <dd class="col-sm-7">{{ $fullBorrowerDetails->email ?: '-' }}</dd>
 
-                                <dt class="col-sm-5 text-nowrap">Telepon</dt>
-                                <dd class="col-sm-7">{{ $fullBorrowerDetails->phone ?: '-' }}</dd>
+                                {{-- <dt class="col-sm-5 text-nowrap">Telepon</dt>
+                                <dd class="col-sm-7">{{ $fullBorrowerDetails->phone ?: '-' }}</dd> --}}
                             </dl>
                         </div>
                     </div>

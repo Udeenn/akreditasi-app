@@ -69,11 +69,14 @@ Route::get('/kunjungan/fakultas', [VisitHistory::class, 'kunjunganFakultasTable'
 
 Route::get('/koleksi/prosiding', [StatistikKoleksi::class, 'prosiding'])->name('koleksi.prosiding');
 Route::get('/koleksi/jurnal', [StatistikKoleksi::class, 'jurnal'])->name('koleksi.jurnal');
+Route::get('/koleksi/ejurnal', [StatistikKoleksi::class, 'ejurnal'])->name('koleksi.ejurnal');
 Route::get('/koleksi/ebook', [StatistikKoleksi::class, 'ebook'])->name('koleksi.ebook');
 Route::get('/koleksi/textbook', [StatistikKoleksi::class, 'textbook'])->name('koleksi.textbook');
 Route::get('/koleksi/periodikal', [StatistikKoleksi::class, 'periodikal'])->name('koleksi.periodikal');
 Route::get('/koleksi/referensi', [StatistikKoleksi::class, 'referensi'])->name('koleksi.referensi');
 Route::get('/koleksi/prodi', [StatistikKoleksi::class, 'koleksiPerprodi'])->name('koleksi.prodi');
+Route::get('/koleksi/eresource', [StatistikKoleksi::class, 'eresource'])->name('koleksi.eresource');
+
 
 Route::get('/kunjungan/cek-kehadiran', [VisitHistory::class, 'cekKehadiran'])->name('kunjungan.cekKehadiran');
 

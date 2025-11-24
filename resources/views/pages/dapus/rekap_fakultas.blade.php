@@ -38,7 +38,7 @@
 
         @if ($selectedFaculty)
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 class="mb-0">Fakultas: <span class="fw-bold text-primary">{{ $selectedFaculty }}</span></h4>
+                <h4 class="mb-0">Fakultas: <span class="fw-bold">{{ $selectedFaculty }}</span></h4>
             </div>
 
             <div class="card shadow-sm mb-4 border-0">
@@ -58,9 +58,9 @@
                     @foreach ($rekapData as $prodiData)
                         <div class="col d-flex align-items-stretch prodi-card-col">
                             <div class="card h-100 shadow-sm border-0 w-100">
-                                <div class="card-header bg-gradient-primary text-white border-0">
+                                <div class="card-header border-0 font-semibold">
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-0 text-truncate" title="{{ $prodiData['nama_prodi'] }}">
+                                        <h6 class="mb-0 fw-bold text-truncate" title="{{ $prodiData['nama_prodi'] }}">
                                             {{ Str::limit($prodiData['nama_prodi'], 35) }}
                                         </h6>
                                         <span class="badge bg-light text-primary ms-2">{{ $prodiData['prodi_code'] }}</span>
@@ -124,7 +124,6 @@
 
     </div>
 @endsection
-
 @push('styles')
     <style>
         .bg-gradient-primary {
@@ -155,7 +154,6 @@
             const searchInput = document.getElementById('prodiSearchInput');
             const prodiContainer = document.getElementById('prodiCardContainer');
 
-            // Cek apakah elemen-elemen ada
             if (searchInput && prodiContainer) {
                 const prodiCards = prodiContainer.querySelectorAll('.prodi-card-col');
                 const noResultsMessage = document.getElementById('noProdiResults');

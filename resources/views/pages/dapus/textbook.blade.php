@@ -117,7 +117,7 @@
                 </div>
                 @if ($prodi && $prodi !== 'initial' && $dataExists)
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold text-primary">
+                        <h6 class="m-0 fw-bold">
                             Daftar Koleksi Text Book @if ($namaProdi && $prodi !== 'all')
                                 ({{ $namaProdi }})
                             @elseif ($prodi === 'all')
@@ -197,6 +197,8 @@
                 var table = $('#myTableTextbook').DataTable({
                     "language": {
                         "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json",
+                        "thousands": ".",
+                        "decimal": ","
                     },
                     "paging": true,
                     "lengthChange": true,
@@ -212,6 +214,7 @@
                         "targets": 0
                     }],
                     "order": [
+                        [5, 'desc'],
                         [1, 'asc']
                     ],
                     "fnDrawCallback": function(oSettings) {

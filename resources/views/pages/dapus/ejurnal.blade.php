@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Statistik Koleksi E-Book')
 
+@section('title', 'Statistik Koleksi E-Journal')
 @section('content')
     @push('styles')
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -16,6 +16,7 @@
             /* Dark Mode Select2 Styles */
             body.dark-mode .select2-container--bootstrap-5 .select2-selection {
                 background-color: var(--sidebar-bg) !important;
+                /* Warna input gelap */
                 border-color: var(--border-color) !important;
                 color: #ffffff !important;
             }
@@ -55,13 +56,14 @@
         </style>
     @endpush
     <div class="container">
-        <h4>Statistik Koleksi E-Book @if ($prodi && $prodi !== 'all')
+        <h4>Statistik Koleksi E-Journal @if ($prodi && $prodi !== 'all')
                 - {{ $namaProdi }}
             @elseif ($prodi === 'all')
                 - Semua Program Studi
             @endif
         </h4>
-        <form method="GET" action="{{ route('koleksi.ebook') }}" class="row g-3 mb-4 align-items-end" id="filterFormEbook">
+        <form method="GET" action="{{ route('koleksi.ejurnal') }}" class="row g-3 mb-4 align-items-end"
+            id="filterFormEjurnal">
             <div class="col-md-4">
                 <label for="prodi" class="form-label">Pilih Prodi</label>
                 <select name="prodi" id="prodi" class="form-select">
@@ -77,7 +79,7 @@
                 <label for="tahun" class="form-label">Tahun Terbit</label>
                 <select name="tahun" id="tahun" class="form-select">
                     <option value="all" {{ $tahunTerakhir == 'all' ? 'selected' : '' }}>Semua Tahun</option>
-                    @for ($i = 1; $i <= 10; $i++)
+                    @for ($i = 0; $i <= 10; $i++)
                         <option value="{{ $i }}" {{ $tahunTerakhir == $i ? 'selected' : '' }}>
                             {{ $i }} Tahun Terakhir
                         </option>
@@ -88,18 +90,16 @@
                 <button type="submit" class="btn btn-primary w-100">Tampilkan</button>
             </div>
         </form>
-
-
         <div class="card shadow mb-4">
             <div class="card-body">
                 <div class="mb-3">
                     <input type="text" class="form-control" id="searchInput"
-                        placeholder="Cari judul, pengarang, penerbit...">
+                        placeholder="Cari judul, penerbit, atau nomor...">
                 </div>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="alert alert-info py-2">
-                            <i class="fas fa-book me-2"></i> Total Judul Ebook:
+                            <i class="fas fa-book me-2"></i> Total Judul:
                             <span class="fw-bold">{{ number_format($totalJudul, 0, ',', '.') }}</span>
                         </div>
                     </div>
@@ -118,8 +118,8 @@
                 </div>
                 @if ($prodi && $prodi !== 'initial' && $dataExists)
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-bold">
-                            Daftar Koleksi E-Book @if ($namaProdi && $prodi !== 'all')
+                        <h6 class="m-0 fw-bold">
+                            Daftar Koleksi E-Jurnal @if ($namaProdi && $prodi !== 'all')
                                 ({{ $namaProdi }})
                             @elseif ($prodi === 'all')
                                 (Semua Program Studi)
@@ -128,46 +128,49 @@
                                 - {{ $tahunTerakhir }} Tahun Terakhir
                             @endif
                         </h6>
-                        <button type="submit" form="filterFormEbook" name="export_csv" value="1"
+                        <button type="submit" form="filterFormEjurnal" name="export_csv" value="1"
                             class="btn btn-success btn-sm"><i class="fas fa-file-csv"></i> Export CSV</button>
                     </div>
                 @endif
                 <div class="card-body">
                     @if ($prodi && $prodi !== 'initial' && $data->isNotEmpty())
                         <div class="table-responsive">
-                            <table class="table table-bordered table-hover table-striped" id="myTableEbook">
+                            <table class="table table-bordered table-hover table-striped" id="myTableEjurnal">
                                 <thead>
                                     <tr>
                                         <th>No</th>
+                                        {{-- <th>Kelas</th> --}}
                                         <th>Judul</th>
-                                        <th>Pengarang</th>
-                                        <th>Kota Terbit</th>
+                                        {{-- <th>Barcode</th> --}}
                                         <th>Penerbit</th>
-                                        <th>Tahun Terbit</th>
+                                        <th>Nomor Edisi</th>
                                         <th>Eksemplar</th>
+                                        <th>Jenis Koleksi</th>
+                                        <th>Jenis Item Tipe</th>
+                                        <th>Lokasi</th>
                                         <th>Link</th>
-                                        {{-- <th>Lokasi</th> --}}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($data as $row)
                                         <tr>
                                             <td></td>
-                                            <td>{!! $row->Judul !!}</td>
-                                            <td>{{ $row->Pengarang }}</td>
-                                            <td>{{ $row->Kota_Terbit }}</td>
+                                            {{-- <td>{{ $row->Kelas }}</td> --}}
+                                            <td>{{ $row->Judul }}</td>
+                                            {{-- <td>{{ $row->Barcode }}</td> --}}
                                             <td>{{ $row->Penerbit }}</td>
-                                            <td>{{ $row->Tahun_Terbit }}</td>
+                                            <td>{{ $row->Nomor }}</td>
                                             <td>{{ $row->Eksemplar }}</td>
+                                            <td>{{ $row->Jenis_Koleksi }}</td>
+                                            <td>{{ $row->Jenis_Item_Tipe }}</td>
+                                            <td>{{ $row->Lokasi }}</td>
                                             <td>
-                                                @if (!empty($row->Link_Ebook))
-                                                    <a href="{{ $row->Link_Ebook }}" target="_blank"
+                                                @if (!empty($row->Link_Ejurnal))
+                                                    <a href="{{ $row->Link_Ejurnal }}" target="_blank"
                                                         class="btn btn-primary" rel="noopener noreferrer">Link</a>
                                                 @else
                                                     -
                                                 @endif
-                                            </td>
-                                            {{-- <td>{{ $row->Lokasi }}</td> --}}
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -181,7 +184,7 @@
                         </div>
                     @else
                         <div class="alert alert-info text-center" role="alert">
-                            Silakan pilih program studi dan filter tahun untuk menampilkan data E-Book.
+                            Silakan pilih program studi dan filter tahun untuk menampilkan data e-jurnal.
                         </div>
                     @endif
                 </div>
@@ -201,7 +204,7 @@
                     placeholder: 'Ketik untuk mencari prodi...'
                 });
 
-                var table = $('#myTableEbook').DataTable({
+                var table = $('#myTableEjurnal').DataTable({
                     "language": {
                         "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json"
                     },
@@ -212,31 +215,38 @@
                     "info": true,
                     "autoWidth": false,
                     "columnDefs": [{
-                            "orderable": false,
-                            "targets": [0]
-                        },
-                        {
-                            "targets": 0,
-                            "render": function(data, type, row, meta) {
-                                return meta.row + 1;
-                            }
-                        }
-                    ],
+                        "searchable": false,
+                        "orderable": false,
+                        "targets": 0
+                    }],
+                    "order": [
+                        [1, 'asc']
+                    ], // Default sort by Judul ascending
                     "lengthMenu": [
                         [10, 25, 50, 100, -1],
                         [10, 25, 50, 100, "Semua"]
                     ],
                     "pageLength": 10,
                     "dom": '<"d-flex justify-content-between mb-3"lp>t<"d-flex justify-content-between mt-3"ip>',
-
                 });
+
+                // Penomoran otomatis
+                table.on('order.dt search.dt', function() {
+                    table.column(0, {
+                        search: 'applied',
+                        order: 'applied'
+                    }).nodes().each(function(cell, i) {
+                        cell.innerHTML = i + 1;
+                    });
+                }).draw();
+
 
                 function updateCustomInfo() {
                     var pageInfo = table.page.info();
                     let formatter = new Intl.NumberFormat('id-ID');
                     let formattedTotal = formatter.format(pageInfo.recordsTotal);
                     let infoText = `${formattedTotal}`;
-                    $('#customInfoJurnal').html(infoText);
+                    $('#customInfoEjurnal').html(infoText);
                 }
                 table.on('draw', updateCustomInfo);
                 updateCustomInfo();

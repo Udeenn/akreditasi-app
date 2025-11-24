@@ -176,16 +176,18 @@
                                 @forelse ($dataHasil as $rekap)
                                     @php($persentase = ($rekap->jumlah / $max) * 100)
                                     <tr>
-                                        <td class="text-center">{{ $loop->iteration }}</td>
+                                        <td class="text-center">
+                                            {{ $loop->iteration }}</td>
                                         <td class="fw-medium">
                                             <i class="fas fa-calendar-alt text-muted me-2"></i>
                                             @if ($filterType == 'yearly')
-                                                {{ \Carbon\Carbon::parse($rekap->periode)->isoFormat('MMMM YYYY') }}
+                                                {{ \Carbon\Carbon::parse($rekap->periode)->locale('id')->isoFormat('MMMM YYYY') }}
                                             @else
-                                                {{ \Carbon\Carbon::parse($rekap->periode)->isoFormat('dddd, D MMMM YYYY') }}
+                                                {{ \Carbon\Carbon::parse($rekap->periode)->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
                                             @endif
                                         </td>
-                                        <td class="text-center fw-bold">{{ number_format($rekap->jumlah) }}</td>
+                                        <td class="text-center fw-bold">
+                                            {{ number_format($rekap->jumlah) }}</td>
                                         <td>
                                             <div class="progress" style="height: 22px;"
                                                 title="{{ number_format($rekap->jumlah) }} Kunjungan ({{ round($persentase) }}%)">
@@ -201,7 +203,8 @@
                                 @empty
                                     <tr>
                                         <td colspan="4" class="text-center py-4 text-muted"><i>Tidak ada data
-                                                kunjungan yang cocok dengan filter.</i></td>
+                                                kunjungan yang cocok
+                                                dengan filter.</i></td>
                                     </tr>
                                 @endforelse
                             </tbody>
