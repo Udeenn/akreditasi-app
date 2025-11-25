@@ -57,12 +57,13 @@
                     </div>
                 </div>
             </div>
+
             <div class="col-lg-8">
                 {{-- Histori Peminjaman --}}
                 <div class="card shadow-sm mb-4 border-0">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0 text-success"><i class="fas fa-arrow-down me-2"></i>Histori Peminjaman (Issue &
-                            Renew)</h6>
+                        <h6 class="mb-0 text-success"><i class="fas fa-arrow-down me-2"></i>Histori Peminjaman (Pinjam &
+                            Perpanjangan)</h6>
                         @if ($borrowingHistory->isNotEmpty())
                             <button type="button" id="exportBorrowingHistory" class="btn btn-sm btn-outline-success"><i
                                     class="fas fa-file-csv"></i> Export</button>
@@ -91,9 +92,11 @@
                                                 </td>
                                                 <td>
                                                     @if (strtolower($history->type) == 'issue')
-                                                        <span class="badge bg-primary">Pinjam</span>
+                                                        <span class="badge bg-primary "><i
+                                                                class="fas fa-arrow-up me-1"></i>Pinjam</span>
                                                     @else
-                                                        <span class="badge bg-info">Perpanjang</span>
+                                                        <span class="badge bg-warning text-dark"><i
+                                                                class="fas fa-redo me-1"></i>Perpanjang</span>
                                                     @endif
                                                 </td>
                                                 <td>{{ \Carbon\Carbon::parse($history->datetime)->format('d M Y, H:i') }}
@@ -143,12 +146,14 @@
                                                 </td>
                                                 <td>
                                                     @if (strtolower($history->type) == 'issue')
-                                                        <span class="badge bg-primary">Pinjam Awal</span>
+                                                        <span class="badge bg-primary"><i
+                                                                class="fas fa-arrow-up me-1"></i>Pinjam Awal</span>
                                                     @elseif(strtolower($history->type) == 'renew')
-                                                        <span class="badge bg-info text-dark">Perpanjangan</span>
+                                                        <span class="badge bg-warning"><i
+                                                                class="fas fa-redo me-1"></i>Perpanjangan</span>
                                                     @else
-                                                        <span
-                                                            class="badge bg-secondary">{{ ucfirst($history->type) }}</span>
+                                                        <span class="badge bg-success"><i
+                                                                class="fas fa-arrow-down me-1"></i>{{ ucfirst($history->type) }}</span>
                                                     @endif
                                                 </td>
                                                 <td>{{ \Carbon\Carbon::parse($history->datetime)->format('d M Y, H:i') }}

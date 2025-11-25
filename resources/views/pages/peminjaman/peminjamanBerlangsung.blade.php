@@ -109,101 +109,103 @@
                 </div>
             @endif
 
-            <div class="card-body">
-                @if ($dataExists)
-                    <div class="row mb-3">
-                        <div class="col-md-12">
-                            <div class="alert alert-info d-flex justify-content-between align-items-center py-2">
-                                <div>
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    Menampilkan data untuk: <strong>{{ $namaProdiFilter }}</strong>
-                                </div>
-                                <div class="fs-5">
-                                    Total Peminjaman Berlangsung:
-                                    <span class="badge bg-primary rounded-pill ms-2">
-                                        {{ number_format($activeLoans->total(), 0, ',', '.') }}
-                                    </span>
+            
+                <div class="card-body">
+                    @if ($dataExists)
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="alert alert-info d-flex justify-content-between align-items-center py-2">
+                                    <div>
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Menampilkan data untuk: <strong>{{ $namaProdiFilter }}</strong>
+                                    </div>
+                                    <div class="fs-5">
+                                        Total Peminjaman Berlangsung:
+                                        <span class="fw-bold">
+                                            {{ number_format($activeLoans->total(), 0, ',', '.') }}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover table-striped mb-0">
-                            <thead class="table-bordered">
-                                <tr class="text-center">
-                                    <th>No.</th>
-                                    <th>Waktu Pinjam</th>
-                                    <th>Peminjam</th>
-                                    <th>Judul Buku</th>
-                                    <th>Barcode</th>
-                                    <th>Status Pengembalian</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($activeLoans as $index => $loan)
-                                    @php
-                                        $dueDate = \Carbon\Carbon::parse($loan->BatasWaktuPengembalian);
-                                        $isOverdue = $dueDate->isPast() && !$dueDate->isToday();
-                                        $isDueToday = $dueDate->isToday();
-                                    @endphp
-
-                                    <tr class="{{ $isOverdue ? 'table-danger' : '' }}">
-                                        <td>{{ $activeLoans->firstItem() + $index }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($loan->BukuDipinjamSaat)->format('d F Y H:i') }}</td>
-                                        <td>{{ $loan->Peminjam }}</td>
-                                        <td>{{ $loan->JudulBuku }}</td>
-                                        <td style="width: 100px">{{ $loan->BarcodeBuku }}</td>
-                                        <td class="text-center" style="width: 200px;">
-                                            @if ($isOverdue)
-                                                <span class="badge bg-danger fs-6">
-                                                    TERLAMBAT
-                                                    <br>
-                                                    <small>({{ $dueDate->diffForHumans(null, true) }} lalu)</small>
-                                                </span>
-                                            @elseif ($isDueToday)
-                                                <span class="badge bg-warning text-dark fs-6">
-                                                    HARI INI
-                                                    <br>
-                                                    <small>({{ $dueDate->format('d F Y H:i') }})</small>
-                                                </span>
-                                            @else
-                                                <span class="">{{ $dueDate->format('d F Y H:i') }}</span>
-                                                <br>
-                                                <small class="text-muted">({{ $dueDate->diffForHumans(null, true) }}
-                                                    again)</small>
-                                            @endif
-                                        </td>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped mb-0">
+                                <thead class="table-bordered">
+                                    <tr class="text-center">
+                                        <th>No.</th>
+                                        <th>Waktu Pinjam</th>
+                                        <th>Peminjam</th>
+                                        <th>Judul Buku</th>
+                                        <th>Barcode</th>
+                                        <th>Status Pengembalian</th>
                                     </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    @foreach ($activeLoans as $index => $loan)
+                                        @php
+                                            $dueDate = \Carbon\Carbon::parse($loan->BatasWaktuPengembalian);
+                                            $isOverdue = $dueDate->isPast() && !$dueDate->isToday();
+                                            $isDueToday = $dueDate->isToday();
+                                        @endphp
 
-                    @if ($activeLoans->hasPages())
-                        <div class="card-footer border-0 d-flex justify-content-between align-items-center">
-                            <small class="text-muted" style="color: var(--bs-secondary-color) !important;">
-                                Showing {{ $activeLoans->firstItem() }} to {{ $activeLoans->lastItem() }} of
-                                {{ $activeLoans->total() }} results
-                            </small>
-                            {{ $activeLoans->withQueryString()->links('pagination::bootstrap-4') }}
+                                        <tr class="{{ $isOverdue ? 'table-danger' : '' }}">
+                                            <td>{{ $activeLoans->firstItem() + $index }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($loan->BukuDipinjamSaat)->format('d F Y H:i') }}
+                                            </td>
+                                            <td>{{ $loan->Peminjam }}</td>
+                                            <td>{{ $loan->JudulBuku }}</td>
+                                            <td style="width: 100px">{{ $loan->BarcodeBuku }}</td>
+                                            <td class="text-center" style="width: 200px;">
+                                                @if ($isOverdue)
+                                                    <span class="badge bg-danger fs-6">
+                                                        TERLAMBAT
+                                                        <br>
+                                                        <small>({{ $dueDate->diffForHumans(null, true) }} lalu)</small>
+                                                    </span>
+                                                @elseif ($isDueToday)
+                                                    <span class="badge bg-warning text-dark fs-6">
+                                                        HARI INI
+                                                        <br>
+                                                        <small>({{ $dueDate->format('d F Y H:i') }})</small>
+                                                    </span>
+                                                @else
+                                                    <span class="">{{ $dueDate->format('d F Y H:i') }}</span>
+                                                    <br>
+                                                    <small class="text-muted">({{ $dueDate->diffForHumans(null, true) }}
+                                                        again)</small>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        @if ($activeLoans->hasPages())
+                            <div class="card-footer border-0 d-flex justify-content-between align-items-center">
+                                <small class="text-muted" style="color: var(--bs-secondary-color) !important;">
+                                    Showing {{ $activeLoans->firstItem() }} to {{ $activeLoans->lastItem() }} of
+                                    {{ $activeLoans->total() }} results
+                                </small>
+                                {{ $activeLoans->withQueryString()->links('pagination::bootstrap-4') }}
+                            </div>
+                        @endif
+                    @else
+                        <div class="text-center p-5">
+                            <i class="fas fa-ghost fa-3x text-warning mb-3"></i>
+                            <h5 class="text-muted">Data Kosong</h5>
+                            <p class="text-muted mb-0">
+                                Tidak ada data peminjaman yang sedang berlangsung
+                                @if ($selectedProdiCode)
+                                    untuk program studi {{ $namaProdiFilter }}
+                                @elseif (request('search'))
+                                    dengan kata kunci "{{ request('search') }}"
+                                @endif
+                                saat ini.
+                            </p>
                         </div>
                     @endif
-                @else
-                    <div class="text-center p-5">
-                        <i class="fas fa-ghost fa-3x text-warning mb-3"></i>
-                        <h5 class="text-muted">Data Kosong</h5>
-                        <p class="text-muted mb-0">
-                            Tidak ada data peminjaman yang sedang berlangsung
-                            @if ($selectedProdiCode)
-                                untuk program studi {{ $namaProdiFilter }}
-                            @elseif (request('search'))
-                                dengan kata kunci "{{ request('search') }}"
-                            @endif
-                            saat ini.
-                        </p>
-                    </div>
-                @endif
-            </div>
+                </div>
         </div>
     </div>
 

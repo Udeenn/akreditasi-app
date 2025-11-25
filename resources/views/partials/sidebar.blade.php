@@ -128,7 +128,7 @@
             <li><a class="nav-link {{ request()->routeIs('peminjaman.peminjaman_prodi_chart') ? 'active' : '' }}"
                     href="{{ route('peminjaman.peminjaman_prodi_chart') }}">Civitas Akademika</a></li>
             <li><a class="nav-link {{ request()->routeIs('peminjaman.check_history') ? 'active' : '' }}"
-                    href="{{ route('peminjaman.check_history') }}">Cek Peminjaman</a></li>
+                    href="{{ route('peminjaman.check_history') }}">Cek Pinjaman</a></li>
             <li><a class="nav-link {{ request()->routeIs('peminjaman.berlangsung') ? 'active' : '' }}"
                     href="{{ route('peminjaman.berlangsung') }}">Sedang Berlangsung</a></li>
         </ul>

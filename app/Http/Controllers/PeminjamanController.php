@@ -109,7 +109,7 @@ class PeminjamanController extends Controller
                 $fullStatisticsForChart = $mainQuery->get();
                 if ($fullStatisticsForChart->isNotEmpty()) {
 
-                    $statistics = (clone $mainQuery)->paginate(10)->withQueryString();
+                    $statistics = (clone $mainQuery)->paginate(12)->withQueryString();
                 }
             } catch (\Exception $e) {
                 //  Log::error('Error fetching pertanggal statistics: ' . $e->getMessage() . "\n"_ . $e->getTraceAsString());
@@ -130,59 +130,6 @@ class PeminjamanController extends Controller
             'rerataPeminjaman'
         ));
     }
-
-
-    // public function getPeminjamDetail(Request $request)
-    // {
-    //     $periode = $request->input('periode');
-    //     $filterType = $request->input('filter_type');
-
-    //     $query = DB::connection('mysql2')->table('statistics as s')
-    //         ->join('borrowers as b', 's.borrowernumber', '=', 'b.borrowernumber')
-    //         ->join('items as i', 's.itemnumber', '=', 'i.itemnumber')
-    //         ->join('biblio as bib', 'i.biblionumber', '=', 'bib.biblionumber')
-    //         ->select('s.borrowernumber', 'b.cardnumber', DB::raw("TRIM(CONCAT(COALESCE(b.firstname, ''), ' ', COALESCE(b.surname, ''))) as nama_peminjam"), 's.type as tipe_transaksi', 's.datetime as waktu_transaksi', 'bib.title as judul_buku')
-    //         ->whereIn('s.type', ['issue', 'renew', 'return']); // Ambil semua tipe transaksi untuk detail
-
-    //     if ($filterType == 'daily') {
-    //         $query->whereDate('s.datetime', $periode);
-    //     } else { // yearly (periode adalah YYYY-MM)
-    //         $query->where(DB::raw('DATE_FORMAT(s.datetime, "%Y-%m")'), $periode);
-    //     }
-
-    //     // Query untuk data mentah
-    //     $detailData = $query->orderBy('nama_peminjam', 'asc')->orderBy('s.datetime', 'asc')->get();
-
-    //     // Kelompokkan di PHP
-    //     $groupedData = $detailData->groupBy('borrowernumber')->map(function ($items) {
-    //         $first = $items->first();
-    //         return [
-    //             'nama_peminjam' => $first->nama_peminjam,
-    //             'cardnumber' => $first->cardnumber,
-    //             'detail_buku' => $items->map(function ($item) {
-    //                 return [
-    //                     'judul_buku' => $item->judul_buku,
-    //                     'tipe_transaksi' => $item->tipe_transaksi,
-    //                     'waktu_transaksi' => Carbon::parse($item->waktu_transaksi)->format('Y-m-d H:i')
-    //                 ];
-    //             })
-    //         ];
-    //     })->values(); // Reset keys
-
-    //     // Paginasi manual
-    //     $currentPage = Paginator::resolveCurrentPage('page');
-    //     $perPage = 5; // 5 peminjam per halaman modal
-    //     $currentPageItems = $groupedData->slice(($currentPage - 1) * $perPage, $perPage);
-    //     $paginatedData = new LengthAwarePaginator($currentPageItems, $groupedData->count(), $perPage, $currentPage, [
-    //         'path' => $request->url(), // Gunakan URL request
-    //         'query' => $request->query() // Pertahankan query string
-    //     ]);
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'data' => $paginatedData // Kirim objek paginator
-    //     ]);
-    // }
 
     public function getDetailPeminjaman(Request $request)
     {
@@ -259,6 +206,102 @@ class PeminjamanController extends Controller
         );
 
         return $paginatedResult;
+    }
+
+    public function exportDetailCsv(Request $request)
+    {
+        $periode = $request->input('periode');
+        $filterType = $request->input('filter_type');
+
+        if (!$periode) {
+            return abort(400, 'Parameter periode tidak ditemukan.');
+        }
+
+        // 1. Setup Query Dasar
+        $baseQuery = DB::connection('mysql2')->table('statistics as s')
+            ->join('borrowers as b', 's.borrowernumber', '=', 'b.borrowernumber')
+            ->join('items as i', 's.itemnumber', '=', 'i.itemnumber')
+            ->join('biblio as bb', 'i.biblionumber', '=', 'bb.biblionumber')
+            ->whereIn('s.type', ['issue', 'renew', 'return']);
+
+        // 2. Filter Tanggal
+        if ($filterType == 'daily') {
+            $startOfDay = \Carbon\Carbon::parse($periode)->startOfDay();
+            $endOfDay = \Carbon\Carbon::parse($periode)->endOfDay();
+            $baseQuery->whereBetween('s.datetime', [$startOfDay, $endOfDay]);
+            $filenameDate = $periode;
+        } else {
+            $startOfMonth = \Carbon\Carbon::parse($periode)->startOfMonth();
+            $endOfMonth = \Carbon\Carbon::parse($periode)->endOfMonth();
+            $baseQuery->whereBetween('s.datetime', [$startOfMonth, $endOfMonth]);
+            $filenameDate = \Carbon\Carbon::parse($periode)->format('m-Y');
+        }
+
+        // 3. Ambil Data
+        $data = $baseQuery
+            ->select(
+                'b.cardnumber as nim',
+                'b.firstname',
+                'b.surname',
+                'bb.title as judul_buku',
+                's.datetime as waktu_transaksi',
+                's.type as tipe_transaksi'
+            )
+            ->orderBy('b.cardnumber', 'asc') // Samakan dengan getDetailPeminjaman
+            ->orderBy('s.datetime', 'asc')   // Lalu urutkan waktu transaksi
+            ->get();
+
+        // 4. Buat Streamed Response untuk CSV
+        $filename = "detail_peminjaman_keseluruhan_{$filenameDate}.csv";
+
+        $callback = function () use ($data) {
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+            $file = fopen('php://output', 'w');
+
+            // PERBAIKAN HEADER:
+            // BOM (Byte Order Mark) agar Excel baca UTF-8
+            fputs($file, "\xEF\xBB\xBF");
+
+            $delimiter = ';';
+
+            // Header CSV
+            fputcsv($file, ['No', 'NIM', 'Nama Peminjam', 'Judul Buku', 'Waktu Transaksi', 'Tipe Transaksi'], $delimiter);
+
+            foreach ($data as $index => $row) {
+                $tipe = match ($row->tipe_transaksi) {
+                    'issue' => 'Pinjam',
+                    'renew' => 'Perpanjang',
+                    'return' => 'Kembali',
+                    default => $row->tipe_transaksi,
+                };
+
+                // Nama digabung
+                $fullName = trim($row->firstname . ' ' . $row->surname);
+
+                fputcsv($file, [
+                    $index + 1,
+                    '="' . $row->nim . '"', // Format Text untuk NIM
+                    $fullName,
+                    $row->judul_buku,
+                    $row->waktu_transaksi,
+                    $tipe
+                ], $delimiter);
+            }
+
+            fclose($file);
+        };
+
+        $headers = [
+            "Content-type"        => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        return response()->stream($callback, 200, $headers);
     }
 
     public function peminjamanProdiChart(Request $request)
@@ -443,7 +486,7 @@ class PeminjamanController extends Controller
                     });
                     break;
             }
-            
+
 
             if ($filterType === 'daily') {
                 $borrowersQuery->whereDate('s.datetime', $periode);
@@ -503,6 +546,115 @@ class PeminjamanController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Gagal mengambil data: ' . $e->getMessage()], 500);
         }
+    }
+
+    public function exportDetailProdiCsv(Request $request)
+    {
+        $periode = $request->input('periode');
+        $prodiCode = $request->input('prodi_code');
+        $filterType = $request->input('filter_type');
+
+        if (!$periode || !$prodiCode) {
+            return abort(400, 'Parameter tidak lengkap.');
+        }
+
+        // 1. Setup Query Utama (Join Lengkap langsung)
+        $query = DB::connection('mysql2')->table('statistics as s')
+            ->join('borrowers as b', 'b.borrowernumber', '=', 's.borrowernumber')
+            ->join('items as i', 'i.itemnumber', '=', 's.itemnumber')
+            ->join('biblio as bi', 'bi.biblionumber', '=', 'i.biblionumber')
+            ->whereIn('s.type', ['issue', 'renew', 'return']);
+
+        // 2. Filter Prodi / Kategori (Logic yang sama dengan getPeminjamDetail)
+        switch (strtoupper($prodiCode)) {
+            case 'DOSEN':
+                $query->where('b.categorycode', 'like', 'TC%');
+                break;
+            case 'STAFF':
+                $query->where(function ($q) {
+                    $q->where('b.categorycode', 'like', 'STAF%')
+                        ->orWhere('b.categorycode', '=', 'LIBRARIAN');
+                });
+                break;
+            default:
+                $query->whereExists(function ($q) use ($prodiCode) {
+                    $q->select(DB::raw(1))
+                        ->from('borrower_attributes as ba')
+                        ->whereColumn('ba.borrowernumber', 'b.borrowernumber')
+                        ->where('ba.code', '=', 'PRODI')
+                        ->where('ba.attribute', '=', $prodiCode);
+                });
+                break;
+        }
+
+        // 3. Filter Tanggal
+        if ($filterType === 'daily') {
+            $query->whereDate('s.datetime', $periode);
+            $filenameDate = $periode;
+        } else {
+            $query->where(DB::raw('DATE_FORMAT(s.datetime, "%Y-%m")'), $periode);
+            $filenameDate = $periode;
+        }
+
+        // 4. Ambil Data
+        $data = $query
+            ->select(
+                'b.cardnumber as nim',
+                'b.firstname',
+                'b.surname',
+                'bi.title as judul_buku',
+                's.datetime as waktu_transaksi',
+                's.type as tipe_transaksi'
+            )
+            ->orderBy('b.cardnumber', 'asc') // Urutkan berdasarkan NIM
+            ->orderBy('s.datetime', 'asc')   // Lalu waktu transaksi
+            ->get();
+
+        // 5. Stream CSV
+        $filename = "Detail_Prodi_{$prodiCode}_{$filenameDate}.csv";
+
+        $callback = function () use ($data) {
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+            $file = fopen('php://output', 'w');
+
+            // BOM untuk Excel
+            fputs($file, "\xEF\xBB\xBF");
+            $delimiter = ';';
+
+            // Header
+            fputcsv($file, ['No', 'NIM', 'Nama Peminjam', 'Judul Buku', 'Waktu Transaksi', 'Tipe Transaksi'], $delimiter);
+
+            foreach ($data as $index => $row) {
+                $tipe = match ($row->tipe_transaksi) {
+                    'issue' => 'Pinjam',
+                    'renew' => 'Perpanjang',
+                    'return' => 'Kembali',
+                    default => $row->tipe_transaksi,
+                };
+
+                fputcsv($file, [
+                    $index + 1,
+                    '="' . $row->nim . '"', // Format Text NIM
+                    trim($row->firstname . ' ' . $row->surname),
+                    $row->judul_buku,
+                    $row->waktu_transaksi,
+                    $tipe
+                ], $delimiter);
+            }
+            fclose($file);
+        };
+
+        $headers = [
+            "Content-type" => "text/csv",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
+        ];
+
+        return response()->stream($callback, 200, $headers);
     }
 
     public function checkHistory(Request $request)

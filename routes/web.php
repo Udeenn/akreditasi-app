@@ -84,7 +84,11 @@ Route::get('/laporan/kunjungan-gabungan', [VisitHistory::class, 'laporanKunjunga
 
 Route::get('/peminjaman/peminjaman-rentang-tanggal', [PeminjamanController::class, 'pertanggal'])->name('peminjaman.peminjaman_rentang_tanggal');
 
+Route::get('/peminjaman/export-detail', [PeminjamanController::class, 'exportDetailCsv'])->name('peminjaman.export_detail');
+
 Route::get('/peminjaman/peminjaman-prodi-chart', [PeminjamanController::class, 'peminjamanProdiChart'])->name('peminjaman.peminjaman_prodi_chart');
+Route::get('/peminjaman/export-detail-prodi', [PeminjamanController::class, 'exportDetailProdiCsv'])->name('peminjaman.export_detail_prodi');
+
 Route::get('/peminjaman/cek-histori', [PeminjamanController::class, 'checkHistory'])->name('peminjaman.check_history');
 
 Route::get('/peminjaman/berlangsung', [PeminjamanController::class, 'peminjamanBerlangsung'])->name('peminjaman.berlangsung');

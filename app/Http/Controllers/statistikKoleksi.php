@@ -1262,7 +1262,8 @@ class StatistikKoleksi extends Controller
      * @return \Symfony\Component\HttpFoundation\StreamedResponse
      */
 
-    public function eresource(Request $request){
+    public function eresource(Request $request)
+    {
         return view('pages.dapus.eresource');
     }
 
