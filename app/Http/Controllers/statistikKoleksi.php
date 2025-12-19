@@ -234,7 +234,6 @@ class StatistikKoleksi extends Controller
                     if ($totalsTextbook && ($totalsTextbook->total_judul > 0 || $totalsTextbook->total_eksemplar > 0)) {
                         $prodiCounts['Textbook'] = ['judul' => $totalsTextbook->total_judul, 'eksemplar' => $totalsTextbook->total_eksemplar];
                     }
-
                     // 3. E-BOOK
                     $queryEbook = M_items::query()
                         ->from('items as i')
@@ -375,6 +374,7 @@ class StatistikKoleksi extends Controller
                 WHEN items.homebranch = 'PASCA' THEN 'Perpustakaan Pasca Sarjana'
                 WHEN items.homebranch = 'RSGM' THEN 'Perpustakaan Rumah Sakit Gigi dan Mulut'
                 WHEN items.homebranch = 'PSI' THEN 'Perpustakaan Pusat Studi Psikologi Islam'
+                WHEN items.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
                 ELSE items.homebranch
                 END AS Lokasi"
             )
@@ -510,6 +510,7 @@ class StatistikKoleksi extends Controller
                     WHEN i.homebranch = 'PASCA' THEN 'Perpustakaan Pasca Sarjana'
                     WHEN i.homebranch = 'RSGM' THEN 'Perpustakaan Rumah Sakit Gigi dan Mulut'
                     WHEN i.homebranch = 'PSI' THEN 'Perpustakaan Pusat Studi Psikologi Islam'
+                    WHEN i.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
                     ELSE i.homebranch
                     END AS Lokasi"),
                     DB::raw("MAX(
@@ -615,6 +616,7 @@ class StatistikKoleksi extends Controller
                     WHEN i.homebranch = 'PASCA' THEN 'Perpustakaan Pasca Sarjana'
                     WHEN i.homebranch = 'RSGM' THEN 'Perpustakaan Rumah Sakit Gigi dan Mulut'
                     WHEN i.homebranch = 'PSI' THEN 'Perpustakaan Pusat Studi Psikologi Islam'
+                    WHEN i.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
                     ELSE i.homebranch
                     END AS Lokasi"),
                     DB::raw("MAX(
@@ -748,7 +750,6 @@ class StatistikKoleksi extends Controller
                 ->where('items.withdrawn', 0)
                 ->whereIn('items.itype', ['EB']);
 
-            // --- PERUBAHAN UTAMA DI SINI (BLOK 2) ---
             if ($prodi !== 'all') {
                 $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
                 // Terapkan juga helpernya ke query total
@@ -783,6 +784,7 @@ class StatistikKoleksi extends Controller
 
     public function textbook(Request $request)
     {
+
         $listprodi = M_Auv::where('category', 'PRODI')->whereRaw('CHAR_LENGTH(lib) >= 13')->onlyProdiTampil()
             ->orderBy('authorised_value', 'asc')->get();
 
@@ -802,7 +804,6 @@ class StatistikKoleksi extends Controller
         $totalEksemplar = 0;
 
         if ($prodi && $prodi !== 'initial') {
-            // 3. Menyesuaikan pluck dengan nama kolom yang baru
             $prodiMapping = $listprodi->pluck('lib', 'authorised_value')->toArray();
             $namaProdi = $prodiMapping[$prodi] ?? 'Tidak Ditemukan';
 
@@ -833,6 +834,7 @@ class StatistikKoleksi extends Controller
                 WHEN items.homebranch = 'PASCA' THEN 'Perpustakaan Postgraduate'
                 WHEN items.homebranch = 'RSGM' THEN 'Perpustakaan Rumah Sakit Gigi dan Mulut'
                 WHEN items.homebranch = 'PSI' THEN 'Perpustakaan Pusat Studi Psikologi Islam'
+                WHEN items.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
                 ELSE items.homebranch
                 END AS Lokasi
             ")
@@ -841,14 +843,14 @@ class StatistikKoleksi extends Controller
                 ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
                 ->where('items.itemlost', 0)
                 ->where('items.withdrawn', 0)
-                ->whereIn('items.itype', ['BKS', 'BKSA', 'BKSCA', 'BKSC'])
-                ->whereRaw('LEFT(items.ccode, 1) <> "R"');
+                ->whereIn('items.itype', ['BKS', 'BKSA', 'BKSCA', 'BKSC']);
+            // ->whereRaw('LEFT(items.ccode, 1) <> "R"');
 
             if ($prodi !== 'all') {
                 $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
                 QueryHelper::applyCnClassRules($query, $cnClasses);
             }
-            // --- AKHIR PERUBAHAN ---
+            
 
             if ($tahunTerakhir !== 'all') {
                 $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
@@ -905,6 +907,7 @@ class StatistikKoleksi extends Controller
 
         return view('pages.dapus.textbook', compact('data', 'prodi', 'listprodi', 'namaProdi', 'tahunTerakhir', 'dataExists', 'totalJudul', 'totalEksemplar'));
     }
+
 
 
     public function periodikal(Request $request)
@@ -1075,7 +1078,7 @@ class StatistikKoleksi extends Controller
                 WHEN i.homebranch = 'LIPK' THEN 'LIPK'
                 WHEN i.homebranch = 'TILIB' THEN 'Perpustakaan Teknik Industri'
                 WHEN i.homebranch = 'MAPRO' THEN 'Perpustakaan Magister Psikologi'
-                WHEN i.homebranch = 'MEDLIB' THEN 'Perpustakaan Kedokteran'
+                WHEN i.homebranch = 'MEDLIB' THEN 'Perpustakaan <Kedokter></Kedokter>an'
                 WHEN i.homebranch = 'PAUD' THEN 'Perpustakaan PAUD'
                 WHEN i.homebranch = 'POG' THEN 'Perpustakaan Pendidikan Olahraga'
                 WHEN i.homebranch = 'PESMA' THEN 'Perpustakaan Pesma Haji Mas Mansyur'
@@ -1083,6 +1086,7 @@ class StatistikKoleksi extends Controller
                 WHEN i.homebranch = 'PASCA' THEN 'Perpustakaan Postgraduate'
                 WHEN i.homebranch = 'RSGM' THEN 'Perpustakaan Rumah Sakit Gigi dan Mulut'
                 WHEN i.homebranch = 'PSI' THEN 'Perpustakaan Pusat Studi Psikologi Islam'
+                WHEN i.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
                 ELSE i.homebranch
                 END AS Lokasi
                 ")

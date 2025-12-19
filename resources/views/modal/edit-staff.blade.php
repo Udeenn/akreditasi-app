@@ -1,5 +1,5 @@
 <div class="modal fade" id="editStaff{{ $item->id }}" tabindex="-1"
-    aria-labelledby="editStaffModalLabel{{ $item->id }}" aria-hidden="true"> {{-- Pastikan aria-labelledby unik --}}
+    aria-labelledby="editStaffModalLabel{{ $item->id }}" > {{-- Pastikan aria-labelledby unik --}}
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">

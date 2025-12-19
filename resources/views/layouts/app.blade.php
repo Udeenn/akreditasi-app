@@ -677,7 +677,7 @@
                         </div>
                     @endif --}}
                     <!-- Modal Notifikasi -->
-                    <div class="modal fade" id="notificationModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal fade" id="notificationModal" tabindex="-1">
                         <div class="modal-dialog modal-dialog-centered">
                             <div class="modal-content border-0 shadow-lg">
                                 <div class="modal-body text-center py-4">
@@ -704,7 +704,7 @@
 
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
-    <div class="modal fade" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeModalLabel" aria-hidden="true">
+    <div class="modal fade" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeModalLabel">
         <div class="modal-dialog modal-dialog-centered welcome-modal-animate">
             <div class="modal-content text-center border-0 shadow-lg" style="border-radius: 1rem;">
                 <div class="modal-body p-4 p-md-5">
@@ -727,7 +727,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header border-0">

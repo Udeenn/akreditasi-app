@@ -184,7 +184,7 @@
 </li>
 </ul>
 
-<ul class="nav flex-column mt-auto py-3 border-top border-light-subtle">
+{{-- <ul class="nav flex-column mt-auto py-3 border-top border-light-subtle">
     <li class="nav-item">
         <a class="nav-link {{ request()->routeIs('credit.index') ? 'active' : '' }}"
             href="{{ route('credit.index') }}">
@@ -192,5 +192,5 @@
             <span class="nav-text">Pengembang</span>
         </a>
     </li>
-</ul>
+</ul> --}}
 </div>

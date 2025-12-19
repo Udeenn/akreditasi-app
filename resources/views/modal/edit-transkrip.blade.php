@@ -1,4 +1,4 @@
-<div class="modal fade" id="editTranskrip{{ $item->id }}" tabindex="-1" aria-labelledby="editStaffModalLabel" aria-hidden="true">
+<div class="modal fade" id="editTranskrip{{ $item->id }}" tabindex="-1" aria-labelledby="editStaffModalLabel" >
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- Modal Header -->

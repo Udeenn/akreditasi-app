@@ -5,7 +5,7 @@
     <div class="container" style="min-height:60vh;">
         <div class="d-flex align-items-center justify-content-center" style="min-height:60vh;">
             <div class="text-center">
-                <i class="fas fa-hourglass-half fa-6x text-secondary mb-4" aria-hidden="true"></i>
+                <i class="fas fa-hourglass-half fa-6x text-secondary mb-4" ></i>
                 <h1 class="display-6 mb-2">Segera Hadir</h1>
                 <p class="text-muted mb-4">Halaman Statistik E-Resource sedang dalam pengembangan. Mohon ditunggu.</p>
                 <div class="d-flex justify-content-center gap-2">

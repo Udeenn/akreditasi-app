@@ -1,4 +1,4 @@
-<div class="modal fade" id="view-pdf-{{ $item->id }}" tabindex="-1" aria-labelledby="pdfModalLabel{{ $no }}" aria-hidden="true">
+<div class="modal fade" id="view-pdf-{{ $item->id }}" tabindex="-1" aria-labelledby="pdfModalLabel{{ $no }}" >
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">

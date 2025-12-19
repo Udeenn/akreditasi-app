@@ -250,7 +250,7 @@
 
         {{-- Modal untuk detail pengunjung --}}
         <div class="modal fade" id="detailPengunjungModal" tabindex="-1" aria-labelledby="detailPengunjungModalLabel"
-            aria-hidden="true">
+            >
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header">

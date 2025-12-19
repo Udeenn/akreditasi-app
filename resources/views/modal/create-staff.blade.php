@@ -1,4 +1,4 @@
-<div class="modal fade" id="addStaffModal" tabindex="-1" aria-labelledby="addStaffModalLabel" aria-hidden="true">
+<div class="modal fade" id="addStaffModal" tabindex="-1" aria-labelledby="addStaffModalLabel" >
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">

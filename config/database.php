@@ -68,7 +68,7 @@ return [
             'host' => env('DB_SECOND_HOST', '127.0.0.1'),
             'port' => env('DB_SECOND_PORT', '3306'),
             'database' => env('DB_SECOND_DATABASE', 'koha'),
-            'username' => env('DB_SECOND_USERNAME', 'root'),
+            'username' => env('DB_SECOND_USERNAME', 'koha_readonly'),
             'password' => env('DB_SECOND_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),

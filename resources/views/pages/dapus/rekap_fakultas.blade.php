@@ -59,9 +59,10 @@
                         <div class="col d-flex align-items-stretch prodi-card-col">
                             <div class="card h-100 shadow-sm border-0 w-100">
                                 <div class="card-header border-0 font-semibold">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-0 fw-bold text-truncate" title="{{ $prodiData['nama_prodi'] }}">
-                                            {{ Str::limit($prodiData['nama_prodi'], 35) }}
+                                    <div class="d-flex justify-content-between align-items-center my-2
+                                        <h6 class="mb-0
+                                        fw-bold text-truncate" title="{{ $prodiData['nama_prodi'] }}">
+                                        {{ Str::limit($prodiData['nama_prodi'], 35) }}
                                         </h6>
                                         <span class="badge bg-light text-primary ms-2">{{ $prodiData['prodi_code'] }}</span>
                                     </div>

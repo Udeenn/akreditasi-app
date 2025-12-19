@@ -30,60 +30,10 @@ class VisitHistory extends Controller
         'L' => 'FKI - Fakultas Komunikasi dan Informatika',
     ];
 
-    private function getProdiToFacultyMap($listprodi)
-    {
-        $map = [];
-        foreach ($listprodi as $prodi) {
-            $prodiCode = $prodi->authorised_value;
-
-            $firstLetter = substr($prodiCode, 0, 1);
-            $firstTwoLetters = substr($prodiCode, 0, 2);
-            $firstThreeLetters = substr($prodiCode, 0, 3);
-
-            if (in_array($firstThreeLetters, ['J53', 'J52'])) {
-                $map[$prodiCode] = 'FKG - Fakultas Kedokteran Gigi';
-            } else if ($firstTwoLetters === 'J5') {
-                $map[$prodiCode] = 'FK - Fakultas Kedokteran';
-            } else if ($firstLetter === 'J') {
-                $map[$prodiCode] = 'FIK - Fakultas Ilmu Kesehatan';
-            } else if (isset($this->facultyMapping[$firstLetter])) {
-                $map[$prodiCode] = $this->facultyMapping[$firstLetter];
-            } else {
-                $map[$prodiCode] = 'Lainnya';
-            }
-
-            if (in_array($prodiCode, ['A510', 'A610', 'KIP/PSKGJ PAUD', 'Q100', 'S400', 'Q200', 'Q300', 'S200'])) {
-                $map[$prodiCode] = 'FKIP - Fakultas Keguruan dan Ilmu Pendidikan';
-            }
-            if (in_array($prodiCode, ['W100', 'P100'])) {
-                $map[$prodiCode] = 'FEB - Fakultas Ekonomi dan Bisnis';
-            }
-            if (in_array($prodiCode, ['U200', 'U100', 'S100'])) {
-                $map[$prodiCode] = 'FT - Fakultas Teknik';
-            }
-            if (in_array($prodiCode, ['S300', 'T100'])) {
-                $map[$prodiCode] = 'FPsi - Fakultas Psikologi';
-            }
-            if (in_array($prodiCode, ['I000', 'O100', 'O300', 'O200', 'O000'])) {
-                $map[$prodiCode] = 'FAI - Fakultas Agama Islam';
-            }
-            if (in_array($prodiCode, ['R100', 'R200'])) {
-                $map[$prodiCode] = 'FHIP - Fakultas Hukum dan Ilmu Politik';
-            }
-            if (in_array($prodiCode, ['V100'])) {
-                $map[$prodiCode] = 'FF - Fakultas Farmasi';
-            }
-        }
-
-        // Tambahan Manual untuk Static Values
-        $map['DOSEN']   = 'Dosen & Tendik';
-        $map['TENDIK']  = 'Dosen & Tendik';
-
-        return $map;
-    }
 
     public function kunjunganFakultasTable(Request $request)
     {
+        ini_set('memory_limit', '512M');
         // 1. SETUP DATA STATIC
         $allProdiListObj = M_Auv::where('category', 'PRODI')->get();
         $prodiToFacultyMap = $this->getProdiToFacultyMap($allProdiListObj);
@@ -99,8 +49,6 @@ class VisitHistory extends Controller
             return $this->getDataTables($request);
         }
 
-        // 3. DEFINISI VARIABEL UNTUK VIEW
-        // <--- PERBAIKAN 1: Definisi $hasFilter
         $hasFilter = $request->hasAny(['filter_type', 'fakultas', 'tanggal_awal', 'tahun_awal']);
         $filterType = $request->input('filter_type', 'daily'); // Default filter type
 
@@ -135,660 +83,848 @@ class VisitHistory extends Controller
             'tahunAkhir',
             'chartData',
             'totalKeseluruhanKunjungan',
-            'hasFilter',      // <--- Wajib ada
-            'filterType',     // <--- Wajib ada untuk form
-            'displayPeriod'   // <--- Wajib ada untuk judul
+            'hasFilter',
+            'filterType',
+            'displayPeriod'
         ));
     }
 
-
     private function buildQuery($request, $forChart = false)
     {
-        // Ambil Filter
         $filterType     = $request->input('filter_type', 'daily');
         $fakultasFilter = $request->input('fakultas');
-        // Search ditangani otomatis oleh Yajra nanti untuk tabel,
-        // tapi untuk Chart kita butuh parameter search manual jika ada
         $searchKeyword  = $request->input('search_manual');
 
-        // Setup Tanggal
+        // ---------------------------------------------------------------------
+        // STEP 1: SETUP TANGGAL
+        // ---------------------------------------------------------------------
         if ($filterType === 'yearly') {
-            $thAwal = $request->input('tahun_awal', Carbon::now()->year);
-            $thAkhir = $request->input('tahun_akhir', Carbon::now()->year);
+            $thAwal = $request->input('tahun_awal', \Carbon\Carbon::now()->year);
+            $thAkhir = $request->input('tahun_akhir', \Carbon\Carbon::now()->year);
             if ($thAwal > $thAkhir) $thAwal = $thAkhir;
-            $start = Carbon::createFromDate($thAwal, 1, 1)->format('Y-m-d');
-            $end = Carbon::createFromDate($thAkhir, 12, 31)->format('Y-m-d');
-            $sqlDateFormat = "DATE_FORMAT(all_visits.visittime, '%Y-%m-01')";
+            $start = \Carbon\Carbon::createFromDate($thAwal, 1, 1)->startOfDay();
+            $end = \Carbon\Carbon::createFromDate($thAkhir, 12, 31)->endOfDay();
+            $dateFormatPHP = 'Y-m-01';
         } else {
-            $start = $request->input('tanggal_awal', Carbon::now()->startOfMonth()->toDateString());
-            $end = $request->input('tanggal_akhir', Carbon::now()->toDateString());
-            $sqlDateFormat = "DATE(all_visits.visittime)";
+            $start = \Carbon\Carbon::parse($request->input('tanggal_awal', \Carbon\Carbon::now()->startOfMonth()->toDateString()))->startOfDay();
+            $end = \Carbon\Carbon::parse($request->input('tanggal_akhir', \Carbon\Carbon::now()->toDateString()))->endOfDay();
+            $dateFormatPHP = 'Y-m-d';
         }
 
-        // Setup Mapping Prodi
-        $listNamaProdi = M_Auv::where('category', 'PRODI')->get()
-            ->mapWithKeys(function ($item) {
-                $lib = $item->lib;
-                if (str_starts_with($lib, 'FAI/ ')) $lib = substr($lib, 5);
-                return [strtoupper(trim($item->authorised_value)) => trim($lib)];
-            })->toArray();
-        $staticValues = [
-            'DOSEN' => 'Dosen',
-            'TENDIK' => 'Tenaga Kependidikan',
-            'XA' => 'Alumni',
-            'KSP' => 'Sekali Kunjung',
-            'LB' => 'Anggota Luar Biasa',
-            'KSPMBKM' => 'Magang MBKM',
-            'KSPBIPA' => 'BIPA'
-        ];
-        $fullProdiList = $staticValues + $listNamaProdi;
-
-        // Logika Filter Fakultas
-        $codesFromFaculty = [];
-        $isFacultyFilterActive = ($fakultasFilter && $fakultasFilter !== 'semua');
-        if ($isFacultyFilterActive) {
-            $allProdiListObj = M_Auv::where('category', 'PRODI')->get();
-            $prodiToFacultyMap = $this->getProdiToFacultyMap($allProdiListObj);
-            foreach ($prodiToFacultyMap as $code => $facultyName) {
-                if ($facultyName === $fakultasFilter) $codesFromFaculty[] = strtoupper(trim($code));
-            }
-        }
-
-        // Logika Search Manual (Khusus untuk Chart)
-        $codesFromSearch = [];
-        if ($forChart && $searchKeyword) {
-            $keyword = strtolower(trim($searchKeyword));
-            foreach ($fullProdiList as $code => $name) {
-                if (str_contains(strtolower($code), $keyword) || str_contains(strtolower($name), $keyword)) {
-                    $codesFromSearch[] = strtoupper(trim($code));
-                }
-            }
-        }
-
-        // BUILD QUERY UNION
-        $strStart = $start . ' 00:00:00';
-        $strEnd   = $end . ' 23:59:59';
-
-        $qHistory = DB::connection('mysql2')->table('visitorhistory')
+        // ---------------------------------------------------------------------
+        // STEP 2: AMBIL DATA KUNJUNGAN (DB SATELIT / MYSQL)
+        // ---------------------------------------------------------------------
+        $qHistory = DB::connection('mysql')->table('visitorhistory')
             ->select('visittime', 'cardnumber')
-            ->whereRaw("visittime >= '$strStart' AND visittime <= '$strEnd'");
-        $qCorner = DB::connection('mysql2')->table('visitorcorner')
+            ->whereBetween('visittime', [$start, $end]);
+
+        $qCorner = DB::connection('mysql')->table('visitorcorner')
             ->select('visittime', 'cardnumber')
-            ->whereRaw("visittime >= '$strStart' AND visittime <= '$strEnd'");
+            ->whereBetween('visittime', [$start, $end]);
 
-        $query = DB::connection('mysql2')->query()
-            ->fromSub($qHistory->unionAll($qCorner), 'all_visits')
-            ->leftJoin('borrowers as b', 'all_visits.cardnumber', '=', 'b.cardnumber')
-            ->selectRaw("
-            $sqlDateFormat as tanggal_kunjungan,
-            CASE
-                WHEN b.categorycode LIKE 'TC%' THEN 'DOSEN'
-                WHEN b.categorycode LIKE 'STAF%' THEN 'TENDIK'
-                WHEN SUBSTR(all_visits.cardnumber, 1, 7) = 'KSPMBKM' THEN 'KSPMBKM'
-                WHEN SUBSTR(all_visits.cardnumber, 1, 7) = 'KSPBIPA' THEN 'KSPBIPA'
-                WHEN SUBSTR(all_visits.cardnumber, 1, 2) IN ('XA', 'XC', 'LB') THEN SUBSTR(all_visits.cardnumber, 1, 2)
-                WHEN SUBSTR(all_visits.cardnumber, 1, 3) = 'KSP' THEN 'KSP'
-                ELSE SUBSTR(all_visits.cardnumber, 1, 4)
-            END as kode_identifikasi,
-            COUNT(*) as jumlah_kunjungan_harian
-        ");
+        $rawVisits = $qHistory->unionAll($qCorner)->get();
 
-        // Apply Filter Fakultas (HAVING)
-        if ($isFacultyFilterActive) {
-            if (!empty($codesFromFaculty)) {
-                $query->havingRaw("UPPER(TRIM(kode_identifikasi)) IN ('" . implode("','", $codesFromFaculty) . "')");
+        // ---------------------------------------------------------------------
+        // STEP 3: AMBIL DATA BORROWER (DB KOHA / MYSQL2)
+        // ---------------------------------------------------------------------
+        $cardNumbers = $rawVisits->pluck('cardnumber')->unique()->values()->all();
+
+        $borrowers = DB::connection('mysql2')->table('borrowers')
+            ->select('cardnumber', 'categorycode')
+            ->whereIn('cardnumber', $cardNumbers)
+            ->get()
+            ->pluck('categorycode', 'cardnumber');
+
+        // ---------------------------------------------------------------------
+        // STEP 4: MAPPING DATA & LOGIKA IDENTIFIKASI
+        // ---------------------------------------------------------------------
+        $processedData = $rawVisits->map(function ($visit) use ($borrowers, $dateFormatPHP) {
+            $cardnumber = $visit->cardnumber;
+            $visittime  = $visit->visittime;
+            $categorycode = $borrowers[$cardnumber] ?? null;
+
+            // Logika Identifikasi
+            $kodeIdentifikasi = substr($cardnumber, 0, 4); // Default
+
+            if ($categorycode && str_starts_with($categorycode, 'TC')) {
+                $kodeIdentifikasi = 'DOSEN';
+            } elseif ($categorycode && (str_starts_with($categorycode, 'STAF') || $categorycode === 'LIBRARIAN')) {
+                $kodeIdentifikasi = 'TENDIK';
+            } elseif (str_starts_with($cardnumber, 'KSPMBKM')) {
+                $kodeIdentifikasi = 'KSPMBKM';
+            } elseif (str_starts_with($cardnumber, 'KSPBIPA')) {
+                $kodeIdentifikasi = 'KSPBIPA';
+            } elseif (in_array(substr($cardnumber, 0, 2), ['XA', 'XC', 'LB'])) {
+                $kodeIdentifikasi = substr($cardnumber, 0, 2);
+            } elseif (substr($cardnumber, 0, 3) === 'KSP') {
+                $kodeIdentifikasi = 'KSP';
+            }
+
+            return [
+                'tanggal_kunjungan' => \Carbon\Carbon::parse($visittime)->format($dateFormatPHP),
+                'kode_identifikasi' => strtoupper(trim($kodeIdentifikasi)),
+                'cardnumber' => $cardnumber,
+            ];
+        });
+
+        // ---------------------------------------------------------------------
+        // STEP 5: FILTERING & FORMATTING NAMA (BAGIAN UTAMA YANG DIBENAHI)
+        // ---------------------------------------------------------------------
+
+        // A. Ambil Data Referensi Prodi dari DB
+        // Pastikan namespace model M_Auv sesuai aplikasi Anda
+        $allProdiListObj = \App\Models\M_Auv::where('category', 'PRODI')->get();
+
+        // B. Ambil Mapping Fakultas (Kode => 'SINGKATAN - Nama Panjang')
+        $facultyMap = $this->getProdiToFacultyMap($allProdiListObj);
+
+        // C. Ambil Nama Prodi Asli (Kode => Nama Prodi)
+        // 'lib' biasanya nama kolom deskripsi di Koha. Jika kosong, coba ganti 'description'
+        $prodiNameMap = $allProdiListObj->pluck('lib', 'authorised_value')->toArray();
+
+        // D. RAKIT LABEL FINAL: "SINGKATAN / Nama Prodi"
+        $fullProdiList = [];
+
+        // D. RAKIT LABEL FINAL: "SINGKATAN / Nama Prodi"
+        $fullProdiList = [];
+
+        foreach ($prodiNameMap as $code => $name) {
+            $facultyString = $facultyMap[$code] ?? '';
+
+            // 1. Ambil Singkatan Fakultas (misal: "FHIP")
+            $parts = explode(' - ', $facultyString);
+            $acronym = isset($parts[0]) ? trim($parts[0]) : '';
+
+            $cleanName = $name; // Default
+
+            // Cek apakah nama prodi diawali dengan singkatan fakultas?
+            if (!empty($acronym) && str_starts_with(strtoupper($name), $acronym)) {
+                // Hapus singkatan dari nama (misal "FHIP" dibuang)
+                $tempName = substr($name, strlen($acronym));
+                // Hapus sisa karakter pemisah seperti " / ", "-", atau spasi di depan
+                $cleanName = ltrim($tempName, "/- ");
+            }
+
+            // 3. Gabungkan Ulang dengan Format Rapi
+            if (!empty($acronym) && $acronym !== 'Lainnya') {
+                $fullProdiList[$code] = $acronym . ' / ' . $cleanName;
             } else {
-                $query->havingRaw("1 = 0");
+                $fullProdiList[$code] = $name;
             }
         }
 
-        // Apply Filter Search (Khusus Chart)
+        // E. Tambahkan Kode Manual (Agar tidak muncul "Prodi Tidak Dikenal")
+        $fullProdiList['DOSEN']   = 'Dosen & Pengajar';
+        $fullProdiList['TENDIK']  = 'Tenaga Kependidikan';
+        $fullProdiList['KSP']     = 'Kartu Sekali Kunjung';
+        $fullProdiList['KSPMBKM'] = 'MBKM';
+        $fullProdiList['KSPBIPA'] = 'BIPA';
+        $fullProdiList['XA']      = 'Almuni';
+        $fullProdiList['LB']      = 'Anggota Luar Biasa';
+
+        // F. Filter Berdasarkan Fakultas (Dropdown)
+        if ($fakultasFilter && $fakultasFilter !== 'semua') {
+            $processedData = $processedData->filter(function ($item) use ($fakultasFilter, $facultyMap) {
+                // Cek fakultas dari kode item
+                $fakultasItem = $facultyMap[$item['kode_identifikasi']] ?? null;
+                return $fakultasItem === $fakultasFilter;
+            });
+        }
+
+        // G. Filter Search Manual (Khusus Chart)
         if ($forChart && $searchKeyword) {
-            if (!empty($codesFromSearch)) {
-                $query->havingRaw("UPPER(TRIM(kode_identifikasi)) IN ('" . implode("','", $codesFromSearch) . "')");
-            } else {
-                $query->havingRaw("1 = 0");
-            }
+            $keyword = strtoupper(trim($searchKeyword));
+            $processedData = $processedData->filter(function ($item) use ($keyword) {
+                return str_contains($item['kode_identifikasi'], $keyword);
+            });
         }
 
-        // Grouping
-        $query->groupBy('tanggal_kunjungan', 'kode_identifikasi');
+        // ---------------------------------------------------------------------
+        // STEP 6: RETURN DATA
+        // ---------------------------------------------------------------------
 
-        // Jika untuk Chart/Total
         if ($forChart) {
-            $rawData = $query->orderBy('tanggal_kunjungan', 'asc')->get();
-
-            $chartData = $rawData->groupBy('tanggal_kunjungan')->map(function ($group, $key) use ($filterType) {
+            $grouped = $processedData->groupBy('tanggal_kunjungan');
+            $chartData = $grouped->map(function ($group, $key) use ($filterType) {
                 $label = $key;
                 if ($filterType === 'yearly') {
-                    try {
-                        $label = Carbon::parse($key)->locale('id')->isoFormat('MMMM Y');
-                    } catch (\Exception $e) {
-                    }
+                    $label = \Carbon\Carbon::parse($key)->locale('id')->isoFormat('MMMM Y');
                 }
                 return [
                     'label' => $label,
-                    'total_kunjungan' => $group->sum('jumlah_kunjungan_harian')
+                    'total_kunjungan' => $group->count()
                 ];
             })->values();
 
             return [
                 'chart' => $chartData,
-                'total' => $rawData->sum('jumlah_kunjungan_harian')
+                'total' => $processedData->count()
             ];
         }
 
+        // Untuk DataTables
+        $tableData = $processedData->groupBy(function ($item) {
+            return $item['tanggal_kunjungan'] . '|' . $item['kode_identifikasi'];
+        })->map(function ($group) {
+            $first = $group->first();
+            return [
+                'tanggal_kunjungan' => $first['tanggal_kunjungan'],
+                'kode_identifikasi' => $first['kode_identifikasi'],
+                'jumlah_kunjungan_harian' => $group->count()
+            ];
+        })->values();
 
         return [
-            'query' => $query,
-            'fullProdiList' => $fullProdiList,
-            'filterType' => $filterType
+            'data'          => $tableData,
+            'filterType'    => $filterType,
+            'fullProdiList' => $fullProdiList
         ];
     }
 
-    private function getDataTables($request)
+    private function getProdiToFacultyMap($listprodi)
     {
-        $build = $this->buildQuery($request, false);
-        $query = $build['query'];
-        $fullProdiList = $build['fullProdiList'];
-        $filterType = $build['filterType'];
+        $map = [];
+        $facultyMapping = $this->facultyMapping ?? [];
 
-        // 1. Wrap Query Utama
-        $wrappedQuery = DB::connection('mysql2')->query()->fromSub($query, 'sub_query');
-        $queryForTotal = clone $wrappedQuery;
+        foreach ($listprodi as $prodi) {
+            $prodiCode = $prodi->authorised_value;
 
-        // Ambil keyword pencarian dari request Yajra
-        $keyword = $request->input('search.value');
+            $firstLetter = substr($prodiCode, 0, 1);
+            $firstTwoLetters = substr($prodiCode, 0, 2);
+            $firstThreeLetters = substr($prodiCode, 0, 3);
 
-        if (!empty($keyword)) {
-            $keyword = strtolower($keyword);
-            $matchedCodes = [];
-
-            // Cari kode prodi yang cocok
-            foreach ($fullProdiList as $code => $name) {
-                if (str_contains(strtolower($name), $keyword) || str_contains(strtolower($code), $keyword)) {
-                    $matchedCodes[] = $code;
-                }
+            if (in_array($firstThreeLetters, ['J53', 'J52'])) {
+                $map[$prodiCode] = 'FKG - Fakultas Kedokteran Gigi';
+            } else if ($firstTwoLetters === 'J5') {
+                $map[$prodiCode] = 'FK - Fakultas Kedokteran';
+            } else if ($firstLetter === 'J') {
+                $map[$prodiCode] = 'FIK - Fakultas Ilmu Kesehatan';
+            } else if (isset($facultyMapping[$firstLetter])) {
+                $map[$prodiCode] = $facultyMapping[$firstLetter];
+            } else {
+                $map[$prodiCode] = 'Lainnya';
             }
 
-            if (!empty($matchedCodes)) {
-                $queryForTotal->whereIn('kode_identifikasi', $matchedCodes);
-            } else {
-                $queryForTotal->where(function ($q) use ($keyword) {
-                    $q->whereRaw("1 = 0"); // Default fail untuk prodi
-                    $q->orWhere('tanggal_kunjungan', 'like', "%{$keyword}%");
-                });
+            // Override Spesifik
+            if (in_array($prodiCode, ['A510', 'A610', 'KIP/PSKGJ PAUD', 'Q100', 'S400', 'Q200', 'Q300', 'S200'])) {
+                $map[$prodiCode] = 'FKIP - Fakultas Keguruan dan Ilmu Pendidikan';
+            }
+            if (in_array($prodiCode, ['W100', 'P100'])) {
+                $map[$prodiCode] = 'FEB - Fakultas Ekonomi dan Bisnis';
+            }
+            if (in_array($prodiCode, ['U200', 'U100', 'S100'])) {
+                $map[$prodiCode] = 'FT - Fakultas Teknik';
+            }
+            if (in_array($prodiCode, ['S300', 'T100'])) {
+                $map[$prodiCode] = 'FPsi - Fakultas Psikologi';
+            }
+            if (in_array($prodiCode, ['I000', 'O100', 'O300', 'O200', 'O000'])) {
+                $map[$prodiCode] = 'FAI - Fakultas Agama Islam';
+            }
+            if (in_array($prodiCode, ['R100', 'R200'])) {
+                $map[$prodiCode] = 'FHIP - Fakultas Hukum dan Ilmu Politik';
+            }
+            if (in_array($prodiCode, ['V100'])) {
+                $map[$prodiCode] = 'FF - Fakultas Farmasi';
             }
         }
 
-        // Hitung jumlahnya
-        $filteredTotal = $queryForTotal->sum('jumlah_kunjungan_harian');
+        // Tambahan Manual untuk Filter
+        $map['DOSEN']   = 'Dosen';
+        $map['TENDIK']  = 'Tendik';
 
-        return DataTables::of($wrappedQuery)
+        return $map;
+    }
+    private function getDataTables($request)
+    {
+        // 1. Ambil Data
+        $build = $this->buildQuery($request, false);
+
+        /** @var \Illuminate\Support\Collection $dataCollection */
+        $dataCollection = $build['data'];
+        $fullProdiList  = $build['fullProdiList'];
+        $filterType     = $build['filterType'];
+
+        // 2. Pre-process Data (Attach Nama Prodi Text)
+        $dataCollection->transform(function ($item) use ($fullProdiList) {
+            $code = strtoupper(trim($item['kode_identifikasi']));
+            $item['nama_prodi_text'] = $fullProdiList[$code] ?? 'Prodi Tidak Dikenal';
+            return $item;
+        });
+
+        // 3. Yajra DataTables
+        return \Yajra\DataTables\Facades\DataTables::of($dataCollection)
             ->addIndexColumn()
-            ->editColumn('tanggal_kunjungan', function ($row) use ($filterType) {
-                if ($filterType === 'yearly') {
-                    try {
-                        return Carbon::parse($row->tanggal_kunjungan)->locale('id')->isoFormat('MMMM Y');
-                    } catch (\Exception $e) {
-                        return $row->tanggal_kunjungan;
-                    }
-                }
-                try {
-                    return Carbon::parse($row->tanggal_kunjungan)->locale('id')->isoFormat('dddd, D MMMM Y');
-                } catch (\Exception $e) {
-                    return $row->tanggal_kunjungan;
-                }
-            })
-            ->addColumn('nama_prodi', function ($row) use ($fullProdiList) {
-                $code = strtoupper(trim($row->kode_identifikasi));
-                $name = $fullProdiList[$code] ?? 'Prodi Tidak Dikenal';
-                return '<div class="d-flex flex-column">
-                        <span class="fw-bold text-primary">' . $name . '</span>
-                        <small class="text-muted">' . $code . '</small>
-                    </div>';
-            })
-            // Logic Search untuk Tabel
-            ->filterColumn('nama_prodi', function ($query, $keyword) use ($fullProdiList) {
-                $matchedCodes = [];
-                $keyword = strtolower($keyword);
-                foreach ($fullProdiList as $code => $name) {
-                    if (str_contains(strtolower($name), $keyword) || str_contains(strtolower($code), $keyword)) {
-                        $matchedCodes[] = $code;
-                    }
-                }
-                if (!empty($matchedCodes)) {
-                    $query->whereIn('kode_identifikasi', $matchedCodes);
-                } else {
-                    $query->whereRaw("1 = 0");
-                }
-            })
-            ->editColumn('jumlah_kunjungan_harian', function ($row) {
-                return '<span class="">' . number_format($row->jumlah_kunjungan_harian, 0, ',', '.') . '</span>';
-            })
-            ->rawColumns(['nama_prodi', 'jumlah_kunjungan_harian'])
 
-            ->with([
-                'recordsTotalFiltered' => number_format($filteredTotal, 0, ',', '.')
-            ])
+            // Render Kolom Nama
+            ->addColumn('nama_prodi', function ($row) {
+                $name = $row['nama_prodi_text'];
+                $code = $row['kode_identifikasi'];
+
+                return '<div class="d-flex flex-column">
+                            <span class="fw-bold text-primary">' . e($name) . '</span>
+                            <small class="text-muted">' . e($code) . '</small>
+                        </div>';
+            })
+
+            // Render Tanggal
+            ->editColumn('tanggal_kunjungan', function ($row) use ($filterType) {
+                $tgl = $row['tanggal_kunjungan'];
+                try {
+                    if ($filterType === 'yearly') {
+                        return \Carbon\Carbon::parse($tgl)->locale('id')->isoFormat('MMMM Y');
+                    }
+                    return \Carbon\Carbon::parse($tgl)->locale('id')->isoFormat('dddd, D MMMM Y');
+                } catch (\Exception $e) {
+                    return $tgl;
+                }
+            })
+
+            // Render Angka
+            ->editColumn('jumlah_kunjungan_harian', function ($row) {
+                return '<span>' . number_format($row['jumlah_kunjungan_harian'], 0, ',', '.') . '</span>';
+            })
+
+            ->rawColumns(['nama_prodi', 'jumlah_kunjungan_harian'])
             ->make(true);
     }
 
     public function kunjunganProdiTable(Request $request)
     {
-        // 1. SETUP DATA AWAL
-        $listProdiFromDb = M_Auv::where('category', 'PRODI')
-            ->whereRaw('CHAR_LENGTH(lib) >= 13')
+        // A. Ambil Data Referensi
+        $allProdiListObj = M_Auv::where('category', 'PRODI')
             ->onlyProdiTampil()
-            ->orderBy('authorised_value', 'asc')
-            ->pluck('lib', 'authorised_value')
-            ->toArray();
+            ->get();
 
-        $staticValues = [
-            'DOSEN' => 'Dosen',
-            'TENDIK' => 'Tenaga Kependidikan',
-        ];
-        $listProdi = $staticValues + $listProdiFromDb;
+        $facultyMap = $this->getProdiToFacultyMap($allProdiListObj);
 
-        // 2. SETUP FILTER
-        $filterType      = $request->input('filter_type', 'daily');
-        $kodeProdiFilter = $request->input('prodi');
-        $perPage         = $request->input('per_page', 10);
-        $hasFilter       = $request->hasAny(['filter_type', 'prodi', 'tanggal_awal', 'tahun_awal']);
+        $prodiNameMap = $allProdiListObj->pluck('lib', 'authorised_value')->toArray();
 
-        $data = collect([]);
-        $chartData = collect([]);
-        $totalKeseluruhanKunjungan = 0;
-        $displayPeriod = '';
+        $listProdi = [];
 
-        $tanggalAwal = $request->input('tanggal_awal', Carbon::now()->startOfMonth()->toDateString());
-        $tanggalAkhir = $request->input('tanggal_akhir', Carbon::now()->toDateString());
-        $tahunAwal = $request->input('tahun_awal', Carbon::now()->year);
-        $tahunAkhir = $request->input('tahun_akhir', Carbon::now()->year);
+        foreach ($prodiNameMap as $code => $name) {
+            $facultyString = $facultyMap[$code] ?? '';
 
-        if ($hasFilter) {
-            if ($filterType === 'yearly') {
-                if ($tahunAwal > $tahunAkhir) $tahunAwal = $tahunAkhir;
-                $tanggalAwal = Carbon::createFromDate($tahunAwal, 1, 1)->format('Y-m-d');
-                $tanggalAkhir = Carbon::createFromDate($tahunAkhir, 12, 31)->format('Y-m-d');
-                $displayPeriod = "Tahun " . $tahunAwal . ($tahunAwal != $tahunAkhir ? " s.d. " . $tahunAkhir : "");
-                // Format Standard SQL (YYYY-MM-01) agar View tidak error saat parsing
-                $sqlDateFormat = "DATE_FORMAT(all_visits.waktu_kunjungan, '%Y-%m-01')";
+            // Ambil Singkatan (misal "FT")
+            $parts = explode(' - ', $facultyString);
+            $acronym = isset($parts[0]) ? trim($parts[0]) : '';
+
+            // BERSIHKAN NAMA: Jika nama prodi diawali singkatan fakultas, hapus depannya
+            $cleanName = $name;
+            if (!empty($acronym) && str_starts_with(strtoupper($name), $acronym)) {
+                $tempName = substr($name, strlen($acronym));
+                $cleanName = ltrim($tempName, "/- ");
+            }
+
+            if (!empty($acronym) && $acronym !== 'Lainnya') {
+                $listProdi[$code] = $acronym . ' / ' . $cleanName;
             } else {
-                $displayPeriod = "Periode " . Carbon::parse($tanggalAwal)->locale('id')->isoFormat('D MMMM Y') . " s.d. " . Carbon::parse($tanggalAkhir)->locale('id')->isoFormat('D MMMM Y');
-                $sqlDateFormat = "DATE(all_visits.waktu_kunjungan)";
-            }
-
-            // 3. QUERY SQL UNION (Data Mentah)
-            $strStart = $tanggalAwal . ' 00:00:00';
-            $strEnd   = $tanggalAkhir . ' 23:59:59';
-
-            $qHistory = DB::connection('mysql2')->table('visitorhistory')
-                ->select('visittime as waktu_kunjungan', 'cardnumber')
-                ->whereRaw("visittime >= '$strStart' AND visittime <= '$strEnd'");
-
-            $qCorner = DB::connection('mysql2')->table('visitorcorner')
-                ->select('visittime as waktu_kunjungan', 'cardnumber')
-                ->whereRaw("visittime >= '$strStart' AND visittime <= '$strEnd'");
-
-            // Wrapper Query
-            $query = DB::connection('mysql2')->query()
-                ->fromSub($qHistory->unionAll($qCorner), 'all_visits')
-                ->leftJoin('borrowers as b', 'all_visits.cardnumber', '=', 'b.cardnumber')
-                ->selectRaw("
-                $sqlDateFormat as tanggal_kunjungan,
-                CASE
-                    WHEN b.categorycode LIKE 'TC%' THEN 'DOSEN'
-                    WHEN b.categorycode LIKE 'STAF%' THEN 'TENDIK'
-                    WHEN SUBSTR(all_visits.cardnumber, 1, 7) = 'KSPMBKM' THEN 'KSPMBKM'
-                    WHEN SUBSTR(all_visits.cardnumber, 1, 7) = 'KSPBIPA' THEN 'KSPBIPA'
-                    WHEN SUBSTR(all_visits.cardnumber, 1, 2) IN ('XA', 'XC', 'LB') THEN SUBSTR(all_visits.cardnumber, 1, 2)
-                    WHEN SUBSTR(all_visits.cardnumber, 1, 3) = 'KSP' THEN 'KSP'
-                    ELSE SUBSTR(all_visits.cardnumber, 1, 4)
-                END as kode_identifikasi,
-                COUNT(*) as jumlah_kunjungan_harian
-            ");
-
-            // Filter Prodi
-            if (!empty($kodeProdiFilter) && strtolower($kodeProdiFilter) !== 'semua') {
-                $fc = strtoupper($kodeProdiFilter);
-                switch ($fc) {
-                    case 'DOSEN':
-                        $query->where('b.categorycode', 'like', 'TC%');
-                        break;
-                    case 'TENDIK':
-                        $query->where('b.categorycode', 'like', 'STAF%');
-                        break;
-                    case 'XA':
-                    case 'XC':
-                    case 'LB':
-                        $query->whereRaw("SUBSTR(all_visits.cardnumber, 1, 2) = ?", [$fc]);
-                        break;
-                    case 'KSP':
-                        $query->whereRaw("SUBSTR(all_visits.cardnumber, 1, 3) = ?", [$fc]);
-                        break;
-                    case 'KSPMBKM':
-                    case 'KSPBIPA':
-                        $query->whereRaw("SUBSTR(all_visits.cardnumber, 1, 7) = ?", [$fc]);
-                        break;
-                    default:
-                        $query->whereRaw("SUBSTR(all_visits.cardnumber, 1, 4) = ?", [$fc]);
-                        break;
-                }
-            }
-
-            // Grouping (Menyatukan duplikat bulan)
-            $query->groupBy('tanggal_kunjungan', 'kode_identifikasi')
-                ->orderBy('tanggal_kunjungan', 'asc')
-                ->orderBy('kode_identifikasi', 'asc');
-
-            $totalKeseluruhanKunjungan = (clone $query)->get()->sum('jumlah_kunjungan_harian');
-            $data = $query->paginate($perPage);
-
-            $data->getCollection()->transform(function ($item) use ($listProdi) {
-                $item->nama_prodi = $listProdi[strtoupper($item->kode_identifikasi)] ?? 'Prodi Tidak Dikenal';
-                $item->kode_prodi = $item->kode_identifikasi;
-
-                // KITA HAPUS LOGIKA PENGUBAHAN TANGGAL DISINI
-                // Biarkan View yang menangani formatting tampilannya.
-
-                return $item;
-            });
-
-            $data->appends($request->all());
-
-            // Chart Data (Chart butuh label teks, jadi disini BOLEH diformat)
-            $chartData = DB::connection('mysql2')->query()->fromSub($query, 'chart_base')
-                ->select('tanggal_kunjungan as label')
-                ->selectRaw('SUM(jumlah_kunjungan_harian) as total_kunjungan')
-                ->groupBy('label')
-                ->orderBy('label', 'asc')
-                ->get();
-
-            // Format Label Chart (Hanya untuk Grafik)
-            if ($filterType === 'yearly') {
-                $chartData->transform(function ($item) {
-                    try {
-                        $item->label = Carbon::parse($item->label)->locale('id')->isoFormat('MMMM Y');
-                    } catch (\Exception $e) {
-                    }
-                    return $item;
-                });
+                $listProdi[$code] = $name;
             }
         }
 
-        return view('pages.kunjungan.prodiTable', compact(
-            'data',
-            'listProdi',
-            'tanggalAwal',
-            'tanggalAkhir',
-            'filterType',
-            'tahunAwal',
-            'tahunAkhir',
-            'perPage',
-            'displayPeriod',
-            'chartData',
-            'totalKeseluruhanKunjungan',
-            'hasFilter'
-        ));
+        // E. Tambahkan Kode Manual (Wajib agar tidak error/kosong)
+        $listProdi['DOSEN']   = 'Dosen';
+        $listProdi['TENDIK']  = 'Tenaga Kependidikan';
+        $listProdi['KSP']     = 'Kartu Sekali Kunjung';
+        $listProdi['KSPMBKM'] = 'MBKM';
+        $listProdi['KSPBIPA'] = 'BIPA';
+        $listProdi['XA']      = 'Alumni';
+        $listProdi['LB']      = 'Anggota Luar Biasa';
+
+        $filterType      = $request->input('filter_type', 'daily');
+        $kodeProdiFilter = $request->input('prodi');
+        $perPage         = $request->input('per_page', 12);
+        $hasFilter       = $request->hasAny(['filter_type', 'prodi', 'tanggal_awal', 'tahun_awal']);
+
+        $tanggalAwal  = $request->input('tanggal_awal', Carbon::now()->startOfMonth()->toDateString());
+        $tanggalAkhir = $request->input('tanggal_akhir', Carbon::now()->toDateString());
+        $tahunAwal    = $request->input('tahun_awal', Carbon::now()->year);
+        $tahunAkhir   = $request->input('tahun_akhir', Carbon::now()->year);
+        $displayPeriod = '';
+
+        // Setup Rentang Waktu
+        if ($filterType === 'yearly') {
+            if ($tahunAwal > $tahunAkhir) $tahunAwal = $tahunAkhir;
+            $start = Carbon::createFromDate($tahunAwal, 1, 1)->startOfDay();
+            $end   = Carbon::createFromDate($tahunAkhir, 12, 31)->endOfDay();
+            $dateFormatPHP = 'Y-m-01'; // Grouping bulanan
+            $displayPeriod = "Tahun " . $tahunAwal . ($tahunAwal != $tahunAkhir ? " s.d. " . $tahunAkhir : "");
+        } else {
+            $start = Carbon::parse($tanggalAwal)->startOfDay();
+            $end   = Carbon::parse($tanggalAkhir)->endOfDay();
+            $dateFormatPHP = 'Y-m-d'; // Grouping harian
+            $displayPeriod = "Periode " . $start->locale('id')->isoFormat('D MMMM Y') . " s.d. " . $end->locale('id')->isoFormat('D MMMM Y');
+        }
+
+        // A. Ambil Data Kunjungan (DB Satelit)
+        $qHistory = DB::connection('mysql')->table('visitorhistory')
+            ->select('visittime', 'cardnumber')
+            ->whereBetween('visittime', [$start, $end]);
+
+        $qCorner = DB::connection('mysql')->table('visitorcorner')
+            ->select('visittime', 'cardnumber')
+            ->whereBetween('visittime', [$start, $end]);
+
+        // Eksekusi Query Visitor
+        $rawVisits = $qHistory->unionAll($qCorner)->get();
+
+        $cardNumbers = $rawVisits->pluck('cardnumber')->unique()->values()->all();
+
+        // Query ke DB Koha menggunakan whereIn (Bukan JOIN SQL)
+        $borrowers = DB::connection('mysql2')->table('borrowers')
+            ->select('cardnumber', 'categorycode')
+            ->whereIn('cardnumber', $cardNumbers)
+            ->get()
+            ->pluck('categorycode', 'cardnumber'); // Array [cardnumber => categorycode]
+
+        $processedData = $rawVisits->map(function ($visit) use ($borrowers, $dateFormatPHP, $listProdi) {
+            $cardnumber = $visit->cardnumber;
+            $categorycode = $borrowers[$cardnumber] ?? null;
+
+            // Logika Identifikasi (Sama dengan buildQuery)
+            $kodeIdentifikasi = substr($cardnumber, 0, 4); // Default
+
+            if ($categorycode && str_starts_with($categorycode, 'TC')) {
+                $kodeIdentifikasi = 'DOSEN';
+            } elseif ($categorycode && (str_starts_with($categorycode, 'STAF') || $categorycode === 'LIBRARIAN')) {
+                $kodeIdentifikasi = 'TENDIK';
+            } elseif (str_starts_with($cardnumber, 'KSPMBKM')) {
+                $kodeIdentifikasi = 'KSPMBKM';
+            } elseif (str_starts_with($cardnumber, 'KSPBIPA')) {
+                $kodeIdentifikasi = 'KSPBIPA';
+            } elseif (in_array(substr($cardnumber, 0, 2), ['XA', 'XC', 'LB'])) {
+                $kodeIdentifikasi = substr($cardnumber, 0, 2);
+            } elseif (substr($cardnumber, 0, 3) === 'KSP') {
+                $kodeIdentifikasi = 'KSP';
+            }
+
+            $code = strtoupper(trim($kodeIdentifikasi));
+
+            return [
+                'tanggal_kunjungan' => Carbon::parse($visit->visittime)->format($dateFormatPHP),
+                'kode_identifikasi' => $code,
+                // Langsung pasang nama prodi disini biar mudah difilter/ditampilkan
+                'nama_prodi'        => $listProdi[$code] ?? 'Prodi Tidak Dikenal',
+                'kode_prodi'        => $code
+            ];
+        });
+
+        // =====================================================================
+        // 5. FILTERING (COLLECTION BASED)
+        // =====================================================================
+
+        // Filter Dropdown Prodi
+        if (!empty($kodeProdiFilter) && strtolower($kodeProdiFilter) !== 'semua') {
+            $processedData = $processedData->filter(function ($item) use ($kodeProdiFilter) {
+                // Bisa filter by kode atau nama jika perlu. Disini by Kode.
+                return $item['kode_identifikasi'] === $kodeProdiFilter;
+            });
+        }
+
+        // =====================================================================
+        // 6. GROUPING & COUNTING
+        // =====================================================================
+
+        // Grouping agar unik per Tanggal & Prodi
+        $groupedData = $processedData->groupBy(function ($item) {
+            return $item['tanggal_kunjungan'] . '|' . $item['kode_identifikasi'];
+        })->map(function ($group) {
+            $first = $group->first();
+            // Ubah array jadi Object agar kompatibel dengan View blade ($item->property)
+            return (object) [
+                'tanggal_kunjungan' => $first['tanggal_kunjungan'],
+                'kode_identifikasi' => $first['kode_identifikasi'],
+                'nama_prodi'        => $first['nama_prodi'],
+                'kode_prodi'        => $first['kode_prodi'],
+                'jumlah_kunjungan_harian' => $group->count()
+            ];
+        })->sortBy([
+            ['tanggal_kunjungan', 'asc'],
+            ['kode_identifikasi', 'asc']
+        ]); // Collection urut
+
+        $totalKeseluruhanKunjungan = $processedData->count(); // Total mentah sebelum digroup
+
+        // =====================================================================
+        // 7. CHART DATA & PAGINATION MANUAL
+        // =====================================================================
+
+        // A. Siapkan Chart Data (Dari grouped data)
+        $chartGrouped = $processedData->groupBy('tanggal_kunjungan');
+        $chartData = $chartGrouped->map(function ($group, $key) use ($filterType) {
+            $label = $key;
+            if ($filterType === 'yearly') {
+                try {
+                    $label = Carbon::parse($key)->locale('id')->isoFormat('MMMM Y');
+                } catch (\Exception $e) {
+                }
+            }
+            return (object) [
+                'label' => $label,
+                'total_kunjungan' => $group->count()
+            ];
+        })->values();
+
+        // B. Manual Pagination (Karena data sekarang berupa Collection, bukan Query Builder)
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $groupedData->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedData = new LengthAwarePaginator(
+            $currentItems,
+            $groupedData->count(),
+            $perPage,
+            $currentPage,
+            ['path' => LengthAwarePaginator::resolveCurrentPath(), 'query' => $request->query()]
+        );
+
+        // =====================================================================
+        // 8. RETURN VIEW
+        // =====================================================================
+
+        return view('pages.kunjungan.prodiTable', [
+            'data'          => $paginatedData, // Variable ini dipakai di foreach view
+            'listProdi'     => $listProdi,
+            'tanggalAwal'   => $tanggalAwal,
+            'tanggalAkhir'  => $tanggalAkhir,
+            'filterType'    => $filterType,
+            'tahunAwal'     => $tahunAwal,
+            'tahunAkhir'    => $tahunAkhir,
+            'perPage'       => $perPage,
+            'displayPeriod' => $displayPeriod,
+            'chartData'     => $chartData,
+            'totalKeseluruhanKunjungan' => $totalKeseluruhanKunjungan,
+            'hasFilter'     => $hasFilter
+        ]);
     }
 
     public function getDetailPengunjung(Request $request)
     {
         $tanggal = $request->query('tanggal'); // YYYY-MM-DD
         $bulanTahun = $request->query('bulan'); // YYYY-MM
-        $kodeIdentifikasi = $request->query('kode_identifikasi');
+        $kodeIdentifikasiReq = $request->query('kode_identifikasi'); // Parameter Filter
         $isExport = $request->query('export');
 
-        if ((!$tanggal && !$bulanTahun) || !$kodeIdentifikasi) {
+        if ((!$tanggal && !$bulanTahun) || !$kodeIdentifikasiReq) {
             return response()->json(['error' => 'Parameter tidak lengkap.'], 400);
         }
 
-        // 1. SIAPKAN FILTER TANGGAL (Raw String)
-        $dateWhereClause = "";
+        // =====================================================================
+        // 1. SIAPKAN FILTER TANGGAL
+        // =====================================================================
         if ($bulanTahun) {
             // Filter Bulanan
-            $dateWhereClause = "DATE_FORMAT(visittime, '%Y-%m') = '$bulanTahun'";
+            // Kita gunakan raw string untuk whereBetween agar index mysql terpakai optimal
+            $start = Carbon::createFromFormat('Y-m', $bulanTahun)->startOfMonth()->toDateTimeString();
+            $end   = Carbon::createFromFormat('Y-m', $bulanTahun)->endOfMonth()->toDateTimeString();
         } else {
             // Filter Harian
-            $startOfDay = Carbon::parse($tanggal)->startOfDay()->toDateTimeString();
-            $endOfDay   = Carbon::parse($tanggal)->endOfDay()->toDateTimeString();
-            $dateWhereClause = "visittime BETWEEN '$startOfDay' AND '$endOfDay'";
+            $start = Carbon::parse($tanggal)->startOfDay()->toDateTimeString();
+            $end   = Carbon::parse($tanggal)->endOfDay()->toDateTimeString();
         }
 
-        // 2. BUILD QUERY UNION
-        // Query A: History
-        $qHistory = DB::connection('mysql2')->table('visitorhistory')
+        // =====================================================================
+        // 2. AMBIL DATA KUNJUNGAN (DB SATELIT)
+        // =====================================================================
+        $qHistory = DB::connection('mysql')->table('visitorhistory')
             ->select('cardnumber', 'visittime')
-            ->whereRaw($dateWhereClause);
+            ->whereBetween('visittime', [$start, $end]);
 
-        // Query B: Corner
-        $qCorner = DB::connection('mysql2')->table('visitorcorner')
+        $qCorner = DB::connection('mysql')->table('visitorcorner')
             ->select('cardnumber', 'visittime')
-            ->whereRaw($dateWhereClause);
+            ->whereBetween('visittime', [$start, $end]);
 
-        // 3. WRAPPER QUERY (Gabungan + Join Borrowers)
-        $query = DB::connection('mysql2')->query()
-            ->fromSub($qHistory->unionAll($qCorner), 'all_visits')
-            ->leftJoin('borrowers', 'all_visits.cardnumber', '=', 'borrowers.cardnumber')
-            ->select(
-                'all_visits.cardnumber',
-                'borrowers.surname as nama',
-                DB::raw('COUNT(*) as visit_count')
-            );
+        // Eksekusi query visitor (Raw Data)
+        $rawVisits = $qHistory->unionAll($qCorner)->get();
 
-        // 4. FILTER KODE IDENTIFIKASI
-        if ($kodeIdentifikasi) {
-            $kd = strtoupper($kodeIdentifikasi);
-            switch ($kd) {
-                case 'DOSEN':
-                    $query->where('borrowers.categorycode', 'like', 'TC%');
-                    break;
-                case 'TENDIK':
-                    $query->where('borrowers.categorycode', 'like', 'STAF%');
-                    break;
-                case 'XA':
-                case 'XC':
-                case 'LB':
-                    // Gunakan all_visits.cardnumber agar tidak ambigu
-                    $query->whereRaw("SUBSTR(all_visits.cardnumber, 1, 2) = ?", [$kd]);
-                    break;
-                case 'KSP':
-                    $query->whereRaw("SUBSTR(all_visits.cardnumber, 1, 3) = ?", [$kd]);
-                    break;
-                case 'KSPMBKM':
-                case 'KSPBIPA':
-                    $query->whereRaw("SUBSTR(all_visits.cardnumber, 1, 7) = ?", [$kd]);
-                    break;
-                default:
-                    $query->whereRaw("SUBSTR(all_visits.cardnumber, 1, 4) = ?", [$kd]);
-                    break;
+        if ($rawVisits->isEmpty()) {
+            return response()->json([]);
+        }
+
+        // =====================================================================
+        // 3. AMBIL DATA BORROWER (DB KOHA - TANPA JOIN)
+        // =====================================================================
+        $cardNumbers = $rawVisits->pluck('cardnumber')->unique()->values()->all();
+
+        $borrowers = DB::connection('mysql2')->table('borrowers')
+            ->select('cardnumber', 'surname', 'firstname', 'categorycode')
+            ->whereIn('cardnumber', $cardNumbers)
+            ->get()
+            ->keyBy('cardnumber'); // Key by cardnumber agar mudah dipanggil
+
+        // =====================================================================
+        // 4. MAPPING & FILTERING (LOGIC PHP)
+        // =====================================================================
+        $targetKode = strtoupper(trim($kodeIdentifikasiReq));
+
+        // Proses setiap kunjungan: Tentukan Kodenya, lalu Filter
+        $filteredVisits = $rawVisits->map(function ($visit) use ($borrowers) {
+            $card = $visit->cardnumber;
+            $borrower = $borrowers[$card] ?? null;
+            $catCode = $borrower ? $borrower->categorycode : null;
+
+            // Nama Lengkap
+            $nama = 'Tanpa Nama';
+            if ($borrower) {
+                $nama = trim(($borrower->firstname ?? '') . ' ' . ($borrower->surname ?? ''));
             }
-        }
 
-        // 5. GROUPING & ORDERING
-        $query->groupBy('all_visits.cardnumber', 'borrowers.surname')
-            ->orderBy('visit_count', 'desc');
+            // --- LOGIKA IDENTIFIKASI (Sama dengan Controller Utama) ---
+            $kode = substr($card, 0, 4); // Default
 
-        // 6. EKSEKUSI
+            if ($catCode && str_starts_with($catCode, 'TC')) {
+                $kode = 'DOSEN';
+            } elseif ($catCode && (str_starts_with($catCode, 'STAF') || $catCode === 'LIBRARIAN')) {
+                $kode = 'TENDIK';
+            } elseif (str_starts_with($card, 'KSPMBKM')) {
+                $kode = 'KSPMBKM';
+            } elseif (str_starts_with($card, 'KSPBIPA')) {
+                $kode = 'KSPBIPA';
+            } elseif (in_array(substr($card, 0, 2), ['XA', 'XC', 'LB'])) {
+                $kode = substr($card, 0, 2);
+            } elseif (substr($card, 0, 3) === 'KSP') {
+                $kode = 'KSP';
+            }
+
+            return [
+                'cardnumber' => $card,
+                'nama'       => $nama,
+                'kode_ident' => strtoupper($kode)
+            ];
+        })->filter(function ($item) use ($targetKode) {
+            // HANYA AMBIL YANG SESUAI REQUEST PARAMETER
+            return $item['kode_ident'] === $targetKode;
+        });
+
+        // =====================================================================
+        // 5. GROUPING & COUNTING (TOTAL KUNJUNGAN PER ORANG)
+        // =====================================================================
+
+        // Group by cardnumber untuk menghitung berapa kali orang tersebut masuk
+        $finalData = $filteredVisits->groupBy('cardnumber')->map(function ($group) {
+            $first = $group->first();
+            return [
+                'cardnumber'  => $first['cardnumber'],
+                'nama'        => $first['nama'],
+                'visit_count' => $group->count()
+            ];
+        })->sortByDesc('visit_count')->values(); // Urutkan terbanyak & reset keys
+
+        // =====================================================================
+        // 6. RESPONSE (EXPORT / PAGINATION)
+        // =====================================================================
+
         if ($isExport) {
-            $detailPengunjung = $query->get();
-        } else {
-            $perPage = $request->input('per_page', 10);
-            $detailPengunjung = $query->paginate($perPage);
+            return response()->json($finalData);
         }
 
-        return response()->json($detailPengunjung);
+        // Manual Pagination untuk Collection
+        $perPage = $request->input('per_page', 10);
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $finalData->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginated = new LengthAwarePaginator(
+            $currentItems,
+            $finalData->count(),
+            $perPage,
+            $currentPage,
+            ['path' => LengthAwarePaginator::resolveCurrentPath(), 'query' => $request->query()]
+        );
+
+        return response()->json($paginated);
     }
 
     public function getProdiExportData(Request $request)
     {
-        $filterType = $request->input('filter_type', 'daily');
+        ini_set('memory_limit', '1024M');
+        set_time_limit(300);
 
-        // 1. SETUP TANGGAL (Sama seperti sebelumnya)
+        $filterType = $request->input('filter_type', 'daily');
+        $kodeProdiFilter = $request->input('prodi');
+
         if ($filterType === 'yearly') {
             $tahunAwal = $request->input('tahun_awal', Carbon::now()->year);
             $tahunAkhir = $request->input('tahun_akhir', Carbon::now()->year);
             if ($tahunAwal > $tahunAkhir) $tahunAwal = $tahunAkhir;
 
-            $tanggalAwal = Carbon::createFromDate($tahunAwal, 1, 1)->format('Y-m-d');
-            $tanggalAkhir = Carbon::createFromDate($tahunAkhir, 12, 31)->format('Y-m-d');
+            $start = Carbon::createFromDate($tahunAwal, 1, 1)->startOfDay();
+            $end = Carbon::createFromDate($tahunAkhir, 12, 31)->endOfDay();
+
             $periodeDisplay = "Tahun " . $tahunAwal . ($tahunAwal != $tahunAkhir ? " s/d " . $tahunAkhir : "");
-            $sqlDateFormat = "DATE_FORMAT(all_visits.visittime, '%Y-%m-01')";
+            $sqlDateFormat = "%Y-%m-01"; // Format SQL
         } else {
-            $tanggalAwal = $request->input('tanggal_awal', Carbon::now()->startOfMonth()->toDateString());
-            $tanggalAkhir = $request->input('tanggal_akhir', Carbon::now()->toDateString());
-            $periodeDisplay = "Periode " . Carbon::parse($tanggalAwal)->locale('id')->isoFormat('D MMMM Y') . " s.d. " . Carbon::parse($tanggalAkhir)->locale('id')->isoFormat('D MMMM Y');
-            $sqlDateFormat = "DATE(all_visits.visittime)";
+            $start = Carbon::parse($request->input('tanggal_awal', Carbon::now()->startOfMonth()->toDateString()))->startOfDay();
+            $end = Carbon::parse($request->input('tanggal_akhir', Carbon::now()->toDateString()))->endOfDay();
+
+            $periodeDisplay = "Periode " . $start->locale('id')->isoFormat('D MMMM Y') . " s.d. " . $end->locale('id')->isoFormat('D MMMM Y');
+            $sqlDateFormat = "%Y-%m-%d"; // Format SQL
         }
 
-        $kodeProdiFilter = $request->input('prodi');
+        $queryStr = "
+        DATE_FORMAT(visittime, '$sqlDateFormat') as tgl_kunjungan,
+        cardnumber,
+        COUNT(*) as total_hits
+    ";
 
-        // 2. BUILD QUERY UNION (Sama seperti sebelumnya)
-        $strStart = $tanggalAwal . ' 00:00:00';
-        $strEnd   = $tanggalAkhir . ' 23:59:59';
-
-        $qHistory = DB::connection('mysql2')->table('visitorhistory')
-            ->select('cardnumber', 'visittime')
-            ->whereRaw("visittime >= '$strStart' AND visittime <= '$strEnd'");
-
-        $qCorner = DB::connection('mysql2')->table('visitorcorner')
-            ->select('cardnumber', 'visittime')
-            ->whereRaw("visittime >= '$strStart' AND visittime <= '$strEnd'");
-
-        // 3. WRAPPER QUERY (Sama seperti sebelumnya)
-        $baseQuery = DB::connection('mysql2')->query()
-            ->fromSub($qHistory->unionAll($qCorner), 'all_visits')
-            ->leftJoin('borrowers as b', 'all_visits.cardnumber', '=', 'b.cardnumber')
-            ->selectRaw("
-            $sqlDateFormat as tanggal_kunjungan,
-            CASE
-                WHEN b.categorycode LIKE 'TC%' THEN 'DOSEN'
-                WHEN b.categorycode LIKE 'STAF%' THEN 'TENDIK'
-                WHEN SUBSTR(all_visits.cardnumber, 1, 7) = 'KSPMBKM' THEN 'KSPMBKM'
-                WHEN SUBSTR(all_visits.cardnumber, 1, 7) = 'KSPBIPA' THEN 'KSPBIPA'
-                WHEN SUBSTR(all_visits.cardnumber, 1, 2) IN ('XA', 'XC', 'LB') THEN SUBSTR(all_visits.cardnumber, 1, 2)
-                WHEN SUBSTR(all_visits.cardnumber, 1, 3) = 'KSP' THEN 'KSP'
-                ELSE SUBSTR(all_visits.cardnumber, 1, 4)
-            END as kode_identifikasi,
-            COUNT(*) as jumlah_kunjungan_harian
-        ");
-
-        // 4. FILTER PRODI (Sama seperti sebelumnya)
-        if ($kodeProdiFilter && strtolower($kodeProdiFilter) !== 'semua') {
-            $fc = strtoupper($kodeProdiFilter);
-            switch ($fc) {
-                case 'DOSEN':
-                    $baseQuery->where('b.categorycode', 'like', 'TC%');
-                    break;
-                case 'TENDIK':
-                    $baseQuery->where('b.categorycode', 'like', 'STAF%');
-                    break;
-                case 'XA':
-                case 'XC':
-                case 'LB':
-                    $baseQuery->whereRaw("SUBSTR(all_visits.cardnumber, 1, 2) = ?", [$fc]);
-                    break;
-                case 'KSP':
-                    $baseQuery->whereRaw("SUBSTR(all_visits.cardnumber, 1, 3) = ?", [$fc]);
-                    break;
-                case 'KSPMBKM':
-                case 'KSPBIPA':
-                    $baseQuery->whereRaw("SUBSTR(all_visits.cardnumber, 1, 7) = ?", [$fc]);
-                    break;
-                default:
-                    $baseQuery->whereRaw("SUBSTR(all_visits.cardnumber, 1, 4) = ?", [$fc]);
-                    break;
-            }
-        }
-
-        // 5. GROUPING & EXECUTION
-        $data = $baseQuery->groupBy('tanggal_kunjungan', 'kode_identifikasi')
-            ->orderBy('tanggal_kunjungan', 'asc')
-            ->orderBy('kode_identifikasi', 'asc')
+        // A. Ambil Rekap History
+        $historyData = DB::connection('mysql')->table('visitorhistory')
+            ->selectRaw($queryStr)
+            ->whereBetween('visittime', [$start, $end])
+            ->groupByRaw("DATE_FORMAT(visittime, '$sqlDateFormat'), cardnumber")
             ->get();
 
-        // --- HITUNG TOTAL KUNJUNGAN (PENAMBAHAN DISINI) ---
-        $grandTotal = $data->sum('jumlah_kunjungan_harian');
+        // B. Ambil Rekap Corner
+        $cornerData = DB::connection('mysql')->table('visitorcorner')
+            ->selectRaw($queryStr)
+            ->whereBetween('visittime', [$start, $end])
+            ->groupByRaw("DATE_FORMAT(visittime, '$sqlDateFormat'), cardnumber")
+            ->get();
 
-        // 6. SETUP DATA CSV
-        $listProdiFromDb = DB::connection('mysql2')->table('authorised_values')
-            ->select('authorised_value', 'lib')
-            ->where('category', 'PRODI')
-            ->whereRaw('CHAR_LENGTH(lib) >= 13')
-            ->orderBy('lib', 'asc')
-            ->get()
-            ->map(function ($prodi) {
-                $cleanedLib = $prodi->lib;
-                if (str_starts_with($cleanedLib, 'FAI/ ')) {
-                    $cleanedLib = substr($cleanedLib, 5);
-                }
-                $prodi->lib = trim($cleanedLib);
-                return $prodi;
-            })->pluck('lib', 'authorised_value');
+        // C. Gabung data di PHP (Merge Collection)
+        // Ini jauh lebih cepat daripada Union SQL beda database
+        $mergedData = $historyData->merge($cornerData);
 
-        $staticValues = [
-            'DOSEN' => 'Dosen',
-            'TENDIK' => 'Tenaga Kependidikan',
-            'XA' => 'Alumni',
-            'XC' => 'Dosen Tidak Tetap',
-            'KSP' => 'Sekali Kunjung',
-            'LB' => 'Anggota Luar Biasa',
-            'KSPMBKM' => 'Magang MBKM',
-            'KSPBIPA' => 'BIPA'
-        ];
+        // Jika kosong langsung return file kosong/pesan
+        if ($mergedData->isEmpty()) {
+            return response()->stream(function () {}, 200, ['Content-Type' => 'text/csv']);
+        }
 
-        $prodiMapping = $staticValues + $listProdiFromDb->all();
-        $namaProdiFilter = $prodiMapping[strtoupper($kodeProdiFilter)] ?? 'Seluruh Kategori';
+        $uniqueCards = $mergedData->pluck('cardnumber')->unique()->values()->all();
 
-        // Transform data untuk CSV
-        $data->transform(function ($item) use ($prodiMapping) {
-            $item->nama_prodi = $prodiMapping[strtoupper($item->kode_identifikasi)] ?? 'Prodi Tidak Dikenal';
-            $item->kode_prodi = $item->kode_identifikasi;
-            return $item;
-        });
+        $borrowers = DB::connection('mysql2')->table('borrowers')
+            ->select('cardnumber', 'categorycode')
+            ->whereIn('cardnumber', $uniqueCards)
+            ->pluck('categorycode', 'cardnumber')
+            ->toArray();
+
+        $finalReport = [];
+
+        foreach ($mergedData as $row) {
+            $card = $row->cardnumber;
+            $tgl  = $row->tgl_kunjungan;
+            $hits = $row->total_hits;
+
+            $catCode = $borrowers[$card] ?? null;
+
+            $kodeIdentifikasi = substr($card, 0, 4);
+
+            if ($catCode && str_starts_with($catCode, 'TC')) {
+                $kodeIdentifikasi = 'DOSEN';
+            } elseif ($catCode && (str_starts_with($catCode, 'STAF') || $catCode === 'LIBRARIAN')) {
+                $kodeIdentifikasi = 'TENDIK';
+            } elseif (str_starts_with($card, 'KSPMBKM')) {
+                $kodeIdentifikasi = 'KSPMBKM';
+            } elseif (str_starts_with($card, 'KSPBIPA')) {
+                $kodeIdentifikasi = 'KSPBIPA';
+            } elseif (in_array(substr($card, 0, 2), ['XA', 'XC', 'LB'])) {
+                $kodeIdentifikasi = substr($card, 0, 2);
+            } elseif (substr($card, 0, 3) === 'KSP') {
+                $kodeIdentifikasi = 'KSP';
+            }
+
+            $key = $tgl . '|' . strtoupper(trim($kodeIdentifikasi));
+
+            if (!isset($finalReport[$key])) {
+                $finalReport[$key] = [
+                    'tanggal' => $tgl,
+                    'kode' => strtoupper(trim($kodeIdentifikasi)),
+                    'jumlah' => 0
+                ];
+            }
+
+            // Kita jumlahkan akumulasi dari SQL
+            $finalReport[$key]['jumlah'] += $hits;
+        }
+
+        // -------------------------------------------------------------------------
+        // 5. FINISHING & FILTERING
+        // -------------------------------------------------------------------------
+        $dataCollection = collect(array_values($finalReport));
+
+        // Filter Prodi
+        if ($kodeProdiFilter && strtolower($kodeProdiFilter) !== 'semua') {
+            $filterTarget = strtoupper($kodeProdiFilter);
+            $dataCollection = $dataCollection->filter(function ($item) use ($filterTarget) {
+                return $item['kode'] === $filterTarget;
+            });
+        }
+
+        // Sorting
+        $dataCollection = $dataCollection->sortBy([
+            ['tanggal', 'asc'],
+            ['kode', 'asc']
+        ]);
+
+        $grandTotal = $dataCollection->sum('jumlah');
+
+        $allProdiListObj = M_Auv::where('category', 'PRODI')->get();
+        $facultyMap = $this->getProdiToFacultyMap($allProdiListObj);
+        $prodiNameMap = $allProdiListObj->pluck('lib', 'authorised_value')->toArray();
+
+        $fullProdiList = [];
+        foreach ($prodiNameMap as $code => $name) {
+            $facultyString = $facultyMap[$code] ?? '';
+            $parts = explode(' - ', $facultyString);
+            $acronym = isset($parts[0]) ? trim($parts[0]) : '';
+
+            $cleanName = $name;
+            if (!empty($acronym) && str_starts_with(strtoupper($name), $acronym)) {
+                $tempName = substr($name, strlen($acronym));
+                $cleanName = ltrim($tempName, "/- ");
+            }
+
+            if (!empty($acronym) && $acronym !== 'Lainnya') {
+                $fullProdiList[$code] = $acronym . ' / ' . $cleanName;
+            } else {
+                $fullProdiList[$code] = $name;
+            }
+        }
+        // Tambahan Manual
+        $fullProdiList['DOSEN']   = 'Dosen & Pengajar';
+        $fullProdiList['TENDIK']  = 'Tenaga Kependidikan';
+        $fullProdiList['KSP']     = 'Kartu Sekali Kunjung';
+        $fullProdiList['KSPMBKM'] = 'MBKM';
+        $fullProdiList['KSPBIPA'] = 'BIPA';
+        $fullProdiList['XA']      = 'Alumni';
+        $fullProdiList['LB']      = 'Anggota Luar Biasa';
+
+        $namaProdiFilter = $fullProdiList[strtoupper($kodeProdiFilter)] ?? 'Seluruh Kategori';
 
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="laporan_kunjungan.csv"',
         ];
 
-        // --- CALLBACK STREAMING (MODIFIKASI DISINI) ---
-        // Tambahkan $grandTotal ke 'use (...)'
-        $callback = function () use ($data, $filterType, $namaProdiFilter, $periodeDisplay, $grandTotal) {
+        $callback = function () use ($dataCollection, $filterType, $namaProdiFilter, $periodeDisplay, $grandTotal, $fullProdiList) {
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
             $file = fopen('php://output', 'w');
-            fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF)); // Tambah BOM UTF-8
+            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM
 
-            // Header Laporan
             fputcsv($file, ["Laporan Statistik Kunjungan: " . $namaProdiFilter], ';');
             fputcsv($file, ["Periode: " . $periodeDisplay], ';');
-            fputcsv($file, [''], ';'); // Spasi
+            fputcsv($file, [''], ';');
 
-            // Header Tabel
             $headers = ['Tanggal / Bulan', 'Kode Identifikasi', 'Nama Prodi/Kategori', 'Jumlah Kunjungan'];
             fputcsv($file, $headers, ';');
 
-            // Isi Data
-            foreach ($data as $row) {
+            foreach ($dataCollection as $row) {
                 $tanggal = ($filterType === 'yearly') ?
-                    Carbon::parse($row->tanggal_kunjungan)->locale('id')->isoFormat('MMMM Y') :
-                    Carbon::parse($row->tanggal_kunjungan)->locale('id')->isoFormat('dddd, D MMMM Y');
+                    Carbon::parse($row['tanggal'])->locale('id')->isoFormat('MMMM Y') :
+                    Carbon::parse($row['tanggal'])->locale('id')->isoFormat('dddd, D MMMM Y');
+
+                $namaProdi = $fullProdiList[$row['kode']] ?? 'Prodi Tidak Dikenal';
 
                 fputcsv($file, [
                     $tanggal,
-                    $row->kode_prodi,
-                    $row->nama_prodi,
-                    $row->jumlah_kunjungan_harian
+                    $row['kode'],
+                    $namaProdi,
+                    $row['jumlah']
                 ], ';');
             }
 
-            fputcsv($file, [
-                '',         // Kolom 1 Kosong
-                '',         // Kolom 2 Kosong
-                'TOTAL',    // Label TOTAL
-                $grandTotal // Nilai Total
-            ], ';');
-
+            fputcsv($file, ['', '', 'TOTAL', $grandTotal], ';');
             fclose($file);
         };
 
@@ -882,13 +1018,13 @@ class VisitHistory extends Controller
         $totalVisitors = M_vishistory::whereBetween('visittime', [$startDate, $endDate])->count();
         $visitors = M_vishistory::select(
             'visitorhistory.cardnumber',
-            'borrowers.surname',
+            'koha.borrowers.surname',
             DB::raw('COUNT(visitorhistory.id) as visit_count')
         )
-            ->join('borrowers', 'visitorhistory.cardnumber', '=', 'borrowers.cardnumber')
+            ->join('koha.borrowers', 'visitorhistory.cardnumber', '=', 'koha.borrowers.cardnumber')
             ->whereBetween('visittime', [$startDate, $endDate])
-            ->groupBy('visitorhistory.cardnumber', 'borrowers.surname')
-            ->orderBy('borrowers.surname', 'asc')
+            ->groupBy('visitorhistory.cardnumber', 'koha.borrowers.surname')
+            ->orderBy('koha.borrowers.surname', 'asc')
             ->paginate(5, ['*'], 'page', $page);
 
         $formattedVisitors = $visitors->map(function ($visitor) {
@@ -931,13 +1067,13 @@ class VisitHistory extends Controller
 
         $visitors = M_vishistory::select(
             'visitorhistory.cardnumber',
-            'borrowers.surname',
+            'koha.borrowers.surname',
             DB::raw('COUNT(visitorhistory.id) as visit_count')
         )
-            ->join('borrowers', 'visitorhistory.cardnumber', '=', 'borrowers.cardnumber')
+            ->join('koha.borrowers', 'visitorhistory.cardnumber', '=', 'koha.borrowers.cardnumber')
             ->whereBetween('visittime', [$startDate, $endDate])
-            ->groupBy('visitorhistory.cardnumber', 'borrowers.surname')
-            ->orderBy('borrowers.surname', 'asc')
+            ->groupBy('visitorhistory.cardnumber', 'koha.borrowers.surname')
+            ->orderBy('koha.borrowers.surname', 'asc')
             ->get(); // Gunakan get() bukan paginate()
 
         $formattedVisitors = $visitors->map(function ($visitor) {
@@ -1024,7 +1160,7 @@ class VisitHistory extends Controller
         if ($cardnumber) {
             $cardnumber = trim(strtolower($cardnumber));
 
-            $fullBorrowerDetails = DB::connection('mysql2')->table('borrowers')
+            $fullBorrowerDetails = DB::connection('mysql2')->table('koha.borrowers')
                 ->select('borrowernumber', 'cardnumber', 'firstname', 'surname', 'email', 'phone')
                 ->where(DB::raw('TRIM(LOWER(cardnumber))'), $cardnumber)
                 ->first();
@@ -1050,7 +1186,7 @@ class VisitHistory extends Controller
                 ORDER BY tahun_bulan ASC
             ";
 
-                $semuaKunjungan = DB::connection('mysql2')->select($queryString, $bindings);
+                $semuaKunjungan = DB::connection('mysql')->select($queryString, $bindings);
 
                 $dataKunjungan = collect($semuaKunjungan);
                 $totalKunjunganSum = $dataKunjungan->sum('jumlah_kunjungan');
@@ -1109,7 +1245,7 @@ class VisitHistory extends Controller
 
             $bindings = [$cardnumber, $tahunBulan];
 
-            $semuaData = DB::connection('mysql2')->select($queryString, $bindings);
+            $semuaData = DB::connection('mysql')->select($queryString, $bindings);
 
             $lokasiData = new \Illuminate\Pagination\LengthAwarePaginator(
                 array_slice($semuaData, $perPage * (\Illuminate\Pagination\Paginator::resolveCurrentPage() - 1), $perPage),
@@ -1147,7 +1283,7 @@ class VisitHistory extends Controller
         }
 
         $cardnumber = trim(strtolower($cardnumber));
-        $fullBorrowerDetails = DB::connection('mysql2')->table('borrowers')
+        $fullBorrowerDetails = DB::connection('mysql2')->table('koha.borrowers')
             ->select('cardnumber', 'firstname', 'surname')
             ->where(DB::raw('TRIM(LOWER(cardnumber))'), $cardnumber)
             ->first();
@@ -1175,7 +1311,7 @@ class VisitHistory extends Controller
         GROUP BY tahun_bulan
         ORDER BY tahun_bulan ASC";
 
-        $dataKunjunganExport = DB::connection('mysql2')->select($queryString, $bindings);
+        $dataKunjunganExport = DB::connection('mysql')->select($queryString, $bindings);
 
         return response()->json([
             'data' => $dataKunjunganExport,
@@ -1196,7 +1332,7 @@ class VisitHistory extends Controller
 
         $normalizedCardnumber = trim(strtolower($cardnumber));
 
-        $fullBorrowerDetails = DB::connection('mysql2')->table('borrowers')
+        $fullBorrowerDetails = DB::connection('mysql')->table('borrowers')
             ->select('cardnumber', 'firstname', 'surname', 'email', 'phone')
             ->where(DB::raw('TRIM(LOWER(cardnumber))'), $normalizedCardnumber)
             ->first();
@@ -1222,7 +1358,7 @@ class VisitHistory extends Controller
         WHERE TRIM(LOWER(combined.cardnumber)) = ? {$tahunFilter}
         GROUP BY tahun_bulan
         ORDER BY tahun_bulan ASC";
-        $dataKunjungan = DB::connection('mysql2')->select($queryString, $bindings);
+        $dataKunjungan = DB::connection('mysql')->select($queryString, $bindings);
         $dataKunjungan = collect($dataKunjungan);
 
         if ($dataKunjungan->isEmpty()) {
@@ -1293,18 +1429,18 @@ class VisitHistory extends Controller
             // 'ref' => 'Referensi Perpustakaan Pusat',
         ];
 
-        $historyLokasi = DB::connection('mysql2')->table('visitorhistory')->select(DB::raw("IFNULL(location, 'pusat') as lokasi_kunjungan"))->distinct();
-        $cornerLokasi = DB::connection('mysql2')->table('visitorcorner')->select(DB::raw("COALESCE(NULLIF(notes, ''), 'pusat') as lokasi_kunjungan"))->distinct();
+        $historyLokasi = DB::connection('mysql')->table('visitorhistory')->select(DB::raw("IFNULL(location, 'pusat') as lokasi_kunjungan"))->distinct();
+        $cornerLokasi = DB::connection('mysql')->table('visitorcorner')->select(DB::raw("COALESCE(NULLIF(notes, ''), 'pusat') as lokasi_kunjungan"))->distinct();
         $lokasiOptions = $historyLokasi->get()->merge($cornerLokasi->get())->pluck('lokasi_kunjungan')->unique()->sort()->values();
 
         if ($request->has('filter_type')) {
             $groupByFormat = $filterType == 'yearly' ? 'LEFT(visittime, 7)' : 'DATE(visittime)';
 
-            $historyQuery = DB::connection('mysql2')->table('visitorhistory')
+            $historyQuery = DB::connection('mysql')->table('visitorhistory')
                 ->select(DB::raw("{$groupByFormat} as periode"), DB::raw("COUNT(*) as jumlah"))
                 ->groupBy('periode');
 
-            $cornerQuery = DB::connection('mysql2')->table('visitorcorner')
+            $cornerQuery = DB::connection('mysql')->table('visitorcorner')
                 ->select(DB::raw("{$groupByFormat} as periode"), DB::raw("COUNT(*) as jumlah"))
                 ->groupBy('periode');
 
@@ -1352,11 +1488,11 @@ class VisitHistory extends Controller
             $dataHasil->appends($request->all());
 
             // Query Top Lokasi yang Dinamis
-            $historyLokasiQuery = DB::connection('mysql2')->table('visitorhistory')
+            $historyLokasiQuery = DB::connection('mysql')->table('visitorhistory')
                 ->select(DB::raw("IFNULL(location, 'pusat') as lokasi"), DB::raw("COUNT(*) as jumlah"))
                 ->groupBy('lokasi');
 
-            $cornerLokasiQuery = DB::connection('mysql2')->table('visitorcorner')
+            $cornerLokasiQuery = DB::connection('mysql')->table('visitorcorner')
                 ->select(DB::raw("COALESCE(NULLIF(notes, ''), 'pusat') as lokasi"), DB::raw("COUNT(*) as jumlah"))
                 ->groupBy('lokasi');
 
@@ -1409,12 +1545,12 @@ class VisitHistory extends Controller
         $groupByFormat = $filterType == 'yearly' ? 'LEFT(visittime, 7)' : 'DATE(visittime)';
 
         // Query untuk visitorhistory
-        $historyQuery = DB::connection('mysql2')->table('visitorhistory')
+        $historyQuery = DB::connection('mysql')->table('visitorhistory')
             ->select(DB::raw("{$groupByFormat} as periode"), DB::raw("COUNT(*) as jumlah"))
             ->groupBy('periode');
 
         // Query untuk visitorcorner
-        $cornerQuery = DB::connection('mysql2')->table('visitorcorner')
+        $cornerQuery = DB::connection('mysql')->table('visitorcorner')
             ->select(DB::raw("{$groupByFormat} as periode"), DB::raw("COUNT(*) as jumlah"))
             ->groupBy('periode');
 

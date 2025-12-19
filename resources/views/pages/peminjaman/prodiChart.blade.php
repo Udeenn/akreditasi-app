@@ -292,8 +292,7 @@
     </div>
 
     {{-- Modal Detail (Clean Design) --}}
-    <div class="modal fade" id="borrowersModal" tabindex="-1" aria-labelledby="borrowersModalLabel"
-        aria-hidden="true">
+    <div class="modal fade" id="borrowersModal" tabindex="-1" aria-labelledby="borrowersModalLabel">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header">

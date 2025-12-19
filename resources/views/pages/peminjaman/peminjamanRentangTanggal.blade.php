@@ -311,7 +311,7 @@
 
         {{-- Modal Detail Peminjaman (FIXED) --}}
         <div class="modal fade" id="detailPeminjamanModal" tabindex="-1" aria-labelledby="detailPeminjamanModalLabel"
-            aria-hidden="true">
+            >
             <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
                 <div class="modal-content border-0 shadow-lg">
                     <div class="modal-header ">
