@@ -123,8 +123,22 @@
                                             <tr>
                                                 <td>{{ ($dataKunjungan->currentPage() - 1) * $dataKunjungan->perPage() + $loop->iteration }}
                                                 </td>
-                                                <td class="text-nowrap">
-                                                    {{ \Carbon\Carbon::createFromFormat('Ym', $row->tahun_bulan)->format('M Y') }}
+                                                <td>
+                                                    @php
+                                                        try {
+                                                            $dateString = (string) $row->tahun_bulan;
+                                                            if (!empty($dateString)) {
+                                                                echo \Carbon\Carbon::createFromFormat(
+                                                                    'Ym',
+                                                                    $dateString,
+                                                                )->format('M Y');
+                                                            } else {
+                                                                echo '-';
+                                                            }
+                                                        } catch (\Exception $e) {
+                                                            echo $row->tahun_bulan ?? 'Invalid Date';
+                                                        }
+                                                    @endphp
                                                 </td>
                                                 <td>
                                                     <div class="d-flex justify-content-between align-items-center">
@@ -160,7 +174,7 @@
     </div>
 
     {{-- Modal Lokasi --}}
-    <div class="modal fade" id="lokasiModal" tabindex="-1" aria-labelledby="lokasiModalLabel" >
+    <div class="modal fade" id="lokasiModal" tabindex="-1" aria-labelledby="lokasiModalLabel">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -172,7 +186,7 @@
                     <p><strong>Bulan Tahun:</strong> <span id="modalBulanTahun"></span></p>
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped text-center">
-                            <thead class="table-light">
+                            <thead class="table">
                                 <tr>
                                     <th>No.</th>
                                     <th>Waktu Kunjungan</th>
@@ -316,7 +330,15 @@
                     type: 'line',
                     data: {
                         labels: {!! json_encode(
-                            $dataKunjungan->pluck('tahun_bulan')->map(fn($v) => \Carbon\Carbon::createFromFormat('Ym', $v)->format('M Y')),
+                            $dataKunjungan->pluck('tahun_bulan')->map(function ($v) {
+                                try {
+                                    // Pastikan ada data dan ubah ke string sebelum diformat
+                                    return $v ? \Carbon\Carbon::createFromFormat('Ym', (string) $v)->format('M Y') : '-';
+                                } catch (\Exception $e) {
+                                    // Jika error format, tampilkan data aslinya saja agar tidak error 500
+                                    return (string) $v;
+                                }
+                            }),
                         ) !!},
                         datasets: [{
                             label: 'Jumlah Kunjungan per Bulan',
@@ -430,11 +452,22 @@
                 }
             }
 
+            // document.querySelectorAll('.btn-modal-lokasi').forEach(button => {
+            //     button.addEventListener('click', function() {
+            //         const cardnumber = this.getAttribute('data-cardnumber');
+            //         const tahunBulan = this.getAttribute('data-tahun-bulan');
+            //         const lokasiModal = new bootstrap.Modal(document.getElementById('lokasiModal'));
+            //         lokasiModal.show();
+            //         fetchLokasiData(cardnumber, tahunBulan);
+            //     });
+            // });
             document.querySelectorAll('.btn-modal-lokasi').forEach(button => {
                 button.addEventListener('click', function() {
                     const cardnumber = this.getAttribute('data-cardnumber');
                     const tahunBulan = this.getAttribute('data-tahun-bulan');
-                    const lokasiModal = new bootstrap.Modal(document.getElementById('lokasiModal'));
+                    const modalElement = document.getElementById('lokasiModal');
+                    const lokasiModal = bootstrap.Modal.getOrCreateInstance(modalElement);
+
                     lokasiModal.show();
                     fetchLokasiData(cardnumber, tahunBulan);
                 });

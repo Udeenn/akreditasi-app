@@ -302,7 +302,10 @@ class StatistikKoleksi extends Controller
 
             $rekapData = collect($rekapDataPerProdi)->sortBy('nama_prodi')->values();
             Log::info('Final Aggregated Data (Hybrid Query):', $rekapData->toArray());
+            // dd($rekapData->toArray());
         }
+
+
 
         return view('pages.dapus.rekap_fakultas', compact(
             'faculties',
@@ -850,7 +853,7 @@ class StatistikKoleksi extends Controller
                 $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
                 QueryHelper::applyCnClassRules($query, $cnClasses);
             }
-            
+
 
             if ($tahunTerakhir !== 'all') {
                 $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);

@@ -371,6 +371,7 @@ class PenggunaanController extends Controller
                     ->where(function ($q) {
                         $q->where('bi.cn_class', 'LIKE', '812%')
                             ->orWhere('bi.cn_class', 'LIKE', '813%')
+                            ->orWhere('bi.cn_class', 'LIKE', '823%')
                             ->orWhere('bi.cn_class', 'LIKE', '899%');
                     })
                     ->groupBy('i.biblionumber', 'b.biblionumber')
@@ -383,6 +384,7 @@ class PenggunaanController extends Controller
                     ->where(function ($q) {
                         $q->where('bi.cn_class', 'NOT LIKE', '812%')
                             ->where('bi.cn_class', 'NOT LIKE', '813%')
+                            ->where('bi.cn_class', 'NOT LIKE', '823%')
                             ->where('bi.cn_class', 'NOT LIKE', '899%');
                     })
                     ->groupBy('i.biblionumber', 'b.biblionumber')
