@@ -19,9 +19,9 @@ services:
     container_name: laravel_web
     restart: unless-stopped
     ports:
-      - "8080:80" # Akses dari browser via http://localhost:8080
+      - "80:80" # Akses dari browser via http://localhost atau domain
     volumes:
-      - .:/var/www/html
+      - .:/var/www/html/datapustaka
       - ./.docker/nginx/datapustaka.conf:/etc/nginx/conf.d/datapustaka.conf
     depends_on:
       - app
@@ -42,6 +42,16 @@ services:
       - db_data:/var/lib/mysql
     ports:
       - "33066:3306"
+    networks:
+      - laravel
+
+  # 4. Service Adminer (Database Management)
+  adminer:
+    image: adminer
+    container_name: laravel_adminer
+    restart: always
+    ports:
+      - 8080:8080
     networks:
       - laravel
 

@@ -3,14 +3,17 @@
     "name": "laravel/laravel",
     "type": "project",
     "description": "This is a Project for Akreditasi Support",
-    "keywords": ["laravel", "framework"],
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.2",
         "barryvdh/laravel-dompdf": "^3.1",
-        "laravel/framework": "^11.31",
+        "laravel/framework": "^12.0",
         "laravel/tinker": "^2.9",
-        "yajra/laravel-datatables": "^11.0"
+        "yajra/laravel-datatables": "^12.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

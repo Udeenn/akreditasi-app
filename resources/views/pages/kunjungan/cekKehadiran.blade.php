@@ -19,7 +19,7 @@
             border-radius: 12px !important;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             background-color: var(--bs-body-bg);
-            color: var(--bs-body-color);
+            color: var(--text-dark);
             overflow: hidden !important;
         }
 
@@ -27,7 +27,7 @@
         .card-header {
             background-color: #ffffff;
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            color: var(--bs-body-color);
+            color: var(--text-dark);
         }
 
         .hover-lift:hover {

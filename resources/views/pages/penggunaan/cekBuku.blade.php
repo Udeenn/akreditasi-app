@@ -3,6 +3,24 @@
 @section('content')
 @section('title', 'Cek Histori Buku')
 
+@push('styles')
+    <style>
+        /* Dark Mode overrides for form elements */
+        body.dark-mode .form-control,
+        body.dark-mode .form-select {
+            background-color: #1b1b29;
+            border-color: #2b2b40;
+            color: #ffffff;
+        }
+        
+        body.dark-mode .input-group-text {
+            background-color: #2b2b40;
+            border-color: #2b2b40;
+            color: #ffffff;
+        }
+    </style>
+@endpush
+
 <div class="container">
     <div class="d-flex align-items-center mb-4">
         <i class="fas fa-barcode fa-2x text-primary me-3"></i>
@@ -23,6 +41,18 @@
                                 value="{{ $barcode ?? '' }}" placeholder="Masukkan Barcode Buku..." required>
                         </div>
                     </div>
+                    
+                    {{-- Filter Tahun --}}
+                    <div class="col-lg-auto">
+                        <select name="tahun" class="form-select form-select-lg">
+                            <option value="">Semua Tahun</option>
+                            @for ($y = date('Y'); $y >= 2019; $y--)
+                                <option value="{{ $y }}" {{ ($tahun ?? '') == $y ? 'selected' : '' }}>
+                                    {{ $y }}</option>
+                            @endfor
+                        </select>
+                    </div>
+
                     <div class="col-lg-auto">
                         <select name="type_filter" class="form-select form-select-lg">
                             <option value="all" @if (isset($typeFilter) && $typeFilter == 'all') selected @endif>Semua Transaksi

@@ -241,6 +241,7 @@ class PenggunaanController extends Controller
         // Trim barcode di sisi aplikasi, BUKAN di query. Ini sangat penting.
         $barcode = trim($request->input('barcode'));
         $typeFilter = $request->input('type_filter', 'all');
+        $tahun = $request->input('tahun'); // Ambil filter tahun
 
         // Inisialisasi variabel
         $history = collect();
@@ -256,7 +257,7 @@ class PenggunaanController extends Controller
         if ($barcode) {
             try {
                 // Query 1: Ambil info buku & semua total penggunaan sekaligus.
-                $bookAndStats = DB::connection('mysql2')->table('items as i')
+                $statsQuery = DB::connection('mysql2')->table('items as i')
                     ->select(
                         'b.title AS Judul',
                         'b.author AS Pengarang',
@@ -268,8 +269,14 @@ class PenggunaanController extends Controller
                     ->leftJoin('statistics as s', 'i.itemnumber', '=', 's.itemnumber')
                     // Perubahan di sini: WHERE langsung ke kolom, tanpa TRIM().
                     ->where('i.barcode', $barcode)
-                    ->groupBy('b.title', 'b.author')
-                    ->first();
+                    ->groupBy('b.title', 'b.author');
+
+                // Filter Tahun pada Stats
+                if ($tahun) {
+                    $statsQuery->whereBetween('s.datetime', ["{$tahun}-01-01 00:00:00", "{$tahun}-12-31 23:59:59"]);
+                }
+
+                $bookAndStats = $statsQuery->first();
 
                 if ($bookAndStats && $bookAndStats->Judul) {
                     $book = $bookAndStats;
@@ -291,6 +298,12 @@ class PenggunaanController extends Controller
                     } else {
                         $historyQuery->whereIn('s.type', ['issue', 'return', 'localuse']);
                     }
+
+                    // Filter Tahun pada History List
+                    if ($tahun) {
+                         $historyQuery->whereBetween('s.datetime', ["{$tahun}-01-01 00:00:00", "{$tahun}-12-31 23:59:59"]);
+                    }
+
                     $history = $historyQuery->paginate(10)->appends($request->query());
                 }
             } catch (\Exception $e) {
@@ -306,6 +319,7 @@ class PenggunaanController extends Controller
             'usageStats' => $usageStats,
             'errorMessage' => $errorMessage,
             'typeFilter' => $typeFilter,
+            'tahun' => $tahun,
         ]);
     }
 

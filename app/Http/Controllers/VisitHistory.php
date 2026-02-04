@@ -56,15 +56,11 @@ class VisitHistory extends Controller
                     'Tamu VIP / Dinas',
                     'Kartu Sekali Kunjung'
                 ];
-                // Return true jika value TIDAK ada di blacklist (artinya lolos filter)
                 return !in_array($value, $blacklist);
             })
             ->sort()
             ->values()
             ->all();
-        // -----------------------------------------------------------
-        // PERBAIKAN: UTAMAKAN REQUEST INPUT, BARU DEFAULT
-        // -----------------------------------------------------------
 
         // Default Tanggal (Harian): Ambil dari input, kalau kosong baru mundur 30 hari
         $defaultTglAwal = \Carbon\Carbon::now()->subDays(30)->toDateString();
@@ -89,7 +85,6 @@ class VisitHistory extends Controller
         $totalKeseluruhanKunjungan = 0;
         $displayPeriod = '';
 
-        // 4. LOAD CHART DATA (Hanya jika ada filter)
         if ($hasFilter) {
             $chartDataRaw = $this->buildQuery($request, true);
             $chartData = $chartDataRaw['chart'];
@@ -104,24 +99,34 @@ class VisitHistory extends Controller
             }
         }
 
-        return view('pages.kunjungan.fakultasTable', compact(
-            'listFakultas',
-            'tanggalAwal',
-            'tanggalAkhir',
-            'tahunAwal',
-            'tahunAkhir',
-            'chartData',
-            'totalKeseluruhanKunjungan',
-            'hasFilter',
-            'filterType',
-            'displayPeriod'
-        ));
-    }
+    $lokasiMapping = [
+        'sni' => 'SNI Corner',
+        'bi' => 'Bank Indonesia Corner',
+        'mc' => 'Muhammadiyah Corner',
+        'pusat' => 'Perpustakaan Pusat',
+        'pasca' => 'Perpustakaan Pascasarjana',
+        'fk' => 'Perpustakaan Kedokteran',
+        'ref' => 'Referensi Perpustakaan Pusat',
+    ];
+
+    return view('pages.kunjungan.fakultasTable', compact(
+        'listFakultas',
+        'tanggalAwal',
+        'tanggalAkhir',
+        'tahunAwal',
+        'tahunAkhir',
+        'chartData',
+        'totalKeseluruhanKunjungan',
+        'hasFilter',
+        'filterType',
+        'displayPeriod',
+        'lokasiMapping'
+    ));
+}
 
 
     private function buildQuery($request, $forChart = false)
     {
-        // 1. MATIKAN STRICT MODE (Agar Group By Aman)
         try {
             DB::connection('mysql')->statement("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));");
         } catch (\Exception $e) {
@@ -130,6 +135,17 @@ class VisitHistory extends Controller
         $filterType     = $request->input('filter_type', 'daily');
         $fakultasFilter = $request->input('fakultas');
         $searchKeyword  = $request->input('search_manual');
+        $selectedLokasi = $request->input('lokasi');
+
+        $lokasiMapping = [
+            'sni' => 'SNI Corner',
+            'bi' => 'Bank Indonesia Corner',
+            'mc' => 'Muhammadiyah Corner',
+            'pusat' => 'Perpustakaan Pusat',
+            'pasca' => 'Perpustakaan Pascasarjana',
+            'fk' => 'Perpustakaan Kedokteran',
+            'ref' => 'Referensi Perpustakaan Pusat',
+        ];
 
         // --- STEP 1: SETUP TANGGAL ---
         if ($filterType === 'yearly') {
@@ -148,9 +164,6 @@ class VisitHistory extends Controller
 
             $sqlDateFormat = '%Y-%m-%d';
         }
-
-        // --- STEP 2: QUERY AGREGAT DATABASE (OPTIMIZED) ---
-        // Kita pindahkan logika IF/ELSE PHP ke SQL CASE WHEN
         
         $sqlCategoryLogic = "
             CASE
@@ -176,14 +189,22 @@ class VisitHistory extends Controller
         ";
 
         // Subquery Union (History + Corner)
-        $unionQuery = DB::connection('mysql')->table('visitorhistory')
+        $historyQuery = DB::connection('mysql')->table('visitorhistory')
             ->select('visittime', 'cardnumber')
-            ->whereBetween('visittime', [$start, $end])
-            ->unionAll(
-                DB::connection('mysql')->table('visitorcorner')
-                    ->select('visittime', 'cardnumber')
-                    ->whereBetween('visittime', [$start, $end])
-            );
+            ->whereBetween('visittime', [$start, $end]);
+
+        $cornerQuery = DB::connection('mysql')->table('visitorcorner')
+            ->select('visittime', 'cardnumber')
+            ->whereBetween('visittime', [$start, $end]);
+
+        // FILTER LOKASI
+        if ($selectedLokasi) {
+            $dbLokasi = array_search($selectedLokasi, $lokasiMapping) ?: $selectedLokasi;
+            $historyQuery->where(DB::raw("IFNULL(location, 'pusat')"), $dbLokasi);
+            $cornerQuery->where(DB::raw("COALESCE(NULLIF(notes, ''), 'pusat')"), $dbLokasi);
+        }
+
+        $unionQuery = $historyQuery->unionAll($cornerQuery);
 
         // Main Query (Aggregate)
         $query = DB::connection('mysql')->query()

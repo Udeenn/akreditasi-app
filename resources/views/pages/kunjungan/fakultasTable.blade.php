@@ -48,12 +48,26 @@
                                     </select>
                                 </div>
 
+                                {{-- Filter Lokasi --}}
+                                <div class="col-md-2 col-12">
+                                    <label class="form-label small text-muted fw-bold mb-1">Lokasi</label>
+                                    <select name="lokasi" id="lokasi" class="form-select form-select-sm shadow-none">
+                                        <option value="">-- Semua Lokasi --</option>
+                                        @foreach ($lokasiMapping as $key => $val)
+                                            <option value="{{ $key }}"
+                                                {{ request('lokasi') == $key ? 'selected' : '' }}>
+                                                {{ $val }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
                                 {{-- Filter Fakultas --}}
-                                <div class="col-md-3 col-12">
+                                <div class="col-md-2 col-12">
                                     <label class="form-label small text-muted fw-bold mb-1">Fakultas</label>
                                     <select name="fakultas" id="fakultas" class="form-select form-select-sm shadow-none">
                                         <option value="semua" {{ request('fakultas') == 'semua' ? 'selected' : '' }}>--
-                                            Semua Fakultas --</option>
+                                            Semua --</option>
                                         @foreach ($listFakultas as $namaFakultas)
                                             <option value="{{ $namaFakultas }}"
                                                 {{ request('fakultas') == $namaFakultas ? 'selected' : '' }}>
@@ -93,13 +107,13 @@
                                 </div>
 
                                 {{-- Tombol Action --}}
-                                <div class="col-md-3 col-12 d-flex gap-2">
+                                <div class="col-md-2 col-12 d-flex gap-2">
                                     <button type="submit" class="btn btn-primary btn-sm flex-fill fw-bold shadow-sm">
-                                        <i class="fas fa-search me-1"></i> Cari
+                                        <i class="fas fa-search me-1"></i>
                                     </button>
                                     <button type="button" id="btnExportCsv"
                                         class="btn btn-success btn-sm flex-fill fw-bold shadow-sm">
-                                        <i class="fas fa-file-csv me-1"></i> CSV
+                                        <i class="fas fa-file-csv me-1"></i>
                                     </button>
                                 </div>
                             </div>
@@ -191,25 +205,25 @@
         .dataTables_info,
         .dataTables_length label,
         .dataTables_filter label {
-            color: var(--bs-body-color) !important;
+            color: var(--text-dark) !important;
         }
 
         /* Memperbaiki baris tabel (TD) agar teksnya terlihat */
         #yajraTable tbody td {
-            color: var(--bs-body-color) !important;
+            color: var(--text-dark) !important;
         }
 
         /* Memperbaiki teks di dalam kotak 'Empty State' */
         .bg-tertiary h4,
         .bg-tertiary p {
-            color: var(--bs-body-color) !important;
+            color: var(--text-dark) !important;
         }
 
         /* Memperbaiki Dropdown & Input agar tidak ada background putih yang menabrak teks */
         .dataTables_length select,
         .dataTables_filter input {
             background-color: var(--bs-tertiary-bg) !important;
-            color: var(--bs-body-color) !important;
+            color: var(--text-dark) !important;
             border: 1px solid var(--bs-border-color) !important;
         }
 
@@ -222,14 +236,14 @@
         .dataTables_wrapper .dataTables_filter label,
         .dataTables_wrapper .dataTables_info,
         .dataTables_wrapper .dataTables_paginate {
-            color: var(--bs-body-color) !important;
+            color: var(--text-dark) !important;
         }
 
         /* Perbaiki input search agar background tidak putih terang */
         .dataTables_filter input,
         .dataTables_length select {
-            background-color: var(--bs-body-bg) !important;
-            color: var(--bs-body-color) !important;
+            background-color: var(--sidebar-bg) !important;
+            color: var(--text-dark) !important;
             border: 1px solid var(--bs-border-color) !important;
         }
 
@@ -238,23 +252,22 @@
             color: #ffffff !important;
         }
 
-        /* Memperbaiki Search box DataTable agar tidak tenggelam di dark mode */
         .dataTables_filter input {
-            background-color: var(--bs-body-bg) !important;
-            color: var(--bs-body-color) !important;
+            background-color: var(--sidebar-bg) !important;
+            color: var(--text-dark) !important;
             border: 1px solid var(--bs-border-color) !important;
         }
 
         /* Memperbaiki Dropdown 'Show entries' */
         .dataTables_length select {
-            background-color: var(--bs-body-bg) !important;
-            color: var(--bs-body-color) !important;
+            background-color: var(--sidebar-bg) !important;
+            color: var(--text-dark) !important;
             border: 1px solid var(--bs-border-color) !important;
         }
 
         /* Memastikan chart mengikuti warna teks tema */
         #kunjunganChart {
-            color: var(--bs-body-color);
+            color: var(--text-dark);
         }
 
         #yajraTable {
@@ -262,24 +275,19 @@
             --bs-table-accent-bg: transparent;
             --bs-table-striped-bg: transparent;
             --bs-table-hover-bg: transparent;
-            color: var(--bs-body-color) !important;
+            color: var(--text-dark) !important;
         }
 
         #yajraTable thead th {
             background-color: transparent !important;
-            /* KUNCI PERBAIKAN: Transparan */
-            color: var(--bs-body-color) !important;
-            /* Teks otomatis putih di darkmode */
+            color: var(--text-dark) !important;
             border-bottom: 2px solid var(--bs-border-color);
             letter-spacing: 0.5px;
         }
 
-        /* 3. Body (TD) Transparan */
         #yajraTable tbody td {
             background-color: transparent !important;
-            /* KUNCI PERBAIKAN: Transparan */
-            color: var(--bs-body-color) !important;
-            /* Teks otomatis putih di darkmode */
+            color: var(--text-dark) !important;
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid var(--bs-border-color);
         }
@@ -417,6 +425,7 @@
                     data: function(d) {
                         d.filter_type = $('#filter_type').val();
                         d.fakultas = $('#fakultas').val();
+                        d.lokasi = $('#lokasi').val();
                         d.tanggal_awal = $('input[name="tanggal_awal"]').val();
                         d.tanggal_akhir = $('input[name="tanggal_akhir"]').val();
                         d.tahun_awal = $('input[name="tahun_awal"]').val();

@@ -1052,6 +1052,7 @@ class PeminjamanController extends Controller
     public function checkHistory(Request $request)
     {
         $cardnumber = $request->input('cardnumber');
+        $tahun = $request->input('tahun'); // Ambil filter tahun
         $borrower = null;
         $borrowingHistory = collect();
         $returnHistory = collect();
@@ -1068,7 +1069,7 @@ class PeminjamanController extends Controller
 
                 if ($borrower) {
                     // Histori Peminjaman (Issue & Renew)
-                    $borrowingHistory = DB::connection('mysql2')->table('statistics as s')
+                    $borrowingQuery = DB::connection('mysql2')->table('statistics as s')
                         ->select(
                             's.datetime',
                             's.itemnumber',
@@ -1081,13 +1082,20 @@ class PeminjamanController extends Controller
                         ->join('biblioitems as bi', 'bi.biblionumber', '=', 'i.biblionumber')
                         ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
                         ->where('s.borrowernumber', $borrower->borrowernumber)
-                        ->whereIn('s.type', ['issue', 'renew'])
-                        ->orderBy('s.datetime', 'desc')
+                        ->whereIn('s.type', ['issue', 'renew']);
+
+                    // Filter Tahun
+                    if ($tahun) {
+                        // OPTIMASI: Gunakan whereBetween alih-alih whereYear agar Index datetime terpakai
+                        $borrowingQuery->whereBetween('s.datetime', ["{$tahun}-01-01 00:00:00", "{$tahun}-12-31 23:59:59"]);
+                    }
+
+                    $borrowingHistory = $borrowingQuery->orderBy('s.datetime', 'desc')
                         ->paginate(5, ['*'], 'borrowing_page')
                         ->withQueryString();
 
                     // Histori Pengembalian (Return)
-                    $returnHistory = DB::connection('mysql2')->table('statistics as s')
+                    $returnQuery = DB::connection('mysql2')->table('statistics as s')
                         ->select(
                             's.datetime',
                             's.itemnumber',
@@ -1100,8 +1108,15 @@ class PeminjamanController extends Controller
                         ->join('biblioitems as bi', 'bi.biblionumber', '=', 'i.biblionumber')
                         ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
                         ->where('s.borrowernumber', $borrower->borrowernumber)
-                        ->where('s.type', 'return')
-                        ->orderBy('s.datetime', 'desc')
+                        ->where('s.type', 'return');
+
+                    // Filter Tahun
+                    if ($tahun) {
+                        // OPTIMASI: Gunakan whereBetween alih-alih whereYear
+                        $returnQuery->whereBetween('s.datetime', ["{$tahun}-01-01 00:00:00", "{$tahun}-12-31 23:59:59"]);
+                    }
+
+                    $returnHistory = $returnQuery->orderBy('s.datetime', 'desc')
                         ->paginate(5, ['*'], 'return_page')
                         ->withQueryString();
                 } else {
@@ -1113,6 +1128,7 @@ class PeminjamanController extends Controller
 
         return view('pages.peminjaman.cekPeminjaman', [
             'cardnumber' => $cardnumber,
+            'tahun' => $tahun,
             'borrower' => $borrower,
             'borrowingHistory' => $borrowingHistory,
             'returnHistory' => $returnHistory,

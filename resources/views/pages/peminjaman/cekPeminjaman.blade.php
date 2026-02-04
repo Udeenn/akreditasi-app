@@ -110,7 +110,8 @@
             border-bottom-color: #3f4254;
         }
 
-        body.dark-mode .form-control {
+        body.dark-mode .form-control,
+        body.dark-mode .form-select {
             background-color: #1b1b29;
             border-color: #2b2b40;
             color: #ffffff;
@@ -159,6 +160,16 @@
                                 <input type="text" name="cardnumber" id="cardnumber"
                                     class="form-control border-0  fw-bold" value="{{ $cardnumber ?? '' }}"
                                     placeholder="Masukkan Nomor Kartu Peminjam (NIM/ID)..." autofocus>
+
+                                {{-- Filter Tahun --}}
+                                <select name="tahun" class="form-select border-0" style="max-width: 180px; border-left: 1px solid var(--bs-border-color) !important;">
+                                    <option value="">Semua Tahun</option>
+                                    @for ($y = date('Y'); $y >= 2019; $y--)
+                                        <option value="{{ $y }}" {{ ($tahun ?? '') == $y ? 'selected' : '' }}>
+                                            {{ $y }}</option>
+                                    @endfor
+                                </select>
+
                                 <button type="submit" class="btn btn-primary px-4 fw-bold">Cari Data</button>
                             </div>
                         </form>
