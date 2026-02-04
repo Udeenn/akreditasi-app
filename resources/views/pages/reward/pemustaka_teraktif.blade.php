@@ -62,23 +62,20 @@
                                 <i class="bi bi-search"></i> Cari
                             </button>
                         </div>
-
                         {{-- GROUP 2: EXPORT (Kanan - Spacer Auto) --}}
-                        {{-- ms-auto akan mendorong tombol export ke paling kanan --}}
                         <div class="col-md-4 col-lg-4 ms-auto text-md-end">
                             <div class="d-flex gap-2 justify-content-md-end mt-3 mt-md-0">
-                                {{-- Tombol Export dibuat Outline agar tidak terlalu 'ramai' --}}
                                 <button type="button" id="exportPengunjungButton"
                                     class="btn btn-outline-success btn-lg {{ !$hasFilter ? 'disabled' : '' }}"
                                     title="Export Data Pengunjung">
-                                    <i class="bi bi-file-earmark-excel me-1"></i> <span class="d-none d-xl-inline">Export
+                                    <i class="bi bi-file-earmark-excel me-1"></i> <span class="d-none d-xl-inline">
                                         Pengunjung</span>
                                 </button>
 
-                                <button type="button" id="exportPeminjamButton"
+                                <button type="button" id="PeminjamButton"
                                     class="btn btn-outline-warning btn-lg {{ !$hasFilter ? 'disabled' : '' }}"
                                     title="Export Data Peminjam">
-                                    <i class="bi bi-file-earmark-excel me-1"></i> <span class="d-none d-xl-inline">Export
+                                    <i class="bi bi-file-earmark-excel me-1"></i> <span class="d-none d-xl-inline">
                                         Peminjam</span>
                                 </button>
                             </div>

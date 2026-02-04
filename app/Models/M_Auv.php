@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Cache;
 
 class M_Auv extends Model
 {
@@ -18,6 +19,29 @@ class M_Auv extends Model
         'imageurl',
     ];
 
+    /**
+     * Get cached prodi list untuk menghindari query berulang.
+     * Cache disimpan selama 1 jam.
+     * 
+     * @param bool $forceRefresh Force refresh cache
+     * @return \Illuminate\Support\Collection
+     */
+    public static function getCachedProdiList(bool $forceRefresh = false)
+    {
+        $cacheKey = 'prodi_list_tampil_cached';
+        
+        if ($forceRefresh) {
+            Cache::forget($cacheKey);
+        }
+        
+        return Cache::remember($cacheKey, 3600, function () {
+            return static::where('category', 'PRODI')
+                ->whereRaw('CHAR_LENGTH(lib) >= 13')
+                ->onlyProdiTampil()
+                ->orderBy('lib', 'asc')
+                ->get();
+        });
+    }
 
     public function scopeExcludeProdi($query)
     {

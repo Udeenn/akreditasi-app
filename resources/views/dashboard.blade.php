@@ -90,16 +90,16 @@ Current Path: {{ request()->path() }}
         @php
             // --- Data Kunjungan Website ---
             $kunjunganWebsite = [
-                'Januari' => 18900,
-                'Februari' => 28087,
-                'Maret' => 15413,
-                'April' => 15591,
-                'Mei' => 22761,
-                'Juni' => 12874,
-                'Juli' => 18876,
-                'Agustus' => 22164,
-                'September' => 21580,
-                'Oktober' => 18424,
+                'Januari' => 0,
+                'Februari' => 0,
+                'Maret' => 0,
+                'April' => 0,
+                'Mei' => 0,
+                'Juni' => 0,
+                'Juli' => 0,
+                'Agustus' => 0,
+                'September' => 0,
+                'Oktober' => 0,
                 'November' => 0,
                 'Desember' => 0,
             ];
@@ -130,16 +130,16 @@ Current Path: {{ request()->path() }}
 
             // --- Data Kunjungan Repository ---
             $kunjunganRepository = [
-                'Januari' => 10161,
-                'Februari' => 13389,
-                'Maret' => 8898,
-                'April' => 9602,
-                'Mei' => 12079,
-                'Juni' => 7299,
-                'Juli' => 8239,
-                'Agustus' => 9452,
-                'September' => 10623,
-                'Oktober' => 9849,
+                'Januari' => 0,
+                'Februari' => 0,
+                'Maret' => 0,
+                'April' => 0,
+                'Mei' => 0,
+                'Juni' => 0,
+                'Juli' => 0,
+                'Agustus' => 0,
+                'September' => 0,
+                'Oktober' => 0,
                 'November' => 0,
                 'Desember' => 0,
             ];

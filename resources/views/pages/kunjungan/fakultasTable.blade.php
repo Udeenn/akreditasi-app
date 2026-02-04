@@ -2,8 +2,7 @@
 @section('title', 'Statistik Kunjungan Per Fakultas')
 
 @section('content')
-    <div class="container-fluid px-4 py-4"> {{-- Tambah py-4 untuk padding atas bawah --}}
-
+    <div class="container-fluid px-4">
         {{-- 1. HEADER SECTION --}}
         <div class="row mb-4">
             <div class="col-12">
@@ -39,8 +38,9 @@
                             <div class="row g-3 align-items-end">
                                 {{-- Filter Tipe --}}
                                 <div class="col-md-2 col-6">
-                                    <label class="form-label small opacity-75 fw-bold">Periode:</label>
-                                    <select name="filter_type" id="filter_type" class="form-select">
+                                    <label class="form-label small text-muted fw-bold mb-1">Periode</label>
+                                    <select name="filter_type" id="filter_type"
+                                        class="form-select form-select-sm shadow-none">
                                         <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>
                                             Harian</option>
                                         <option value="yearly" {{ ($filterType ?? '') == 'yearly' ? 'selected' : '' }}>
@@ -49,9 +49,9 @@
                                 </div>
 
                                 {{-- Filter Fakultas --}}
-                                <div class="col-md-4 col-12">
-                                    <label class="form-label small opacity-75 fw-bold">Fakultas:</label>
-                                    <select name="fakultas" id="fakultas" class="form-select">
+                                <div class="col-md-3 col-12">
+                                    <label class="form-label small text-muted fw-bold mb-1">Fakultas</label>
+                                    <select name="fakultas" id="fakultas" class="form-select form-select-sm shadow-none">
                                         <option value="semua" {{ request('fakultas') == 'semua' ? 'selected' : '' }}>--
                                             Semua Fakultas --</option>
                                         @foreach ($listFakultas as $namaFakultas)
@@ -64,36 +64,42 @@
                                 </div>
 
                                 {{-- Filter Tanggal (Daily) --}}
-                                <div class="col-md-2 col-6 daily-filter">
-                                    <label class="form-label small opacity-75 fw-bold">Dari Tanggal:</label>
-                                    <input type="date" name="tanggal_awal" class="form-control"
-                                        value="{{ $tanggalAwal }}">
+                                <div class="col-md-2 col-6 daily-filter"
+                                    style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
+                                    <label class="form-label small text-muted fw-bold mb-1">Dari Tanggal</label>
+                                    <input type="date" name="tanggal_awal"
+                                        class="form-control form-control-sm shadow-none" value="{{ $tanggalAwal }}">
                                 </div>
-                                <div class="col-md-2 col-6 daily-filter">
-                                    <label class="form-label small opacity-75 fw-bold">Sampai Tanggal:</label>
-                                    <input type="date" name="tanggal_akhir" class="form-control"
-                                        value="{{ $tanggalAkhir }}">
+                                <div class="col-md-2 col-6 daily-filter"
+                                    style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
+                                    <label class="form-label small text-muted fw-bold mb-1">Sampai Tanggal</label>
+                                    <input type="date" name="tanggal_akhir"
+                                        class="form-control form-control-sm shadow-none" value="{{ $tanggalAkhir }}">
                                 </div>
 
                                 {{-- Filter Tahun (Yearly) --}}
-                                <div class="col-md-2 col-6 yearly-filter" style="display: none;">
-                                    <label class="form-label small opacity-75 fw-bold">Dari Tahun:</label>
-                                    <input type="number" name="tahun_awal" class="form-control"
+                                <div class="col-md-2 col-6 yearly-filter"
+                                    style="{{ ($filterType ?? '') == 'yearly' ? '' : 'display: none;' }}">
+                                    <label class="form-label small text-muted fw-bold mb-1">Dari Tahun</label>
+                                    <input type="number" name="tahun_awal" class="form-control form-control-sm shadow-none"
                                         value="{{ $tahunAwal }}" placeholder="2020">
                                 </div>
-                                <div class="col-md-2 col-6 yearly-filter" style="display: none;">
-                                    <label class="form-label small opacity-75 fw-bold">Sampai Tahun:</label>
-                                    <input type="number" name="tahun_akhir" class="form-control"
-                                        value="{{ $tahunAkhir }}" placeholder="{{ date('Y') }}">
+                                <div class="col-md-2 col-6 yearly-filter"
+                                    style="{{ ($filterType ?? '') == 'yearly' ? '' : 'display: none;' }}">
+                                    <label class="form-label small text-muted fw-bold mb-1">Sampai Tahun</label>
+                                    <input type="number" name="tahun_akhir"
+                                        class="form-control form-control-sm shadow-none" value="{{ $tahunAkhir }}"
+                                        placeholder="{{ date('Y') }}">
                                 </div>
 
                                 {{-- Tombol Action --}}
-                                <div class="col-md-2 col-12 d-flex gap-2">
-                                    <button type="submit" class="btn btn-primary w-100 fw-bold">
+                                <div class="col-md-3 col-12 d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary btn-sm flex-fill fw-bold shadow-sm">
                                         <i class="fas fa-search me-1"></i> Cari
                                     </button>
-                                    <button type="button" id="btnExportCsv" class="btn btn-success w-100 fw-bold">
-                                        <i class="fas fa-file-excel me-1"></i> CSV
+                                    <button type="button" id="btnExportCsv"
+                                        class="btn btn-success btn-sm flex-fill fw-bold shadow-sm">
+                                        <i class="fas fa-file-csv me-1"></i> CSV
                                     </button>
                                 </div>
                             </div>
@@ -138,12 +144,10 @@
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
-                                {{-- Hapus table-striped agar background dark mode lebih konsisten --}}
-                                <table id="yajraTable" class="table align-middle w-100 mb-0 my-3"
+                                <table id="yajraTable" class="table table-dark-custom align-middle w-100 mb-0 my-3"
                                     style="border-collapse: collapse;">
                                     <thead class="">
                                         <tr>
-                                            {{-- Hapus text-secondary agar warna text mengikuti tema (putih di darkmode) --}}
                                             <th class="px-4 py-3 text-uppercase small fw-bold" width="5%">No</th>
                                             <th class="px-4 py-3 text-uppercase small fw-bold" width="25%">Waktu</th>
                                             <th class="px-4 py-3 text-uppercase small fw-bold" width="45%">Prodi /
@@ -160,16 +164,15 @@
                 </div>
             </div>
         @else
-            {{-- EMPTY STATE --}}
             <div class="row justify-content-center mt-5">
                 <div class="col-md-6">
-                    <div class="text-center p-5 border rounded-4 bg-body shadow-sm">
+                    <div class="text-center p-5 border rounded-4 shadow-sm">
                         <div class="mb-3 text-primary opacity-50">
                             <i class="fas fa-search fa-4x"></i>
                         </div>
                         <h4 class="fw-bold">Data Belum Ditampilkan</h4>
-                        <p class="opacity-75">Silakan atur filter di atas lalu klik tombol <strong>"Cari"</strong> untuk
-                            menampilkan statistik.</p>
+                        <p class="">Silakan atur filter di atas lalu klik tombol <strong>"Cari"</strong>
+                            untuk menampilkan statistik.</p>
                     </div>
                 </div>
             </div>
@@ -179,143 +182,89 @@
     </div>
 @endsection
 
-{{-- @push('styles')
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
-    <style>
-        /* --- 1. DARK MODE & COLOR FIXES --- */
-        #yajraTable {
-            color: var(--bs-body-color);
-        }
-
-        #yajraTable thead th {
-            border-bottom: 2px solid var(--bs-border-color);
-            background-color: var(--bs-tertiary-bg);
-            color: var(--bs-body-color);
-            letter-spacing: 0.5px;
-        }
-
-        #yajraTable tbody td {
-            padding: 1.25rem 1.5rem;
-            color: inherit;
-            border-bottom: 1px solid var(--bs-border-color);
-        }
-
-        #yajraTable tbody tr:hover {
-            background-color: var(--bs-tertiary-bg);
-            transition: all 0.2s;
-        }
-
-        .card {
-            background-color: var(--bs-body-bg);
-            border-color: var(--bs-border-color);
-        }
-
-        .card-header {
-            background-color: var(--bs-body-bg);
-            border-bottom-color: var(--bs-border-color);
-        }
-
-        .form-control,
-        .form-select {
-            border-radius: 8px;
-            padding: 0.6rem 0.85rem;
-            background-color: var(--bs-body-bg);
-            color: var(--bs-body-color);
-            border-color: var(--bs-border-color);
-        }
-
-        .fw-extrabold {
-            font-weight: 800;
-        }
-
-        .btn {
-            border-radius: 8px;
-            padding: 0.6rem 1rem;
-            transition: all 0.2s ease;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        /* --- 2. PADDING & LAYOUT FIXES (UPDATED) --- */
-
-        /* Bagian ATAS (Length Menu "Tampilkan" & Search "Cari") */
-        div.dataTables_wrapper div.dataTables_length {
-            padding-left: 1.5rem !important;
-            /* Padding Kiri Atas */
-            padding-top: 1rem;
-        }
-
-        div.dataTables_wrapper div.dataTables_filter {
-            padding-right: 1.5rem !important;
-            /* Padding Kanan Atas */
-            padding-top: 1rem;
-        }
-
-        /* Bagian BAWAH (Info "Menampilkan..." & Pagination) */
-        div.dataTables_wrapper div.dataTables_info {
-            padding-top: 1.5rem !important;
-            padding-left: 1.5rem !important;
-            /* Padding Kiri Bawah */
-        }
-
-        div.dataTables_wrapper div.dataTables_paginate {
-            padding-top: 1.5rem !important;
-            padding-right: 1.5rem !important;
-            /* Padding Kanan Bawah */
-            padding-bottom: 1rem;
-        }
-
-        /* Styling Tombol Pagination */
-        .page-link {
-            padding: 0.6rem 1.2rem !important;
-            font-weight: 600;
-            border-radius: 8px !important;
-            margin: 0 3px;
-            font-size: 0.9rem;
-        }
-
-        /* Active State */
-        .page-item.active .page-link {
-            background-color: #0d6efd;
-            border-color: #0d6efd;
-            color: white;
-            box-shadow: 0 4px 6px rgba(13, 110, 253, 0.2);
-        }
-
-        /* Normal State */
-        .page-item .page-link {
-            background-color: var(--bs-body-bg);
-            border-color: var(--bs-border-color);
-            color: var(--bs-body-color);
-        }
-
-        /* Disabled State */
-        .page-item.disabled .page-link {
-            background-color: var(--bs-tertiary-bg);
-            color: var(--bs-secondary-color);
-        }
-    </style>
-@endpush --}}
 
 @push('styles')
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
     <style>
-        /* --- 1. DARK MODE FIX (TRANSPARENT BACKGROUND) --- */
+        /* Pastikan teks tabel dan info DataTable otomatis putih/terang */
+        #yajraTable,
+        .dataTables_info,
+        .dataTables_length label,
+        .dataTables_filter label {
+            color: var(--bs-body-color) !important;
+        }
 
-        /* 1. Reset Variabel Bootstrap Table agar tidak memaksa warna putih */
+        /* Memperbaiki baris tabel (TD) agar teksnya terlihat */
+        #yajraTable tbody td {
+            color: var(--bs-body-color) !important;
+        }
+
+        /* Memperbaiki teks di dalam kotak 'Empty State' */
+        .bg-tertiary h4,
+        .bg-tertiary p {
+            color: var(--bs-body-color) !important;
+        }
+
+        /* Memperbaiki Dropdown & Input agar tidak ada background putih yang menabrak teks */
+        .dataTables_length select,
+        .dataTables_filter input {
+            background-color: var(--bs-tertiary-bg) !important;
+            color: var(--bs-body-color) !important;
+            border: 1px solid var(--bs-border-color) !important;
+        }
+
+        .table-dark-custom {
+            --bs-table-color: #ffffff;
+            /* Memaksa warna teks tabel jadi putih */
+        }
+
+        .dataTables_wrapper .dataTables_length label,
+        .dataTables_wrapper .dataTables_filter label,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            color: var(--bs-body-color) !important;
+        }
+
+        /* Perbaiki input search agar background tidak putih terang */
+        .dataTables_filter input,
+        .dataTables_length select {
+            background-color: var(--bs-body-bg) !important;
+            color: var(--bs-body-color) !important;
+            border: 1px solid var(--bs-border-color) !important;
+        }
+
+        .card-body.bg-primary h3,
+        .card-body.bg-primary p {
+            color: #ffffff !important;
+        }
+
+        /* Memperbaiki Search box DataTable agar tidak tenggelam di dark mode */
+        .dataTables_filter input {
+            background-color: var(--bs-body-bg) !important;
+            color: var(--bs-body-color) !important;
+            border: 1px solid var(--bs-border-color) !important;
+        }
+
+        /* Memperbaiki Dropdown 'Show entries' */
+        .dataTables_length select {
+            background-color: var(--bs-body-bg) !important;
+            color: var(--bs-body-color) !important;
+            border: 1px solid var(--bs-border-color) !important;
+        }
+
+        /* Memastikan chart mengikuti warna teks tema */
+        #kunjunganChart {
+            color: var(--bs-body-color);
+        }
+
         #yajraTable {
             --bs-table-bg: transparent;
             --bs-table-accent-bg: transparent;
             --bs-table-striped-bg: transparent;
             --bs-table-hover-bg: transparent;
             color: var(--bs-body-color) !important;
-            /* Teks mengikuti tema */
         }
 
-        /* 2. Header (TH) Transparan agar warna biru Card muncul */
         #yajraTable thead th {
             background-color: transparent !important;
             /* KUNCI PERBAIKAN: Transparan */

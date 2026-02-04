@@ -29,6 +29,27 @@ final class CnClassHelperr
         if (!$rules) return false;
 
         $val = self::normalizeCn($cn);
+        
+        // OPTIMASI: Cek lookup cache untuk exact match dulu (O(1))
+        static $exactMatchCache = [];
+        $cacheKey = $prodi . '|exact';
+        
+        if (!isset($exactMatchCache[$cacheKey])) {
+            // Build exact match set untuk prodi ini
+            $exactMatchCache[$cacheKey] = [];
+            foreach ($rules as $r) {
+                if (!is_array($r) && !str_ends_with((string)$r, '*')) {
+                    $exactMatchCache[$cacheKey][self::normalizeCn((string)$r)] = true;
+                }
+            }
+        }
+        
+        // Cek exact match dulu (paling cepat)
+        if (isset($exactMatchCache[$cacheKey][$val])) {
+            return true;
+        }
+        
+        // Fallback ke iterasi untuk prefix/range rules
         foreach ($rules as $r) {
             if (is_array($r) && count($r) === 2) {
                 $min = self::normalizeCn($r[0]);
@@ -39,9 +60,8 @@ final class CnClassHelperr
                 if (str_ends_with($rule, '*')) {
                     $prefix = self::normalizeCn(substr($rule, 0, -1));
                     if ($prefix !== '' && str_starts_with($val, $prefix)) return true;
-                } else {
-                    if ($val === self::normalizeCn($rule)) return true;
                 }
+                // exact match sudah dicek di atas, skip
             }
         }
         return false;
