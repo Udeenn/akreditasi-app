@@ -36,7 +36,7 @@ class M_Auv extends Model
         
         return Cache::remember($cacheKey, 3600, function () {
             return static::where('category', 'PRODI')
-                ->whereRaw('CHAR_LENGTH(lib) >= 13')
+            ->whereRaw('CHAR_LENGTH(lib) >= 5') 
                 ->onlyProdiTampil()
                 ->orderBy('lib', 'asc')
                 ->get();
@@ -120,7 +120,7 @@ class M_Auv extends Model
             'K110',
             'L100',
             'L200',
-            'L280',
+            'L208',
             'L300',
             'O100',
             'O200',

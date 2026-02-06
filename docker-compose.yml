@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: .docker/php/Dockerfile.dev
-    container_name: laravel_app
+    container_name: akreditasi_app
     restart: unless-stopped
     volumes:
       - .:/var/www/html/datapustaka # Sinkronisasi kode dari lokal ke container
@@ -16,7 +16,7 @@ services:
   # 2. Service Web Server (Nginx)
   web:
     image: nginx:alpine
-    container_name: laravel_web
+    container_name: nginx
     restart: unless-stopped
     ports:
       - "80:80" # Akses dari browser via http://localhost atau domain
@@ -52,6 +52,16 @@ services:
     restart: always
     ports:
       - 8080:8080
+    networks:
+      - laravel
+
+  # 5. Service Redis (Cache & Queue)
+  redis:
+    image: redis:alpine
+    container_name: laravel_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
     networks:
       - laravel
 
