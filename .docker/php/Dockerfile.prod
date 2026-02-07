@@ -63,9 +63,9 @@ COPY --from=builder /var/www/html .
 COPY --from=builder /usr/bin/composer /usr/bin/composer
 
 # Buat folder yang diperlukan dan set permission
-RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache vendor \
+    && chown -R www-data:www-data storage bootstrap/cache vendor \
+    && chmod -R 775 storage bootstrap/cache vendor
 
 USER www-data
 
