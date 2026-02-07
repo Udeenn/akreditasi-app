@@ -9,13 +9,12 @@ WORKDIR /var/www/html
 RUN apt-get update && apt-get install -y \
     git zip unzip \
     libzip-dev \
-    libpq-dev \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && pecl install redis && docker-php-ext-enable redis \
-    && docker-php-ext-install pdo_mysql pdo_pgsql zip gd
+    && docker-php-ext-install pdo_mysql zip gd
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -51,13 +50,11 @@ WORKDIR /var/www/html
 
 # Install ekstensi PHP yang HANYA dibutuhkan saat runtime
 RUN apk add --no-cache \
-    libpq \
     libpng \
     libjpeg \
     freetype \
     libzip \
     && apk add --no-cache --virtual .build-deps \
-    postgresql-dev \
     libpng-dev \
     libjpeg-turbo-dev \
     freetype-dev \
@@ -66,7 +63,7 @@ RUN apk add --no-cache \
     && pecl install redis \
     && docker-php-ext-enable redis \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql pdo_pgsql gd zip \
+    && docker-php-ext-install pdo_mysql gd zip \
     && apk del .build-deps
 
 # Copy semua kode aplikasi dari stage builder

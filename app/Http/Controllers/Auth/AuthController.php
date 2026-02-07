@@ -30,8 +30,10 @@ class AuthController extends Controller
 
         if (Auth::attempt(['username' => $request->username, 'password' => $request->password], $request->filled('remember'))) {
             $request->session()->regenerate();
+            
             return redirect()->intended('/');
         }
+
 
         throw ValidationException::withMessages([
             'username' => ['Username atau password salah.'],

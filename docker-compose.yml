@@ -21,7 +21,7 @@ services:
     ports:
       - "8081:80" # Docker jalan di 8081, Nginx Server yang handle 80/443 + SSL
     volumes:
-      - .:/var/www/html
+      - ./:/var/www/html
       - ./.docker/nginx/datapustaka.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - app
