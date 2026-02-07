@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use App\Models\LoginLog;
 use phpCAS;
 
 class CasController extends Controller
@@ -97,6 +98,9 @@ class CasController extends Controller
         // Login ke Laravel
         Auth::login($user, true);
         
+        // Log successful login
+        LoginLog::logSuccess($user->id, $casUser, 'cas');
+        
         // Redirect ke halaman yang diminta sebelumnya, atau dashboard
         return redirect()->intended(route('dashboard'));
     }
@@ -117,3 +121,4 @@ class CasController extends Controller
         phpCAS::logout(['service' => config('app.url')]);
     }
 }
+
