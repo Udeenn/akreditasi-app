@@ -31,6 +31,9 @@ COPY . .
 # Hapus cache setelah build
 RUN rm -rf /root/.composer
 
+# Pastikan bootstrap/cache bersih & generate package discovery baru
+RUN rm -rf bootstrap/cache/*.php && composer dump-autoload --optimize
+
 # Optimasi Laravel - cache commands akan dijalankan setelah container up
 # karena beberapa service provider adalah dev dependencies
 # RUN php artisan config:cache && php artisan route:cache && php artisan view:cache

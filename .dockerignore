@@ -13,3 +13,4 @@ public/storage
 storage/*.log
 npm-debug.log
 composer.lock
+bootstrap/cache/*.php
