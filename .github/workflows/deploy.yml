@@ -27,6 +27,10 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
+          timeout: 30s
+          command_timeout: 30m
+          debug: true
+          script_stop: true
           script: |
             cd /var/www/akreditasi-app
             
