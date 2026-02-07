@@ -31,8 +31,9 @@ COPY . .
 # Hapus cache setelah build
 RUN rm -rf /root/.composer
 
-# Optimasi Laravel untuk production
-RUN php artisan config:cache && php artisan route:cache && php artisan view:cache
+# Optimasi Laravel - cache commands akan dijalankan setelah container up
+# karena beberapa service provider adalah dev dependencies
+# RUN php artisan config:cache && php artisan route:cache && php artisan view:cache
 
 
 # ---- STAGE 2: FINAL PRODUCTION IMAGE ----
