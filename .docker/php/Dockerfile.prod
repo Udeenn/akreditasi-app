@@ -2,7 +2,7 @@
 
 # ---- STAGE 1: BUILDER ----
 # Di stage ini kita install semua dependensi, termasuk dev-dependencies
-FROM php:8.2-fpm as builder
+FROM php:8.2-fpm AS builder
 WORKDIR /var/www/html
 
 # Install dependensi sistem dan ekstensi PHP
