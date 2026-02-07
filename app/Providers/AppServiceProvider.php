@@ -36,7 +36,8 @@ class AppServiceProvider extends ServiceProvider
         }
 
         // Initialize phpCAS
-        if (!phpCAS::isInitialized()) {
+        // Initialize phpCAS only for web requests, not console commands
+        if (!$this->app->runningInConsole() && !phpCAS::isInitialized()) {
             phpCAS::setVerbose(config('app.debug'));
             
             // Konversi version string ke konstanta CAS
