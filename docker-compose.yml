@@ -19,7 +19,7 @@ services:
     container_name: nginx
     restart: unless-stopped
     ports:
-      - "80:80" # Akses dari browser via http://localhost atau domain
+      - "8080:80" # Docker jalan di 8080, Nginx Server yang handle 80/443 + SSL
     volumes:
       - .:/var/www/html
       - ./.docker/nginx/datapustaka.conf:/etc/nginx/conf.d/default.conf
