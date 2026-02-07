@@ -8,7 +8,7 @@ services:
     container_name: akreditasi_app
     restart: unless-stopped
     volumes:
-      - .:/var/www/html # Sinkronisasi kode dari lokal ke container
+      # - .:/var/www/html # Sinkronisasi kode dari lokal ke container (Matikan di production jika ingin pakai image build)
     networks:
       - akreditasi-network
 

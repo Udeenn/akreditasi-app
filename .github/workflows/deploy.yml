@@ -41,13 +41,14 @@ jobs:
             docker compose down
             docker compose up -d --build
             
+            # Rebuild and restart containers
+            docker compose down
+            docker compose up -d --build
+            
             # Wait for container to be ready
             sleep 10
             
-            # Install/Update Dependencies (karena volume mount menimpa vendor image)
-            docker compose exec -T app composer install --no-dev --optimize-autoloader
-            
-            # Run Laravel setup commands
+            # Run post-deployment commands
             docker compose exec -T app php artisan migrate --force
             docker compose exec -T app php artisan config:cache
             docker compose exec -T app php artisan route:cache
