@@ -41,7 +41,21 @@ FROM php:8.2-fpm-alpine
 WORKDIR /var/www/html
 
 # Install ekstensi PHP yang HANYA dibutuhkan saat runtime
-RUN docker-php-ext-install pdo_mysql pdo_pgsql
+RUN apk add --no-cache \
+    libpq \
+    libpng \
+    libjpeg \
+    freetype \
+    libzip \
+    && apk add --no-cache --virtual .build-deps \
+    postgresql-dev \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    libzip-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql pdo_pgsql gd zip \
+    && apk del .build-deps
 
 # Copy vendor & kode aplikasi dari stage builder
 COPY --from=builder /var/www/html/vendor ./vendor
