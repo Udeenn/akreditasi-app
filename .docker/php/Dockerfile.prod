@@ -2,7 +2,7 @@
 
 # ---- STAGE 1: BUILDER ----
 # Di stage ini kita install semua dependensi, termasuk dev-dependencies
-FROM php:8.2-fpm AS builder
+FROM php:8.4-fpm AS builder
 WORKDIR /var/www/html
 
 # Install dependensi sistem dan ekstensi PHP
@@ -38,7 +38,7 @@ RUN rm -rf /root/.composer
 
 # ---- STAGE 2: FINAL PRODUCTION IMAGE ----
 # Di stage ini kita hanya mengambil hasil yang diperlukan dari stage builder
-FROM php:8.2-fpm-alpine
+FROM php:8.4-fpm-alpine
 WORKDIR /var/www/html
 
 # Install ekstensi PHP yang HANYA dibutuhkan saat runtime
