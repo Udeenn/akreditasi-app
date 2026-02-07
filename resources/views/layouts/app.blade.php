@@ -656,7 +656,7 @@
                                     Login
                                 </button>
                             @else
-                                <form action="{{ route('logout') }}" method="POST" class="d-inline">
+                                <form action="{{ route('cas.logout') }}" method="POST" class="d-inline">
                                     @csrf
                                     <button type="submit" class="btn btn-sm btn-danger text-body-emphasis">
                                         <i class="fas fa-sign-out-alt me-1"></i>
