@@ -12,10 +12,10 @@ RUN apt-get update && apt-get install -y git zip unzip libzip-dev libpq-dev \
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy file composer & install dependensi
-# Ini memanfaatkan layer caching Docker. `composer install` hanya akan jalan
-# jika composer.json atau composer.lock berubah.
-COPY composer.json composer.lock ./
+# Copy file composer
+# Jika composer.lock tidak ada, composer install akan generate otomatis
+COPY composer.json ./
+COPY composer.lock* ./
 RUN composer install --no-dev --no-interaction --no-scripts --optimize-autoloader
 
 # Copy sisa kode aplikasi
