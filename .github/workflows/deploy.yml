@@ -40,6 +40,9 @@ jobs:
             # Wait for container to be ready
             sleep 10
             
+            # Install/Update Dependencies (karena volume mount menimpa vendor image)
+            docker-compose exec -T app composer install --no-dev --optimize-autoloader
+            
             # Run Laravel setup commands
             docker-compose exec -T app php artisan migrate --force
             docker-compose exec -T app php artisan config:cache
