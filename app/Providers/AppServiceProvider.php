@@ -28,5 +28,9 @@ class AppServiceProvider extends ServiceProvider
             return $user->role === 'admin';
         });
         Schema::defaultStringLength(191);
+
+        if($this->app->environment('production')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
     }
 }
