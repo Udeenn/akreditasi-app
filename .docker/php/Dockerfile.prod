@@ -31,6 +31,10 @@ COPY . .
 # Hapus cache setelah build
 RUN rm -rf /root/.composer
 
+# Fix: Create storage directories for Laravel (needed for package discovery)
+RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
 # Pastikan bootstrap/cache bersih & generate package discovery baru
 RUN rm -rf bootstrap/cache/*.php && composer dump-autoload --optimize
 
