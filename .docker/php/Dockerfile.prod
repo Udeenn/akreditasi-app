@@ -58,12 +58,13 @@ RUN apk add --no-cache \
     && docker-php-ext-install pdo_mysql pdo_pgsql gd zip \
     && apk del .build-deps
 
-# Copy vendor & kode aplikasi dari stage builder
-COPY --from=builder /var/www/html/vendor ./vendor
+# Copy semua kode aplikasi dari stage builder
 COPY --from=builder /var/www/html .
 
-# Set permission untuk folder storage dan bootstrap/cache
-RUN chown -R www-data:www-data storage bootstrap/cache
+# Buat folder yang diperlukan dan set permission
+RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
 USER www-data
 
