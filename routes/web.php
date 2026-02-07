@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\CasController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IjazahController;
@@ -20,124 +21,131 @@ use App\Http\Controllers\VisitHistory;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 
-Route::get('/', [DashboardController::class, 'totalStatistik'])->name('dashboard');
+// =============================================
+// PUBLIC ROUTES (Tidak perlu login)
+// =============================================
 
+// Landing Page
+Route::get('/', function () {
+    if (Auth::check()) {
+        return redirect()->route('dashboard');
+    }
+    return view('landing');
+})->name('home');
+
+// CAS Authentication Routes
+Route::prefix('cas')->name('cas.')->group(function () {
+    Route::get('/login', [CasController::class, 'login'])->name('login');
+    Route::get('/callback', [CasController::class, 'callback'])->name('callback');
+    Route::post('/logout', [CasController::class, 'logout'])->name('logout');
+});
+
+// Staff Login (Non-CAS) - untuk backward compatibility
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
-    Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
 });
+
+// =============================================
+// PROTECTED ROUTES (Harus login CAS/Auth)
+// =============================================
 
 Route::middleware('auth')->group(function () {
+    
+    // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'totalStatistik'])->name('dashboard');
+    
+    // Credit Page
+    Route::get('/credit', function () {
+        return view('credit');
+    })->name('credit.index');
+
+    // =============================================
+    // Statistik Kunjungan
+    // =============================================
+    Route::prefix('kunjungan')->name('kunjungan.')->group(function () {
+        Route::get('/prodiChart', [VisitHistory::class, 'kunjunganProdiChart'])->name('prodiChart');
+        Route::get('/prodiTable', [VisitHistory::class, 'kunjunganProdiTable'])->name('prodiTable');
+        Route::get('/tanggal', [VisitHistory::class, 'kunjunganTanggalTable'])->name('tanggalTable');
+        Route::get('/fakultas', [VisitHistory::class, 'kunjunganFakultasTable'])->name('fakultasTable');
+        Route::get('/fakultas/export', [VisitHistory::class, 'exportCsvFakultas'])->name('fakultasExport');
+        Route::get('/cek-kehadiran', [VisitHistory::class, 'cekKehadiran'])->name('cekKehadiran');
+        Route::get('/export-kehadiran-full-data', [VisitHistory::class, 'getKehadiranExportData'])->name('get_export_data');
+        Route::get('/export-harian-full-data', [VisitHistory::class, 'getKunjunganHarianExportData'])->name('get_harian_export_data');
+        Route::get('/export-prodi-full-data', [VisitHistory::class, 'getProdiExportData'])->name('get_prodi_export_data');
+        Route::get('/prodi-table/detail-pengunjung', [VisitHistory::class, 'getDetailPengunjung'])->name('get_detail_pengunjung');
+        Route::get('/get_detail_pengunjung_harian', [VisitHistory::class, 'getDetailPengunjungHarian'])->name('get_detail_pengunjung_harian');
+        Route::get('/export-pdf', [VisitHistory::class, 'exportPdf'])->name('export-pdf');
+        Route::get('/get-detail-pengunjung-harian-export', [VisitHistory::class, 'getDetailPengunjungHarianExport'])->name('get_detail_pengunjung_harian_export');
+        Route::get('/get-lokasi-detail', [VisitHistory::class, 'getLokasiDetail'])->name('get_lokasi_detail');
+    });
+
+    // =============================================
+    // Statistik Koleksi
+    // =============================================
+    Route::prefix('koleksi')->name('koleksi.')->group(function () {
+        Route::get('/prosiding', [StatistikKoleksi::class, 'prosiding'])->name('prosiding');
+        Route::get('/jurnal', [StatistikKoleksi::class, 'jurnal'])->name('jurnal');
+        Route::get('/ejurnal', [StatistikKoleksi::class, 'ejurnal'])->name('ejurnal');
+        Route::get('/ebook', [StatistikKoleksi::class, 'ebook'])->name('ebook');
+        Route::get('/textbook', [StatistikKoleksi::class, 'textbook'])->name('textbook');
+        Route::get('/periodikal', [StatistikKoleksi::class, 'periodikal'])->name('periodikal');
+        Route::get('/referensi', [StatistikKoleksi::class, 'referensi'])->name('referensi');
+        Route::get('/prodi', [StatistikKoleksi::class, 'koleksiPerprodi'])->name('prodi');
+        Route::get('/eresource', [StatistikKoleksi::class, 'eresource'])->name('eresource');
+        Route::get('/detail', [StatistikKoleksi::class, 'getDetailKoleksi'])->name('detail');
+        Route::get('/rekap-fakultas', [StatistikKoleksi::class, 'rekapPerFakultas'])->name('rekap_fakultas');
+    });
+
+    // =============================================
+    // Laporan
+    // =============================================
+    Route::get('/laporan/kunjungan-gabungan', [VisitHistory::class, 'laporanKunjunganGabungan'])->name('kunjungan.kunjungan_gabungan');
+
+    // =============================================
+    // Peminjaman
+    // =============================================
+    Route::prefix('peminjaman')->name('peminjaman.')->group(function () {
+        Route::get('/peminjaman-rentang-tanggal', [PeminjamanController::class, 'pertanggal'])->name('peminjaman_rentang_tanggal');
+        Route::get('/export-detail', [PeminjamanController::class, 'exportDetailCsv'])->name('export_detail');
+        Route::get('/peminjaman-prodi-chart', [PeminjamanController::class, 'peminjamanProdiChart'])->name('peminjaman_prodi_chart');
+        Route::get('/export-detail-prodi', [PeminjamanController::class, 'exportDetailProdiCsv'])->name('export_detail_prodi');
+        Route::get('/cek-histori', [PeminjamanController::class, 'checkHistory'])->name('check_history');
+        Route::get('/berlangsung', [PeminjamanController::class, 'peminjamanBerlangsung'])->name('berlangsung');
+        Route::get('/export-berlangsung-full-data', [PeminjamanController::class, 'getBerlangsungExportData'])->name('get_berlangsung_export_data');
+        Route::get('/detail', [PeminjamanController::class, 'getDetailPeminjaman'])->name('get_detail');
+        Route::get('/export-borrowing-full-data', [PeminjamanController::class, 'getBorrowingHistoryExportData'])->name('get_borrowing_export_data');
+        Route::get('/export-return-full-data', [PeminjamanController::class, 'getReturnHistoryExportData'])->name('get_return_export_data');
+        Route::get('/peminjam-detail', [PeminjamanController::class, 'getPeminjamDetail'])->name('peminjamDetail');
+    });
+
+    // =============================================
+    // Statistik Penggunaan
+    // =============================================
+    Route::get('/statistik/keterpakaian-koleksi', [PenggunaanController::class, 'keterpakaianKoleksi'])->name('penggunaan.keterpakaian_koleksi');
+    Route::get('/statistik/keterpakaian-koleksi/detail', [PenggunaanController::class, 'getKeterpakaianDetail'])->name('statistik.keterpakaian_koleksi.detail');
+    Route::get('/cek-histori-buku', [PenggunaanController::class, 'cekBuku'])->name('penggunaan.cek_histori');
+    Route::get('/statistik/sering-dibaca', [PenggunaanController::class, 'seringDibaca'])->name('penggunaan.sering_dibaca');
+
+    // =============================================
+    // Reward
+    // =============================================
+    Route::prefix('reward')->name('reward.')->group(function () {
+        Route::get('/pemustaka-teraktif', [RewardController::class, 'pemustakaTeraktif'])->name('pemustaka_teraktif');
+        Route::get('/pemustaka-teraktif/export-csv', [RewardController::class, 'exportCsvPemustakaTeraktif'])->name('export_csv_pemustaka_teraktif');
+        Route::get('/peminjam-teraktif', [RewardController::class, 'peminjamTeraktif'])->name('peminjam_teraktif');
+        Route::get('/peminjam-teraktif/export-csv', [RewardController::class, 'exportCsvPeminjamTeraktif'])->name('export_csv_peminjam_teraktif');
+    });
+
+    // =============================================
+    // Utilities (Admin only)
+    // =============================================
+    Route::get('/clear-cache', function () {
+        Artisan::call('cache:clear');
+        return redirect()->back()->with('success', 'Cache cleared!');
+    })->name('clear-cache');
 });
 
-Route::get('/credit', function () {
-    return view('credit');
-})->name('credit.index');
-
-Route::get('/test', function () {
-    dd(Auth::check()); // true jika login, false jika tidak
-});
-
-Route::get('/debug-session', function () {
-    dd([
-        'is_logged_in' => Auth::check(),
-        'user_id' => Auth::id(),
-        'session_data' => session()->all()
-    ]);
-});
-
-
-// Route::middleware(['auth', 'verified'])->group(function () {
-//     Route::resources([
-//         'ijazah' => IjazahController::class,
-//         'staff' => StaffController::class,
-//         'transkrip' => TranskripController::class,
-//         'sertifikasi' => SertifikasiController::class,
-//         'skp' => SkpController::class,
-//         'pelatihan' => PelatihanController::class,
-//         'mou' => MouController::class,
-//     ]);
-// });
-
-Route::get('/kunjungan/prodiChart', [VisitHistory::class, 'kunjunganProdiChart'])->name('kunjungan.prodiChart');
-Route::get('/kunjungan/prodiTable', [VisitHistory::class, 'kunjunganProdiTable'])->name('kunjungan.prodiTable');
-Route::get('/kunjungan/tanggal', [VisitHistory::class, 'kunjunganTanggalTable'])->name('kunjungan.tanggalTable');
-Route::get('/kunjungan/fakultas', [VisitHistory::class, 'kunjunganFakultasTable'])->name('kunjungan.fakultasTable');
-// Route untuk Export CSV
-Route::get('/kunjungan/fakultas/export', [VisitHistory::class, 'exportCsvFakultas'])
-    ->name('kunjungan.fakultasExport');
-
-Route::get('/koleksi/prosiding', [StatistikKoleksi::class, 'prosiding'])->name('koleksi.prosiding');
-Route::get('/koleksi/jurnal', [StatistikKoleksi::class, 'jurnal'])->name('koleksi.jurnal');
-Route::get('/koleksi/ejurnal', [StatistikKoleksi::class, 'ejurnal'])->name('koleksi.ejurnal');
-Route::get('/koleksi/ebook', [StatistikKoleksi::class, 'ebook'])->name('koleksi.ebook');
-Route::get('/koleksi/textbook', [StatistikKoleksi::class, 'textbook'])->name('koleksi.textbook');
-Route::get('/koleksi/periodikal', [StatistikKoleksi::class, 'periodikal'])->name('koleksi.periodikal');
-Route::get('/koleksi/referensi', [StatistikKoleksi::class, 'referensi'])->name('koleksi.referensi');
-Route::get('/koleksi/prodi', [StatistikKoleksi::class, 'koleksiPerprodi'])->name('koleksi.prodi');
-Route::get('/koleksi/eresource', [StatistikKoleksi::class, 'eresource'])->name('koleksi.eresource');
-
-
-Route::get('/kunjungan/cek-kehadiran', [VisitHistory::class, 'cekKehadiran'])->name('kunjungan.cekKehadiran');
-
-Route::get('/laporan/kunjungan-gabungan', [VisitHistory::class, 'laporanKunjunganGabungan'])->name('kunjungan.kunjungan_gabungan');
-
-Route::get('/peminjaman/peminjaman-rentang-tanggal', [PeminjamanController::class, 'pertanggal'])->name('peminjaman.peminjaman_rentang_tanggal');
-
-Route::get('/peminjaman/export-detail', [PeminjamanController::class, 'exportDetailCsv'])->name('peminjaman.export_detail');
-
-Route::get('/peminjaman/peminjaman-prodi-chart', [PeminjamanController::class, 'peminjamanProdiChart'])->name('peminjaman.peminjaman_prodi_chart');
-Route::get('/peminjaman/export-detail-prodi', [PeminjamanController::class, 'exportDetailProdiCsv'])->name('peminjaman.export_detail_prodi');
-
-Route::get('/peminjaman/cek-histori', [PeminjamanController::class, 'checkHistory'])->name('peminjaman.check_history');
-
-Route::get('/peminjaman/berlangsung', [PeminjamanController::class, 'peminjamanBerlangsung'])->name('peminjaman.berlangsung');
-
-Route::get('/peminjaman/export-berlangsung-full-data', [PeminjamanController::class, 'getBerlangsungExportData'])->name('peminjaman.get_berlangsung_export_data');
-
-Route::get('/peminjaman/detail', [PeminjamanController::class, 'getDetailPeminjaman'])->name('peminjaman.get_detail');
-
-Route::get('/kunjungan/export-kehadiran-full-data', [VisitHistory::class, 'getKehadiranExportData'])->name('kunjungan.get_export_data');
-Route::get('/kunjungan/export-harian-full-data', [VisitHistory::class, 'getKunjunganHarianExportData'])->name('kunjungan.get_harian_export_data');
-
-Route::get('/kunjungan/export-prodi-full-data', [VisitHistory::class, 'getProdiExportData'])->name('kunjungan.get_prodi_export_data');
-
-Route::get('/peminjaman/export-borrowing-full-data', [PeminjamanController::class, 'getBorrowingHistoryExportData'])->name('peminjaman.get_borrowing_export_data');
-Route::get('/peminjaman/export-return-full-data', [PeminjamanController::class, 'getReturnHistoryExportData'])->name('peminjaman.get_return_export_data');
-
-Route::get('/peminjaman/peminjam-detail', [PeminjamanController::class, 'getPeminjamDetail'])->name('peminjaman.peminjamDetail');
-
-Route::get('/koleksi/detail', [StatistikKoleksi::class, 'getDetailKoleksi'])->name('koleksi.detail');
-
-Route::get('/kunjungan/prodi-table/detail-pengunjung', [VisitHistory::class, 'getDetailPengunjung'])
-    ->name('kunjungan.get_detail_pengunjung');
-
-Route::get('/kunjungan/get_detail_pengunjung_harian', [VisitHistory::class, 'getDetailPengunjungHarian'])->name('kunjungan.get_detail_pengunjung_harian');
-
-Route::get('/kunjungan/export-pdf', [VisitHistory::class, 'exportPdf'])->name('kunjungan.export-pdf');
-
-Route::get('/kunjungan/get-detail-pengunjung-harian-export', [VisitHistory::class, 'getDetailPengunjungHarianExport'])->name('kunjungan.get_detail_pengunjung_harian_export');
-
-Route::get('/statistik/keterpakaian-koleksi', [PenggunaanController::class, 'keterpakaianKoleksi'])->name('penggunaan.keterpakaian_koleksi');
-
-Route::get('/statistik/keterpakaian-koleksi/detail', [PenggunaanController::class, 'getKeterpakaianDetail'])->name('statistik.keterpakaian_koleksi.detail');
-
-Route::get('/kunjungan/get-lokasi-detail', [VisitHistory::class, 'getLokasiDetail'])->name('kunjungan.get_lokasi_detail');
-
-Route::get('/reward/pemustaka-teraktif', [RewardController::class, 'pemustakaTeraktif'])->name('reward.pemustaka_teraktif')->middleware('auth');
-Route::get('/reward/pemustaka-teraktif/export-csv', [RewardController::class, 'exportCsvPemustakaTeraktif'])->name('reward.export_csv_pemustaka_teraktif')->middleware('auth');
-Route::get('/reward/peminjam-teraktif', [RewardController::class, 'peminjamTeraktif'])->name('reward.peminjam_teraktif')->middleware('auth');
-Route::get('/reward/peminjam-teraktif/export-csv', [RewardController::class, 'exportCsvPeminjamTeraktif'])->name('reward.export_csv_peminjam_teraktif')->middleware('auth');
-
-Route::get('/cek-histori-buku', [PenggunaanController::class, 'cekBuku'])->name('penggunaan.cek_histori');
-Route::get('/statistik/sering-dibaca', [PenggunaanController::class, 'seringDibaca'])->name('penggunaan.sering_dibaca')->middleware('auth');
-
-Route::get('/koleksi/rekap-fakultas', [StatistikKoleksi::class, 'rekapPerFakultas'])->name('koleksi.rekap_fakultas');
-
-Route::get('/clear-cache', function () {
-    Artisan::call('cache:clear');
-    dd('clear');
-});

@@ -1,17 +1,16 @@
 
-
 services:
   # 1. Service Aplikasi (PHP-FPM)
   app:
     build:
       context: .
-      dockerfile: .docker/php/Dockerfile.dev
+      dockerfile: .docker/php/Dockerfile.prod
     container_name: akreditasi_app
     restart: unless-stopped
     volumes:
       - .:/var/www/html/datapustaka # Sinkronisasi kode dari lokal ke container
     networks:
-      - laravel
+      - akreditasi-network
 
   # 2. Service Web Server (Nginx)
   web:
@@ -26,12 +25,12 @@ services:
     depends_on:
       - app
     networks:
-      - laravel
+      - akreditasi-network
 
   # 3. Service Database (MySQL)
   db:
     image: mysql:8.0
-    container_name: laravel_db
+    container_name: akreditasi_db
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: ${DB_DATABASE}
@@ -43,30 +42,30 @@ services:
     ports:
       - "33066:3306"
     networks:
-      - laravel
+      - akreditasi-network
 
   # 4. Service Adminer (Database Management)
   adminer:
     image: adminer
-    container_name: laravel_adminer
+    container_name: akreditasi_adminer
     restart: always
     ports:
       - 8080:8080
     networks:
-      - laravel
+      - akreditasi-network
 
   # 5. Service Redis (Cache & Queue)
   redis:
     image: redis:alpine
-    container_name: laravel_redis
+    container_name: akreditasi_redis
     restart: unless-stopped
     ports:
       - "6379:6379"
     networks:
-      - laravel
+      - akreditasi-network
 
 networks:
-  laravel:
+  akreditasi-network:
     driver: bridge
 
 volumes:
