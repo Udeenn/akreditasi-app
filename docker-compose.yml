@@ -7,7 +7,7 @@ services:
       dockerfile: .docker/php/Dockerfile.prod
     container_name: akreditasi_app
     restart: unless-stopped
-    volumes:
+    # volumes:
       # - .:/var/www/html # Sinkronisasi kode dari lokal ke container (Matikan di production jika ingin pakai image build)
     networks:
       - akreditasi-network
