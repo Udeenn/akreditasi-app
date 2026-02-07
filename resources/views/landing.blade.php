@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
@@ -16,265 +16,501 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --bg-primary: #0a0a1a;
+            --bg-secondary: #0f0f2a;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.4);
+            --accent-1: #4A69FF;
+            --accent-2: #5B7AFF;
+            --accent-3: #6D8BFF;
+            --glow-color: rgba(74, 105, 255, 0.4);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f0f4ff;
+            --bg-secondary: #e0e7ff;
+            --bg-card: rgba(255, 255, 255, 0.8);
+            --text-primary: #1e293b;
+            --text-secondary: #4A69FF;
+            --text-muted: #5B7AFF;
+            --glow-color: rgba(74, 105, 255, 0.2);
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
-            color: #fff;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             overflow-x: hidden;
-        }
-
-        .landing-container {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
             position: relative;
         }
 
-        /* Decorative elements */
-        .bg-decoration {
+        /* Animated Background */
+        .bg-animated {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-animated::before {
+            content: '';
             position: absolute;
-            border-radius: 50%;
-            filter: blur(100px);
-            opacity: 0.3;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 80%, var(--accent-1) 0%, transparent 25%),
+                radial-gradient(circle at 80% 20%, var(--accent-2) 0%, transparent 25%),
+                radial-gradient(circle at 40% 40%, var(--accent-3) 0%, transparent 20%);
+            animation: bgFloat 20s ease-in-out infinite;
+            opacity: 0.15;
+        }
+
+        @keyframes bgFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(2%, 2%) rotate(5deg); }
+            66% { transform: translate(-2%, 1%) rotate(-5deg); }
+        }
+
+        /* Floating Particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
             pointer-events: none;
         }
 
-        .bg-decoration-1 {
-            width: 400px;
-            height: 400px;
-            background: #4A69FF;
-            top: -100px;
-            left: -100px;
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--accent-1);
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: float 15s infinite;
         }
 
-        .bg-decoration-2 {
-            width: 300px;
-            height: 300px;
-            background: #7c3aed;
-            bottom: -50px;
-            right: -50px;
+        .particle:nth-child(2) { left: 20%; animation-delay: -2s; background: var(--accent-2); }
+        .particle:nth-child(3) { left: 40%; animation-delay: -4s; background: var(--accent-3); }
+        .particle:nth-child(4) { left: 60%; animation-delay: -6s; }
+        .particle:nth-child(5) { left: 80%; animation-delay: -8s; background: var(--accent-2); }
+        .particle:nth-child(6) { left: 10%; animation-delay: -10s; }
+        .particle:nth-child(7) { left: 30%; animation-delay: -12s; background: var(--accent-3); }
+        .particle:nth-child(8) { left: 50%; animation-delay: -14s; }
+        .particle:nth-child(9) { left: 70%; animation-delay: -3s; background: var(--accent-2); }
+        .particle:nth-child(10) { left: 90%; animation-delay: -7s; }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
         }
 
-        .bg-decoration-3 {
-            width: 200px;
-            height: 200px;
-            background: #06b6d4;
-            top: 50%;
-            right: 30%;
+        /* Main Container */
+        .landing-wrapper {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 2rem 0;
         }
 
-        .welcome-section {
-            padding: 3rem;
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 100;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .logo-container {
-            margin-bottom: 2rem;
+        .theme-toggle:hover {
+            transform: rotate(180deg) scale(1.1);
+            box-shadow: 0 0 30px var(--glow-color);
         }
 
-        .logo-container img {
-            height: 60px;
-            width: auto;
+        .theme-toggle i {
+            font-size: 1.3rem;
+            color: var(--text-primary);
         }
 
-        .welcome-title {
-            font-size: 2.5rem;
+        /* Hero Section */
+        .hero-content {
+            padding: 2rem;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 50px;
+            padding: 0.5rem 1.25rem;
+            font-size: 0.85rem;
+            color: var(--accent-1);
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        [data-theme="light"] .hero-badge {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+        }
+
+        .hero-badge i {
+            font-size: 0.9rem;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
             font-weight: 700;
-            margin-bottom: 1rem;
-            line-height: 1.2;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.8s ease 0.1s both;
         }
 
-        .welcome-title span {
-            background: linear-gradient(90deg, #4A69FF, #7c3aed, #06b6d4);
+        .hero-title .highlight {
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2), var(--accent-3));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
-        .welcome-description {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.7);
+        .hero-description {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
             line-height: 1.8;
-            margin-bottom: 2rem;
-            max-width: 500px;
+            margin-bottom: 2.5rem;
+            max-width: 520px;
+            animation: fadeInUp 0.8s ease 0.2s both;
         }
 
-        .features-list {
-            list-style: none;
-            padding: 0;
-            margin-bottom: 2rem;
-        }
-
-        .features-list li {
+        /* Stats Cards */
+        .stats-row {
             display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.5rem 0;
-            color: rgba(255, 255, 255, 0.8);
+            gap: 1rem;
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.8s ease 0.3s both;
         }
 
-        .features-list li i {
-            color: #4A69FF;
-            font-size: 1rem;
+        .stat-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1rem;
+            padding: 1.25rem 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            flex: 1;
         }
 
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-1);
+            box-shadow: 0 10px 40px var(--glow-color);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Login Card */
         .login-section {
-            padding: 3rem;
+            padding: 2rem;
+            animation: fadeInUp 0.8s ease 0.4s both;
         }
 
         .login-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1.5rem;
+            background: var(--bg-card);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 2rem;
             padding: 3rem;
-            max-width: 400px;
+            max-width: 420px;
             margin: 0 auto;
+            position: relative;
+            overflow: hidden;
         }
 
-        .login-card-title {
-            font-size: 1.5rem;
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-1), var(--accent-2), var(--accent-3));
+        }
+
+        [data-theme="light"] .login-card {
+            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.15);
+        }
+
+        .login-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            border-radius: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 10px 30px var(--glow-color);
+        }
+
+        .login-icon i {
+            font-size: 2rem;
+            color: white;
+        }
+
+        .login-title {
+            font-size: 1.75rem;
             font-weight: 600;
-            margin-bottom: 0.5rem;
             text-align: center;
+            margin-bottom: 0.5rem;
         }
 
-        .login-card-subtitle {
-            color: rgba(255, 255, 255, 0.6);
+        .login-subtitle {
+            color: var(--text-muted);
             text-align: center;
             margin-bottom: 2rem;
             font-size: 0.95rem;
         }
 
-        .btn-cas-login {
+        .btn-login {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.75rem;
             width: 100%;
-            padding: 1rem 1.5rem;
-            background: linear-gradient(135deg, #4A69FF 0%, #7c3aed 100%);
+            padding: 1.1rem 2rem;
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
             border: none;
-            border-radius: 0.75rem;
-            color: #fff;
+            border-radius: 1rem;
+            color: white;
             font-size: 1rem;
             font-weight: 600;
             text-decoration: none;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(74, 105, 255, 0.4);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-cas-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(74, 105, 255, 0.5);
-            color: #fff;
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
         }
 
-        .btn-cas-login i {
+        .btn-login:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px var(--glow-color);
+            color: white;
+        }
+
+        .btn-login:hover::before {
+            left: 100%;
+        }
+
+        .btn-login i {
             font-size: 1.2rem;
         }
 
-        .divider {
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .feature-item {
             display: flex;
             align-items: center;
-            margin: 1.5rem 0;
-            color: rgba(255, 255, 255, 0.4);
-            font-size: 0.85rem;
-        }
-
-        .divider::before,
-        .divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .divider span {
-            padding: 0 1rem;
-        }
-
-        .btn-staff-login {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            width: 100%;
-            padding: 0.875rem 1.5rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 0.75rem;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 0.95rem;
-            font-weight: 500;
-            text-decoration: none;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: var(--bg-card);
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
             transition: all 0.3s ease;
         }
 
-        .btn-staff-login:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.3);
-            color: #fff;
+        .feature-item:hover {
+            border-color: var(--accent-1);
+            transform: translateX(5px);
         }
 
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .feature-icon i {
+            color: var(--accent-1);
+            font-size: 1rem;
+        }
+
+        .feature-text {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Footer */
         .footer-text {
             text-align: center;
             margin-top: 2rem;
-            color: rgba(255, 255, 255, 0.4);
+            color: var(--text-muted);
             font-size: 0.85rem;
         }
 
+        .footer-text a {
+            color: var(--accent-1);
+            text-decoration: none;
+        }
+
+        /* Alert Container */
         .alert-container {
             position: fixed;
-            top: 1rem;
-            right: 1rem;
+            top: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 9999;
             max-width: 400px;
         }
 
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
         @media (max-width: 991px) {
-            .welcome-section {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .hero-content {
                 text-align: center;
             }
-
-            .welcome-description {
+            
+            .hero-description {
                 margin: 0 auto 2rem;
             }
-
-            .features-list {
-                display: inline-block;
-                text-align: left;
+            
+            .stats-row {
+                justify-content: center;
             }
 
-            .welcome-title {
-                font-size: 2rem;
+            .features-grid {
+                max-width: 400px;
+                margin: 2rem auto 0;
             }
         }
 
         @media (max-width: 576px) {
-            .welcome-section,
-            .login-section {
-                padding: 2rem 1.5rem;
+            .hero-title {
+                font-size: 2rem;
             }
-
+            
             .login-card {
                 padding: 2rem 1.5rem;
             }
+            
+            .stats-row {
+                flex-direction: column;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
 
-            .welcome-title {
-                font-size: 1.75rem;
+            .theme-toggle {
+                top: 1rem;
+                right: 1rem;
+                width: 44px;
+                height: 44px;
             }
         }
     </style>
 </head>
 
 <body>
-    <!-- Background decorations -->
-    <div class="bg-decoration bg-decoration-1"></div>
-    <div class="bg-decoration bg-decoration-2"></div>
-    <div class="bg-decoration bg-decoration-3"></div>
+    <!-- Animated Background -->
+    <div class="bg-animated"></div>
+    
+    <!-- Floating Particles -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
 
-    <!-- Alert messages -->
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+        <i class="fas fa-moon" id="theme-icon"></i>
+    </button>
+
+    <!-- Alert Messages -->
     @if (session('error'))
         <div class="alert-container">
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -295,65 +531,88 @@
         </div>
     @endif
 
-    <div class="container landing-container">
+    <!-- Main Content -->
+    <div class="container landing-wrapper">
         <div class="row align-items-center w-100">
-            <!-- Left: Welcome Section -->
-            <div class="col-lg-6 welcome-section">
-                <div class="logo-container">
-                    <img src="{{ asset('img/logo4a.png') }}" alt="UMS Library">
+            <!-- Left: Hero Section -->
+            <div class="col-lg-7 hero-content">
+                <div class="hero-badge">
+                    <i class="fas fa-sparkles"></i>
+                    Perpustakaan UMS
                 </div>
-                <h1 class="welcome-title">
-                    Selamat Datang di<br>
-                    <span>Aplikasi Pendukung Akreditasi Prodi</span>
+                
+                <h1 class="hero-title">
+                    Aplikasi Pendukung<br>
+                    <span class="highlight">Akreditasi Prodi</span>
                 </h1>
-                <p class="welcome-description">
-                    Platform data dan statistik perpustakaan untuk mendukung proses akreditasi 
-                    program studi di Universitas Muhammadiyah Surakarta.
+                
+                <p class="hero-description">
+                    Platform terintegrasi untuk mengakses data statistik perpustakaan yang mendukung 
+                    proses akreditasi program studi di Universitas Muhammadiyah Surakarta.
                 </p>
-                <ul class="features-list">
-                    <li>
-                        <i class="fas fa-chart-line"></i>
-                        Statistik kunjungan dan peminjaman
-                    </li>
-                    <li>
-                        <i class="fas fa-book"></i>
-                        Data koleksi per program studi
-                    </li>
-                    <li>
-                        <i class="fas fa-users"></i>
-                        Laporan aktivitas pemustaka
-                    </li>
-                    <li>
-                        <i class="fas fa-file-export"></i>
-                        Export data untuk akreditasi
-                    </li>
-                </ul>
+
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-number">50+</div>
+                        <div class="stat-label">Prodi</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">100K+</div>
+                        <div class="stat-label">Koleksi</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">Real-time</div>
+                        <div class="stat-label">Data</div>
+                    </div>
+                </div>
+
+                <div class="features-grid">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <span class="feature-text">Statistik Kunjungan</span>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        <span class="feature-text">Data Koleksi</span>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <span class="feature-text">Laporan Pemustaka</span>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-file-export"></i>
+                        </div>
+                        <span class="feature-text">Export Data</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Right: Login Section -->
-            <div class="col-lg-6 login-section">
+            <div class="col-lg-5 login-section">
                 <div class="login-card">
-                    <h2 class="login-card-title">Masuk</h2>
-                    <p class="login-card-subtitle">
-                        Gunakan akun SSO UMS untuk mengakses aplikasi
+                    <div class="login-icon">
+                        <i class="fas fa-fingerprint"></i>
+                    </div>
+                    
+                    <h2 class="login-title">Selamat Datang</h2>
+                    <p class="login-subtitle">
+                        Masuk menggunakan akun SSO UMS Anda
                     </p>
 
-                    <a href="{{ route('cas.login') }}" class="btn-cas-login">
+                    <a href="{{ route('cas.login') }}" class="btn-login">
                         <i class="fas fa-sign-in-alt"></i>
                         Login dengan SSO UMS
                     </a>
 
-                    <div class="divider">
-                        <span>atau</span>
-                    </div>
-
-                    <a href="{{ route('login') }}" class="btn-staff-login">
-                        <i class="fas fa-user-shield"></i>
-                        Login Staff Perpustakaan
-                    </a>
-
                     <p class="footer-text">
-                        &copy; {{ date('Y') }} Perpustakaan UMS
+                        &copy; {{ date('Y') }} <a href="#">Perpustakaan UMS</a>
                     </p>
                 </div>
             </div>
@@ -362,7 +621,33 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Auto-dismiss alerts after 5 seconds
+        // Theme Management
+        function getTheme() {
+            return localStorage.getItem('theme') || 'dark';
+        }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            updateIcon(theme);
+        }
+
+        function updateIcon(theme) {
+            const icon = document.getElementById('theme-icon');
+            icon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+        }
+
+        function toggleTheme() {
+            const newTheme = getTheme() === 'dark' ? 'light' : 'dark';
+            setTheme(newTheme);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setTheme(getTheme());
+        });
+
+        // Auto-dismiss alerts
         setTimeout(() => {
             document.querySelectorAll('.alert').forEach(alert => {
                 new bootstrap.Alert(alert).close();
