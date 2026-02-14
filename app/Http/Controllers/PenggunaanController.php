@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class PenggunaanController extends Controller
 {
@@ -359,52 +360,81 @@ class PenggunaanController extends Controller
                     $end_date = Carbon::createFromDate($tahun, 12, 31)->endOfYear();
                 }
 
-                $baseQuery = DB::connection('mysql2')->table('statistics as s')
-                    ->select(
-                        DB::raw("MAX(CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]'))) AS judul_buku"),
-                        DB::raw("MAX(b.author) as pengarang"),
-                        DB::raw('COUNT(s.itemnumber) as jumlah_penggunaan'),
-                        DB::raw("(SELECT COUNT(*) FROM items WHERE items.biblionumber = b.biblionumber AND items.withdrawn = 0) as jumlah_eksemplar")
-                    )
+                // --- OPTIMIZATION START ---
+                // Pisahkan Logic Export (Heavy) dan View (Light + Hydrate)
+
+                if ($request->query('export')) {
+                    // Logic Lama (Heavy Query) - Hanya dijalankan saat export CSV
+                    $baseQuery = DB::connection('mysql2')->table('statistics as s')
+                        ->select(
+                            DB::raw("MAX(CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]'))) AS judul_buku"),
+                            DB::raw("MAX(b.author) as pengarang"),
+                            DB::raw('COUNT(s.itemnumber) as jumlah_penggunaan'),
+                            DB::raw("(SELECT COUNT(*) FROM items WHERE items.biblionumber = b.biblionumber AND items.withdrawn = 0) as jumlah_eksemplar")
+                        )
+                        ->join('items as i', 's.itemnumber', '=', 'i.itemnumber')
+                        ->join('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
+                        ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
+                        ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
+                        ->whereIn('s.type', ['issue', 'return', 'localuse'])
+                        ->whereBetween('s.datetime', [$start_date, $end_date]);
+
+                    if ($request->query('export') === 'fiksi') {
+                        return $this->exportSeringDibacaCsv(clone $baseQuery, 'fiksi', $tahun, $bulan);
+                    }
+                    if ($request->query('export') === 'nonfiksi') {
+                        return $this->exportSeringDibacaCsv(clone $baseQuery, 'nonfiksi', $tahun, $bulan);
+                    }
+                }
+
+                // --- OPTIMIZED VIEW QUERY (2-Step) ---
+                // Step 1: Hitung Statistik & ID saja (Lightweight)
+                $lightQuery = DB::connection('mysql2')->table('statistics as s')
+                    ->select('i.biblionumber', DB::raw('COUNT(s.itemnumber) as jumlah_penggunaan'))
                     ->join('items as i', 's.itemnumber', '=', 'i.itemnumber')
-                    ->join('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
                     ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
-                    ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
                     ->whereIn('s.type', ['issue', 'return', 'localuse'])
                     ->whereBetween('s.datetime', [$start_date, $end_date]);
 
-                if ($request->query('export') === 'fiksi') {
-                    return $this->exportSeringDibacaCsv(clone $baseQuery, 'fiksi', $tahun, $bulan);
-                }
-                if ($request->query('export') === 'nonfiksi') {
-                    return $this->exportSeringDibacaCsv(clone $baseQuery, 'nonfiksi', $tahun, $bulan);
-                }
+                // Query Fiksi (Cache per page)
+                $fiksiPage = $request->input('fiksi_page', 1);
+                $cacheKeyFiksi = "sering_dibaca:fiksi:{$tahun}:{$bulan}:p{$fiksiPage}";
+                $queryFiksi = Cache::remember($cacheKeyFiksi, 3600, function() use ($lightQuery, $perPage) {
+                     $paginator =  (clone $lightQuery)
+                        ->where(function ($q) {
+                            $q->where('bi.cn_class', 'LIKE', '812%')
+                                ->orWhere('bi.cn_class', 'LIKE', '813%')
+                                ->orWhere('bi.cn_class', 'LIKE', '823%')
+                                ->orWhere('bi.cn_class', 'LIKE', '899%');
+                        })
+                        ->groupBy('i.biblionumber')
+                        ->orderBy('jumlah_penggunaan', 'desc')
+                        ->paginate($perPage, ['*'], 'fiksi_page')
+                        ->onEachSide(1);
+                    
+                    $this->hydrateBookDetails($paginator);
+                    return $paginator;
+                });
 
-                // --- Query 1: Fiksi (Paginasi) ---
-                $queryFiksi = (clone $baseQuery)
-                    ->where(function ($q) {
-                        $q->where('bi.cn_class', 'LIKE', '812%')
-                            ->orWhere('bi.cn_class', 'LIKE', '813%')
-                            ->orWhere('bi.cn_class', 'LIKE', '823%')
-                            ->orWhere('bi.cn_class', 'LIKE', '899%');
-                    })
-                    ->groupBy('i.biblionumber', 'b.biblionumber')
-                    ->orderBy('jumlah_penggunaan', 'desc')
-                    ->paginate($perPage, ['*'], 'fiksi_page')
-                    ->onEachSide(1);
+                // Query Non-Fiksi (Cache per page)
+                $nonFiksiPage = $request->input('nonfiksi_page', 1);
+                $cacheKeyNonFiksi = "sering_dibaca:nonfiksi:{$tahun}:{$bulan}:p{$nonFiksiPage}";
+                $queryNonFiksi = Cache::remember($cacheKeyNonFiksi, 3600, function() use ($lightQuery, $perPage) {
+                    $paginator = (clone $lightQuery)
+                        ->where(function ($q) {
+                            $q->where('bi.cn_class', 'NOT LIKE', '812%')
+                                ->where('bi.cn_class', 'NOT LIKE', '813%')
+                                ->where('bi.cn_class', 'NOT LIKE', '823%')
+                                ->where('bi.cn_class', 'NOT LIKE', '899%');
+                        })
+                        ->groupBy('i.biblionumber')
+                        ->orderBy('jumlah_penggunaan', 'desc')
+                        ->paginate($perPage, ['*'], 'nonfiksi_page')
+                        ->onEachSide(1);
 
-                // --- Query 2: Non-Fiksi (Paginasi) ---
-                $queryNonFiksi = (clone $baseQuery)
-                    ->where(function ($q) {
-                        $q->where('bi.cn_class', 'NOT LIKE', '812%')
-                            ->where('bi.cn_class', 'NOT LIKE', '813%')
-                            ->where('bi.cn_class', 'NOT LIKE', '823%')
-                            ->where('bi.cn_class', 'NOT LIKE', '899%');
-                    })
-                    ->groupBy('i.biblionumber', 'b.biblionumber')
-                    ->orderBy('jumlah_penggunaan', 'desc')
-                    ->paginate($perPage, ['*'], 'nonfiksi_page')
-                    ->onEachSide(1); // Gunakan paginate di sini
+                    $this->hydrateBookDetails($paginator);
+                    return $paginator;
+                });
 
                 $dataFiksi = $queryFiksi->appends($request->except('nonfiksi_page'));
                 $dataNonFiksi = $queryNonFiksi->appends($request->except('fiksi_page'));
@@ -421,6 +451,41 @@ class PenggunaanController extends Controller
             'tahun',
             'bulan'
         ));
+    }
+
+    /**
+     * Helper untuk mengisi detail buku dari ID yang sudah dipaginate.
+     * Menghindari join berat di query utama.
+     */
+    private function hydrateBookDetails($paginator)
+    {
+        if ($paginator->isEmpty()) return;
+
+        $ids = $paginator->getCollection()->pluck('biblionumber')->toArray();
+
+        if (empty($ids)) return;
+
+        // Ambil data detail XML & Eksemplar
+        $details = DB::connection('mysql2')->table('biblio as b')
+            ->select(
+                'b.biblionumber',
+                'b.author as pengarang',
+                DB::raw("CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]')) AS judul_buku"),
+                DB::raw("(SELECT COUNT(*) FROM items WHERE items.biblionumber = b.biblionumber AND items.withdrawn = 0) as jumlah_eksemplar")
+            )
+            ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
+            ->whereIn('b.biblionumber', $ids)
+            ->get()
+            ->keyBy('biblionumber');
+
+        // Map ke koleksi paginator
+        $paginator->getCollection()->transform(function ($item) use ($details) {
+            $detail = $details[$item->biblionumber] ?? null;
+            $item->judul_buku = $detail ? $detail->judul_buku : 'Judul Tidak Diketahui';
+            $item->pengarang = $detail ? $detail->pengarang : '-';
+            $item->jumlah_eksemplar = $detail ? $detail->jumlah_eksemplar : 0;
+            return $item;
+        });
     }
 
     private function exportSeringDibacaCsv($baseQuery, string $kategori, $tahun, $bulan)
@@ -447,7 +512,7 @@ class PenggunaanController extends Controller
             $kategoriTitle = "Non-Fiksi";
         }
 
-        $data = $query->groupBy('i.biblionumber')
+        $data = $query->groupBy('b.biblionumber')
             ->orderBy('jumlah_penggunaan', 'desc')
             ->get();
 

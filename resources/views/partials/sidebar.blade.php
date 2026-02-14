@@ -1,8 +1,15 @@
-<div class="sidebar-header d-flex align-items-center">
-    <a href="{{ route('dashboard') }}" class="d-flex align-items-center text-decoration-none w-100">
-        <i class="fas fa-chart-pie fs-4 me-3 text-primary "></i>
-        {{-- <img src="{{ asset('img/sidebar.png') }}" alt="Logo" class="sidebar-logo" style="max-height: 100px;"> --}}
-        <h5 class="sidebar-title m-0">Library Data</h5>
+<div class="sidebar-header d-flex align-items-center justify-content-start ps-4 py-4">
+    <a href="{{ route('dashboard') }}" class="d-flex align-items-center text-decoration-none gap-3">
+        <div class="icon-box text-primary " style="width: 50px; height: 50px;">
+            {{-- Light Mode Logo (logo4a.png) --}}
+            <img src="{{ asset('img/logo4a.png') }}" alt="Logo" class="img-fluid logo-light" style="max-height: 32px;">
+            {{-- Dark Mode Logo (logo4.png) --}}
+            <img src="{{ asset('img/logo4.png') }}" alt="Logo" class="img-fluid logo-dark" style="max-height: 32px; display: none;">
+        </div>
+        <div class="d-flex flex-column">
+             <h5 class="sidebar-title m-0 fw-bold tracking-tight" style="font-size: 1.15rem; letter-spacing: -0.02em;">Library Data</h5>
+             <small class="text-muted" style="font-size: 0.75rem;">Accreditation Support</small>
+        </div>
     </a>
 </div>
 
@@ -99,12 +106,10 @@
             <li><a class="nav-link {{ request()->routeIs('kunjungan.fakultasTable') ? 'active' : '' }}"
                     href="{{ route('kunjungan.fakultasTable') }}">Per Fakultas</a>
             </li>
-            {{-- <li><a class="nav-link {{ request()->routeIs('kunjungan.tanggalTable') ? 'active' : '' }}"
-                            href="{{ route('kunjungan.tanggalTable') }}">Perpustakaan</a></li> --}}
-            <li><a class="nav-link {{ request()->routeIs('kunjungan.kunjungan_gabungan') ? 'active' : '' }}"
-                    href="{{ route('kunjungan.kunjungan_gabungan') }}">Perpustakaan</a></li>
-            <li><a class="nav-link {{ request()->routeIs('kunjungan.prodiTable') ? 'active' : '' }}"
-                    href="{{ route('kunjungan.prodiTable') }}">Civitas Akademika</a></li>
+            <li><a class="nav-link {{ request()->routeIs('kunjungan.keseluruhan') ? 'active' : '' }}"
+                    href="{{ route('kunjungan.keseluruhan') }}">Perpustakaan</a></li>
+            <li><a class="nav-link {{ request()->routeIs('kunjungan.prodi') ? 'active' : '' }}"
+                    href="{{ route('kunjungan.prodi') }}">Civitas Akademika</a></li>
             <li><a class="nav-link {{ request()->routeIs('kunjungan.cekKehadiran') ? 'active' : '' }}"
                     href="{{ route('kunjungan.cekKehadiran') }}">Cek Kunjungan</a></li>
         </ul>

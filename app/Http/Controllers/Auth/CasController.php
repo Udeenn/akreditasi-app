@@ -56,16 +56,20 @@ class CasController extends Controller
     {
         $casUser = phpCAS::getUser();
         $attributes = phpCAS::getAttributes();
+        // dd($attributes); // DEBUG CAS - Removed
         
-        // Cari atau buat user berdasarkan username CAS
-        $user = User::firstOrCreate(
-            ['username' => $casUser],
-            [
-                'email' => $attributes['mail'] ?? $casUser . '@ums.ac.id',
-                'password' => bcrypt(str()->random(32)),
-                'name' => $attributes['displayName'] ?? $attributes['cn'] ?? $casUser,
-            ]
-        );
+        // Cari atau buat user, dan update data terbaru dari CAS
+        // Cari atau buat user, dan update data terbaru dari CAS
+        $user = User::firstOrNew(['username' => $casUser]);
+        
+        $user->email = $attributes['mail'] ?? $casUser . '@ums.ac.id';
+        $user->name = $attributes['full_name'] ?? $attributes['displayName'] ?? $attributes['cn'] ?? $attributes['description'] ?? $casUser;
+        
+        if (!$user->exists) {
+            $user->password = bcrypt(str()->random(32));
+        }
+        
+        $user->save();
         
         // Login ke Laravel
         Auth::login($user, true);

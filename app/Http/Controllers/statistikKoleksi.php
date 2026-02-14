@@ -338,145 +338,151 @@ class StatistikKoleksi extends Controller
         $rekapDataPerProdi = [];
 
         if ($selectedFaculty) {
-            $targetProdiCodes = array_keys($prodiToFacultyMap, $selectedFaculty);
+            $cacheKey = "rekap_fakultas:" . ($selectedFaculty ?: 'all') . ":" . $tahunTerakhir;
+            
+            $rekapData = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodiToFacultyMap, $selectedFaculty, $prodiCodeToNameMap, $tahunTerakhir) {
+                
+                $targetProdiCodes = array_keys($prodiToFacultyMap, $selectedFaculty);
+                $rekapDataPerProdi = [];
 
-            // ==========================================
-            // OPTIMASI: QUERY AGREGAT (GROUP BY KELAS)
-            // ==========================================
-            // Daripada query per prodi (N+1), kita query global dikelompokkan per CnClass.
-            // Nanti di PHP baru kita distribusikan ke Prodi yg sesuai pakai Helper.
+                // ==========================================
+                // OPTIMASI: QUERY AGREGAT (GROUP BY KELAS)
+                // ==========================================
+                // Daripada query per prodi (N+1), kita query global dikelompokkan per CnClass.
+                // Nanti di PHP baru kita distribusikan ke Prodi yg sesuai pakai Helper.
 
-            // Helper function untuk query dasar
-            $aggregateQuery = function($itypes, $isCcodeR = false, $isBarcodeJE = false, $isNotBarcodeJE = false) use ($tahunTerakhir) {
-                $q = M_items::query()
-                    ->from('items')
-                    ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                    ->join('biblio as b', 'items.biblionumber', '=', 'b.biblionumber')
-                    ->select(
-                        'bi.cn_class',
-                        DB::raw('COUNT(DISTINCT items.biblionumber) as total_judul'),
-                        DB::raw('COUNT(items.itemnumber) as total_eksemplar')
-                    )
-                    ->where('items.itemlost', 0)
-                    ->where('items.withdrawn', 0);
+                // Helper function untuk query dasar
+                $aggregateQuery = function($itypes, $isCcodeR = false, $isBarcodeJE = false, $isNotBarcodeJE = false) use ($tahunTerakhir) {
+                    $q = M_items::query()
+                        ->from('items')
+                        ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
+                        ->join('biblio as b', 'items.biblionumber', '=', 'b.biblionumber')
+                        ->select(
+                            'bi.cn_class',
+                            DB::raw('COUNT(DISTINCT items.biblionumber) as total_judul'),
+                            DB::raw('COUNT(items.itemnumber) as total_eksemplar')
+                        )
+                        ->where('items.itemlost', 0)
+                        ->where('items.withdrawn', 0);
 
-                 if (is_array($itypes)) {
-                     $q->whereIn('items.itype', $itypes);
-                 } else {
-                     $q->where('items.itype', $itypes);
-                 }
-
-                 if ($isCcodeR) {
-                     $q->whereRaw('LEFT(items.ccode, 1) = ?', ['R']);
-                     // Untuk referensi biasanya BKS
-                 } else {
-                      // Textbook exclude R, lainnya bebas
-                      if ($itypes == ['BKS', 'BKSA', 'BKSCA', 'BKSC']) {
-                         $q->whereRaw('LEFT(items.ccode, 1) <> "R"');
-                      }
-                 }
-
-                 if ($isBarcodeJE) {
-                     $q->where('items.barcode', 'like', 'JE%');
-                 }
-                 if ($isNotBarcodeJE) {
-                     $q->where('items.barcode', 'not like', 'JE%');
-                 }
-
-                 // Filter Tahun (Untuk Jurnal biasanya pakai enumchron, tapi untuk keseragaman dan kemudahan
-                 // di mode rekap ini kita pakai publicationyear saja atau enumchron jika perlu spesifik.
-                 // NAMUN, kode asli Jurnal pakai RIGHT(enumchron, 4) >= ?.
-                 // Kode asli Buku tidak ada filter tahun di loop (hanya Jurnal).
-                 // Kita ikuti logic asli: Filter tahun HANYA di Jurnal/E-Jurnal.
-                 if ($tahunTerakhir !== 'all') {
-                     // Cek apakah item type jurnal
-                     if (in_array('JR', (array)$itypes)) {
-                         $q->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
-                         $q->whereRaw('RIGHT(items.enumchron, 4) >= ?', [date('Y') - (int)$tahunTerakhir]);
+                     if (is_array($itypes)) {
+                         $q->whereIn('items.itype', $itypes);
+                     } else {
+                         $q->where('items.itype', $itypes);
                      }
-                     // Buku/Lainnya tidak difilter tahun di kode lama, jadi skip.
-                 }
 
-                 $q->groupBy('bi.cn_class');
-                 return $q->get();
-            };
+                     if ($isCcodeR) {
+                         $q->whereRaw('LEFT(items.ccode, 1) = ?', ['R']);
+                         // Untuk referensi biasanya BKS
+                     } else {
+                          // Textbook exclude R, lainnya bebas
+                          if ($itypes == ['BKS', 'BKSA', 'BKSCA', 'BKSC']) {
+                             $q->whereRaw('LEFT(items.ccode, 1) <> "R"');
+                          }
+                     }
 
-            // 1. Data Jurnal (Not JE)
-            $rawJurnal = $aggregateQuery(['JR', 'JRA', 'JRT'], false, false, true);
-            // 2. Data E-Jurnal (Barcode JE)
-            $rawEjurnal = $aggregateQuery(['JR', 'JRA', 'JRT'], false, true, false);
-            // 3. Data Textbook
-            $rawTextbook = $aggregateQuery(['BKS', 'BKSA', 'BKSCA', 'BKSC'], false, false, false);
-            // 4. Data E-Book
-            $rawEbook = $aggregateQuery('EB');
-            // 5. Data Prosiding
-            $rawProsiding = $aggregateQuery(['PR', 'EPR']);
-            // 6. Data Referensi
-            $rawReferensi = $aggregateQuery(['BKS', 'BKSA', 'BKSCA', 'BKSC'], true);
+                     if ($isBarcodeJE) {
+                         $q->where('items.barcode', 'like', 'JE%');
+                     }
+                     if ($isNotBarcodeJE) {
+                         $q->where('items.barcode', 'not like', 'JE%');
+                     }
 
+                     // Filter Tahun (Untuk Jurnal biasanya pakai enumchron, tapi untuk keseragaman dan kemudahan
+                     // di mode rekap ini kita pakai publicationyear saja atau enumchron jika perlu spesifik.
+                     // NAMUN, kode asli Jurnal pakai RIGHT(enumchron, 4) >= ?.
+                     // Kode asli Buku tidak ada filter tahun di loop (hanya Jurnal).
+                     // Kita ikuti logic asli: Filter tahun HANYA di Jurnal/E-Jurnal.
+                     if ($tahunTerakhir !== 'all') {
+                         // Cek apakah item type jurnal
+                         if (in_array('JR', (array)$itypes)) {
+                             $q->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
+                             $q->whereRaw('RIGHT(items.enumchron, 4) >= ?', [date('Y') - (int)$tahunTerakhir]);
+                         }
+                         // Buku/Lainnya tidak difilter tahun di kode lama, jadi skip.
+                     }
 
-            // ==========================================
-            // MAPPING KE PRODI (VIA PHP)
-            // ==========================================
-            // Iterasi per prodi yg ditargetkan saja
-
-            foreach ($targetProdiCodes as $prodiCode) {
-                $namaProdi = $prodiCodeToNameMap->get($prodiCode, 'Prodi Tidak Dikenal');
-                $counts = [
-                    'Jurnal'    => ['judul' => 0, 'eksemplar' => 0],
-                    'E-Jurnal'  => ['judul' => 0, 'eksemplar' => 0],
-                    'Textbook'  => ['judul' => 0, 'eksemplar' => 0],
-                    'E-Book'    => ['judul' => 0, 'eksemplar' => 0],
-                    'Prosiding' => ['judul' => 0, 'eksemplar' => 0],
-                    'Referensi' => ['judul' => 0, 'eksemplar' => 0],
-                ];
-
-                // Helper khusus untuk match
-                // Kita pakai Closure biar akses $prodiCode
-                $sumCounts = function($rawData) use ($prodiCode) {
-                    $j = 0; $e = 0;
-                    foreach ($rawData as $row) {
-                        if (empty($row->cn_class)) continue;
-                        // Cek validitas via Helper (Expensive but in-memory is faster than DB)
-                        if (CnClassHelperr::isValidCnClass($prodiCode, $row->cn_class)) {
-                            $j += $row->total_judul;
-                            $e += $row->total_eksemplar;
-                        }
-                    }
-                    return ['judul' => $j, 'eksemplar' => $e];
+                     $q->groupBy('bi.cn_class');
+                     return $q->get();
                 };
 
-                // Proses hitung
-                $counts['Jurnal']       = $sumCounts($rawJurnal);
-                $counts['E-Jurnal']     = $sumCounts($rawEjurnal);
-                $counts['Textbook']     = $sumCounts($rawTextbook);
-                $counts['E-Book']       = $sumCounts($rawEbook);
-                $counts['Prosiding']    = $sumCounts($rawProsiding);
-                $counts['Referensi']    = $sumCounts($rawReferensi);
+                // 1. Data Jurnal (Not JE)
+                $rawJurnal = $aggregateQuery(['JR', 'JRA', 'JRT'], false, false, true);
+                // 2. Data E-Jurnal (Barcode JE)
+                $rawEjurnal = $aggregateQuery(['JR', 'JRA', 'JRT'], false, true, false);
+                // 3. Data Textbook
+                $rawTextbook = $aggregateQuery(['BKS', 'BKSA', 'BKSCA', 'BKSC'], false, false, false);
+                // 4. Data E-Book
+                $rawEbook = $aggregateQuery('EB');
+                // 5. Data Prosiding
+                $rawProsiding = $aggregateQuery(['PR', 'EPR']);
+                // 6. Data Referensi
+                $rawReferensi = $aggregateQuery(['BKS', 'BKSA', 'BKSCA', 'BKSC'], true);
 
-                // Filter yang kosong
-                $finalCounts = array_filter($counts, function($val) {
-                    return $val['judul'] > 0 || $val['eksemplar'] > 0;
-                });
 
-                // Sorting
-                if (!empty($finalCounts)) {
-                    $order = [
-                        'Textbook' => 1, 'E-Book' => 2, 'Jurnal' => 3,
-                        'E-Jurnal' => 4, 'Prosiding' => 5, 'Referensi' => 6,
+                // ==========================================
+                // MAPPING KE PRODI (VIA PHP)
+                // ==========================================
+                // Iterasi per prodi yg ditargetkan saja
+
+                foreach ($targetProdiCodes as $prodiCode) {
+                    $namaProdi = $prodiCodeToNameMap->get($prodiCode, 'Prodi Tidak Dikenal');
+                    $counts = [
+                        'Jurnal'    => ['judul' => 0, 'eksemplar' => 0],
+                        'E-Jurnal'  => ['judul' => 0, 'eksemplar' => 0],
+                        'Textbook'  => ['judul' => 0, 'eksemplar' => 0],
+                        'E-Book'    => ['judul' => 0, 'eksemplar' => 0],
+                        'Prosiding' => ['judul' => 0, 'eksemplar' => 0],
+                        'Referensi' => ['judul' => 0, 'eksemplar' => 0],
                     ];
-                    uksort($finalCounts, function ($a, $b) use ($order) {
-                        return ($order[$a] ?? 99) <=> ($order[$b] ?? 99);
+
+                    // Helper khusus untuk match
+                    // Kita pakai Closure biar akses $prodiCode
+                    $sumCounts = function($rawData) use ($prodiCode) {
+                        $j = 0; $e = 0;
+                        foreach ($rawData as $row) {
+                            if (empty($row->cn_class)) continue;
+                            // Cek validitas via Helper (Expensive but in-memory is faster than DB)
+                            if (CnClassHelperr::isValidCnClass($prodiCode, $row->cn_class)) {
+                                $j += $row->total_judul;
+                                $e += $row->total_eksemplar;
+                            }
+                        }
+                        return ['judul' => $j, 'eksemplar' => $e];
+                    };
+
+                    // Proses hitung
+                    $counts['Jurnal']       = $sumCounts($rawJurnal);
+                    $counts['E-Jurnal']     = $sumCounts($rawEjurnal);
+                    $counts['Textbook']     = $sumCounts($rawTextbook);
+                    $counts['E-Book']       = $sumCounts($rawEbook);
+                    $counts['Prosiding']    = $sumCounts($rawProsiding);
+                    $counts['Referensi']    = $sumCounts($rawReferensi);
+
+                    // Filter yang kosong
+                    $finalCounts = array_filter($counts, function($val) {
+                        return $val['judul'] > 0 || $val['eksemplar'] > 0;
                     });
 
-                    $rekapDataPerProdi[] = [
-                        'prodi_code' => $prodiCode,
-                        'nama_prodi' => $namaProdi,
-                        'counts'     => $finalCounts
-                    ];
+                    // Sorting
+                    if (!empty($finalCounts)) {
+                        $order = [
+                            'Textbook' => 1, 'E-Book' => 2, 'Jurnal' => 3,
+                            'E-Jurnal' => 4, 'Prosiding' => 5, 'Referensi' => 6,
+                        ];
+                        uksort($finalCounts, function ($a, $b) use ($order) {
+                            return ($order[$a] ?? 99) <=> ($order[$b] ?? 99);
+                        });
+
+                        $rekapDataPerProdi[] = [
+                            'prodi_code' => $prodiCode,
+                            'nama_prodi' => $namaProdi,
+                            'counts'     => $finalCounts
+                        ];
+                    }
                 }
-            }
-            $rekapData = collect($rekapDataPerProdi)->sortBy('nama_prodi')->values();
+                return collect($rekapDataPerProdi)->sortBy('nama_prodi')->values();
+            }); // Cache Remember End
         }
 
         return view('pages.dapus.rekap_fakultas', compact('faculties', 'selectedFaculty', 'rekapData'));
@@ -509,8 +515,10 @@ class StatistikKoleksi extends Controller
             $prodiMapping = $listprodi->pluck('lib', 'authorised_value')->toArray();
             $namaProdi = $prodiMapping[$prodi] ?? 'Tidak Ditemukan';
 
-            $query = M_items::selectRaw(
-                "
+            $cacheKey = "stats_prosiding:{$prodi}:{$tahunTerakhir}";
+            $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
+                $query = M_items::selectRaw(
+                    "
                 bi.cn_class as Kelas,
                 EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"a\"]') as Judul_a,
                 EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]') as Judul_b,
@@ -548,65 +556,76 @@ class StatistikKoleksi extends Controller
                 WHEN items.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
                 ELSE items.homebranch
                 END AS Lokasi"
-            )
-                ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
-                ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
-                ->where('items.itemlost', 0)
-                ->where('items.withdrawn', 0)
-                ->whereIn('items.itype', ['EPR', 'PR']);
+                )
+                    ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
+                    ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
+                    ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
+                    ->where('items.itemlost', 0)
+                    ->where('items.withdrawn', 0)
+                    ->whereIn('items.itype', ['EPR', 'PR']);
 
-            if ($prodi !== 'all') {
-                $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                QueryHelper::applyCnClassRules($query, $cnClasses);
-            }
-
-            if ($tahunTerakhir !== 'all') {
-                $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
-            }
-
-            $query->orderBy('TahunTerbit', 'desc');
-            $query->groupBy('Judul_a', 'Judul_b', 'Judul_c', 'Pengarang', 'Nomor',  'TahunTerbit', 'Lokasi', 'Link_Prosiding', 'Kelas');
-
-            $processedData = $query->get()->map(function ($row) {
-                $fullJudul = $row->Judul_a;
-                if (!empty($row->Judul_b)) {
-                    $fullJudul .= ' : ' . $row->Judul_b;
+                if ($prodi !== 'all') {
+                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
+                    QueryHelper::applyCnClassRules($query, $cnClasses);
                 }
-                if (!empty($row->Judul_c)) {
-                    $fullJudul .= ' / ' . $row->Judul_c;
-                }
-                $row->Judul = $fullJudul;
 
-                $row->Judul = html_entity_decode($row->Judul, ENT_QUOTES, 'UTF-8');
-                $row->Penerbit = html_entity_decode($row->Penerbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                $row->Pengarang = html_entity_decode($row->Pengarang, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                return $row;
+                if ($tahunTerakhir !== 'all') {
+                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
+                }
+
+                $query->orderBy('TahunTerbit', 'desc');
+                $query->groupBy('Judul_a', 'Judul_b', 'Judul_c', 'Pengarang', 'Nomor',  'TahunTerbit', 'Lokasi', 'Link_Prosiding', 'Kelas');
+
+                $processedData = $query->get()->map(function ($row) {
+                    $fullJudul = $row->Judul_a;
+                    if (!empty($row->Judul_b)) {
+                        $fullJudul .= ' : ' . $row->Judul_b;
+                    }
+                    if (!empty($row->Judul_c)) {
+                        $fullJudul .= ' / ' . $row->Judul_c;
+                    }
+                    $row->Judul = $fullJudul;
+
+                    $row->Judul = html_entity_decode($row->Judul, ENT_QUOTES, 'UTF-8');
+                    $row->Penerbit = html_entity_decode($row->Penerbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    $row->Pengarang = html_entity_decode($row->Pengarang, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    return $row;
+                });
+
+                $totalQuery = M_items::selectRaw("
+                    COUNT(DISTINCT b.biblionumber) as total_judul,
+                    COUNT(items.itemnumber) as total_eksemplar
+                ")
+                    ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
+                    ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
+                    ->where('items.itemlost', 0)
+                    ->where('items.withdrawn', 0)
+                    ->whereIn('items.itype', ['EPR', 'PR']);
+
+                if ($prodi !== 'all') {
+                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
+                    // Terapkan aturan yang sama ke query total
+                    QueryHelper::applyCnClassRules($totalQuery, $cnClasses);
+                }
+
+                if ($tahunTerakhir !== 'all') {
+                    $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
+                }
+
+                $totals = $totalQuery->first();
+                $totalJudul = $totals->total_judul ?? 0;
+                $totalEksemplar = $totals->total_eksemplar ?? 0;
+
+                return [
+                    'processedData' => $processedData,
+                    'totalJudul' => $totalJudul,
+                    'totalEksemplar' => $totalEksemplar
+                ];
             });
 
-            $totalQuery = M_items::selectRaw("
-                COUNT(DISTINCT b.biblionumber) as total_judul,
-                COUNT(items.itemnumber) as total_eksemplar
-            ")
-                ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
-                ->where('items.itemlost', 0)
-                ->where('items.withdrawn', 0)
-                ->whereIn('items.itype', ['EPR', 'PR']);
-
-            if ($prodi !== 'all') {
-                $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                // Terapkan aturan yang sama ke query total
-                QueryHelper::applyCnClassRules($totalQuery, $cnClasses);
-            }
-
-            if ($tahunTerakhir !== 'all') {
-                $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
-            }
-
-            $totals = $totalQuery->first();
-            $totalJudul = $totals->total_judul ?? 0;
-            $totalEksemplar = $totals->total_eksemplar ?? 0;
+            $processedData = $cachedResult['processedData'];
+            $totalJudul = $cachedResult['totalJudul'];
+            $totalEksemplar = $cachedResult['totalEksemplar'];
 
             if ($request->has('export_csv')) {
                 return $this->exportCsvProsiding($processedData, $namaProdi, $tahunTerakhir);
@@ -650,73 +669,89 @@ class StatistikKoleksi extends Controller
             $prodiMapping = $listprodi->pluck('lib', 'authorised_value')->toArray();
             $namaProdi = $prodiMapping[$prodi] ?? 'Tidak Ditemukan';
 
-            $query = M_items::query()
-                ->from('items') // Hapus alias 'as i'
-                ->select(
-                    'bi.cn_class AS Kelas',
-                    DB::raw("GROUP_CONCAT(items.barcode ORDER BY items.barcode ASC SEPARATOR ', ') as Barcode"),
-                    DB::raw("CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]')) AS Judul"),
-                    'bi.publishercode AS Penerbit',
-                    'items.enumchron AS Nomor',
-                    'av.lib AS Jenis_Koleksi',
-                    'it.description AS Jenis_Item_Tipe',
-                    DB::raw('COUNT(DISTINCT items.enumchron) AS Issue'),
-                    DB::raw('COUNT(*) AS Eksemplar'),
-                    DB::raw("CASE
-                    WHEN items.homebranch = 'PUSAT' THEN 'Perpustakaan Pusat'
-                    WHEN items.homebranch = 'GIZI' THEN 'Perpustakaan Gizi'
-                    WHEN items.homebranch = 'FKG' THEN 'Perpustakaan Kedokteran Gigi'
-                    WHEN items.homebranch = 'PSIKO' THEN 'Perpustakaan Psikologi'
-                    WHEN items.homebranch = 'INF' THEN 'Perpustakaan Informatika'
-                    WHEN items.homebranch = 'FIK' THEN 'Perpustakaan FIK'
-                    WHEN items.homebranch = 'MATH' THEN 'Perpustakaan Matematika FKIP'
-                    WHEN items.homebranch = 'LIPK' THEN 'LIPK'
-                    WHEN items.homebranch = 'TILIB' THEN 'Perpustakaan Teknik Industri'
-                    WHEN items.homebranch = 'MAPRO' THEN 'Perpustakaan Magister Psikologi'
-                    WHEN items.homebranch = 'MEDLIB' THEN 'Perpustakaan Kedokteran'
-                    WHEN items.homebranch = 'PAUD' THEN 'Perpustakaan PAUD'
-                    WHEN items.homebranch = 'POG' THEN 'Perpustakaan Pendidikan Olahraga'
-                    WHEN items.homebranch = 'PESMA' THEN 'Perpustakaan Pesma Haji Mas Mansyur'
-                    WHEN items.homebranch = 'PGSDKRA' THEN 'Perpustakaan PGSD'
-                    WHEN items.homebranch = 'PASCA' THEN 'Perpustakaan Pasca Sarjana'
-                    WHEN items.homebranch = 'RSGM' THEN 'Perpustakaan Rumah Sakit Gigi dan Mulut'
-                    WHEN items.homebranch = 'PSI' THEN 'Perpustakaan Pusat Studi Psikologi Islam'
-                    WHEN items.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
-                    ELSE items.homebranch
-                END AS Lokasi"),
-                    DB::raw("MAX(COALESCE(NULLIF(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"u\"]'), ''), NULLIF(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"a\"]'), ''))) as Link_Jurnal")
-                )
-                ->join('biblio as b', 'b.biblionumber', '=', 'items.biblionumber')
-                ->join('biblioitems as bi', 'bi.biblionumber', '=', 'items.biblionumber')
-                ->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'items.biblionumber')
-                ->leftJoin('itemtypes as it', 'it.itemtype', '=', 'items.itype')
-                ->leftJoin('authorised_values as av', function ($join) {
-                    $join->on('av.authorised_value', '=', 'items.ccode')
-                        ->where('av.category', '=', 'CCODE');
-                })
-                ->where('items.itemlost', 0)
-                ->where('items.withdrawn', 0)
-                ->whereIn('items.itype', ['JR', 'JRA', 'JRT'])
-                ->where('items.barcode', 'not like', 'JE%')
-                ->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
+            $cacheKey = "stats_jurnal:{$prodi}:{$tahunTerakhir}";
+            $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
+                $query = M_items::query()
+                    ->from('items') // Hapus alias 'as i'
+                    ->select(
+                        'bi.cn_class AS Kelas',
+                        DB::raw("GROUP_CONCAT(items.barcode ORDER BY items.barcode ASC SEPARATOR ', ') as Barcode"),
+                        DB::raw("CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]')) AS Judul"),
+                        'bi.publishercode AS Penerbit',
+                        'items.enumchron AS Nomor',
+                        'av.lib AS Jenis_Koleksi',
+                        'it.description AS Jenis_Item_Tipe',
+                        DB::raw('COUNT(DISTINCT items.enumchron) AS Issue'),
+                        DB::raw('COUNT(*) AS Eksemplar'),
+                        DB::raw("CASE
+                        WHEN items.homebranch = 'PUSAT' THEN 'Perpustakaan Pusat'
+                        WHEN items.homebranch = 'GIZI' THEN 'Perpustakaan Gizi'
+                        WHEN items.homebranch = 'FKG' THEN 'Perpustakaan Kedokteran Gigi'
+                        WHEN items.homebranch = 'PSIKO' THEN 'Perpustakaan Psikologi'
+                        WHEN items.homebranch = 'INF' THEN 'Perpustakaan Informatika'
+                        WHEN items.homebranch = 'FIK' THEN 'Perpustakaan FIK'
+                        WHEN items.homebranch = 'MATH' THEN 'Perpustakaan Matematika FKIP'
+                        WHEN items.homebranch = 'LIPK' THEN 'LIPK'
+                        WHEN items.homebranch = 'TILIB' THEN 'Perpustakaan Teknik Industri'
+                        WHEN items.homebranch = 'MAPRO' THEN 'Perpustakaan Magister Psikologi'
+                        WHEN items.homebranch = 'MEDLIB' THEN 'Perpustakaan Kedokteran'
+                        WHEN items.homebranch = 'PAUD' THEN 'Perpustakaan PAUD'
+                        WHEN items.homebranch = 'POG' THEN 'Perpustakaan Pendidikan Olahraga'
+                        WHEN items.homebranch = 'PESMA' THEN 'Perpustakaan Pesma Haji Mas Mansyur'
+                        WHEN items.homebranch = 'PGSDKRA' THEN 'Perpustakaan PGSD'
+                        WHEN items.homebranch = 'PASCA' THEN 'Perpustakaan Pasca Sarjana'
+                        WHEN items.homebranch = 'RSGM' THEN 'Perpustakaan Rumah Sakit Gigi dan Mulut'
+                        WHEN items.homebranch = 'PSI' THEN 'Perpustakaan Pusat Studi Psikologi Islam'
+                        WHEN items.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
+                        ELSE items.homebranch
+                    END AS Lokasi"),
+                        DB::raw("MAX(COALESCE(NULLIF(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"u\"]'), ''), NULLIF(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"a\"]'), ''))) as Link_Jurnal")
+                    )
+                    ->join('biblio as b', 'b.biblionumber', '=', 'items.biblionumber')
+                    ->join('biblioitems as bi', 'bi.biblionumber', '=', 'items.biblionumber')
+                    ->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'items.biblionumber')
+                    ->leftJoin('itemtypes as it', 'it.itemtype', '=', 'items.itype')
+                    ->leftJoin('authorised_values as av', function ($join) {
+                        $join->on('av.authorised_value', '=', 'items.ccode')
+                            ->where('av.category', '=', 'CCODE');
+                    })
+                    ->where('items.itemlost', 0)
+                    ->where('items.withdrawn', 0)
+                    ->whereIn('items.itype', ['JR', 'JRA', 'JRT'])
+                    ->where('items.barcode', 'not like', 'JE%')
+                    ->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
 
-            if ($prodi !== 'all') {
-                $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                QueryHelper::applyCnClassRules($query, $cnClasses);
-            }
+                if ($prodi !== 'all') {
+                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
+                    QueryHelper::applyCnClassRules($query, $cnClasses);
+                }
 
-            if ($tahunTerakhir !== 'all') {
-                $query->whereRaw('RIGHT(items.enumchron, 4) >= ?', [date('Y') - (int)$tahunTerakhir]);
-            }
+                if ($tahunTerakhir !== 'all') {
+                    $query->whereRaw('RIGHT(items.enumchron, 4) >= ?', [date('Y') - (int)$tahunTerakhir]);
+                }
 
-            $query->groupBy('Judul', 'Kelas', 'bi.publishercode', 'Jenis_Koleksi', 'Jenis_Item_Tipe', 'Nomor', 'av.lib', 'it.description', 'items.homebranch');
-            $query->orderBy('Judul', 'asc');
+                $query->groupBy('Judul', 'Kelas', 'bi.publishercode', 'Jenis_Koleksi', 'Jenis_Item_Tipe', 'Nomor', 'av.lib', 'it.description', 'items.homebranch');
+                $query->orderBy('Judul', 'asc');
 
-            $processedData = $query->get();
-            if ($processedData->isNotEmpty()) {
-                $totalJudul = $processedData->count();
-                $totalEksemplar = $processedData->sum('Eksemplar');
-            }
+                $processedData = $query->get();
+                $totalJudul = 0;
+                $totalEksemplar = 0;
+
+                if ($processedData->isNotEmpty()) {
+                    $totalJudul = $processedData->count();
+                    $totalEksemplar = $processedData->sum('Eksemplar');
+                }
+
+                return [
+                    'processedData' => $processedData,
+                    'totalJudul' => $totalJudul,
+                    'totalEksemplar' => $totalEksemplar
+                ];
+            });
+
+            $processedData = $cachedResult['processedData'];
+            $totalJudul = $cachedResult['totalJudul'];
+            $totalEksemplar = $cachedResult['totalEksemplar'];
 
             if ($request->has('export_csv')) {
                 return $this->exportCsvJurnal($processedData, $namaProdi, $tahunTerakhir);
@@ -754,73 +789,89 @@ class StatistikKoleksi extends Controller
             $prodiMapping = $listprodi->pluck('lib', 'authorised_value')->toArray();
             $namaProdi = $prodiMapping[$prodi] ?? 'Tidak Ditemukan';
 
-            $query = M_items::query()
-                ->from('items') // Hapus alias 'as i'
-                ->select(
-                    'bi.cn_class AS Kelas',
-                    DB::raw("GROUP_CONCAT(items.barcode ORDER BY items.barcode ASC SEPARATOR ', ') as Barcode"),
-                    DB::raw("CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]')) AS Judul"),
-                    'bi.publishercode AS Penerbit',
-                    'items.enumchron AS Nomor',
-                    'av.lib AS Jenis_Koleksi',
-                    'it.description AS Jenis_Item_Tipe',
-                    DB::raw('COUNT(DISTINCT items.enumchron) AS Issue'),
-                    DB::raw('COUNT(*) AS Eksemplar'),
-                    DB::raw("CASE
-                    WHEN items.homebranch = 'PUSAT' THEN 'Perpustakaan Pusat'
-                    WHEN items.homebranch = 'GIZI' THEN 'Perpustakaan Gizi'
-                    WHEN items.homebranch = 'FKG' THEN 'Perpustakaan Kedokteran Gigi'
-                    WHEN items.homebranch = 'PSIKO' THEN 'Perpustakaan Psikologi'
-                    WHEN items.homebranch = 'INF' THEN 'Perpustakaan Informatika'
-                    WHEN items.homebranch = 'FIK' THEN 'Perpustakaan FIK'
-                    WHEN items.homebranch = 'MATH' THEN 'Perpustakaan Matematika FKIP'
-                    WHEN items.homebranch = 'LIPK' THEN 'LIPK'
-                    WHEN items.homebranch = 'TILIB' THEN 'Perpustakaan Teknik Industri'
-                    WHEN items.homebranch = 'MAPRO' THEN 'Perpustakaan Magister Psikologi'
-                    WHEN items.homebranch = 'MEDLIB' THEN 'Perpustakaan Kedokteran'
-                    WHEN items.homebranch = 'PAUD' THEN 'Perpustakaan PAUD'
-                    WHEN items.homebranch = 'POG' THEN 'Perpustakaan Pendidikan Olahraga'
-                    WHEN items.homebranch = 'PESMA' THEN 'Perpustakaan Pesma Haji Mas Mansyur'
-                    WHEN items.homebranch = 'PGSDKRA' THEN 'Perpustakaan PGSD'
-                    WHEN items.homebranch = 'PASCA' THEN 'Perpustakaan Pasca Sarjana'
-                    WHEN items.homebranch = 'RSGM' THEN 'Perpustakaan Rumah Sakit Gigi dan Mulut'
-                    WHEN items.homebranch = 'PSI' THEN 'Perpustakaan Pusat Studi Psikologi Islam'
-                    WHEN items.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
-                    ELSE items.homebranch
-                END AS Lokasi"),
-                    DB::raw("MAX(COALESCE(NULLIF(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"u\"]'), ''), NULLIF(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"a\"]'), ''))) as Link_Ejurnal")
-                )
-                ->join('biblio as b', 'b.biblionumber', '=', 'items.biblionumber')
-                ->join('biblioitems as bi', 'bi.biblionumber', '=', 'items.biblionumber')
-                ->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'items.biblionumber')
-                ->leftJoin('itemtypes as it', 'it.itemtype', '=', 'items.itype')
-                ->leftJoin('authorised_values as av', function ($join) {
-                    $join->on('av.authorised_value', '=', 'items.ccode')
-                        ->where('av.category', '=', 'CCODE');
-                })
-                ->where('items.itemlost', 0)
-                ->where('items.withdrawn', 0)
-                ->whereIn('items.itype', ['JR', 'JRA', 'JRT'])
-                ->where('items.barcode', 'like', 'JE%') // Filter E-Jurnal (JE)
-                ->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
+            $cacheKey = "stats_ejurnal:{$prodi}:{$tahunTerakhir}";
+            $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
+                $query = M_items::query()
+                    ->from('items') // Hapus alias 'as i'
+                    ->select(
+                        'bi.cn_class AS Kelas',
+                        DB::raw("GROUP_CONCAT(items.barcode ORDER BY items.barcode ASC SEPARATOR ', ') as Barcode"),
+                        DB::raw("CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]')) AS Judul"),
+                        'bi.publishercode AS Penerbit',
+                        'items.enumchron AS Nomor',
+                        'av.lib AS Jenis_Koleksi',
+                        'it.description AS Jenis_Item_Tipe',
+                        DB::raw('COUNT(DISTINCT items.enumchron) AS Issue'),
+                        DB::raw('COUNT(*) AS Eksemplar'),
+                        DB::raw("CASE
+                        WHEN items.homebranch = 'PUSAT' THEN 'Perpustakaan Pusat'
+                        WHEN items.homebranch = 'GIZI' THEN 'Perpustakaan Gizi'
+                        WHEN items.homebranch = 'FKG' THEN 'Perpustakaan Kedokteran Gigi'
+                        WHEN items.homebranch = 'PSIKO' THEN 'Perpustakaan Psikologi'
+                        WHEN items.homebranch = 'INF' THEN 'Perpustakaan Informatika'
+                        WHEN items.homebranch = 'FIK' THEN 'Perpustakaan FIK'
+                        WHEN items.homebranch = 'MATH' THEN 'Perpustakaan Matematika FKIP'
+                        WHEN items.homebranch = 'LIPK' THEN 'LIPK'
+                        WHEN items.homebranch = 'TILIB' THEN 'Perpustakaan Teknik Industri'
+                        WHEN items.homebranch = 'MAPRO' THEN 'Perpustakaan Magister Psikologi'
+                        WHEN items.homebranch = 'MEDLIB' THEN 'Perpustakaan Kedokteran'
+                        WHEN items.homebranch = 'PAUD' THEN 'Perpustakaan PAUD'
+                        WHEN items.homebranch = 'POG' THEN 'Perpustakaan Pendidikan Olahraga'
+                        WHEN items.homebranch = 'PESMA' THEN 'Perpustakaan Pesma Haji Mas Mansyur'
+                        WHEN items.homebranch = 'PGSDKRA' THEN 'Perpustakaan PGSD'
+                        WHEN items.homebranch = 'PASCA' THEN 'Perpustakaan Pasca Sarjana'
+                        WHEN items.homebranch = 'RSGM' THEN 'Perpustakaan Rumah Sakit Gigi dan Mulut'
+                        WHEN items.homebranch = 'PSI' THEN 'Perpustakaan Pusat Studi Psikologi Islam'
+                        WHEN items.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
+                        ELSE items.homebranch
+                    END AS Lokasi"),
+                        DB::raw("MAX(COALESCE(NULLIF(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"u\"]'), ''), NULLIF(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"a\"]'), ''))) as Link_Ejurnal")
+                    )
+                    ->join('biblio as b', 'b.biblionumber', '=', 'items.biblionumber')
+                    ->join('biblioitems as bi', 'bi.biblionumber', '=', 'items.biblionumber')
+                    ->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'items.biblionumber')
+                    ->leftJoin('itemtypes as it', 'it.itemtype', '=', 'items.itype')
+                    ->leftJoin('authorised_values as av', function ($join) {
+                        $join->on('av.authorised_value', '=', 'items.ccode')
+                            ->where('av.category', '=', 'CCODE');
+                    })
+                    ->where('items.itemlost', 0)
+                    ->where('items.withdrawn', 0)
+                    ->whereIn('items.itype', ['JR', 'JRA', 'JRT'])
+                    ->where('items.barcode', 'like', 'JE%') // Filter E-Jurnal (JE)
+                    ->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
 
-            if ($prodi !== 'all') {
-                $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                QueryHelper::applyCnClassRules($query, $cnClasses);
-            }
+                if ($prodi !== 'all') {
+                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
+                    QueryHelper::applyCnClassRules($query, $cnClasses);
+                }
 
-            if ($tahunTerakhir !== 'all') {
-                $query->whereRaw('RIGHT(items.enumchron, 4) >= ?', [date('Y') - (int)$tahunTerakhir]);
-            }
+                if ($tahunTerakhir !== 'all') {
+                    $query->whereRaw('RIGHT(items.enumchron, 4) >= ?', [date('Y') - (int)$tahunTerakhir]);
+                }
 
-            $query->groupBy('Judul', 'Kelas', 'bi.publishercode', 'Jenis_Koleksi', 'Jenis_Item_Tipe', 'Nomor', 'av.lib', 'it.description', 'items.homebranch');
-            $query->orderBy('Judul', 'asc');
+                $query->groupBy('Judul', 'Kelas', 'bi.publishercode', 'Jenis_Koleksi', 'Jenis_Item_Tipe', 'Nomor', 'av.lib', 'it.description', 'items.homebranch');
+                $query->orderBy('Judul', 'asc');
 
-            $processedData = $query->get();
-            if ($processedData->isNotEmpty()) {
-                $totalJudul = $processedData->count();
-                $totalEksemplar = $processedData->sum('Eksemplar');
-            }
+                $processedData = $query->get();
+                $totalJudul = 0;
+                $totalEksemplar = 0;
+
+                if ($processedData->isNotEmpty()) {
+                    $totalJudul = $processedData->count();
+                    $totalEksemplar = $processedData->sum('Eksemplar');
+                }
+
+                return [
+                    'processedData' => $processedData,
+                    'totalJudul' => $totalJudul,
+                    'totalEksemplar' => $totalEksemplar
+                ];
+            });
+
+            $processedData = $cachedResult['processedData'];
+            $totalJudul = $cachedResult['totalJudul'];
+            $totalEksemplar = $cachedResult['totalEksemplar'];
 
             if ($request->has('export_csv')) {
                 return $this->exportCsvEjurnal($processedData, $namaProdi, $tahunTerakhir);
@@ -859,77 +910,90 @@ class StatistikKoleksi extends Controller
             $prodiMapping = $listprodi->pluck('lib', 'authorised_value')->toArray();
             $namaProdi = $prodiMapping[$prodi] ?? 'Tidak Ditemukan';
 
-            $query = M_items::selectRaw("
-                EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"a\"]') as Judul_a,
-                EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]') as Judul_b,
-                b.author as Pengarang,
-                bi.place AS Kota_Terbit,
-                MAX(bi.publishercode) AS Penerbit_Raw,
-                MAX(bi.place) AS Place_Raw,
-                MAX(CONCAT(COALESCE(bi.publishercode,''), ' ', COALESCE(bi.place,''))) AS Penerbit,
-                bi.publicationyear AS Tahun_Terbit,
-                COUNT(items.itemnumber) AS Eksemplar,
-                IF(
-                EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"a\"]') <> '',
-                EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"a\"]'),
-                EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"u\"]')
-            ) AS Link_Ebook,
-                MAX(items.biblionumber) as biblionumber
-            ")
-                ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
-                ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
-                ->where('items.itemlost', 0)
-                ->where('items.withdrawn', 0)
-                ->where('items.itype', 'EB');
+            $cacheKey = "stats_ebook:{$prodi}:{$tahunTerakhir}";
+            $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
+                $query = M_items::selectRaw("
+                    EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"a\"]') as Judul_a,
+                    EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]') as Judul_b,
+                    b.author as Pengarang,
+                    bi.place AS Kota_Terbit,
+                    MAX(bi.publishercode) AS Penerbit_Raw,
+                    MAX(bi.place) AS Place_Raw,
+                    MAX(CONCAT(COALESCE(bi.publishercode,''), ' ', COALESCE(bi.place,''))) AS Penerbit,
+                    bi.publicationyear AS Tahun_Terbit,
+                    COUNT(items.itemnumber) AS Eksemplar,
+                    IF(
+                    EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"a\"]') <> '',
+                    EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"a\"]'),
+                    EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"u\"]')
+                ) AS Link_Ebook,
+                    MAX(items.biblionumber) as biblionumber
+                ")
+                    ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
+                    ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
+                    ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
+                    ->where('items.itemlost', 0)
+                    ->where('items.withdrawn', 0)
+                    ->where('items.itype', 'EB');
 
-            if ($prodi !== 'all') {
-                $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                QueryHelper::applyCnClassRules($query, $cnClasses);
-            }
-
-            if ($tahunTerakhir !== 'all') {
-                $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
-            }
-
-            $query->orderBy('Tahun_Terbit', 'desc')->orderBy('Judul_a', 'asc');
-            $query->groupBy('Judul_a', 'Judul_b', 'Pengarang', 'Kota_Terbit', 'Tahun_Terbit', 'Link_Ebook');
-
-            $processedData = $query->get()->map(function ($row) {
-                $fullJudul = $row->Judul_a;
-                if (!empty($row->Judul_b)) {
-                    $fullJudul .= ' ' . $row->Judul_b;
+                if ($prodi !== 'all') {
+                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
+                    QueryHelper::applyCnClassRules($query, $cnClasses);
                 }
-                $row->Judul = html_entity_decode($fullJudul, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                $row->Pengarang = html_entity_decode($row->Pengarang, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                $row->Penerbit = html_entity_decode($row->Penerbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                $row->Kota_Terbit = html_entity_decode($row->Kota_Terbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                return $row;
+
+                if ($tahunTerakhir !== 'all') {
+                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                }
+
+                $query->orderBy('Tahun_Terbit', 'desc')->orderBy('Judul_a', 'asc');
+                $query->groupBy('Judul_a', 'Judul_b', 'Pengarang', 'Kota_Terbit', 'Tahun_Terbit', 'Link_Ebook');
+
+                $processedData = $query->get()->map(function ($row) {
+                    $fullJudul = $row->Judul_a;
+                    if (!empty($row->Judul_b)) {
+                        $fullJudul .= ' ' . $row->Judul_b;
+                    }
+                    $row->Judul = html_entity_decode($fullJudul, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    $row->Pengarang = html_entity_decode($row->Pengarang, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    $row->Penerbit = html_entity_decode($row->Penerbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    $row->Kota_Terbit = html_entity_decode($row->Kota_Terbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    return $row;
+                });
+
+                $totalQuery = M_items::selectRaw("
+                    COUNT(DISTINCT b.biblionumber) as total_judul,
+                    COUNT(items.itemnumber) as total_eksemplar
+                ")
+                    ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
+                    ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
+                    ->where('items.itemlost', 0)
+                    ->where('items.withdrawn', 0)
+                    ->whereIn('items.itype', ['EB']);
+
+                if ($prodi !== 'all') {
+                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
+                    // Terapkan juga helpernya ke query total
+                    QueryHelper::applyCnClassRules($totalQuery, $cnClasses);
+                }
+
+                if ($tahunTerakhir !== 'all') {
+                    $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                }
+
+                $totals = $totalQuery->first();
+                $totalJudul = $totals->total_judul ?? 0;
+                $totalEksemplar = $totals->total_eksemplar ?? 0;
+
+                return [
+                    'processedData' => $processedData,
+                    'totalJudul' => $totalJudul,
+                    'totalEksemplar' => $totalEksemplar
+                ];
             });
 
-            $totalQuery = M_items::selectRaw("
-                COUNT(DISTINCT b.biblionumber) as total_judul,
-                COUNT(items.itemnumber) as total_eksemplar
-            ")
-                ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
-                ->where('items.itemlost', 0)
-                ->where('items.withdrawn', 0)
-                ->whereIn('items.itype', ['EB']);
-
-            if ($prodi !== 'all') {
-                $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                // Terapkan juga helpernya ke query total
-                QueryHelper::applyCnClassRules($totalQuery, $cnClasses);
-            }
-
-            if ($tahunTerakhir !== 'all') {
-                $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
-            }
-
-            $totals = $totalQuery->first();
-            $totalJudul = $totals->total_judul ?? 0;
-            $totalEksemplar = $totals->total_eksemplar ?? 0;
+            $processedData = $cachedResult['processedData'];
+            $totalJudul = $cachedResult['totalJudul'];
+            $totalEksemplar = $cachedResult['totalEksemplar'];
 
             if ($request->has('export_csv')) {
                 return $this->exportCsvEbook($processedData, $namaProdi, $tahunTerakhir);
@@ -974,95 +1038,108 @@ class StatistikKoleksi extends Controller
             $prodiMapping = $listprodi->pluck('lib', 'authorised_value')->toArray();
             $namaProdi = $prodiMapping[$prodi] ?? 'Tidak Ditemukan';
 
-            $query = M_items::selectRaw("
-                EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"a\"]') as Judul_a,
-                EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]') as Judul_b,
-                b.author as Pengarang,
-                bi.place AS Kota_Terbit,
-                bi.publishercode AS Penerbit,
-                bi.publicationyear AS Tahun_Terbit,
-                COUNT(items.itemnumber) AS Eksemplar,
-                CASE
-                WHEN items.homebranch = 'PUSAT' THEN 'Perpustakaan Pusat'
-                WHEN items.homebranch = 'GIZI' THEN 'Perpustakaan Gizi'
-                WHEN items.homebranch = 'FKG' THEN 'Perpustakaan Kedokteran Gigi'
-                WHEN items.homebranch = 'PSIKO' THEN 'Perpustakaan Psikologi'
-                WHEN items.homebranch = 'INF' THEN 'Perpustakaan Informatika'
-                WHEN items.homebranch = 'FIK' THEN 'Perpustakaan FIK'
-                WHEN items.homebranch = 'MATH' THEN 'Perpustakaan Matematika FKIP'
-                WHEN items.homebranch = 'LIPK' THEN 'LIPK'
-                WHEN items.homebranch = 'TILIB' THEN 'Perpustakaan Teknik Industri'
-                WHEN items.homebranch = 'MAPRO' THEN 'Perpustakaan Magister Psikologi'
-                WHEN items.homebranch = 'MEDLIB' THEN 'Perpustakaan Kedokteran'
-                WHEN items.homebranch = 'PAUD' THEN 'Perpustakaan PAUD'
-                WHEN items.homebranch = 'POG' THEN 'Perpustakaan Pendidikan Olahraga'
-                WHEN items.homebranch = 'PESMA' THEN 'Perpustakaan Pesma Haji Mas Mansyur'
-                WHEN items.homebranch = 'PGSDKRA' THEN 'Perpustakaan PGSD'
-                WHEN items.homebranch = 'PASCA' THEN 'Perpustakaan Postgraduate'
-                WHEN items.homebranch = 'RSGM' THEN 'Perpustakaan Rumah Sakit Gigi dan Mulut'
-                WHEN items.homebranch = 'PSI' THEN 'Perpustakaan Pusat Studi Psikologi Islam'
-                WHEN items.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
-                ELSE items.homebranch
-                END AS Lokasi
-            ")
-                ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
-                ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
-                ->where('items.itemlost', 0)
-                ->where('items.withdrawn', 0)
-                ->whereIn('items.itype', ['BKS', 'BKSA', 'BKSCA', 'BKSC']);
-            // ->whereRaw('LEFT(items.ccode, 1) <> "R"');
+            $cacheKey = "stats_textbook:{$prodi}:{$tahunTerakhir}";
+            $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
+                $query = M_items::selectRaw("
+                    EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"a\"]') as Judul_a,
+                    EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]') as Judul_b,
+                    b.author as Pengarang,
+                    bi.place AS Kota_Terbit,
+                    bi.publishercode AS Penerbit,
+                    bi.publicationyear AS Tahun_Terbit,
+                    COUNT(items.itemnumber) AS Eksemplar,
+                    CASE
+                    WHEN items.homebranch = 'PUSAT' THEN 'Perpustakaan Pusat'
+                    WHEN items.homebranch = 'GIZI' THEN 'Perpustakaan Gizi'
+                    WHEN items.homebranch = 'FKG' THEN 'Perpustakaan Kedokteran Gigi'
+                    WHEN items.homebranch = 'PSIKO' THEN 'Perpustakaan Psikologi'
+                    WHEN items.homebranch = 'INF' THEN 'Perpustakaan Informatika'
+                    WHEN items.homebranch = 'FIK' THEN 'Perpustakaan FIK'
+                    WHEN items.homebranch = 'MATH' THEN 'Perpustakaan Matematika FKIP'
+                    WHEN items.homebranch = 'LIPK' THEN 'LIPK'
+                    WHEN items.homebranch = 'TILIB' THEN 'Perpustakaan Teknik Industri'
+                    WHEN items.homebranch = 'MAPRO' THEN 'Perpustakaan Magister Psikologi'
+                    WHEN items.homebranch = 'MEDLIB' THEN 'Perpustakaan Kedokteran'
+                    WHEN items.homebranch = 'PAUD' THEN 'Perpustakaan PAUD'
+                    WHEN items.homebranch = 'POG' THEN 'Perpustakaan Pendidikan Olahraga'
+                    WHEN items.homebranch = 'PESMA' THEN 'Perpustakaan Pesma Haji Mas Mansyur'
+                    WHEN items.homebranch = 'PGSDKRA' THEN 'Perpustakaan PGSD'
+                    WHEN items.homebranch = 'PASCA' THEN 'Perpustakaan Postgraduate'
+                    WHEN items.homebranch = 'RSGM' THEN 'Perpustakaan Rumah Sakit Gigi dan Mulut'
+                    WHEN items.homebranch = 'PSI' THEN 'Perpustakaan Pusat Studi Psikologi Islam'
+                    WHEN items.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
+                    ELSE items.homebranch
+                    END AS Lokasi
+                ")
+                    ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
+                    ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
+                    ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
+                    ->where('items.itemlost', 0)
+                    ->where('items.withdrawn', 0)
+                    ->whereIn('items.itype', ['BKS', 'BKSA', 'BKSCA', 'BKSC']);
+                // ->whereRaw('LEFT(items.ccode, 1) <> "R"');
 
-            if ($prodi !== 'all') {
-                $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                QueryHelper::applyCnClassRules($query, $cnClasses);
-            }
-
-
-            if ($tahunTerakhir !== 'all') {
-                $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
-            }
-
-            $query->orderBy('Tahun_Terbit', 'desc')
-                ->orderBy('Judul_a', 'asc');
-            $query->groupBy('Judul_a', 'Judul_b', 'Pengarang', 'Kota_Terbit', 'Tahun_Terbit', 'Lokasi', 'Penerbit');
-
-            $processedData = $query->get()->map(function ($row) {
-                $fullJudul = $row->Judul_a;
-                if (!empty($row->Judul_b)) {
-                    $fullJudul .= ' ' . $row->Judul_b;
+                if ($prodi !== 'all') {
+                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
+                    QueryHelper::applyCnClassRules($query, $cnClasses);
                 }
 
-                $row->Judul = html_entity_decode($fullJudul, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                $row->Pengarang = html_entity_decode($row->Pengarang, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                $row->Penerbit = html_entity_decode($row->Penerbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                $row->Kota_Terbit = html_entity_decode($row->Kota_Terbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                return $row;
+
+                if ($tahunTerakhir !== 'all') {
+                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                }
+
+                $query->orderBy('Tahun_Terbit', 'desc')
+                    ->orderBy('Judul_a', 'asc');
+                $query->groupBy('Judul_a', 'Judul_b', 'Pengarang', 'Kota_Terbit', 'Tahun_Terbit', 'Lokasi', 'Penerbit');
+
+                $processedData = $query->get()->map(function ($row) {
+                    $fullJudul = $row->Judul_a;
+                    if (!empty($row->Judul_b)) {
+                        $fullJudul .= ' ' . $row->Judul_b;
+                    }
+
+                    $row->Judul = html_entity_decode($fullJudul, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    $row->Pengarang = html_entity_decode($row->Pengarang, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    $row->Penerbit = html_entity_decode($row->Penerbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    $row->Kota_Terbit = html_entity_decode($row->Kota_Terbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    return $row;
+                });
+
+                $totalQuery = M_items::selectRaw("
+                    COUNT(DISTINCT b.biblionumber) as total_judul,
+                    COUNT(items.itemnumber) as total_eksemplar
+                ")
+                    ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
+                    ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
+                    ->where('items.itemlost', 0)
+                    ->where('items.withdrawn', 0)
+                    ->whereRaw('LEFT(items.itype, 3) = "BKS"')
+                    ->whereRaw('LEFT(items.ccode, 1) <> "R"');
+
+                if ($prodi !== 'all') {
+                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
+                    QueryHelper::applyCnClassRules($totalQuery, $cnClasses);
+                }
+
+                if ($tahunTerakhir !== 'all') {
+                    $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                }
+
+                $totals = $totalQuery->first();
+                $totalJudul = $totals->total_judul ?? 0;
+                $totalEksemplar = $totals->total_eksemplar ?? 0;
+
+                return [
+                    'processedData' => $processedData,
+                    'totalJudul' => $totalJudul,
+                    'totalEksemplar' => $totalEksemplar
+                ];
             });
 
-            $totalQuery = M_items::selectRaw("
-                COUNT(DISTINCT b.biblionumber) as total_judul,
-                COUNT(items.itemnumber) as total_eksemplar
-            ")
-                ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
-                ->where('items.itemlost', 0)
-                ->where('items.withdrawn', 0)
-                ->whereRaw('LEFT(items.itype, 3) = "BKS"')
-                ->whereRaw('LEFT(items.ccode, 1) <> "R"');
-
-            if ($prodi !== 'all') {
-                $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                QueryHelper::applyCnClassRules($totalQuery, $cnClasses);
-            }
-
-            if ($tahunTerakhir !== 'all') {
-                $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
-            }
-
-            $totals = $totalQuery->first();
-            $totalJudul = $totals->total_judul ?? 0;
-            $totalEksemplar = $totals->total_eksemplar ?? 0;
+            $processedData = $cachedResult['processedData'];
+            $totalJudul = $cachedResult['totalJudul'];
+            $totalEksemplar = $cachedResult['totalEksemplar'];
 
             if ($request->has('export_csv')) {
                 return $this->exportCsvTextbook($processedData, $namaProdi, $tahunTerakhir);
@@ -1100,92 +1177,105 @@ class StatistikKoleksi extends Controller
             $prodiMapping = $listprodi->pluck('lib', 'authorised_value')->toArray();
             $namaProdi = $prodiMapping[$prodi] ?? 'Tidak Ditemukan';
 
-            $periodicalTypes = ['MJA', 'MJI', 'MJIP', 'MJP'];
+            $cacheKey = "stats_periodikal:{$prodi}:{$tahunTerakhir}";
+            $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
+                $periodicalTypes = ['MJA', 'MJI', 'MJIP', 'MJP'];
 
-            $query = M_items::select(
-                'i.itype AS Jenis_kode',
-                't.description AS Jenis',
-                'bi.publishercode AS Penerbit',
-                'bi.place AS Tempat_Terbit',
-                'bi.publicationyear AS Tahun_Terbit',
-                'bi.cn_class as Kelas',
-                'i.enumchron AS Nomor',
-                'i.homebranch as Lokasi'
-            )
-                ->selectRaw("EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"a\"]') as Judul_a")
-                ->selectRaw("EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]') as Judul_b")
-                ->selectRaw('COUNT(i.itemnumber) AS Issue')
-                ->selectRaw('SUM(i.copynumber) AS Eksemplar')
-                ->from('items as i')
-                ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
-                ->join('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
-                ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
-                ->join('itemtypes as t', 'i.itype', '=', 't.itemtype')
-                ->where('i.itemlost', 0)
-                ->where('i.withdrawn', 0)
-                ->whereIn('i.itype', $periodicalTypes)
-                ->groupBy('i.biblionumber');
+                $query = M_items::select(
+                    'i.itype AS Jenis_kode',
+                    't.description AS Jenis',
+                    'bi.publishercode AS Penerbit',
+                    'bi.place AS Tempat_Terbit',
+                    'bi.publicationyear AS Tahun_Terbit',
+                    'bi.cn_class as Kelas',
+                    'i.enumchron AS Nomor',
+                    'i.homebranch as Lokasi'
+                )
+                    ->selectRaw("EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"a\"]') as Judul_a")
+                    ->selectRaw("EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]') as Judul_b")
+                    ->selectRaw('COUNT(i.itemnumber) AS Issue')
+                    ->selectRaw('SUM(i.copynumber) AS Eksemplar')
+                    ->from('items as i')
+                    ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
+                    ->join('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
+                    ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
+                    ->join('itemtypes as t', 'i.itype', '=', 't.itemtype')
+                    ->where('i.itemlost', 0)
+                    ->where('i.withdrawn', 0)
+                    ->whereIn('i.itype', $periodicalTypes)
+                    ->groupBy('i.biblionumber');
 
-            // Terapkan filter prodi menggunakan helper
-            if ($prodi !== 'all') {
-                $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                QueryHelper::applyCnClassRules($query, $cnClasses);
-            }
-
-            // Terapkan filter tahun
-            if ($tahunTerakhir !== 'all') {
-                $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
-            }
-
-            // Group by untuk rekapitulasi yang benar
-            $query->groupBy('Jenis_kode', 'Jenis', 'Judul_a', 'Judul_b', 'Nomor', 'Kelas', 'Lokasi', 'Penerbit', 'Tempat_Terbit', 'Tahun_Terbit');
-
-            $processedData = $query->get()->map(function ($row) {
-                $fullJudul = $row->Judul_a;
-                if (!empty($row->Judul_b)) {
-                    $fullJudul .= ' ' . $row->Judul_b;
-                }
-                $row->Judul = html_entity_decode($fullJudul, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-                $penerbit = $row->Penerbit;
-                if (!empty($row->Tempat_Terbit)) {
-                    $penerbit .= ' : ' . $row->Tempat_Terbit;
-                }
-                $row->Penerbit_Lengkap = html_entity_decode($penerbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-                if (empty($row->Tahun_Terbit) || $row->Tahun_Terbit == '0000') {
-                    $row->Tahun_Terbit = 'n.d.';
+                // Terapkan filter prodi menggunakan helper
+                if ($prodi !== 'all') {
+                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
+                    QueryHelper::applyCnClassRules($query, $cnClasses);
                 }
 
-                return $row;
-            });
+                // Terapkan filter tahun
+                if ($tahunTerakhir !== 'all') {
+                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                }
 
-            // Query untuk menghitung total
-            $totalQuery = M_items::query()
-                ->from('items as i')
-                ->selectRaw("
+                // Group by untuk rekapitulasi yang benar
+                $query->groupBy('Jenis_kode', 'Jenis', 'Judul_a', 'Judul_b', 'Nomor', 'Kelas', 'Lokasi', 'Penerbit', 'Tempat_Terbit', 'Tahun_Terbit');
+
+                $processedData = $query->get()->map(function ($row) {
+                    $fullJudul = $row->Judul_a;
+                    if (!empty($row->Judul_b)) {
+                        $fullJudul .= ' ' . $row->Judul_b;
+                    }
+                    $row->Judul = html_entity_decode($fullJudul, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+                    $penerbit = $row->Penerbit;
+                    if (!empty($row->Tempat_Terbit)) {
+                        $penerbit .= ' : ' . $row->Tempat_Terbit;
+                    }
+                    $row->Penerbit_Lengkap = html_entity_decode($penerbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+                    if (empty($row->Tahun_Terbit) || $row->Tahun_Terbit == '0000') {
+                        $row->Tahun_Terbit = 'n.d.';
+                    }
+
+                    return $row;
+                });
+
+                // Query untuk menghitung total
+                $totalQuery = M_items::query()
+                    ->from('items as i')
+                    ->selectRaw("
                     COUNT(DISTINCT i.biblionumber) as total_judul,
                     COUNT(i.itemnumber) as total_eksemplar
                 ")
-                ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
-                ->where('i.itemlost', 0)
-                ->where('i.withdrawn', 0)
-                ->whereIn('i.itype', $periodicalTypes);
+                    ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
+                    ->where('i.itemlost', 0)
+                    ->where('i.withdrawn', 0)
+                    ->whereIn('i.itype', $periodicalTypes);
 
-            // Terapkan filter prodi juga ke query total
-            if ($prodi !== 'all') {
-                $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                QueryHelper::applyCnClassRules($totalQuery, $cnClasses);
-            }
+                // Terapkan filter prodi juga ke query total
+                if ($prodi !== 'all') {
+                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
+                    QueryHelper::applyCnClassRules($totalQuery, $cnClasses);
+                }
 
-            // Terapkan filter tahun juga ke query total
-            if ($tahunTerakhir !== 'all') {
-                $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
-            }
+                // Terapkan filter tahun juga ke query total
+                if ($tahunTerakhir !== 'all') {
+                    $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                }
 
-            $totals = $totalQuery->first();
-            $totalJudul = $totals->total_judul ?? 0;
-            $totalEksemplar = $totals->total_eksemplar ?? 0;
+                $totals = $totalQuery->first();
+                $totalJudul = $totals->total_judul ?? 0;
+                $totalEksemplar = $totals->total_eksemplar ?? 0;
+
+                return [
+                    'processedData' => $processedData,
+                    'totalJudul' => $totalJudul,
+                    'totalEksemplar' => $totalEksemplar
+                ];
+            });
+
+            $processedData = $cachedResult['processedData'];
+            $totalJudul = $cachedResult['totalJudul'];
+            $totalEksemplar = $cachedResult['totalEksemplar'];
 
             if ($request->has('export_csv')) {
                 return $this->exportCsvPeriodikal($processedData, $namaProdi, $tahunTerakhir);
@@ -1349,7 +1439,9 @@ class StatistikKoleksi extends Controller
             $prodiMapping = $listprodi->pluck('lib', 'authorised_value')->toArray();
             $namaProdi = $prodiMapping[$prodi] ?? 'Tidak Ditemukan';
 
-            $query = M_items::selectRaw("
+            $cacheKey = "stats_referensi:{$prodi}:{$tahunTerakhir}";
+            $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
+                $query = M_items::selectRaw("
                 bi.cn_class as Kelas,
                 EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"a\"]') as Judul_a,
                 EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]') as Judul_b,
@@ -1383,64 +1475,75 @@ class StatistikKoleksi extends Controller
                     ELSE items.homebranch
                 END AS Lokasi
             ")
-                ->from('items') // ALIAS 'as i' DIHAPUS
-                ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                ->join('biblio as b', 'items.biblionumber', '=', 'b.biblionumber')
-                ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
-                ->where('items.itemlost', 0)
-                ->where('items.withdrawn', 0)
-                ->whereRaw('LEFT(items.itype,3) = "BKS"')
-                ->whereRaw('LEFT(items.ccode,1) = "R"');
+                    ->from('items') // ALIAS 'as i' DIHAPUS
+                    ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
+                    ->join('biblio as b', 'items.biblionumber', '=', 'b.biblionumber')
+                    ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
+                    ->where('items.itemlost', 0)
+                    ->where('items.withdrawn', 0)
+                    ->whereRaw('LEFT(items.itype,3) = "BKS"')
+                    ->whereRaw('LEFT(items.ccode,1) = "R"');
 
-            if ($prodi !== 'all') {
-                $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                QueryHelper::applyCnClassRules($query, $cnClasses);
-            }
-
-            if ($tahunTerakhir !== 'all') {
-                $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
-            }
-
-            $query->orderBy('Tahun_Terbit', 'desc');
-            $query->groupBy('Judul_a', 'Judul_b', 'Pengarang', 'Kota_Terbit', 'Tahun_Terbit', 'Kelas', 'Lokasi');
-
-            $processedData = $query->get()->map(function ($row) {
-                $fullJudul = $row->Judul_a;
-                if (!empty($row->Judul_b)) {
-                    $fullJudul .= ' ' . $row->Judul_b;
+                if ($prodi !== 'all') {
+                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
+                    QueryHelper::applyCnClassRules($query, $cnClasses);
                 }
-                $row->Judul = html_entity_decode($fullJudul, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                $row->Pengarang = html_entity_decode($row->Pengarang, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                $row->Penerbit = html_entity_decode($row->Penerbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                $row->Kota_Terbit = html_entity_decode($row->Kota_Terbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                return $row;
-            });
 
-            // Perbaikan pada bagian Total Query (sudah menggunakan items)
-            $totalQuery = M_items::selectRaw("
+                if ($tahunTerakhir !== 'all') {
+                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                }
+
+                $query->orderBy('Tahun_Terbit', 'desc');
+                $query->groupBy('Judul_a', 'Judul_b', 'Pengarang', 'Kota_Terbit', 'Tahun_Terbit', 'Kelas', 'Lokasi');
+
+                $processedData = $query->get()->map(function ($row) {
+                    $fullJudul = $row->Judul_a;
+                    if (!empty($row->Judul_b)) {
+                        $fullJudul .= ' ' . $row->Judul_b;
+                    }
+                    $row->Judul = html_entity_decode($fullJudul, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    $row->Pengarang = html_entity_decode($row->Pengarang, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    $row->Penerbit = html_entity_decode($row->Penerbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    $row->Kota_Terbit = html_entity_decode($row->Kota_Terbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    return $row;
+                });
+
+                // Perbaikan pada bagian Total Query (sudah menggunakan items)
+                $totalQuery = M_items::selectRaw("
                 COUNT(DISTINCT b.biblionumber) as total_judul,
                 COUNT(items.itemnumber) as total_eksemplar
             ")
-                ->from('items')
-                ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
-                ->where('items.itemlost', 0)
-                ->where('items.withdrawn', 0)
-                ->whereRaw('LEFT(items.itype,3) = "BKS"')
-                ->whereRaw('LEFT(items.ccode,1) = "R"');
+                    ->from('items')
+                    ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
+                    ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
+                    ->where('items.itemlost', 0)
+                    ->where('items.withdrawn', 0)
+                    ->whereRaw('LEFT(items.itype,3) = "BKS"')
+                    ->whereRaw('LEFT(items.ccode,1) = "R"');
 
-            if ($prodi !== 'all') {
-                $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                QueryHelper::applyCnClassRules($totalQuery, $cnClasses);
-            }
+                if ($prodi !== 'all') {
+                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
+                    QueryHelper::applyCnClassRules($totalQuery, $cnClasses);
+                }
 
-            if ($tahunTerakhir !== 'all') {
-                $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
-            }
+                if ($tahunTerakhir !== 'all') {
+                    $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                }
 
-            $totals = $totalQuery->first();
-            $totalJudul = $totals->total_judul ?? 0;
-            $totalEksemplar = $totals->total_eksemplar ?? 0;
+                $totals = $totalQuery->first();
+                $totalJudul = $totals->total_judul ?? 0;
+                $totalEksemplar = $totals->total_eksemplar ?? 0;
+
+                return [
+                    'processedData' => $processedData,
+                    'totalJudul' => $totalJudul,
+                    'totalEksemplar' => $totalEksemplar
+                ];
+            });
+
+            $processedData = $cachedResult['processedData'];
+            $totalJudul = $cachedResult['totalJudul'];
+            $totalEksemplar = $cachedResult['totalEksemplar'];
 
             if ($request->has('export_csv')) {
                 return $this->exportCsvReferensi($processedData, $namaProdi, $tahunTerakhir);
@@ -1470,35 +1573,48 @@ class StatistikKoleksi extends Controller
         $chartData = [];
 
         if ($prodi) {
-            $prodiMapping = $listprodi->pluck('nama', 'kode')->toArray();
-            $cnClasses = CnClassHelper::getCnClassByProdi($prodi);
-            $namaProdi = $prodiMapping[$prodi] ?? 'Tidak Ditemukan';
+            $cacheKey = "koleksi_prodi:{$prodi}:{$tahunTerakhir}";
+            $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir, $listprodi) {
+                $prodiMapping = $listprodi->pluck('nama', 'kode')->toArray();
+                $cnClasses = CnClassHelper::getCnClassByProdi($prodi);
+                $namaProdi = $prodiMapping[$prodi] ?? 'Tidak Ditemukan';
 
-            $query = M_items::select('t.description AS Jenis', 'i.ccode AS Koleksi')
-                ->selectRaw('COUNT(DISTINCT i.biblionumber) AS Judul')
-                ->selectRaw('COUNT(i.itemnumber) AS Eksemplar')
-                ->from('items as i')
-                ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
-                ->join('itemtypes as t', 'i.itype', '=', 't.itemtype')
-                ->where('i.itemlost', 0)
-                ->where('i.withdrawn', 0)
-                ->whereIn('bi.cn_class', $cnClasses);
+                $query = M_items::select('t.description AS Jenis', 'i.ccode AS Koleksi')
+                    ->selectRaw('COUNT(DISTINCT i.biblionumber) AS Judul')
+                    ->selectRaw('COUNT(i.itemnumber) AS Eksemplar')
+                    ->from('items as i')
+                    ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
+                    ->join('itemtypes as t', 'i.itype', '=', 't.itemtype')
+                    ->where('i.itemlost', 0)
+                    ->where('i.withdrawn', 0)
+                    ->whereIn('bi.cn_class', $cnClasses);
 
-            if ($tahunTerakhir !== 'all') {
-                $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
-            }
+                if ($tahunTerakhir !== 'all') {
+                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
+                }
 
-            $data = $query->groupBy('Jenis', 'Koleksi')
-                ->orderBy('Jenis', 'asc')
-                ->orderBy('Koleksi', 'asc')
-                ->get();
-            $chartData = $data->map(function ($item) {
+                $data = $query->groupBy('Jenis', 'Koleksi')
+                    ->orderBy('Jenis', 'asc')
+                    ->orderBy('Koleksi', 'asc')
+                    ->get();
+                $chartData = $data->map(function ($item) {
+                    return [
+                        'jenis' => $item->Jenis,
+                        'judul' => $item->Judul,
+                        'eksemplar' => $item->Eksemplar
+                    ];
+                })->values()->all();
+
                 return [
-                    'jenis' => $item->Jenis,
-                    'judul' => $item->Judul,
-                    'eksemplar' => $item->Eksemplar
+                    'namaProdi' => $namaProdi,
+                    'data' => $data,
+                    'chartData' => $chartData
                 ];
-            })->values()->all();
+            });
+
+            $namaProdi = $cachedResult['namaProdi'];
+            $data = $cachedResult['data'];
+            $chartData = $cachedResult['chartData'];
         }
 
         return view('pages.dapus.prodi', compact('namaProdi', 'listprodi', 'data', 'prodi', 'tahunTerakhir', 'chartData'));
@@ -1521,31 +1637,34 @@ class StatistikKoleksi extends Controller
         $detailData = collect();
 
         if ($prodi && $jenis) {
-            $cnClasses = CnClassHelper::getCnClassByProdi($prodi);
+            $cacheKey = "detail_koleksi:{$prodi}:{$jenis}:{$tahunTerakhir}:{$page}";
+            $detailData = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $jenis, $tahunTerakhir, $page, $perPage) {
+                $cnClasses = CnClassHelper::getCnClassByProdi($prodi);
 
-            $query = M_items::select(
-                'b.title AS Judul',
-                DB::raw('MIN(bi.cn_class) AS Kelas'),
-                DB::raw('MIN(bi.publicationyear) AS TahunTerbit'),
-                DB::raw('SUM(CASE WHEN i.itemlost = 0 AND i.withdrawn = 0 THEN 1 ELSE 0 END) AS Eksemplar'),
-                DB::raw('GROUP_CONCAT(DISTINCT i.homebranch ORDER BY i.homebranch SEPARATOR ", ") AS Lokasi')
-            )
-                ->from('items as i')
-                ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
-                ->join('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
-                ->join('itemtypes as t', 'i.itype', '=', 't.itemtype')
-                ->where('i.itemlost', 0)
-                ->where('i.withdrawn', 0)
-                ->whereIn('bi.cn_class', $cnClasses)
-                ->where('t.description', $jenis);
+                $query = M_items::select(
+                    'b.title AS Judul',
+                    DB::raw('MIN(bi.cn_class) AS Kelas'),
+                    DB::raw('MIN(bi.publicationyear) AS TahunTerbit'),
+                    DB::raw('SUM(CASE WHEN i.itemlost = 0 AND i.withdrawn = 0 THEN 1 ELSE 0 END) AS Eksemplar'),
+                    DB::raw('GROUP_CONCAT(DISTINCT i.homebranch ORDER BY i.homebranch SEPARATOR ", ") AS Lokasi')
+                )
+                    ->from('items as i')
+                    ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
+                    ->join('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
+                    ->join('itemtypes as t', 'i.itype', '=', 't.itemtype')
+                    ->where('i.itemlost', 0)
+                    ->where('i.withdrawn', 0)
+                    ->whereIn('bi.cn_class', $cnClasses)
+                    ->where('t.description', $jenis);
 
-            if ($tahunTerakhir !== 'all') {
-                $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
-            }
+                if ($tahunTerakhir !== 'all') {
+                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
+                }
 
-            $detailData = $query->groupBy('b.title')
-                ->orderBy('Kelas', 'asc')
-                ->paginate($perPage, ['*'], 'page', $page);
+                return $query->groupBy('b.title')
+                    ->orderBy('Kelas', 'asc')
+                    ->paginate($perPage, ['*'], 'page', $page);
+            });
         }
 
         return response()->json($detailData);

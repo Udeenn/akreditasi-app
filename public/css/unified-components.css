@@ -1,0 +1,315 @@
+/* ============================================================
+   UNIFIED COMPONENTS CSS
+   Extracted from the modern dashboard styling used across
+   kunjungan and peminjaman pages.
+   ============================================================ */
+
+/* --- ROOT VARIABLES (Soft background colors for icon-boxes / stat cards) --- */
+:root {
+    /* Override Bootstrap primary to match sidebar purple */
+    --bs-primary: #4A69FF;
+    --bs-primary-rgb: 74, 105, 255;
+
+    --primary-soft: rgba(74, 105, 255, 0.1);
+    --success-soft: rgba(25, 135, 84, 0.1);
+    --danger-soft: rgba(220, 53, 69, 0.1);
+    --warning-soft: rgba(255, 193, 7, 0.1);
+    --info-soft: rgba(13, 202, 240, 0.1);
+}
+
+/* Override Bootstrap btn-primary colors */
+.btn-primary {
+    --bs-btn-bg: #4A69FF;
+    --bs-btn-border-color: #4A69FF;
+    --bs-btn-hover-bg: #3b54cc;
+    --bs-btn-hover-border-color: #3b54cc;
+    --bs-btn-active-bg: #3249b3;
+    --bs-btn-active-border-color: #3249b3;
+    --bs-btn-disabled-bg: #4A69FF;
+    --bs-btn-disabled-border-color: #4A69FF;
+}
+
+.btn-outline-primary {
+    --bs-btn-color: #4A69FF;
+    --bs-btn-border-color: #4A69FF;
+    --bs-btn-hover-bg: #4A69FF;
+    --bs-btn-hover-border-color: #4A69FF;
+    --bs-btn-active-bg: #3b54cc;
+    --bs-btn-active-border-color: #3b54cc;
+}
+
+/* Override text-primary */
+.text-primary {
+    color: #4A69FF !important;
+}
+
+/* Soft background utility classes */
+.bg-primary-soft {
+    background-color: var(--primary-soft) !important;
+}
+
+.bg-success-soft {
+    background-color: var(--success-soft) !important;
+}
+
+.bg-danger-soft {
+    background-color: var(--danger-soft) !important;
+}
+
+.bg-warning-soft {
+    background-color: var(--warning-soft) !important;
+}
+
+.bg-info-soft {
+    background-color: var(--info-soft) !important;
+}
+
+
+/* --- CARD STYLING --- */
+.unified-card {
+    border: none;
+    border-radius: 12px !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background-color: var(--bs-body-bg);
+    color: var(--text-dark);
+    overflow: hidden !important;
+}
+
+.unified-card .card-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    color: var(--text-dark);
+}
+
+
+/* --- HOVER LIFT EFFECT --- */
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+}
+
+
+/* --- ICON BOX --- */
+.icon-box {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-size: 1.25rem;
+}
+
+
+/* --- TABLE STYLING --- */
+.unified-table thead th {
+    background-color: rgba(0, 0, 0, 0.02);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+}
+
+
+/* --- PROGRESS BAR --- */
+.progress {
+    background-color: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+
+/* --- GRADIENT HEADER BANNER --- */
+.page-header-banner {
+    border-radius: 15px !important;
+    border: 0 !important;
+    overflow: hidden;
+}
+
+.page-header-banner .card-body {
+    padding: 1.5rem;
+}
+
+/* Override Bootstrap's bg-primary to match the sidebar purple */
+.page-header-banner .bg-primary,
+.card>.bg-primary.bg-gradient {
+    background: #4A69FF !important;
+}
+
+
+/* --- FILTER CARD --- */
+.filter-card .card-header {
+    border-bottom: none;
+    padding-top: 0.75rem;
+    padding-bottom: 0;
+}
+
+
+/* --- SELECT2 FOCUS STYLING --- */
+.select2-container--bootstrap-5.select2-container--focus .select2-selection,
+.select2-container--bootstrap-5.select2-container--open .select2-selection {
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+
+/* ============================================================
+   DARK MODE OVERRIDES
+   ============================================================ */
+
+/* Cards */
+body.dark-mode .unified-card {
+    background-color: #1e1e2d;
+    border: 1px solid #2b2b40;
+    color: #ffffff;
+}
+
+body.dark-mode .unified-card .card-header {
+    background-color: #1e293b !important;
+    border-bottom-color: #2b2b40;
+    color: #ffffff;
+}
+
+/* Text */
+body.dark-mode .text-muted {
+    color: #a1a5b7 !important;
+}
+
+body.dark-mode .text-body {
+    color: #ffffff !important;
+}
+
+/* Tables */
+body.dark-mode .unified-table {
+    color: #ffffff;
+    border-color: #2b2b40;
+}
+
+body.dark-mode .unified-table thead th {
+    background-color: #2b2b40;
+    color: #ffffff;
+    border-bottom-color: #3f4254;
+}
+
+/* Forms */
+body.dark-mode .form-control,
+body.dark-mode .form-select,
+body.dark-mode .input-group-text {
+    background-color: #1b1b29;
+    border-color: #2b2b40;
+    color: #ffffff;
+}
+
+/* Modals */
+body.dark-mode .modal-content {
+    background-color: #1e1e2d;
+    color: #fff;
+    border: 1px solid #2b2b40;
+}
+
+body.dark-mode .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* List group items */
+body.dark-mode .list-group-item strong {
+    color: #ffffff !important;
+}
+
+body.dark-mode .list-group-item {
+    background-color: transparent;
+    border-color: #2b2b40;
+}
+
+
+/* --- SELECT2 DARK MODE --- */
+body.dark-mode .select2-container--bootstrap-5 .select2-selection {
+    background-color: #1e293b !important;
+    border-color: #2b2b40 !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .select2-container--bootstrap-5 .select2-selection__rendered {
+    color: #ffffff !important;
+}
+
+body.dark-mode .select2-container--bootstrap-5 .select2-selection__arrow b {
+    border-color: #adb5bd transparent transparent transparent !important;
+}
+
+body.dark-mode .select2-container--bootstrap-5 .select2-dropdown {
+    background-color: #1e293b !important;
+    border-color: #2b2b40 !important;
+}
+
+body.dark-mode .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
+    background-color: #1e293b !important;
+    border-color: #2b2b40 !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .select2-results__option {
+    color: #ffffff !important;
+}
+
+body.dark-mode .select2-results__option--highlighted {
+    background-color: #0d6efd !important;
+    color: white !important;
+}
+
+body.dark-mode .select2-results__option[aria-selected=true] {
+    background-color: rgba(13, 110, 253, 0.2) !important;
+    color: #ffffff !important;
+}
+
+
+/* --- DATATABLES DARK MODE --- */
+body.dark-mode .dataTables_wrapper .dataTables_length select,
+body.dark-mode .dataTables_wrapper .dataTables_filter input {
+    background-color: #1b1b29;
+    border-color: #2b2b40;
+    color: #ffffff;
+}
+
+body.dark-mode .dataTables_wrapper .dataTables_info,
+body.dark-mode .dataTables_wrapper .dataTables_length label,
+body.dark-mode .dataTables_wrapper .dataTables_filter label {
+    color: #a1a5b7 !important;
+}
+
+body.dark-mode .dataTables_wrapper .dataTables_paginate .paginate_button {
+    color: #a1a5b7 !important;
+}
+
+body.dark-mode .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #2b2b40 !important;
+    border-color: #2b2b40 !important;
+    color: #ffffff !important;
+}
+
+/* --- SIDEBAR BRAND LOGO --- */
+/* --- SIDEBAR BRAND LOGO TOGGLE --- */
+/* Default (Light Mode): Show logo-light, Hide logo-dark */
+.logo-light {
+    display: block;
+}
+
+.logo-dark {
+    display: none;
+}
+
+/* Dark Mode: Hide logo-light, Show logo-dark */
+body.dark-mode .logo-light {
+    display: none !important;
+}
+
+body.dark-mode .logo-dark {
+    display: block !important;
+}

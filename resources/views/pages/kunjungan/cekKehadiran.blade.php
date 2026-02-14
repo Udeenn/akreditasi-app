@@ -426,7 +426,7 @@
                     const tahun = document.getElementById('tahun').value;
                     if (cardnumber) {
                         window.open(
-                            `{{ route('kunjungan.export-pdf') }}?cardnumber=${cardnumber}&tahun=${tahun}`,
+                            `{{ route('kunjungan.export_pdf') }}?cardnumber=${cardnumber}&tahun=${tahun}`,
                             '_blank');
                     } else {
                         alert("Mohon masukkan Nomor Kartu Anggota terlebih dahulu.");

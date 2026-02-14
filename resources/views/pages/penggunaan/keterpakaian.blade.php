@@ -2,19 +2,36 @@
 
 @section('content')
 @section('title', 'Statistik Keterpakaian Koleksi')
-<div class="container">
-    <div class="card bg-white shadow-sm mb-4">
-        <div class="card-body">
-            <h4 class="mb-0">Statistik Keterpakaian Koleksi</h4>
-            <small class="text-muted">Jumlah penggunaan koleksi berdasarkan kategori (Referensi, Sirkulasi, dll)</small>
+
+<div class="container-fluid px-3 px-md-4 py-4">
+
+    {{-- 1. HEADER BANNER --}}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card unified-card border-0 shadow-sm page-header-banner">
+                <div
+                    class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
+                    <div class="mb-3 mb-md-0">
+                        <h3 class="fw-bold mb-1">
+                            <i class="fas fa-chart-line me-2"></i>Statistik Keterpakaian Koleksi
+                        </h3>
+                        <p class="mb-0 opacity-75">Jumlah penggunaan koleksi berdasarkan kategori (Referensi, Sirkulasi,
+                            dll)</p>
+                    </div>
+                    <div class="d-none d-md-block opacity-50">
+                        <i class="fas fa-chart-pie fa-4x"></i>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <a class="h6 mb-0 text-decoration-none" data-bs-toggle="collapse" href="#collapseFilter" role="button"
-                aria-expanded="true" aria-controls="collapseFilter">
-                <i class="fas fa-filter me-2"></i> Filter Data
+    {{-- 2. FILTER --}}
+    <div class="card unified-card border-0 shadow-sm filter-card mb-4">
+        <div class="card-header border-bottom-0 pt-3 pb-0">
+            <a class="h6 mb-0 text-decoration-none fw-bold text-primary" data-bs-toggle="collapse"
+                href="#collapseFilter" role="button" aria-expanded="true" aria-controls="collapseFilter">
+                <i class="fas fa-filter me-2"></i>Filter Data
             </a>
         </div>
         <div class="collapse show" id="collapseFilter">
@@ -22,7 +39,8 @@
                 <form method="GET" action="{{ route('penggunaan.keterpakaian_koleksi') }}"
                     class="row g-3 align-items-end">
                     <div class="col-md-auto">
-                        <label for="filter_type" class="form-label">Tampilkan per:</label>
+                        <label for="filter_type" class="form-label small text-muted fw-bold text-uppercase">Tampilkan
+                            per:</label>
                         <select name="filter_type" id="filter_type" class="form-select">
                             <option value="monthly" {{ $filterType == 'monthly' ? 'selected' : '' }}>Bulan</option>
                             <option value="daily" {{ $filterType == 'daily' ? 'selected' : '' }}>Hari</option>
@@ -30,15 +48,14 @@
                     </div>
                     <div class="col-md-5" id="monthlyFilter"
                         style="{{ $filterType == 'monthly' ? '' : 'display: none;' }}">
-                        {{-- <label class="form-label">Rentang Bulan:</label> --}}
                         <div class="input-group">
                             <input type="month" name="start_month" class="form-control" value="{{ $startMonth }}">
                             <span class="input-group-text">s/d</span>
                             <input type="month" name="end_month" class="form-control" value="{{ $endMonth }}">
                         </div>
                     </div>
-                    <div class="col-md-5" id="dailyFilter" style="{{ $filterType == 'daily' ? '' : 'display: none;' }}">
-                        {{-- <label class="form-label">Rentang Tanggal:</label> --}}
+                    <div class="col-md-5" id="dailyFilter"
+                        style="{{ $filterType == 'daily' ? '' : 'display: none;' }}">
                         <div class="input-group">
                             <input type="date" name="start_date" class="form-control" value="{{ $startDate }}">
                             <span class="input-group-text">s/d</span>
@@ -46,7 +63,8 @@
                         </div>
                     </div>
                     <div class="col-md-auto">
-                        <button type="submit" class="btn btn-primary">Terapkan</button>
+                        <button type="submit" class="btn btn-primary"><i
+                                class="fas fa-search me-1"></i>Terapkan</button>
                     </div>
                 </form>
             </div>
@@ -55,60 +73,74 @@
 
     @if (request()->has('filter_type'))
         @if (!empty($dataTabel) && !$dataTabel->isEmpty())
-            {{-- Kartu Ringkasan (Summary Cards) --}}
-            <div class="row mb-4">
-                <div class="col-md-4 mb-3 mb-md-0">
-                    <div class="card shadow-sm border-0 h-100">
-                        <div class="card-body text-center">
-                            <i class="fas fa-book-open fa-3x text-primary mb-3"></i>
-                            <h6 class="card-subtitle mb-2 text-muted">Total Penggunaan Koleksi</h6>
-                            <h2 class="card-title fw-bold">{{ number_format($totalPenggunaan) }}</h2>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-3 mb-md-0">
-                    <div class="card shadow-sm border-0 h-100">
-                        <div class="card-body text-center">
-                            <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
-                            <h6 class="text-muted mb-1">
-                                Rerata Penggunaan / {{ $filterType == 'daily' ? 'Hari' : 'Bulan' }}
-                            </h6>
-                            <h2 class="fw-bold mb-0">{{ number_format($rerataPenggunaan, 1) }}</h2>
+            {{-- 3. STAT CARDS --}}
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card unified-card border-0 shadow-sm hover-lift h-100">
+                        <div class="card-body d-flex align-items-center p-3">
+                            <div class="icon-box bg-primary text-white me-3">
+                                <i class="fas fa-book-open"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small fw-bold text-uppercase">Total Penggunaan Koleksi</div>
+                                <div class="fs-4 fw-bold">{{ number_format($totalPenggunaan) }}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card shadow-sm border-0 h-100">
-                        <div class="card-body text-center">
-                            <i class="fas fa-star fa-3x text-warning mb-3"></i>
-                            <h6 class="card-subtitle mb-2 text-muted">Kategori Terpopuler</h6>
-                            <h2 class="card-title fw-bold">{{ $kategoriPopuler['nama'] }}</h2>
-                            <span class="badge text-bg-primary fs-6">{{ number_format($kategoriPopuler['jumlah']) }}
-                                kali</span>
+                    <div class="card unified-card border-0 shadow-sm hover-lift h-100">
+                        <div class="card-body d-flex align-items-center p-3">
+                            <div class="icon-box bg-success text-white me-3">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small fw-bold text-uppercase">
+                                    Rerata Penggunaan / {{ $filterType == 'daily' ? 'Hari' : 'Bulan' }}
+                                </div>
+                                <div class="fs-4 fw-bold">{{ number_format($rerataPenggunaan, 1) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card unified-card border-0 shadow-sm hover-lift h-100">
+                        <div class="card-body d-flex align-items-center p-3">
+                            <div class="icon-box bg-warning text-white me-3">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small fw-bold text-uppercase">Kategori Terpopuler</div>
+                                <div class="fs-4 fw-bold">{{ $kategoriPopuler['nama'] }}</div>
+                                <span
+                                    class="badge text-bg-primary">{{ number_format($kategoriPopuler['jumlah']) }}
+                                    kali</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Chart --}}
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h6 class="mb-0">Grafik Keterpakaian Koleksi</h6>
+            {{-- 4. CHART --}}
+            <div class="card unified-card border-0 shadow-sm mb-4">
+                <div class="card-header py-3">
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-chart-area me-1 text-primary"></i> Grafik Keterpakaian
+                        Koleksi</h6>
                 </div>
                 <div class="card-body"><canvas id="koleksiChart"></canvas></div>
             </div>
 
-            {{-- Tabel Hasil --}}
-            <div class="card shadow-sm">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">Hasil Analisis</h6>
+            {{-- 5. TABEL --}}
+            <div class="card unified-card border-0 shadow-sm">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-table me-1 text-primary"></i> Hasil Analisis</h6>
                     <button id="exportCsvBtn" class="btn btn-success btn-sm"><i class="fas fa-file-csv me-2"></i>Export
                         CSV</button>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered table-hover" id="main-table">
-                            <thead class="table-light">
+                        <table class="table table-hover align-middle mb-0 unified-table" id="main-table">
+                            <thead>
                                 <tr>
                                     <th>Periode</th>
                                     @foreach ($listKategori as $kategori)
@@ -218,13 +250,11 @@
             if (filterTypeSelect.value === 'daily') {
                 dailyFilterDiv.style.display = 'flex';
                 monthlyFilterDiv.style.display = 'none';
-                // Aktifkan input harian, nonaktifkan input bulanan
                 monthlyInputs.forEach(input => input.disabled = true);
                 dailyInputs.forEach(input => input.disabled = false);
-            } else { // 'monthly'
+            } else {
                 dailyFilterDiv.style.display = 'none';
                 monthlyFilterDiv.style.display = 'flex';
-                // Aktifkan input bulanan, nonaktifkan input harian
                 dailyInputs.forEach(input => input.disabled = true);
                 monthlyInputs.forEach(input => input.disabled = false);
             }
@@ -232,7 +262,6 @@
 
         if (filterTypeSelect) {
             filterTypeSelect.addEventListener('change', handleFilterChange);
-
             handleFilterChange();
         }
 
@@ -251,12 +280,10 @@
                     const kategori = target.dataset.kategori;
                     const filterType = document.getElementById('filter_type').value;
 
-                    // Update modal title
                     document.getElementById('modal-kategori').innerText = kategori;
                     document.getElementById('modal-periode').innerText = (filterType === 'daily') ?
                         moment(periode).format('D MMM YYYY') : moment(periode).format('MMM YYYY');
 
-                    // Fetch data for the first page
                     const url =
                         `{{ route('statistik.keterpakaian_koleksi.detail') }}?periode=${periode}&kategori=${kategori}&filter_type=${filterType}`;
                     fetchDetailBuku(url);
@@ -306,7 +333,6 @@
                 });
                 detailBukuTbody.innerHTML = allRowsHtml;
 
-                // Render pagination links
                 let paginationHtml = '<ul class="pagination pagination-sm mb-0">';
                 if (result.links) {
                     result.links.forEach(link => {
@@ -338,22 +364,20 @@
             });
 
             const colorPalette = [
-                'rgba(54, 162, 235, 0.8)', // Biru
-                'rgba(255, 99, 132, 0.8)', // Merah
-                'rgba(75, 192, 192, 0.8)', // Hijau
-                'rgba(255, 206, 86, 0.8)', // Kuning
-                'rgba(153, 102, 255, 0.8)', // Ungu
-                'rgba(255, 159, 64, 0.8)', // Oranye
-                'rgba(201, 203, 207, 0.8)', // Abu-abu
-                'rgba(231, 84, 128, 0.8)', // Pink
-                'rgba(0, 204, 153, 0.8)', // Teal
-                'rgba(102, 178, 255, 0.8)', // Biru Langit
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(75, 192, 192, 0.8)',
+                'rgba(255, 206, 86, 0.8)',
+                'rgba(153, 102, 255, 0.8)',
+                'rgba(255, 159, 64, 0.8)',
+                'rgba(201, 203, 207, 0.8)',
+                'rgba(231, 84, 128, 0.8)',
+                'rgba(0, 204, 153, 0.8)',
+                'rgba(102, 178, 255, 0.8)',
             ];
 
             const datasets = listKategori.map((kategori, index) => {
                 const data = dataTabel.map(row => row[kategori] || 0);
-
-                // Ambil warna dari palet secara berurutan
                 const color = colorPalette[index % colorPalette.length];
 
                 return {

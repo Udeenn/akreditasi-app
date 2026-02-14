@@ -2,46 +2,70 @@
 @section('title', 'Rekapitulasi Koleksi per Fakultas')
 
 @section('content')
-    <div class="container">
-        <div class="card bg-white shadow-sm mb-4 border-0">
-            <div class="card-body p-4">
-                <h4 class="mb-1"><i class="fas fa-sitemap me-2 text-primary"></i>Rekapitulasi Koleksi per Fakultas</h4>
-                <p class="text-muted mb-0">Menampilkan jumlah koleksi (judul dan eksemplar) yang dikelompokkan per program
-                    studi.</p>
+    <div class="container-fluid px-3 px-md-4 py-4">
+
+        {{-- 1. HEADER BANNER --}}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card unified-card border-0 shadow-sm page-header-banner">
+                    <div
+                        class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
+                        <div class="mb-3 mb-md-0">
+                            <h3 class="fw-bold mb-1">
+                                <i class="fas fa-sitemap me-2"></i>Rekapitulasi Koleksi per Fakultas
+                            </h3>
+                            <p class="mb-0 opacity-75">
+                                Menampilkan jumlah koleksi (judul dan eksemplar) yang dikelompokkan per program studi.
+                            </p>
+                        </div>
+                        <div class="d-none d-md-block opacity-50">
+                            <i class="fas fa-university fa-4x"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="card shadow-sm mb-4 border-0">
-            <div class="card-header border-0">
-                <h6 class="mb-0 mt-2"><i class="fas fa-filter me-2"></i>Filter Fakultas</h6>
-            </div>
-            <div class="card-body">
-                <form method="GET" action="{{ route('koleksi.rekap_fakultas') }}" class="row g-3 align-items-end">
-                    <div class="col-md-12">
-                        <label for="fakultas" class="form-label">Pilih Fakultas (akan langsung memuat data):</label>
-                        <select name="fakultas" id="fakultas" class="form-select" onchange="this.form.submit()">
-                            @if (empty($faculties))
-                                <option value="">Tidak ada data fakultas</option>
-                            @else
-                                <option value="">Pilih Fakultas</option>
-                                @foreach ($faculties as $faculty)
-                                    <option value="{{ $faculty }}"
-                                        {{ $selectedFaculty == $faculty ? 'selected' : '' }}>
-                                        {{ $faculty }}
-                                    </option>
-                                @endforeach
-                            @endif
-                        </select>
+
+        {{-- 2. FILTER SECTION --}}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card unified-card border-0 shadow-sm filter-card">
+                    <div class="card-header border-bottom-0 pt-3 pb-0">
+                        <h6 class="fw-bold text-primary"><i class="fas fa-filter me-1"></i> Filter Fakultas</h6>
                     </div>
-                </form>
+                    <div class="card-body">
+                        <form method="GET" action="{{ route('koleksi.rekap_fakultas') }}" class="row g-3 align-items-end">
+                            <div class="col-md-12">
+                                <label for="fakultas" class="form-label small text-muted fw-bold">Pilih Fakultas (akan
+                                    langsung memuat data):</label>
+                                <select name="fakultas" id="fakultas" class="form-select" onchange="this.form.submit()">
+                                    @if (empty($faculties))
+                                        <option value="">Tidak ada data fakultas</option>
+                                    @else
+                                        <option value="">Pilih Fakultas</option>
+                                        @foreach ($faculties as $faculty)
+                                            <option value="{{ $faculty }}"
+                                                {{ $selectedFaculty == $faculty ? 'selected' : '' }}>
+                                                {{ $faculty }}
+                                            </option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
 
         @if ($selectedFaculty)
+            {{-- Faculty title --}}
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4 class="mb-0">Fakultas: <span class="fw-bold">{{ $selectedFaculty }}</span></h4>
             </div>
 
-            <div class="card shadow-sm mb-4 border-0">
+            {{-- Search --}}
+            <div class="card unified-card shadow-sm mb-4 border-0">
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-12">
@@ -53,19 +77,20 @@
                     </div>
                 </div>
             </div>
+
             @if ($rekapData->isNotEmpty())
                 <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" id="prodiCardContainer">
                     @foreach ($rekapData as $prodiData)
                         <div class="col d-flex align-items-stretch prodi-card-col">
-                            <div class="card h-100 shadow-sm border-0 w-100">
+                            <div class="card unified-card h-100 shadow-sm border-0 w-100">
                                 <div class="card-header border-0 font-semibold">
                                     <div class="d-flex justify-content-between align-items-center my-2">
-                                        <h6 class="mb-0
-                                        fw-bold text-truncate"
+                                        <h6 class="mb-0 fw-bold text-truncate"
                                             title="{{ $prodiData['nama_prodi'] }}">
                                             {{ Str::limit($prodiData['nama_prodi'], 35) }}
                                         </h6>
-                                        <span class="badge bg-light text-primary ms-2">{{ $prodiData['prodi_code'] }}</span>
+                                        <span
+                                            class="badge bg-light text-primary ms-2">{{ $prodiData['prodi_code'] }}</span>
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -126,29 +151,6 @@
 
     </div>
 @endsection
-@push('styles')
-    <style>
-        .bg-gradient-primary {
-            background: linear-gradient(45deg, #0d6efd, #6f42c1);
-        }
-
-        .card-header .badge {
-            font-size: 0.75em;
-        }
-
-        .list-group-item {
-            background-color: transparent;
-        }
-
-        html[data-bs-theme="dark"] .list-group-item strong {
-            color: #ffffff !important;
-        }
-
-        body.dark-mode .list-group-item strong {
-            color: #ffffff !important;
-        }
-    </style>
-@endpush
 
 @push('scripts')
     <script>

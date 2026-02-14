@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Laporan Kehadiran Kunjungan</title>
+    <link rel="shortcut icon" href="{{ asset('img/logo4.png') }}" type="image/x-icon">
     <style>
         @page {
             margin: 28px;

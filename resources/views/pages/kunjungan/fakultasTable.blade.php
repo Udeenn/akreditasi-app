@@ -40,7 +40,7 @@
                                 <div class="col-md-2 col-6">
                                     <label class="form-label small text-muted fw-bold mb-1">Periode</label>
                                     <select name="filter_type" id="filter_type"
-                                        class="form-select form-select-sm shadow-none">
+                                        class="form-select form-select-sm shadow-none border-0">
                                         <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>
                                             Harian</option>
                                         <option value="yearly" {{ ($filterType ?? '') == 'yearly' ? 'selected' : '' }}>
@@ -51,8 +51,8 @@
                                 {{-- Filter Lokasi --}}
                                 <div class="col-md-2 col-12">
                                     <label class="form-label small text-muted fw-bold mb-1">Lokasi</label>
-                                    <select name="lokasi" id="lokasi" class="form-select form-select-sm shadow-none">
-                                        <option value="">-- Semua Lokasi --</option>
+                                    <select name="lokasi" id="lokasi" class="form-select form-select-sm shadow-none border-0">
+                                        <option value="">Semua Lokasi </option>
                                         @foreach ($lokasiMapping as $key => $val)
                                             <option value="{{ $key }}"
                                                 {{ request('lokasi') == $key ? 'selected' : '' }}>
@@ -65,9 +65,9 @@
                                 {{-- Filter Fakultas --}}
                                 <div class="col-md-2 col-12">
                                     <label class="form-label small text-muted fw-bold mb-1">Fakultas</label>
-                                    <select name="fakultas" id="fakultas" class="form-select form-select-sm shadow-none">
-                                        <option value="semua" {{ request('fakultas') == 'semua' ? 'selected' : '' }}>--
-                                            Semua --</option>
+                                    <select name="fakultas" id="fakultas" class="form-select form-select-sm shadow-none border-0">
+                                        <option value="semua" {{ request('fakultas') == 'semua' ? 'selected' : '' }}>
+                                            Semua </option>
                                         @foreach ($listFakultas as $namaFakultas)
                                             <option value="{{ $namaFakultas }}"
                                                 {{ request('fakultas') == $namaFakultas ? 'selected' : '' }}>
@@ -82,38 +82,38 @@
                                     style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
                                     <label class="form-label small text-muted fw-bold mb-1">Dari Tanggal</label>
                                     <input type="date" name="tanggal_awal"
-                                        class="form-control form-control-sm shadow-none" value="{{ $tanggalAwal }}">
+                                        class="form-control form-control-sm shadow-none border-0" value="{{ $tanggalAwal }}">
                                 </div>
                                 <div class="col-md-2 col-6 daily-filter"
                                     style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
                                     <label class="form-label small text-muted fw-bold mb-1">Sampai Tanggal</label>
                                     <input type="date" name="tanggal_akhir"
-                                        class="form-control form-control-sm shadow-none" value="{{ $tanggalAkhir }}">
+                                        class="form-control form-control-sm shadow-none border-0" value="{{ $tanggalAkhir }}">
                                 </div>
 
                                 {{-- Filter Tahun (Yearly) --}}
                                 <div class="col-md-2 col-6 yearly-filter"
                                     style="{{ ($filterType ?? '') == 'yearly' ? '' : 'display: none;' }}">
                                     <label class="form-label small text-muted fw-bold mb-1">Dari Tahun</label>
-                                    <input type="number" name="tahun_awal" class="form-control form-control-sm shadow-none"
+                                    <input type="number" name="tahun_awal" class="form-control form-control-sm shadow-none border-0"
                                         value="{{ $tahunAwal }}" placeholder="2020">
                                 </div>
                                 <div class="col-md-2 col-6 yearly-filter"
                                     style="{{ ($filterType ?? '') == 'yearly' ? '' : 'display: none;' }}">
                                     <label class="form-label small text-muted fw-bold mb-1">Sampai Tahun</label>
                                     <input type="number" name="tahun_akhir"
-                                        class="form-control form-control-sm shadow-none" value="{{ $tahunAkhir }}"
+                                        class="form-control form-control-sm shadow-none border-0" value="{{ $tahunAkhir }}"
                                         placeholder="{{ date('Y') }}">
                                 </div>
 
                                 {{-- Tombol Action --}}
-                                <div class="col-md-2 col-12 d-flex gap-2">
-                                    <button type="submit" class="btn btn-primary btn-sm flex-fill fw-bold shadow-sm">
-                                        <i class="fas fa-search me-1"></i>
+                                <div class="col-md-auto col-12 d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">
+                                        <i class="fas fa-search me-1"></i> Cari
                                     </button>
                                     <button type="button" id="btnExportCsv"
-                                        class="btn btn-success btn-sm flex-fill fw-bold shadow-sm">
-                                        <i class="fas fa-file-csv me-1"></i>
+                                        class="btn btn-success px-4 fw-bold shadow-sm">
+                                        <i class="fas fa-file-csv me-1"></i> CSV
                                     </button>
                                 </div>
                             </div>
@@ -156,10 +156,16 @@
                                     class="fw-extrabold">{{ number_format($totalKeseluruhanKunjungan ?? 0, 0, ',', '.') }}</span>
                             </div>
                         </div>
-                        <div class="card-body p-0">
+                        <div class="card-body p-4">
+                            <!-- Custom Search Input (Match Textbook Style) -->
+                            <div class="mb-3">
+                                <input type="text" class="form-control" id="searchInput"
+                                    placeholder="Cari prodi atau kategori...">
+                            </div>
+                            
                             <div class="table-responsive">
-                                <table id="yajraTable" class="table table-dark-custom align-middle w-100 mb-0 my-3"
-                                    style="border-collapse: collapse;">
+                                <table id="yajraTable" class="table table-hover align-middle mb-0 unified-table"
+                                    style="width:100%">
                                     <thead class="">
                                         <tr>
                                             <th class="px-4 py-3 text-uppercase small fw-bold" width="5%">No</th>
@@ -170,7 +176,29 @@
                                                 Jumlah</th>
                                         </tr>
                                     </thead>
-                                    <tbody></tbody>
+                                    <tbody>
+                                        @foreach ($tableData as $index => $row)
+                                            <tr>
+                                                <td class="text-center opacity-75">{{ $index + 1 }}</td>
+                                                <td>
+                                                    @if($filterType === 'yearly')
+                                                        {{ \Carbon\Carbon::parse($row->tanggal_display ?? $row->tanggal_kunjungan)->locale('id')->isoFormat('MMMM Y') }}
+                                                    @else
+                                                        {{ $row->tanggal_display }}
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex flex-column">
+                                                        <span class="fw-bold text-primary">{{ $row->nama_prodi }}</span>
+                                                        <small class="text-muted">{{ $row->kode_prodi }}</small>
+                                                    </div>
+                                                </td>
+                                                <td class="text-end fw-bold">
+                                                    {{ number_format($row->jumlah, 0, ',', '.') }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
                                 </table>
                             </div>
                         </div>
@@ -290,6 +318,7 @@
             color: var(--text-dark) !important;
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid var(--bs-border-color);
+            vertical-align: middle;
         }
 
         /* 4. Hapus Efek Hover (Sesuai Request) */
@@ -343,37 +372,12 @@
             padding-bottom: 1rem;
         }
 
-        /* Pagination Styling */
-        .page-link {
-            padding: 0.6rem 1.2rem !important;
-            font-weight: 600;
-            border-radius: 8px !important;
-            margin: 0 3px;
-            font-size: 0.9rem;
-            background-color: var(--bs-body-bg);
-            /* Background tombol ikut tema */
-            border-color: var(--bs-border-color);
-            color: var(--bs-body-color);
-        }
-
-        .page-item.active .page-link {
-            background-color: #0d6efd;
-            border-color: #0d6efd;
-            color: white !important;
-        }
-
-        .page-item.disabled .page-link {
-            background-color: var(--bs-tertiary-bg);
-            color: var(--bs-secondary-color);
-        }
-
         .fw-extrabold {
             font-weight: 800;
         }
 
         .btn {
             border-radius: 8px;
-            padding: 0.6rem 1rem;
             transition: all 0.2s ease;
         }
     </style>
@@ -410,63 +414,56 @@
             $('#filter_type').on('change', toggleFilters);
             toggleFilters();
 
-            // --- 3. DATATABLES ---
+            // --- 3. CLIENT-SIDE DATATABLES ---
             var table = $('#yajraTable').DataTable({
-                processing: true,
-                serverSide: true,
-                searching: true,
-                ordering: false,
-                lengthMenu: [
-                    [10, 25, 50, 100],
-                    [10, 25, 50, 100]
-                ],
-                ajax: {
-                    url: "{{ route('kunjungan.fakultasTable') }}",
-                    data: function(d) {
-                        d.filter_type = $('#filter_type').val();
-                        d.fakultas = $('#fakultas').val();
-                        d.lokasi = $('#lokasi').val();
-                        d.tanggal_awal = $('input[name="tanggal_awal"]').val();
-                        d.tanggal_akhir = $('input[name="tanggal_akhir"]').val();
-                        d.tahun_awal = $('input[name="tahun_awal"]').val();
-                        d.tahun_akhir = $('input[name="tahun_akhir"]').val();
-                        d.search_manual = $('#hiddenSearchInput').val();
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json",
+                    "thousands": ".",
+                    "decimal": ",",
+                    "paginate": {
+                        "previous": "Sebelumnya",
+                        "next": "Selanjutnya"
                     }
                 },
-                columns: [{
-                        data: 'DT_RowIndex',
-                        name: 'DT_RowIndex',
-                        orderable: false,
-                        searchable: false,
-                        className: 'text-center opacity-75'
-                    },
-                    {
-                        data: 'tanggal_kunjungan',
-                        name: 'tanggal_kunjungan'
-                    },
-                    {
-                        data: 'nama_prodi',
-                        name: 'nama_prodi'
-                    },
-                    {
-                        data: 'jumlah_kunjungan_harian',
-                        name: 'jumlah_kunjungan_harian',
-                        className: 'text-end fw-bold'
-                    }
+                "paging": true,
+                "lengthChange": true,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "responsive": true,
+                "lengthMenu": [
+                    [10, 25, 50, 100, -1],
+                    [10, 25, 50, 100, "Semua"]
                 ],
-                language: {
-                    url: "//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json",
-                    searchPlaceholder: "Cari prodi..."
-                },
-                drawCallback: function(settings) {
+                // DOM Layout persis seperti Textbook (Tanpa 'f' karena pakai custom search)
+                "dom": '<"d-flex justify-content-between mb-3"lp>rt<"d-flex justify-content-between mt-3"ip>',
+                "columnDefs": [
+                    { "searchable": false, "orderable": false, "targets": 0 }
+                ],
+                "drawCallback": function(settings) {
                     var api = this.api();
-                    var json = api.ajax.json();
-                    if (json && typeof json.recordsTotalFiltered !== 'undefined') {
-                        let formattedTotal = new Intl.NumberFormat('id-ID').format(json
-                            .recordsTotalFiltered);
-                        $('#totalBadge').text(formattedTotal);
-                    }
+                    // Update nomor urut
+                    api.column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+                        cell.innerHTML = i+1;
+                    });
+                    
+                    // Update Badge Total (Sum of Column 3 - Jumlah)
+                    let total = 0;
+                    api.column(3, { search: 'applied' }).data().each(function(value, index) {
+                        // Value might be formatted (e.g. "1.234"), remove dots to parse integer
+                        let cleanValue = typeof value === 'string' ? value.replace(/\./g, '') : value;
+                        total += parseInt(cleanValue) || 0;
+                    });
+                    
+                    let formattedTotal = new Intl.NumberFormat('id-ID').format(total);
+                    $('#totalBadge').text(formattedTotal);
                 }
+            });
+
+            // Bind Custom Search Input (Match Textbook)
+            $('#searchInput').on('keyup change', function() {
+                table.search(this.value).draw();
             });
 
             // --- 4. CHART ---

@@ -9,7 +9,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./.env:/var/www/html/.env
-      # - .:/var/www/html # Sinkronisasi kode dari lokal ke container (Matikan di production jika ingin pakai image build)
+      - .:/var/www/html # Sinkronisasi kode dari lokal ke container (Matikan di production jika ingin pakai image build)
     networks:
       - akreditasi-network
 

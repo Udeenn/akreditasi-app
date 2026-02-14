@@ -199,7 +199,7 @@
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body p-4 text-center">
                             <div class="mb-4">
-                                <img src="https://ui-avatars.com/api/?name={{ urlencode($borrower->firstname . ' ' . $borrower->surname) }}&background=0d6efd&color=fff&size=128&bold=true"
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ urlencode($borrower->firstname . ' ' . $borrower->surname) }}"
                                     class="rounded-circle shadow-sm border border-4 border-light" alt="Avatar"
                                     width="100">
                             </div>

@@ -1,32 +1,17 @@
 @extends('layouts.app')
 
-@section('title', 'Data Ijazah')
-
-@push('styles')
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.min.css">
-    <style>
-        .search-form-container {
-            margin-bottom: 1.5rem;
-        }
-    </style>
-@endpush
+@section('title', 'Ijazah')
 
 @section('content')
-    <div class="container mt-4">
+    <div class="container-fluid px-3 px-md-4 py-4">
+
+        {{-- Alerts --}}
         @if (session('success'))
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 {{ session('success') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
-
-        @if (session('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
         @if ($errors->any())
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 <ul>
@@ -38,38 +23,55 @@
             </div>
         @endif
 
-        <h1 class="mb-4">Data Ijazah</h1>
-
-        <div class="d-flex justify-content-between align-items-center mb-3 search-form-container">
-            <div>
-                @can('admin-action')
-                    <button type="button" class="btn btn-warning me-2" data-bs-toggle="modal" data-bs-target="#ijazahModal">
-                        <i class="fas fa-plus me-2"></i> Tambah Data Ijazah
-                    </button>
-                    @include('modal.create-ijazah')
-                @endcan
-
-                {{-- Tombol Download All Dokumen --}}
-                {{-- <a href="{{ route('ijazah.downloadAll') }}" class="btn btn-info">
-                    <i class="fas fa-download me-2"></i> Download Semua Dokumen
-                </a> --}}
+        {{-- 1. HEADER BANNER --}}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card unified-card border-0 shadow-sm page-header-banner">
+                    <div
+                        class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
+                        <div class="mb-3 mb-md-0">
+                            <h3 class="fw-bold mb-1">
+                                <i class="fas fa-graduation-cap me-2"></i>Data Ijazah
+                            </h3>
+                            <p class="mb-0 opacity-75">Kelola data ijazah staff perpustakaan</p>
+                        </div>
+                        <div class="d-none d-md-block opacity-50">
+                            <i class="fas fa-graduation-cap fa-4x"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            {{-- Search Input Form --}}
-            <form action="{{ route('ijazah.index') }}" method="GET" class="d-flex ms-auto">
-                <input type="text" name="search" class="form-control me-2" placeholder="Cari ID, Judul Ijazah, Tahun..."
-                    value="{{ request('search') }}">
-                <button type="submit" class="btn btn-primary">Cari</button>
-                @if (request('search'))
-                    <a href="{{ route('ijazah.index') }}" class="btn btn-secondary ms-2">Reset</a>
-                @endif
-            </form>
         </div>
 
-        <div class="card shadow mb-4">
+        {{-- 2. SEARCH & ACTION --}}
+        <div class="card unified-card border-0 shadow-sm filter-card mb-4">
+            <div class="card-body">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    @can('admin-action')
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal"
+                            data-bs-target="#ijazahModal">
+                            <i class="fas fa-plus me-2"></i> Tambah Data Ijazah
+                        </button>
+                        @include('modal.create-ijazah')
+                    @endcan
+
+                    <form action="{{ route('ijazah.index') }}" method="GET" class="d-flex ms-auto">
+                        <input type="text" name="search" class="form-control me-2"
+                            placeholder="Cari ID, Nama Ijazah, Tahun..." value="{{ request('search') }}">
+                        <button type="submit" class="btn btn-primary">Cari</button>
+                        @if (request('search'))
+                            <a href="{{ route('ijazah.index') }}" class="btn btn-secondary ms-2">Reset</a>
+                        @endif
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {{-- 3. DATA TABLE --}}
+        <div class="card unified-card border-0 shadow-sm">
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover text-center" id="data-table-ijazah">
+                    <table class="table table-hover align-middle mb-0 unified-table text-center" id="data-table-ijazah">
                         <thead>
                             <tr>
                                 <th>No</th>
@@ -128,6 +130,3 @@
         </div>
     </div>
 @endsection
-
-@push('scripts')
-@endpush

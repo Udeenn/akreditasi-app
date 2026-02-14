@@ -59,4 +59,20 @@ class User extends Authenticatable
     {
         return static::where('name', $username)->first();
     }
+
+    /**
+     * Override toArray to sanitize UTF-8 strings.
+     */
+    public function toArray()
+    {
+        $attributes = parent::toArray();
+        
+        array_walk_recursive($attributes, function (&$value) {
+            if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
+                $value = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+            }
+        });
+
+        return $attributes;
+    }
 }

@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ asset('css/unified-components.css') }}">
 
     @stack('styles')
 
@@ -181,7 +182,9 @@
             position: sticky;
             top: 0;
             z-index: 1000;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, margin-left 0.3s ease-in-out;
+            margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
         }
 
         .header-left .sidebar-toggle-btn {
@@ -635,10 +638,16 @@
                     </button>
 
                     {{-- Greeting dan Waktu --}}
-                    <h5 class="m-0 fw-normal" id="greeting-header">
-                        <span id="greeting-icon"></span>
-                        <span id="greeting-text"></span>
-                    </h5>
+                    <div class="d-flex flex-column justify-content-center">
+                        <span class="text-xs text-muted fw-bold">Selamat Datang,</span>
+                        <h5 class="m-0 fw-bold" id="greeting-header">
+                             @auth
+                                {{ Auth::user()->name ?: Auth::user()->username }}
+                            @else
+                                <span id="greeting-text">Pengunjung</span>
+                            @endauth
+                        </h5>
+                    </div>
                 </div>
                 <div class="header-right">
                     <div class="d-flex align-items-center gap-3">
@@ -649,7 +658,6 @@
 
                         <div class="d-flex align-items-center">
                             @guest
-                                {{-- Ini diubah jadi tombol untuk mentrigger modal --}}
                                 <button type="button" class="btn btn-sm btn-outline-secondary text-body-emphasis"
                                     data-bs-toggle="modal" data-bs-target="#loginModal"><i
                                         class="fas fa-sign-in-alt me-1"></i>
@@ -658,7 +666,7 @@
                             @else
                                 <form action="{{ route('cas.logout') }}" method="POST" class="d-inline">
                                     @csrf
-                                    <button type="submit" class="btn btn-sm btn-danger text-body-emphasis">
+                                    <button type="submit" class="btn btn-sm btn-danger">
                                         <i class="fas fa-sign-out-alt me-1"></i>
                                         Logout</button>
                                 </form>
@@ -828,8 +836,8 @@
                     iconClass = "fas fa-moon me-2";
                 }
 
-                $('#greeting-text').text(greetingText);
-                $('#greeting-icon').removeClass().addClass(iconClass);
+                // $('#greeting-text').text(greetingText);
+                // $('#greeting-icon').removeClass().addClass(iconClass);
 
                 $('#welcomeModalGreeting').text(greetingText + "!");
             }

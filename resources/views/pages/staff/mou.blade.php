@@ -2,26 +2,16 @@
 
 @section('title', 'MoU')
 
-@push('styles')
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.min.css">
-    <style>
-        /* Optional: Adjust spacing for search form */
-        .search-form-container {
-            margin-bottom: 1.5rem;
-        }
-    </style>
-@endpush
-
 @section('content')
-    <div class="container mt-4"> {{-- Added mt-4 for top margin from navbar --}}
-        {{-- Success and Error Alerts --}}
+    <div class="container-fluid px-3 px-md-4 py-4">
+
+        {{-- Alerts --}}
         @if (session('success'))
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 {{ session('success') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
-
         @if ($errors->any())
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 <ul>
@@ -33,39 +23,59 @@
             </div>
         @endif
 
-        <h1 class="mb-4">Data MoU</h1>
-
-        {{-- Action buttons and Search form --}}
-        <div class="d-flex justify-content-between align-items-center mb-3 search-form-container">
-            @can('admin-action')
-                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#mouModal">
-                    <i class="fas fa-plus me-2"></i> Tambah Data MoU
-                </button>
-                @include('modal.create-mou')
-            @endcan
-
-            {{-- Search Input Form --}}
-            <form action="{{ route('mou.index') }}" method="GET" class="d-flex ms-auto">
-                <input type="text" name="search" class="form-control me-2" placeholder="Cari Nama MoU, Tahun..."
-                    value="{{ request('search') }}">
-                <button type="submit" class="btn btn-primary">Cari</button>
-                @if (request('search'))
-                    <a href="{{ route('mou.index') }}" class="btn btn-secondary ms-2">Reset</a>
-                @endif
-            </form>
+        {{-- 1. HEADER BANNER --}}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card unified-card border-0 shadow-sm page-header-banner">
+                    <div
+                        class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
+                        <div class="mb-3 mb-md-0">
+                            <h3 class="fw-bold mb-1">
+                                <i class="fas fa-handshake me-2"></i>Data MoU
+                            </h3>
+                            <p class="mb-0 opacity-75">Kelola data Memorandum of Understanding</p>
+                        </div>
+                        <div class="d-none d-md-block opacity-50">
+                            <i class="fas fa-handshake fa-4x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="card shadow mb-4"> {{-- Added card styling --}}
+        {{-- 2. SEARCH & ACTION --}}
+        <div class="card unified-card border-0 shadow-sm filter-card mb-4">
+            <div class="card-body">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    @can('admin-action')
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#mouModal">
+                            <i class="fas fa-plus me-2"></i> Tambah Data MoU
+                        </button>
+                        @include('modal.create-mou')
+                    @endcan
+
+                    <form action="{{ route('mou.index') }}" method="GET" class="d-flex ms-auto">
+                        <input type="text" name="search" class="form-control me-2"
+                            placeholder="Cari Nama MoU, Tahun..." value="{{ request('search') }}">
+                        <button type="submit" class="btn btn-primary">Cari</button>
+                        @if (request('search'))
+                            <a href="{{ route('mou.index') }}" class="btn btn-secondary ms-2">Reset</a>
+                        @endif
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {{-- 3. DATA TABLE --}}
+        <div class="card unified-card border-0 shadow-sm">
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover text-center" id="data-table-mou"> {{-- Added ID for DataTables --}}
+                    <table class="table table-hover align-middle mb-0 unified-table text-center" id="data-table-mou">
                         <thead>
                             <tr>
                                 <th>No</th>
-                                {{-- Jika MoU memiliki id_staf, tambahkan ini. Dari kode Anda, sepertinya tidak ada. --}}
-                                {{-- <th>ID Staff</th> --}}
                                 <th>Nama MoU</th>
-                                <th>File MoU</th> {{-- Changed from Nama File to File MoU --}}
+                                <th>File MoU</th>
                                 <th>Tahun</th>
                                 @can('admin-action')
                                     <th>Aksi</th>
@@ -74,11 +84,8 @@
                         </thead>
                         <tbody>
                             @forelse ($mou as $no => $item)
-                                {{-- Changed to @forelse --}}
                                 <tr>
-                                    <td>{{ $no + $mou->firstItem() }}</td> {{-- Corrected for pagination index --}}
-                                    {{-- Jika MoU memiliki id_staf, tampilkan di sini. --}}
-                                    {{-- <td>{{ $item->id_staf }}</td> --}}
+                                    <td>{{ $no + $mou->firstItem() }}</td>
                                     <td>{{ $item->judul_mou }}</td>
                                     <td>
                                         <button class="btn btn-success btn-sm" data-bs-toggle="modal"
@@ -102,12 +109,10 @@
                                         </td>
                                     @endcan
                                 </tr>
-                                {{-- Include the view-pdf and edit-mou modals for each item --}}
-                                @include('modal.view-pdf', ['item' => $item]) {{-- Pass $item to view-pdf modal --}}
-                                @include('modal.edit-mou', ['mou' => $item]) {{-- Pass $item as $mou to edit-mou modal --}}
+                                @include('modal.view-pdf', ['item' => $item])
+                                @include('modal.edit-mou', ['mou' => $item])
                             @empty
                                 <tr>
-                                    {{-- Colspan disesuaikan jika id_staf tidak ditampilkan --}}
                                     <td colspan="{{ Auth::user()->can('admin-action') ? '5' : '4' }}" class="text-center">
                                         Tidak ada data MoU ditemukan.</td>
                                 </tr>
@@ -116,11 +121,9 @@
                     </table>
                 </div>
                 <div class="d-flex justify-content-center mt-3">
-                    {{ $mou->links() }} {{-- Laravel Pagination Links --}}
+                    {{ $mou->links() }}
                 </div>
             </div>
         </div>
     </div>
 @endsection
-
-

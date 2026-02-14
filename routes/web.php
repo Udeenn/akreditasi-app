@@ -52,6 +52,7 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     
+    
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     
@@ -67,18 +68,20 @@ Route::middleware('auth')->group(function () {
     // Statistik Kunjungan
     // =============================================
     Route::prefix('kunjungan')->name('kunjungan.')->group(function () {
-        Route::get('/prodiChart', [VisitHistory::class, 'kunjunganProdiChart'])->name('prodiChart');
-        Route::get('/prodiTable', [VisitHistory::class, 'kunjunganProdiTable'])->name('prodiTable');
-        Route::get('/tanggal', [VisitHistory::class, 'kunjunganTanggalTable'])->name('tanggalTable');
+        Route::get('/prodi-chart', [VisitHistory::class, 'kunjunganProdiChart'])->name('prodiChartData');
+        Route::get('/prodi-data', [VisitHistory::class, 'getProdiDataJSON'])->name('prodiData');
+        Route::get('/prodi', [VisitHistory::class, 'kunjunganProdiTable'])->name('prodi');
+        Route::get('/prodi/data', [VisitHistory::class, 'getProdiData'])->name('prodi.data');
+        Route::get('/harian', [VisitHistory::class, 'kunjunganTanggalTable'])->name('tanggalTable');
         Route::get('/fakultas', [VisitHistory::class, 'kunjunganFakultasTable'])->name('fakultasTable');
         Route::get('/fakultas/export', [VisitHistory::class, 'exportCsvFakultas'])->name('fakultasExport');
         Route::get('/cek-kehadiran', [VisitHistory::class, 'cekKehadiran'])->name('cekKehadiran');
         Route::get('/export-kehadiran-full-data', [VisitHistory::class, 'getKehadiranExportData'])->name('get_export_data');
         Route::get('/export-harian-full-data', [VisitHistory::class, 'getKunjunganHarianExportData'])->name('get_harian_export_data');
         Route::get('/export-prodi-full-data', [VisitHistory::class, 'getProdiExportData'])->name('get_prodi_export_data');
-        Route::get('/prodi-table/detail-pengunjung', [VisitHistory::class, 'getDetailPengunjung'])->name('get_detail_pengunjung');
-        Route::get('/get_detail_pengunjung_harian', [VisitHistory::class, 'getDetailPengunjungHarian'])->name('get_detail_pengunjung_harian');
-        Route::get('/export-pdf', [VisitHistory::class, 'exportPdf'])->name('export-pdf');
+        Route::get('/get-detail-pengunjung', [VisitHistory::class, 'getDetailPengunjung'])->name('get_detail_pengunjung');
+        Route::get('/get-detail-pengunjung-harian', [VisitHistory::class, 'getDetailPengunjungHarian'])->name('get_detail_pengunjung_harian');
+        Route::get('/export-pdf', [VisitHistory::class, 'exportPdf'])->name('export_pdf');
         Route::get('/get-detail-pengunjung-harian-export', [VisitHistory::class, 'getDetailPengunjungHarianExport'])->name('get_detail_pengunjung_harian_export');
         Route::get('/get-lokasi-detail', [VisitHistory::class, 'getLokasiDetail'])->name('get_lokasi_detail');
     });
@@ -103,7 +106,7 @@ Route::middleware('auth')->group(function () {
     // =============================================
     // Laporan
     // =============================================
-    Route::get('/laporan/kunjungan-gabungan', [VisitHistory::class, 'laporanKunjunganGabungan'])->name('kunjungan.kunjungan_gabungan');
+    Route::get('/kunjungan/keseluruhan', [VisitHistory::class, 'laporanKunjunganGabungan'])->name('kunjungan.keseluruhan');
 
     // =============================================
     // Peminjaman

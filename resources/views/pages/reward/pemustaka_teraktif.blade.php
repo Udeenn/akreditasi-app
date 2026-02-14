@@ -3,36 +3,48 @@
 @section('title', 'Pemustaka Teraktif')
 
 @section('content')
-    <div class="container-fluid px-4 py-4">
+    <div class="container-fluid px-3 px-md-4 py-4">
 
-        {{-- Header --}}
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
-            <div class="card-body p-4">
-                <h4 class="mb-1"><i class="fas fa-chart-line me-2 text-primary"></i>Pemustaka Teraktif</h4>
-                <p class="text-muted mb-0">Menampilkan daftar pemustaka teraktif di perpustakaan UMS selama satu tahun
-                </p>
-            </div>
-            @if ($hasFilter)
-                <div>
-                    <span class="badgeborder px-3 py-2 rounded-pill shadow-sm">
-                        <i class="bi bi-calendar-check me-1 text-primary"></i> Periode: <strong>{{ $tahun }}</strong>
-                    </span>
+        {{-- 1. HEADER BANNER --}}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card unified-card border-0 shadow-sm page-header-banner">
+                    <div
+                        class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
+                        <div class="mb-3 mb-md-0">
+                            <h3 class="fw-bold mb-1">
+                                <i class="fas fa-chart-line me-2"></i>Pemustaka Teraktif
+                            </h3>
+                            <p class="mb-0 opacity-75">
+                                Menampilkan daftar pemustaka teraktif di perpustakaan UMS selama satu tahun
+                                @if ($hasFilter)
+                                    — Periode: <strong>{{ $tahun }}</strong>
+                                @endif
+                            </p>
+                        </div>
+                        <div class="d-none d-md-block opacity-50">
+                            <i class="fas fa-trophy fa-4x"></i>
+                        </div>
+                    </div>
                 </div>
-            @endif
+            </div>
         </div>
 
-        {{-- Filter Panel --}}
-        <div class="card border-0 shadow-sm rounded-4 mb-4">
+        {{-- 2. FILTER PANEL --}}
+        <div class="card unified-card border-0 shadow-sm filter-card mb-4">
+            <div class="card-header border-bottom-0 pt-3 pb-0">
+                <h6 class="fw-bold text-primary"><i class="fas fa-filter me-1"></i> Filter Data</h6>
+            </div>
             <div class="card-body p-4">
                 <form method="GET" action="{{ route('reward.pemustaka_teraktif') }}">
                     <div class="row g-3 align-items-end">
 
-                        {{-- GROUP 1: FILTER (Kiri) --}}
+                        {{-- Periode --}}
                         <div class="col-md-3 col-lg-3">
-                            <label for="tahun" class="form-label text-secondary fw-bold small text-uppercase ls-1">
-                                <i class="bi bi-calendar3 me-1"></i> Periode
+                            <label for="tahun" class="form-label small text-muted fw-bold text-uppercase">
+                                <i class="fas fa-calendar me-1"></i> Periode
                             </label>
-                            <select name="tahun" id="tahun" class="form-select form-select-lg border-0 ">
+                            <select name="tahun" id="tahun" class="form-select">
                                 @php $currentYear = date('Y'); @endphp
                                 @for ($year = $currentYear; $year >= 2020; $year--)
                                     <option value="{{ $year }}"
@@ -43,10 +55,10 @@
                             </select>
                         </div>
                         <div class="col-md-3 col-lg-3">
-                            <label for="kategori" class="form-label text-secondary fw-bold small text-uppercase ls-1">
-                                <i class="bi bi-funnel me-1"></i> Kategori
+                            <label for="kategori" class="form-label small text-muted fw-bold text-uppercase">
+                                <i class="fas fa-filter me-1"></i> Kategori
                             </label>
-                            <select name="kategori" id="kategori" class="form-select form-select-lg border-0 ">
+                            <select name="kategori" id="kategori" class="form-select">
                                 <option value="">Semua Kategori</option>
                                 <option value="Mahasiswa" {{ request('kategori') == 'Mahasiswa' ? 'selected' : '' }}>
                                     Mahasiswa</option>
@@ -56,26 +68,26 @@
                             </select>
                         </div>
 
-                        {{-- Tombol Tampilkan (Primary Action) --}}
+                        {{-- Tombol Cari --}}
                         <div class="col-md-2 col-lg-2">
-                            <button type="submit" class="btn btn-primary btn-lg w-100  shadow-sm">
-                                <i class="bi bi-search"></i> Cari
+                            <button type="submit" class="btn btn-primary w-100 shadow-sm">
+                                <i class="fas fa-search"></i> Cari
                             </button>
                         </div>
-                        {{-- GROUP 2: EXPORT (Kanan - Spacer Auto) --}}
+                        {{-- Export Buttons --}}
                         <div class="col-md-4 col-lg-4 ms-auto text-md-end">
                             <div class="d-flex gap-2 justify-content-md-end mt-3 mt-md-0">
                                 <button type="button" id="exportPengunjungButton"
-                                    class="btn btn-outline-success btn-lg {{ !$hasFilter ? 'disabled' : '' }}"
+                                    class="btn btn-outline-success {{ !$hasFilter ? 'disabled' : '' }}"
                                     title="Export Data Pengunjung">
-                                    <i class="bi bi-file-earmark-excel me-1"></i> <span class="d-none d-xl-inline">
+                                    <i class="fas fa-file-csv me-1"></i> <span class="d-none d-xl-inline">
                                         Pengunjung</span>
                                 </button>
 
-                                <button type="button" id="PeminjamButton"
-                                    class="btn btn-outline-warning btn-lg {{ !$hasFilter ? 'disabled' : '' }}"
+                                <button type="button" id="exportPeminjamButton"
+                                    class="btn btn-outline-warning {{ !$hasFilter ? 'disabled' : '' }}"
                                     title="Export Data Peminjam">
-                                    <i class="bi bi-file-earmark-excel me-1"></i> <span class="d-none d-xl-inline">
+                                    <i class="fas fa-file-csv me-1"></i> <span class="d-none d-xl-inline">
                                         Peminjam</span>
                                 </button>
                             </div>
@@ -89,23 +101,20 @@
         @if (!$hasFilter)
             <div class="text-center py-5">
                 <div class="mb-3">
-                    <i class="bi bi-bar-chart-line fs-1 text-muted opacity-25"></i>
+                    <i class="fas fa-chart-bar fs-1 text-muted opacity-25"></i>
                 </div>
-                <h5 class="text-muted fw-normal">Silakan pilih tahun dan klik Tampilkan</h5>
+                <h5 class="text-muted fw-normal">Silakan pilih tahun dan klik Cari</h5>
             </div>
         @else
             <div class="row g-4">
-                {{-- Helper Function untuk Render Baris (Agar tidak duplikasi kode) --}}
+                {{-- Helper Function untuk Render Baris --}}
                 @php
                     function renderRow($p, $index, $unit)
                     {
-                        // Warna Avatar Random berdasarkan Nama
                         $avatarUrl =
-                            'https://ui-avatars.com/api/?name=' .
-                            urlencode($p->nama) .
-                            '&background=random&color=fff&size=128&bold=true';
+                            'https://api.dicebear.com/7.x/avataaars/svg?seed=' .
+                            urlencode($p->nama);
 
-                        // Style Rank
                         $rankIcon = '';
                         $rankClass = 'text-secondary fw-bold';
                         if ($index == 1) {
@@ -116,12 +125,11 @@
                             $rankClass = 'text-secondary fs-4';
                         } elseif ($index == 3) {
                             $rankIcon = '🥉';
-                            $rankClass = 'text-danger fs-4'; // Bronze color approx
+                            $rankClass = 'text-danger fs-4';
                         } else {
                             $rankIcon = '#' . $index;
                         }
 
-                        // Badge Kategori
                         $badgeClass = match ($p->kategori) {
                             'Mahasiswa' => 'bg-info bg-opacity-10 text-info',
                             'Dosen' => 'bg-success bg-opacity-10 text-success',
@@ -130,7 +138,7 @@
                         };
 
                         return '
-                    <tr class="align-middle transition-hover">
+                    <tr class="align-middle">
                         <td class="text-center ps-4 ' .
                             $rankClass .
                             '" style="width: 80px;">' .
@@ -163,7 +171,7 @@
                                 <span class="fw-bolder fs-5 ">' .
                             number_format($p->jumlah, 0, ',', '.') .
                             '</span>
-                                <span class="text-muted fs-xs text-uppercase">' .
+                                <span class="text-muted small text-uppercase">' .
                             $unit .
                             '</span>
                             </div>
@@ -174,11 +182,11 @@
 
                 {{-- Kolom Pengunjung --}}
                 <div class="col-xl-6">
-                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                        <div class="card-header  pt-4 px-4 pb-2 border-0">
+                    <div class="card unified-card h-100 border-0 shadow-sm overflow-hidden">
+                        <div class="card-header border-0 pt-4 px-4 pb-2">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h5 class="fw-bold text-primary mb-1"><i class="bi bi-person-check-fill me-2"></i>Top
+                                    <h5 class="fw-bold text-primary mb-1"><i class="fas fa-user-check me-2"></i>Top
                                         Pengunjung</h5>
                                     <p class="text-muted small mb-0">Frekuensi tap kartu / presensi</p>
                                 </div>
@@ -186,8 +194,8 @@
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead class=" text-uppercase fs-xs text-secondary fw-bold">
+                                <table class="table table-hover align-middle mb-0 unified-table">
+                                    <thead>
                                         <tr>
                                             <th class="ps-4 py-3 text-center">Rank</th>
                                             <th class="py-3">Nama Pemustaka</th>
@@ -213,11 +221,11 @@
 
                 {{-- Kolom Peminjam --}}
                 <div class="col-xl-6">
-                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                        <div class="card-header  pt-4 px-4 pb-2 border-0">
+                    <div class="card unified-card h-100 border-0 shadow-sm overflow-hidden">
+                        <div class="card-header border-0 pt-4 px-4 pb-2">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h5 class="fw-bold text-success mb-1"><i class="bi bi-book-half me-2"></i>Top Peminjam
+                                    <h5 class="fw-bold text-success mb-1"><i class="fas fa-book me-2"></i>Top Peminjam
                                     </h5>
                                     <p class="text-muted small mb-0">Transaksi peminjaman buku</p>
                                 </div>
@@ -225,8 +233,8 @@
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead class=" text-uppercase fs-xs text-secondary fw-bold">
+                                <table class="table table-hover align-middle mb-0 unified-table">
+                                    <thead>
                                         <tr>
                                             <th class="ps-4 py-3 text-center">Rank</th>
                                             <th class="py-3">Nama Pemustaka</th>
@@ -253,52 +261,20 @@
         @endif
     </div>
 
-    <style>
-        /* Custom CSS agar tampilan lebih clean */
-        .fs-xs {
-            font-size: 0.75rem;
-        }
-
-        .ls-1 {
-            letter-spacing: 0.5px;
-        }
-
-        .transition-hover:hover {
-            background-color: #f8f9fa;
-        }
-
-        /* Tabel tanpa border bawah yang kasar */
-        .table> :not(caption)>*>* {
-            border-bottom-width: 0;
-        }
-
-        .table tbody tr {
-            border-bottom: 1px solid #f1f1f1;
-        }
-
-        .table tbody tr:last-child {
-            border-bottom: 0;
-        }
-    </style>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const exportPengunjungButton = document.getElementById('exportPengunjungButton');
             const exportPeminjamButton = document.getElementById('exportPeminjamButton');
 
-            // Fungsi Helper untuk buat URL Export yang lengkap
             function getExportUrl(routeName) {
                 const tahun = document.getElementById('tahun').value;
-                const kategori = document.getElementById('kategori').value; // <--- INI KUNCINYA
-
-                // Kita harus kirim 'tahun' DAN 'kategori' ke controller
+                const kategori = document.getElementById('kategori').value;
                 return `${routeName}?tahun=${tahun}&kategori=${kategori}`;
             }
 
             if (exportPengunjungButton) {
                 exportPengunjungButton.addEventListener('click', function() {
                     if (this.classList.contains('disabled')) return;
-
-                    // Gunakan helper function di atas
                     const url = getExportUrl("{{ route('reward.export_csv_pemustaka_teraktif') }}");
                     window.location.href = url;
                 });
@@ -307,8 +283,6 @@
             if (exportPeminjamButton) {
                 exportPeminjamButton.addEventListener('click', function() {
                     if (this.classList.contains('disabled')) return;
-
-                    // Gunakan helper function di atas
                     const url = getExportUrl("{{ route('reward.export_csv_peminjam_teraktif') }}");
                     window.location.href = url;
                 });
