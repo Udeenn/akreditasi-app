@@ -1,6 +1,6 @@
 
 services:
-  # 1. Service Aplikasi (PHP-FPM)
+  # 1. Service Aplikasi (PHP-FPM) - Production
   app:
     build:
       context: .
@@ -9,7 +9,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./.env:/var/www/html/.env
-      - .:/var/www/html # Sinkronisasi kode dari lokal ke container (Matikan di production jika ingin pakai image build)
+      # Production: TIDAK mount seluruh source code, pakai image build
     networks:
       - akreditasi-network
 
@@ -22,10 +22,11 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./:/var/www/html
-      - ./.docker/nginx/datapustaka.conf:/etc/nginx/conf.d/default.conf
+      - ./.docker/nginx/local.conf:/etc/nginx/conf.d/default.conf
       - ./.docker/nginx/selfsigned.crt:/etc/nginx/ssl/selfsigned.crt
       - ./.docker/nginx/selfsigned.key:/etc/nginx/ssl/selfsigned.key
+      # Mount public directory saja untuk static assets
+      - ./public:/var/www/html/public:ro
     depends_on:
       - app
     networks:
@@ -36,8 +37,6 @@ services:
     image: redis:alpine
     container_name: akreditasi_redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
     networks:
       - akreditasi-network
 
