@@ -75,9 +75,12 @@ RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framewor
     && chown -R www-data:www-data storage bootstrap/cache vendor \
     && chmod -R 775 storage bootstrap/cache vendor
 
+# Fix: Port 9000 conflict with Portainer - append listen = 9001
+RUN echo 'listen = 9001' >> /usr/local/etc/php-fpm.d/zz-docker.conf
+
 USER www-data
 
-EXPOSE 9000
+EXPOSE 9001
 CMD ["php-fpm"]
 
 

@@ -7,6 +7,12 @@ services:
       dockerfile: .docker/php/Dockerfile.prod
     container_name: akreditasi_app
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "php-fpm -t 2>/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     volumes:
       - ./.env:/var/www/html/.env
       # Production: TIDAK mount seluruh source code, pakai image build
@@ -28,7 +34,8 @@ services:
       # Mount public directory saja untuk static assets
       - ./public:/var/www/html/public:ro
     depends_on:
-      - app
+      app:
+        condition: service_healthy
     networks:
       - akreditasi-network
 
