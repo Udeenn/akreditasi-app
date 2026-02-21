@@ -34,6 +34,9 @@ class VisitHistory extends Controller
     public function kunjunganFakultasTable(Request $request)
     {
         ini_set('memory_limit', '512M');
+        set_time_limit(120);
+
+      try {
 
         // 1. SETUP DATA STATIC
         $allProdiListObj = \App\Models\M_Auv::where('category', 'PRODI')->get();
@@ -203,6 +206,14 @@ class VisitHistory extends Controller
             'lokasiMapping',
             'tableData' 
         ));
+
+      } catch (\Throwable $e) {
+          \Illuminate\Support\Facades\Log::error('Kunjungan Fakultas Error: ' . $e->getMessage(), [
+              'trace' => $e->getTraceAsString(),
+              'filters' => $request->all(),
+          ]);
+          return back()->with('error', 'Terjadi kesalahan saat memproses data. Silakan coba lagi atau kurangi rentang tanggal. Detail: ' . $e->getMessage());
+      }
     }
 
 

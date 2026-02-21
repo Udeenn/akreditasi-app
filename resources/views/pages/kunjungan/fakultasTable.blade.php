@@ -123,6 +123,12 @@
             </div>
         </div>
 
+        @if (session('error'))
+            <div class="alert alert-danger shadow-sm border-0 rounded-4">
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ session('error') }}
+            </div>
+        @endif
+
         @if ($hasFilter)
             <div class="row">
                 {{-- 3. CHART SECTION --}}
@@ -181,11 +187,7 @@
                                             <tr>
                                                 <td class="text-center opacity-75">{{ $index + 1 }}</td>
                                                 <td>
-                                                    @if($filterType === 'yearly')
-                                                        {{ \Carbon\Carbon::parse($row->tanggal_display ?? $row->tanggal_kunjungan)->locale('id')->isoFormat('MMMM Y') }}
-                                                    @else
-                                                        {{ $row->tanggal_display }}
-                                                    @endif
+                                                    {{ $row->tanggal_display }}
                                                 </td>
                                                 <td>
                                                     <div class="d-flex flex-column">
