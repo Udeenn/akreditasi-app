@@ -170,7 +170,7 @@
                                     <option value="">Semua Kategori</option>
                                     @foreach($listProdi as $code => $name)
                                         <option value="{{ $code }}" {{ request('prodi') == $code ? 'selected' : '' }}>
-                                            {{ $name }}
+                                            {{ $code }} - {{ $name }}
                                         </option>
                                     @endforeach
                                 </select>

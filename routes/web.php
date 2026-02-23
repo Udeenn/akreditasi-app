@@ -123,6 +123,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/export-borrowing-full-data', [PeminjamanController::class, 'getBorrowingHistoryExportData'])->name('get_borrowing_export_data');
         Route::get('/export-return-full-data', [PeminjamanController::class, 'getReturnHistoryExportData'])->name('get_return_export_data');
         Route::get('/peminjam-detail', [PeminjamanController::class, 'getPeminjamDetail'])->name('peminjamDetail');
+        Route::get('/fakultas', [PeminjamanController::class, 'peminjamanFakultasTable'])->name('peminjaman_fakultas');
+        Route::get('/export-fakultas', [PeminjamanController::class, 'exportCsvPeminjamanFakultas'])->name('export_fakultas');
     });
 
     // =============================================

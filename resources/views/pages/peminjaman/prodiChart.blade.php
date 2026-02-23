@@ -285,7 +285,7 @@
                                     @foreach ($prodiOptions as $prodi)
                                         <option value="{{ $prodi->authorised_value }}"
                                             {{ $selectedProdiCode == $prodi->authorised_value ? 'selected' : '' }}>
-                                            {{ $prodi->lib }} ({{ $prodi->authorised_value }})
+                                            {{ $prodi->authorised_value }} - {{ $prodi->lib }} 
                                         </option>
                                     @endforeach
                                 </select>

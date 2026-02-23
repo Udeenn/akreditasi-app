@@ -9,6 +9,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use App\Models\M_Auv;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class PeminjamanController extends Controller
 {
@@ -1426,6 +1427,436 @@ class PeminjamanController extends Controller
         return response()->json([
             'data' => $exportData,
             'namaProdiFilter' => $namaProdiFilter,
+        ]);
+    }
+
+    // =============================================
+    // PEMINJAMAN PER FAKULTAS
+    // =============================================
+
+    private $facultyMapping = [
+        'A' => 'FKIP - Fakultas Keguruan dan Ilmu Pendidikan',
+        'B' => 'FEB - Fakultas Ekonomi dan Bisnis',
+        'C' => 'FHIP - Fakultas Hukum dan Ilmu Politik',
+        'D' => 'FT - Fakultas Teknik',
+        'E' => 'FG - Fakultas Geografi',
+        'F' => 'FPsi - Fakultas Psikologi',
+        'G' => 'FAI - Fakultas Agama Islam',
+        'H' => 'FAI - Fakultas Agama Islam',
+        'K' => 'FF - Fakultas Farmasi',
+        'L' => 'FKI - Fakultas Komunikasi dan Informatika',
+    ];
+
+    /**
+     * Helper: Map kode prodi ke nama fakultas
+     * (Logika sama dengan VisitHistory::mapCodeToFaculty)
+     */
+    private function mapCodeToFaculty($prodiCode)
+    {
+        $prodiCode = strtoupper(trim($prodiCode));
+        $firstLetter = substr($prodiCode, 0, 1);
+        $firstTwoLetters = substr($prodiCode, 0, 2);
+        $firstThreeLetters = substr($prodiCode, 0, 3);
+
+        // Kode Spesifik
+        if (in_array($prodiCode, ['A510', 'A610', 'Q100', 'S400', 'Q200', 'Q300', 'S200']))
+            return 'FKIP - Fakultas Keguruan dan Ilmu Pendidikan';
+        if (in_array($prodiCode, ['W100', 'P100']))
+            return 'FEB - Fakultas Ekonomi dan Bisnis';
+        if (in_array($prodiCode, ['U200', 'U100', 'S100', 'D100', 'D200', 'D400']))
+            return 'FT - Fakultas Teknik';
+        if (in_array($prodiCode, ['S300', 'T100', 'F100']))
+            return 'FPsi - Fakultas Psikologi';
+        if (in_array($prodiCode, ['I000', 'O100', 'O300', 'O200', 'O000']))
+            return 'FAI - Fakultas Agama Islam';
+        if (in_array($prodiCode, ['R100', 'R200', 'C100']))
+            return 'FHIP - Fakultas Hukum dan Ilmu Politik';
+        if (in_array($prodiCode, ['V100', 'K100']))
+            return 'FF - Fakultas Farmasi';
+
+        // KSP (Kartu Sekali Kunjung) — jangan masuk Farmasi
+        if (str_starts_with($prodiCode, 'KSP') || $prodiCode === 'KSP')
+            return 'Lainnya';
+
+        // FIK / FK / FKG
+        if (in_array($firstThreeLetters, ['J53', 'J52'])) return 'FKG - Fakultas Kedokteran Gigi';
+        if ($firstTwoLetters === 'J5') return 'FK - Fakultas Kedokteran';
+        if ($firstLetter === 'J' || $firstLetter === 'G') return 'FIK - Fakultas Ilmu Kesehatan';
+
+        // FAI prefix
+        if (in_array($firstLetter, ['I', 'O', 'H'])) return 'FAI - Fakultas Agama Islam';
+
+        // Mapping standar dari property
+        if (isset($this->facultyMapping[$firstLetter]))
+            return $this->facultyMapping[$firstLetter];
+
+        return 'Lainnya';
+    }
+
+    /**
+     * Halaman Peminjaman Per Fakultas
+     */
+    public function peminjamanFakultasTable(Request $request)
+    {
+        ini_set('memory_limit', '512M');
+        set_time_limit(120);
+
+        // 1. Setup filter parameters
+        $hasFilter = $request->hasAny(['filter_type', 'start_date', 'end_date', 'start_year', 'end_year', 'fakultas']);
+        $filterType = $request->input('filter_type', 'daily');
+        $startDate = $request->input('start_date', Carbon::now()->subDays(30)->format('Y-m-d'));
+        $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+        $startYear = $request->input('start_year', Carbon::now()->year);
+        $endYear = $request->input('end_year', Carbon::now()->year);
+        $selectedFakultas = $request->input('fakultas', 'semua');
+
+        // Inisialisasi
+        $tableData = collect();
+        $chartData = collect();
+        $totalIssues = 0;
+        $totalRenews = 0;
+        $totalReturns = 0;
+        $totalBorrowers = 0;
+        $totalCirculation = 0;
+        $rerataPeminjaman = 0;
+        $dataExists = false;
+
+        // 2. Build daftar fakultas untuk dropdown
+        $allProdiListObj = M_Auv::getCachedProdiList();
+        $prodiMap = $allProdiListObj->mapWithKeys(function ($prodi) {
+            $lib = str_starts_with($prodi->lib, 'FAI/ ') ? substr($prodi->lib, 5) : $prodi->lib;
+            return [trim($prodi->authorised_value) => trim($lib)];
+        })->toArray();
+        $listFakultas = $allProdiListObj->map(function ($prodi) {
+            return $this->mapCodeToFaculty($prodi->authorised_value);
+        })->unique()->filter(function ($value) {
+            $blacklist = ['Lainnya', 'Dosen', 'Dosen & Pengajar', 'Tendik', 'Tenaga Kependidikan'];
+            return !in_array($value, $blacklist);
+        })->sort()->values()->all();
+
+        try {
+            if ($hasFilter) {
+                // 3. Setup tanggal
+                if ($filterType == 'daily') {
+                    if ($startDate > $endDate) [$startDate, $endDate] = [$endDate, $startDate];
+                    $start = Carbon::parse($startDate)->startOfDay();
+                    $end = Carbon::parse($endDate)->endOfDay();
+                    $sqlDateFormat = '%Y-%m-%d';
+                } else {
+                    if ($startYear > $endYear) [$startYear, $endYear] = [$endYear, $startYear];
+                    $start = Carbon::createFromDate($startYear, 1, 1)->startOfDay();
+                    $end = Carbon::createFromDate($endYear, 12, 31)->endOfDay();
+                    $sqlDateFormat = '%Y-%m';
+                }
+
+                // Cache key berdasarkan semua parameter filter
+                $cacheKey = 'peminjaman_fakultas_' . md5(json_encode([
+                    'filterType' => $filterType,
+                    'start' => $start->toDateTimeString(),
+                    'end' => $end->toDateTimeString(),
+                    'selectedFakultas' => $selectedFakultas,
+                ]));
+                $cachedResult = Cache::remember($cacheKey, 3600, function () use ($start, $end, $sqlDateFormat, $filterType, $selectedFakultas, $prodiMap) {
+
+                    // 4. Query: Ambil data sirkulasi grouped per periode + borrowernumber
+                    $rawData = DB::connection('mysql2')->table('statistics as s')
+                        ->leftJoin('borrowers as b', 'b.borrowernumber', '=', 's.borrowernumber')
+                        ->leftJoin('borrower_attributes as ba', function ($join) {
+                            $join->on('ba.borrowernumber', '=', 'b.borrowernumber')
+                                ->where('ba.code', '=', 'PRODI');
+                        })
+                        ->whereIn('s.type', ['issue', 'renew', 'return'])
+                        ->whereBetween('s.datetime', [$start, $end])
+                        ->select(
+                            DB::raw("DATE_FORMAT(s.datetime, '$sqlDateFormat') as periode"),
+                            's.type',
+                            'b.cardnumber',
+                            'b.categorycode',
+                            'b.borrowernumber',
+                            'ba.attribute as prodi_code'
+                        )
+                        ->get();
+
+                    // 5. Map setiap record ke fakultas di PHP
+                    $processedData = $rawData->map(function ($row) use ($prodiMap) {
+                        $fakultas = 'Lainnya';
+                        $catCode = strtoupper(trim($row->categorycode ?? ''));
+                        $cardnumber = strtoupper(trim($row->cardnumber ?? ''));
+                        $prodiName = 'Lainnya / Tidak Diketahui';
+                        if (str_starts_with($catCode, 'TC') || str_starts_with($catCode, 'DOSEN')) {
+                            $fakultas = 'Dosen & Pengajar';
+                            $prodiName = 'Dosen';
+                        } elseif (str_starts_with($catCode, 'STAF') || str_contains($catCode, 'LIB') || $catCode === 'LIBRARIAN') {
+                            $fakultas = 'Tenaga Kependidikan';
+                            $prodiName = 'Staff/Tendik';
+                        } elseif (!empty($row->prodi_code)) {
+                            $cleanCode = trim($row->prodi_code);
+                            $fakultas = $this->mapCodeToFaculty($cleanCode);
+                            $prodiName = isset($prodiMap[$cleanCode]) ? $cleanCode . ' - ' . $prodiMap[$cleanCode] : $cleanCode;
+                        } elseif (strlen($cardnumber) >= 4 && preg_match('/^[A-Z]\d{3}/', $cardnumber)) {
+                            $kode = trim(substr($cardnumber, 0, 4));
+                            $fakultas = $this->mapCodeToFaculty($kode);
+                            $prodiName = isset($prodiMap[$kode]) ? $kode . ' - ' . $prodiMap[$kode] : $kode;
+                        }
+
+                        return [
+                            'periode' => $row->periode,
+                            'type' => $row->type,
+                            'fakultas' => $fakultas,
+                            'prodi_name' => trim($prodiName),
+                            'borrowernumber' => $row->borrowernumber,
+                        ];
+                    });
+
+                    // 6. Filter by fakultas jika dipilih
+                    if ($selectedFakultas && $selectedFakultas !== 'semua') {
+                        $processedData = $processedData->filter(fn($item) => $item['fakultas'] === $selectedFakultas);
+                    }
+
+                    // 7. Agregasi per periode + fakultas
+                    $grouped = $processedData->groupBy(fn($item) => $item['periode'] . '|' . $item['fakultas']);
+
+                    $aggregated = $grouped->map(function ($group, $key) {
+                        $parts = explode('|', $key);
+                        return [
+                            'periode' => $parts[0],
+                            'fakultas' => $parts[1],
+                            'jumlah_issue' => $group->where('type', 'issue')->count(),
+                            'jumlah_renew' => $group->where('type', 'renew')->count(),
+                            'jumlah_pengembalian' => $group->where('type', 'return')->count(),
+                            'total_sirkulasi' => $group->count(),
+                            'peminjam_unik' => $group->whereIn('type', ['issue', 'renew'])->pluck('borrowernumber')->unique()->count(),
+                        ];
+                    })->values();
+
+                    // 8. Total summary
+                    $totalIssues = $processedData->where('type', 'issue')->count();
+                    $totalRenews = $processedData->where('type', 'renew')->count();
+                    $totalReturns = $processedData->where('type', 'return')->count();
+                    $totalCirculation = $totalIssues + $totalRenews + $totalReturns;
+                    $totalBorrowers = $processedData->whereIn('type', ['issue', 'renew'])->pluck('borrowernumber')->unique()->count();
+
+                    // 9. Tabel data (agregasi per periode dengan sub-agregasi per prodi)
+                    $tableGrouped = $processedData->groupBy('periode');
+                    $tableData = $tableGrouped->map(function ($group, $periode) {
+                        
+                        // Sub-agregasi per prodi
+                        $prodiGrouped = $group->groupBy('prodi_name');
+                        $prodiDetails = $prodiGrouped->map(function ($pGroup, $pName) {
+                            return [
+                                'prodi' => $pName,
+                                'jumlah_issue' => $pGroup->where('type', 'issue')->count(),
+                                'jumlah_renew' => $pGroup->where('type', 'renew')->count(),
+                                'jumlah_buku_kembali' => $pGroup->where('type', 'return')->count(),
+                                'total_sirkulasi' => $pGroup->count(),
+                                'jumlah_peminjam_unik' => $pGroup->whereIn('type', ['issue', 'renew'])->pluck('borrowernumber')->unique()->count(),
+                            ];
+                        })->values()->sortByDesc('total_sirkulasi')->values();
+
+                        return [
+                            'periode' => $periode,
+                            'jumlah_issue' => $group->where('type', 'issue')->count(),
+                            'jumlah_renew' => $group->where('type', 'renew')->count(),
+                            'jumlah_buku_kembali' => $group->where('type', 'return')->count(),
+                            'total_sirkulasi' => $group->count(),
+                            'jumlah_peminjam_unik' => $group->whereIn('type', ['issue', 'renew'])->pluck('borrowernumber')->unique()->count(),
+                            'prodi_details' => $prodiDetails,
+                        ];
+                    })->sortBy('periode')->values();
+
+                    return [
+                        'totalIssues' => $totalIssues,
+                        'totalRenews' => $totalRenews,
+                        'totalReturns' => $totalReturns,
+                        'totalCirculation' => $totalCirculation,
+                        'totalBorrowers' => $totalBorrowers,
+                        'tableData' => $tableData,
+                    ];
+                }); // End Cache::remember
+
+                // Extract cached results
+                $totalIssues = $cachedResult['totalIssues'];
+                $totalRenews = $cachedResult['totalRenews'];
+                $totalReturns = $cachedResult['totalReturns'];
+                $totalCirculation = $cachedResult['totalCirculation'];
+                $totalBorrowers = $cachedResult['totalBorrowers'];
+                $tableData = collect($cachedResult['tableData'])->map(fn($item) => (object) $item);
+
+                if ($tableData->isNotEmpty()) {
+                    $dataExists = true;
+                    $jumlahPeriode = $tableData->count();
+                    $rerataPeminjaman = ($jumlahPeriode > 0) ? ($totalCirculation / $jumlahPeriode) : 0;
+                }
+
+                // 10. Chart data (per periode)
+                $chartData = $tableData->map(function ($item) use ($filterType) {
+                    $label = $item->periode;
+                    try {
+                        if ($filterType == 'daily') {
+                            $label = Carbon::parse($item->periode)->format('d M Y');
+                        } else {
+                            $label = Carbon::createFromFormat('Y-m', $item->periode)->format('M Y');
+                        }
+                    } catch (\Throwable $e) {}
+                    return [
+                        'label' => $label,
+                        'issue' => $item->jumlah_issue,
+                        'renew' => $item->jumlah_renew,
+                        'pengembalian' => $item->jumlah_buku_kembali,
+                        'sirkulasi' => $item->total_sirkulasi,
+                    ];
+                })->values();
+            }
+        } catch (\Throwable $e) {
+            Log::error('Peminjaman Fakultas Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'filters' => $request->all(),
+            ]);
+            return back()->with('error', 'Terjadi kesalahan saat memproses data: ' . $e->getMessage());
+        }
+
+        return view('pages.peminjaman.peminjamanFakultas', compact(
+            'listFakultas', 'selectedFakultas',
+            'startDate', 'endDate', 'startYear', 'endYear',
+            'filterType', 'hasFilter', 'dataExists',
+            'tableData', 'chartData',
+            'totalIssues', 'totalRenews', 'totalReturns', 'totalBorrowers',
+            'totalCirculation', 'rerataPeminjaman'
+        ));
+    }
+
+    /**
+     * Export CSV Peminjaman Per Fakultas
+     */
+    public function exportCsvPeminjamanFakultas(Request $request)
+    {
+        ini_set('memory_limit', '512M');
+        set_time_limit(120);
+
+        $filterType = $request->input('filter_type', 'daily');
+        $startDate = $request->input('start_date', Carbon::now()->subDays(30)->format('Y-m-d'));
+        $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+        $startYear = $request->input('start_year', Carbon::now()->year);
+        $endYear = $request->input('end_year', Carbon::now()->year);
+        $selectedFakultas = $request->input('fakultas', 'semua');
+
+        // Setup tanggal
+        if ($filterType == 'daily') {
+            if ($startDate > $endDate) [$startDate, $endDate] = [$endDate, $startDate];
+            $start = Carbon::parse($startDate)->startOfDay();
+            $end = Carbon::parse($endDate)->endOfDay();
+            $sqlDateFormat = '%Y-%m-%d';
+        } else {
+            if ($startYear > $endYear) [$startYear, $endYear] = [$endYear, $startYear];
+            $start = Carbon::createFromDate($startYear, 1, 1)->startOfDay();
+            $end = Carbon::createFromDate($endYear, 12, 31)->endOfDay();
+            $sqlDateFormat = '%Y-%m';
+        }
+
+        // Query
+        $rawData = DB::connection('mysql2')->table('statistics as s')
+            ->leftJoin('borrowers as b', 'b.borrowernumber', '=', 's.borrowernumber')
+            ->leftJoin('borrower_attributes as ba', function ($join) {
+                $join->on('ba.borrowernumber', '=', 'b.borrowernumber')
+                    ->where('ba.code', '=', 'PRODI');
+            })
+            ->whereIn('s.type', ['issue', 'renew', 'return'])
+            ->whereBetween('s.datetime', [$start, $end])
+            ->select(
+                DB::raw("DATE_FORMAT(s.datetime, '$sqlDateFormat') as periode"),
+                's.type',
+                'b.cardnumber',
+                'b.categorycode',
+                'b.borrowernumber',
+                'ba.attribute as prodi_code'
+            )
+            ->get();
+
+        // Map ke fakultas
+        $processedData = $rawData->map(function ($row) {
+            $fakultas = 'Lainnya';
+            $catCode = strtoupper(trim($row->categorycode ?? ''));
+            $cardnumber = strtoupper(trim($row->cardnumber ?? ''));
+
+            if (str_starts_with($catCode, 'TC') || str_starts_with($catCode, 'DOSEN')) {
+                $fakultas = 'Dosen & Pengajar';
+            } elseif (str_starts_with($catCode, 'STAF') || str_contains($catCode, 'LIB') || $catCode === 'LIBRARIAN') {
+                $fakultas = 'Tenaga Kependidikan';
+            } elseif (!empty($row->prodi_code)) {
+                $fakultas = $this->mapCodeToFaculty($row->prodi_code);
+            } elseif (strlen($cardnumber) >= 4 && preg_match('/^[A-Z]\d{3}/', $cardnumber)) {
+                $fakultas = $this->mapCodeToFaculty(substr($cardnumber, 0, 4));
+            }
+
+            return [
+                'periode' => $row->periode,
+                'type' => $row->type,
+                'fakultas' => $fakultas,
+                'borrowernumber' => $row->borrowernumber,
+            ];
+        });
+
+        // Filter fakultas
+        if ($selectedFakultas && $selectedFakultas !== 'semua') {
+            $processedData = $processedData->filter(fn($item) => $item['fakultas'] === $selectedFakultas);
+        }
+
+        // Agregasi per periode
+        $tableGrouped = $processedData->groupBy('periode');
+        $tableData = $tableGrouped->map(function ($group, $periode) {
+            return [
+                'periode' => $periode,
+                'issue' => $group->where('type', 'issue')->count(),
+                'renew' => $group->where('type', 'renew')->count(),
+                'pengembalian' => $group->where('type', 'return')->count(),
+                'sirkulasi' => $group->count(),
+                'peminjam_unik' => $group->whereIn('type', ['issue', 'renew'])->pluck('borrowernumber')->unique()->count(),
+            ];
+        })->sortBy('periode')->values();
+
+        // Filename
+        $fakTag = ($selectedFakultas && $selectedFakultas !== 'semua') ? '_' . preg_replace('/[^A-Za-z0-9]/', '_', $selectedFakultas) : '';
+        $periodeTag = ($filterType == 'daily') ? "{$startDate}_sd_{$endDate}" : "tahun_{$startYear}_{$endYear}";
+        $fileName = "peminjaman_fakultas{$fakTag}_{$periodeTag}.csv";
+
+        $callback = function () use ($tableData, $filterType, $selectedFakultas) {
+            $file = fopen('php://output', 'w');
+            fwrite($file, "\xEF\xBB\xBF");
+
+            fputcsv($file, ['LAPORAN PEMINJAMAN PER FAKULTAS'], ';');
+            if ($selectedFakultas && $selectedFakultas !== 'semua') {
+                fputcsv($file, ['Fakultas: ' . $selectedFakultas], ';');
+            }
+            fputcsv($file, [], ';');
+            fputcsv($file, ['No', 'Periode', 'Peminjaman', 'Perpanjangan', 'Pengembalian', 'Total Sirkulasi', 'Peminjam Unik'], ';');
+
+            $no = 1;
+            $totalI = 0; $totalR = 0; $totalK = 0; $totalS = 0;
+            foreach ($tableData as $row) {
+                $label = $row['periode'];
+                try {
+                    if ($filterType == 'daily') {
+                        $label = Carbon::parse($row['periode'])->locale('id')->isoFormat('dddd, D MMMM Y');
+                    } else {
+                        $label = Carbon::createFromFormat('Y-m', $row['periode'])->locale('id')->isoFormat('MMMM Y');
+                    }
+                } catch (\Throwable $e) {}
+
+                fputcsv($file, [$no++, $label, $row['issue'], $row['renew'], $row['pengembalian'], $row['sirkulasi'], $row['peminjam_unik']], ';');
+                $totalI += $row['issue'];
+                $totalR += $row['renew'];
+                $totalK += $row['pengembalian'];
+                $totalS += $row['sirkulasi'];
+            }
+
+            fputcsv($file, [], ';');
+            fputcsv($file, ['', 'TOTAL', $totalI, $totalR, $totalK, $totalS, ''], ';');
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
         ]);
     }
 }

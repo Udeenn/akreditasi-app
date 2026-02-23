@@ -243,8 +243,10 @@
                         </div>
                         <div class="card-body p-4">
                             <div class="text-center mb-4">
-                                <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-2">
-                                    <i class="fas fa-user fa-3x text-primary"></i>
+                                <div class="mb-2">
+                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ urlencode($fullBorrowerDetails->firstname . ' ' . $fullBorrowerDetails->surname) }}"
+                                        class="rounded-circle shadow-sm border border-4 border-light" alt="Avatar"
+                                        width="100">
                                 </div>
                                 <h5 class="fw-bold text-body mb-0">{{ $fullBorrowerDetails->firstname }}
                                     {{ $fullBorrowerDetails->surname }}</h5>

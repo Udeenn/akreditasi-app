@@ -204,7 +204,7 @@
                                     width="100">
                             </div>
                             <h5 class="fw-bold mb-1">{{ $borrower->firstname }} {{ $borrower->surname }}</h5>
-                            <span class="badge   border px-3 py-2 rounded-pill mb-3">{{ $borrower->cardnumber }}</span>
+                            <span class="badge border px-3 py-2 rounded-pill mb-3">{{ $borrower->cardnumber }}</span>
 
                             <div class="d-flex justify-content-center gap-2 mb-4">
                                 @if ($borrower->email)

@@ -163,40 +163,37 @@
                             </div>
                         </div>
                         <div class="card-body p-4">
-                            <!-- Custom Search Input (Match Textbook Style) -->
+                            <!-- Custom Search Input -->
                             <div class="mb-3">
                                 <input type="text" class="form-control" id="searchInput"
-                                    placeholder="Cari prodi atau kategori...">
+                                    placeholder="Cari periode...">
                             </div>
                             
                             <div class="table-responsive">
                                 <table id="yajraTable" class="table table-hover align-middle mb-0 unified-table"
                                     style="width:100%">
-                                    <thead class="">
+                                    <thead>
                                         <tr>
-                                            <th class="px-4 py-3 text-uppercase small fw-bold" width="5%">No</th>
-                                            <th class="px-4 py-3 text-uppercase small fw-bold" width="25%">Waktu</th>
-                                            <th class="px-4 py-3 text-uppercase small fw-bold" width="45%">Prodi /
-                                                Kategori</th>
-                                            <th class="px-4 py-3 text-uppercase small fw-bold text-end" width="25%">
-                                                Jumlah</th>
+                                            <th class="text-center py-3 border-bottom-0" width="3%"></th>
+                                            <th class="text-center py-3 px-2 border-bottom-0" width="5%">No</th>
+                                            <th class="py-3 px-4 border-bottom-0">Periode</th>
+                                            <th class="text-center py-3 px-4 border-bottom-0">Jumlah Kunjungan</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach ($tableData as $index => $row)
-                                            <tr>
-                                                <td class="text-center opacity-75">{{ $index + 1 }}</td>
-                                                <td>
-                                                    {{ $row->tanggal_display }}
+                                        @foreach ($tableData as $index => $stat)
+                                            <tr data-child="{{ json_encode($stat->prodi_details) }}">
+                                                <td class="details-control"><i class="fas fa-chevron-right"></i></td>
+                                                <td class="text-center text-muted fw-bold">{{ $index + 1 }}</td>
+                                                <td class="px-4 fw-medium text-body">
+                                                    @if (($filterType ?? 'daily') == 'daily')
+                                                        <i class="far fa-calendar-alt me-2 text-muted"></i>{{ \Carbon\Carbon::parse($stat->periode)->locale('id')->isoFormat('dddd, D MMMM Y') }}
+                                                    @else
+                                                        <i class="far fa-calendar me-2 text-muted"></i>{{ \Carbon\Carbon::createFromFormat('Y-m', $stat->periode)->locale('id')->isoFormat('MMMM Y') }}
+                                                    @endif
                                                 </td>
-                                                <td>
-                                                    <div class="d-flex flex-column">
-                                                        <span class="fw-bold text-primary">{{ $row->nama_prodi }}</span>
-                                                        <small class="text-muted">{{ $row->kode_prodi }}</small>
-                                                    </div>
-                                                </td>
-                                                <td class="text-end fw-bold">
-                                                    {{ number_format($row->jumlah, 0, ',', '.') }}
+                                                <td class="text-center">
+                                                    <span class="badge bg-primary-soft text-primary rounded-pill px-3 fw-bold">{{ number_format($stat->total_kunjungan) }}</span>
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -382,6 +379,66 @@
             border-radius: 8px;
             transition: all 0.2s ease;
         }
+
+        /* Child Rows (Accordion) Styling */
+        td.details-control {
+            text-align: center;
+            color: #0d6efd;
+            cursor: pointer;
+            width: 40px;
+        }
+        tr.shown td.details-control i {
+            transform: rotate(90deg);
+            transition: transform 0.2s ease;
+        }
+        td.details-control i {
+            transition: transform 0.2s ease;
+        }
+        .child-table-wrapper {
+            background-color: var(--bs-body-bg);
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+            margin: 0.5rem 0;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .table-child {
+            margin-bottom: 0;
+            background-color: #ffffff;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.03);
+        }
+        .table-child th {
+            background-color: var(--primary-soft) !important;
+            color: #0d6efd !important;
+            font-size: 0.7rem;
+            padding: 0.75rem 1rem;
+            border-bottom: none;
+        }
+        .table-child td {
+            font-size: 0.85rem;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(0,0,0,0.03);
+        }
+        body.dark-mode .table-child {
+            background-color: var(--sidebar-bg) !important;
+            color: #e2e8f0;
+        }
+        body.dark-mode .table-child th {
+            background-color: rgba(13, 110, 253, 0.15) !important;
+            color: #6ea8fe !important;
+        }
+        body.dark-mode .table-child td {
+            border-bottom-color: rgba(255,255,255,0.05);
+        }
+        body.dark-mode .child-table-wrapper {
+            border-color: rgba(255,255,255,0.08);
+            background-color: var(--sidebar-bg) !important;
+        }
+        body.dark-mode .child-table-wrapper h6 {
+            color: #6ea8fe !important;
+        }
     </style>
 @endpush
 
@@ -417,6 +474,37 @@
             toggleFilters();
 
             // --- 3. CLIENT-SIDE DATATABLES ---
+            // --- Format DataTables Child Row ---
+            function formatChildRow(dataString) {
+                if (!dataString) return '<div class="text-muted small p-2">Tidak ada detail prodi.</div>';
+                
+                try {
+                    let details = JSON.parse(dataString);
+                    if (details.length === 0) return '<div class="text-muted small p-2">Tidak ada detail prodi.</div>';
+
+                    let html = '<div class="child-table-wrapper"><h6 class="fw-bold text-primary mb-3"><i class="fas fa-layer-group me-2"></i>Rincian Program Studi</h6><table class="table table-child w-100">';
+                    html += `<thead>
+                                <tr>
+                                    <th>Program Studi</th>
+                                    <th class="text-center">Jumlah Kunjungan</th>
+                                </tr>
+                             </thead><tbody>`;
+                             
+                    details.forEach(item => {
+                        html += `<tr>
+                                    <td class="fw-medium">${item.prodi}</td>
+                                    <td class="text-center fw-bold">${item.jumlah.toLocaleString('id-ID')}</td>
+                                 </tr>`;
+                    });
+                    
+                    html += '</tbody></table></div>';
+                    return html;
+                } catch (e) {
+                    return '<div class="text-danger small p-2">Gagal memuat detail prodi.</div>';
+                }
+            }
+
+            // --- DATATABLES INIT ---
             var table = $('#yajraTable').DataTable({
                 "language": {
                     "url": "//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json",
@@ -438,35 +526,41 @@
                     [10, 25, 50, 100, -1],
                     [10, 25, 50, 100, "Semua"]
                 ],
-                // DOM Layout persis seperti Textbook (Tanpa 'f' karena pakai custom search)
                 "dom": '<"d-flex justify-content-between mb-3"lp>rt<"d-flex justify-content-between mt-3"ip>',
-                "columnDefs": [
-                    { "searchable": false, "orderable": false, "targets": 0 }
-                ],
+                "columnDefs": [{
+                    "searchable": false,
+                    "orderable": false,
+                    "targets": [0, 1]
+                }],
+                "order": [],
                 "drawCallback": function(settings) {
                     var api = this.api();
-                    // Update nomor urut
-                    api.column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
-                        cell.innerHTML = i+1;
+                    api.column(1, {search:'applied', order:'applied'}).nodes().each(function(cell, i) {
+                        cell.innerHTML = i + 1;
                     });
-                    
-                    // Update Badge Total (Sum of Column 3 - Jumlah)
-                    let total = 0;
-                    api.column(3, { search: 'applied' }).data().each(function(value, index) {
-                        // Value might be formatted (e.g. "1.234"), remove dots to parse integer
-                        let cleanValue = typeof value === 'string' ? value.replace(/\./g, '') : value;
-                        total += parseInt(cleanValue) || 0;
-                    });
-                    
-                    let formattedTotal = new Intl.NumberFormat('id-ID').format(total);
-                    $('#totalBadge').text(formattedTotal);
                 }
             });
 
-            // Bind Custom Search Input (Match Textbook)
+            // Add event listener for opening and closing details
+            $('#yajraTable tbody').on('click', 'td.details-control', function () {
+                var tr = $(this).closest('tr');
+                var row = table.row(tr);
+                
+                if (row.child.isShown()) {
+                    row.child.hide();
+                    tr.removeClass('shown');
+                } else {
+                    var childData = tr.attr('data-child');
+                    row.child(formatChildRow(childData)).show();
+                    tr.addClass('shown');
+                }
+            });
+
+            // Bind Custom Search Input
             $('#searchInput').on('keyup change', function() {
                 table.search(this.value).draw();
             });
+
 
             // --- 4. CHART ---
             @if (isset($chartData) && count($chartData) > 0)

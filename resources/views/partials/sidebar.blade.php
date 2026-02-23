@@ -128,6 +128,8 @@
     </button>
     <div class="collapse {{ $isPeminjamanActive ? 'show' : '' }}" id="peminjamanCollapse">
         <ul class="nav flex-column mt-1 sub-menu">
+            <li><a class="nav-link {{ request()->routeIs('peminjaman.peminjaman_fakultas') ? 'active' : '' }}"
+                    href="{{ route('peminjaman.peminjaman_fakultas') }}">Per Fakultas</a></li>
             <li><a class="nav-link {{ request()->routeIs('peminjaman.peminjaman_rentang_tanggal') ? 'active' : '' }}"
                     href="{{ route('peminjaman.peminjaman_rentang_tanggal') }}">Keseluruhan</a></li>
             <li><a class="nav-link {{ request()->routeIs('peminjaman.peminjaman_prodi_chart') ? 'active' : '' }}"
