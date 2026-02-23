@@ -220,7 +220,8 @@ class PeminjamanController extends Controller
                 );
             }
 
-            $fullStatisticsForChart = $query->groupBy('periode')
+            $queryForChart = clone $query;
+            $fullStatisticsForChart = $queryForChart->groupBy('periode')
                 ->orderBy('periode', 'asc')
                 ->get();
 
@@ -228,17 +229,11 @@ class PeminjamanController extends Controller
             $jumlahPeriode = $fullStatisticsForChart->count();
             $rerataPeminjaman = ($jumlahPeriode > 0) ? ($totalCirculation / $jumlahPeriode) : 0;
 
-            $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
-            $perPage = 10;
-            $items = $fullStatisticsForChart->slice(($page - 1) * $perPage, $perPage)->values();
-
-            $statistics = new \Illuminate\Pagination\LengthAwarePaginator(
-                $items,
-                $fullStatisticsForChart->count(),
-                $perPage,
-                $page,
-                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
-            );
+            // Gunakan SQL Pagination langsung dari Database
+            $statistics = $query->groupBy('periode')
+                ->orderBy('periode', 'asc')
+                ->paginate(10)
+                ->withQueryString();
 
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
@@ -701,7 +696,8 @@ class PeminjamanController extends Controller
                 }
 
                 // --- EKSEKUSI (Hanya 1x Query Database) ---
-                $allStatistics = $query->get();
+                $queryForChart = clone $query;
+                $allStatistics = $queryForChart->get();
 
                 if ($allStatistics->isNotEmpty()) {
                     $dataExists = true;
@@ -753,16 +749,14 @@ class PeminjamanController extends Controller
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
 
-        // Manual Pagination dari Collection
-        $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
-        $perPage = 10;
-        $statistics = new \Illuminate\Pagination\LengthAwarePaginator(
-            $allStatistics->slice(($page - 1) * $perPage, $perPage)->values(),
-            $allStatistics->count(),
-            $perPage,
-            $page,
-            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
-        );
+        // Gunakan SQL Pagination langsung dari Database
+        if ($dataExists && isset($query)) {
+            $statistics = clone $query;
+            $statistics = $statistics->paginate(10)->withQueryString();
+        } else {
+            $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
+            $statistics = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10, $page, ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]);
+        }
 
         return view('pages.peminjaman.prodiChart', compact(
             'prodiOptions', 'startYear', 'endYear', 'selectedProdiCode',
@@ -1447,51 +1441,6 @@ class PeminjamanController extends Controller
         'L' => 'FKI - Fakultas Komunikasi dan Informatika',
     ];
 
-    /**
-     * Helper: Map kode prodi ke nama fakultas
-     * (Logika sama dengan VisitHistory::mapCodeToFaculty)
-     */
-    private function mapCodeToFaculty($prodiCode)
-    {
-        $prodiCode = strtoupper(trim($prodiCode));
-        $firstLetter = substr($prodiCode, 0, 1);
-        $firstTwoLetters = substr($prodiCode, 0, 2);
-        $firstThreeLetters = substr($prodiCode, 0, 3);
-
-        // Kode Spesifik
-        if (in_array($prodiCode, ['A510', 'A610', 'Q100', 'S400', 'Q200', 'Q300', 'S200']))
-            return 'FKIP - Fakultas Keguruan dan Ilmu Pendidikan';
-        if (in_array($prodiCode, ['W100', 'P100']))
-            return 'FEB - Fakultas Ekonomi dan Bisnis';
-        if (in_array($prodiCode, ['U200', 'U100', 'S100', 'D100', 'D200', 'D400']))
-            return 'FT - Fakultas Teknik';
-        if (in_array($prodiCode, ['S300', 'T100', 'F100']))
-            return 'FPsi - Fakultas Psikologi';
-        if (in_array($prodiCode, ['I000', 'O100', 'O300', 'O200', 'O000']))
-            return 'FAI - Fakultas Agama Islam';
-        if (in_array($prodiCode, ['R100', 'R200', 'C100']))
-            return 'FHIP - Fakultas Hukum dan Ilmu Politik';
-        if (in_array($prodiCode, ['V100', 'K100']))
-            return 'FF - Fakultas Farmasi';
-
-        // KSP (Kartu Sekali Kunjung) — jangan masuk Farmasi
-        if (str_starts_with($prodiCode, 'KSP') || $prodiCode === 'KSP')
-            return 'Lainnya';
-
-        // FIK / FK / FKG
-        if (in_array($firstThreeLetters, ['J53', 'J52'])) return 'FKG - Fakultas Kedokteran Gigi';
-        if ($firstTwoLetters === 'J5') return 'FK - Fakultas Kedokteran';
-        if ($firstLetter === 'J' || $firstLetter === 'G') return 'FIK - Fakultas Ilmu Kesehatan';
-
-        // FAI prefix
-        if (in_array($firstLetter, ['I', 'O', 'H'])) return 'FAI - Fakultas Agama Islam';
-
-        // Mapping standar dari property
-        if (isset($this->facultyMapping[$firstLetter]))
-            return $this->facultyMapping[$firstLetter];
-
-        return 'Lainnya';
-    }
 
     /**
      * Halaman Peminjaman Per Fakultas
@@ -1528,7 +1477,7 @@ class PeminjamanController extends Controller
             return [trim($prodi->authorised_value) => trim($lib)];
         })->toArray();
         $listFakultas = $allProdiListObj->map(function ($prodi) {
-            return $this->mapCodeToFaculty($prodi->authorised_value);
+            return \App\Helpers\FacultyHelper::mapCodeToFaculty($prodi->authorised_value);
         })->unique()->filter(function ($value) {
             $blacklist = ['Lainnya', 'Dosen', 'Dosen & Pengajar', 'Tendik', 'Tenaga Kependidikan'];
             return !in_array($value, $blacklist);
@@ -1591,11 +1540,11 @@ class PeminjamanController extends Controller
                             $prodiName = 'Staff/Tendik';
                         } elseif (!empty($row->prodi_code)) {
                             $cleanCode = trim($row->prodi_code);
-                            $fakultas = $this->mapCodeToFaculty($cleanCode);
+                            $fakultas = \App\Helpers\FacultyHelper::mapCodeToFaculty($cleanCode);
                             $prodiName = isset($prodiMap[$cleanCode]) ? $cleanCode . ' - ' . $prodiMap[$cleanCode] : $cleanCode;
                         } elseif (strlen($cardnumber) >= 4 && preg_match('/^[A-Z]\d{3}/', $cardnumber)) {
                             $kode = trim(substr($cardnumber, 0, 4));
-                            $fakultas = $this->mapCodeToFaculty($kode);
+                            $fakultas = \App\Helpers\FacultyHelper::mapCodeToFaculty($kode);
                             $prodiName = isset($prodiMap[$kode]) ? $kode . ' - ' . $prodiMap[$kode] : $kode;
                         }
 
@@ -1783,9 +1732,9 @@ class PeminjamanController extends Controller
             } elseif (str_starts_with($catCode, 'STAF') || str_contains($catCode, 'LIB') || $catCode === 'LIBRARIAN') {
                 $fakultas = 'Tenaga Kependidikan';
             } elseif (!empty($row->prodi_code)) {
-                $fakultas = $this->mapCodeToFaculty($row->prodi_code);
+                $fakultas = \App\Helpers\FacultyHelper::mapCodeToFaculty($row->prodi_code);
             } elseif (strlen($cardnumber) >= 4 && preg_match('/^[A-Z]\d{3}/', $cardnumber)) {
-                $fakultas = $this->mapCodeToFaculty(substr($cardnumber, 0, 4));
+                $fakultas = \App\Helpers\FacultyHelper::mapCodeToFaculty(substr($cardnumber, 0, 4));
             }
 
             return [

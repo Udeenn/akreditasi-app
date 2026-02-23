@@ -112,11 +112,11 @@ Route::middleware('auth')->group(function () {
     // Peminjaman
     // =============================================
     Route::prefix('peminjaman')->name('peminjaman.')->group(function () {
-        Route::get('/peminjaman-rentang-tanggal', [PeminjamanController::class, 'pertanggal'])->name('peminjaman_rentang_tanggal');
+        Route::get('/keseluruhan', [PeminjamanController::class, 'pertanggal'])->name('keseluruhan');
         Route::get('/export-detail', [PeminjamanController::class, 'exportDetailCsv'])->name('export_detail');
-        Route::get('/peminjaman-prodi-chart', [PeminjamanController::class, 'peminjamanProdiChart'])->name('peminjaman_prodi_chart');
+        Route::get('/prodi', [PeminjamanController::class, 'peminjamanProdiChart'])->name('prodi');
         Route::get('/export-detail-prodi', [PeminjamanController::class, 'exportDetailProdiCsv'])->name('export_detail_prodi');
-        Route::get('/cek-histori', [PeminjamanController::class, 'checkHistory'])->name('check_history');
+        Route::get('/cek-pinjaman', [PeminjamanController::class, 'checkHistory'])->name('cek_pinjaman');
         Route::get('/berlangsung', [PeminjamanController::class, 'peminjamanBerlangsung'])->name('berlangsung');
         Route::get('/export-berlangsung-full-data', [PeminjamanController::class, 'getBerlangsungExportData'])->name('get_berlangsung_export_data');
         Route::get('/detail', [PeminjamanController::class, 'getDetailPeminjaman'])->name('get_detail');
@@ -132,7 +132,7 @@ Route::middleware('auth')->group(function () {
     // =============================================
     Route::get('/statistik/keterpakaian-koleksi', [PenggunaanController::class, 'keterpakaianKoleksi'])->name('penggunaan.keterpakaian_koleksi');
     Route::get('/statistik/keterpakaian-koleksi/detail', [PenggunaanController::class, 'getKeterpakaianDetail'])->name('statistik.keterpakaian_koleksi.detail');
-    Route::get('/cek-histori-buku', [PenggunaanController::class, 'cekBuku'])->name('penggunaan.cek_histori');
+    Route::get('/statistik/cek-histori-buku', [PenggunaanController::class, 'cekBuku'])->name('penggunaan.cek_histori_buku_buku');
     Route::get('/statistik/sering-dibaca', [PenggunaanController::class, 'seringDibaca'])->name('penggunaan.sering_dibaca');
 
     // =============================================

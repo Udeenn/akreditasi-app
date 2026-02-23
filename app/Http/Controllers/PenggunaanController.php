@@ -111,35 +111,42 @@ class PenggunaanController extends Controller
         $kategori = $request->input('kategori');
         $filterType = $request->input('filter_type');
 
-        $query = DB::connection('mysql2')->table('statistics as s')
-            ->select('bb.title as judul_buku', 'i.barcode', 's.datetime as waktu_transaksi', 's.type as tipe_transaksi')
-            ->join('items as i', 's.itemnumber', '=', 'i.itemnumber')
-            ->join('biblio as bb', 'i.biblionumber', '=', 'bb.biblionumber')
-            ->whereIn('s.type', ['issue', 'return', 'localuse'])
-            ->whereNotNull('s.ccode')->where('s.ccode', '!=', '');
-
+        $query = \App\Models\Koha\Statistic::with(['item.biblio'])
+            ->whereIn('type', ['issue', 'return', 'localuse'])
+            ->whereNotNull('ccode')
+            ->where('ccode', '!=', '');
 
         if ($filterType == 'daily') {
             $startOfDay = Carbon::parse($periode)->startOfDay();
             $endOfDay = Carbon::parse($periode)->endOfDay();
-            $query->whereBetween('s.datetime', [$startOfDay, $endOfDay]);
+            $query->whereBetween('datetime', [$startOfDay, $endOfDay]);
         } else { // 'monthly'
             $startOfMonth = Carbon::parse($periode)->startOfMonth();
             $endOfMonth = Carbon::parse($periode)->endOfMonth();
-            $query->whereBetween('s.datetime', [$startOfMonth, $endOfMonth]);
+            $query->whereBetween('datetime', [$startOfMonth, $endOfMonth]);
         }
 
         if ($kategori == 'Referensi') {
-            $query->where('s.ccode', 'LIKE', 'R%');
+            $query->where('ccode', 'LIKE', 'R%');
         } else {
-            $query->where('s.ccode', '=', $kategori);
+            $query->where('ccode', '=', $kategori);
         }
 
-        $detailBuku = $query->orderBy('s.datetime', 'desc')
+        $paginator = $query->orderBy('datetime', 'desc')
             ->paginate(10)
             ->withQueryString();
 
-        return $detailBuku;
+        // Format data untuk output JSON agar kompatibel dengan view lama (jika memanggil API ini)
+        $paginator->getCollection()->transform(function ($stat) {
+            return [
+                'judul_buku' => $stat->item->biblio->title ?? 'Tanpa Judul',
+                'barcode' => $stat->item->barcode ?? '-',
+                'waktu_transaksi' => $stat->datetime,
+                'tipe_transaksi' => $stat->type,
+            ];
+        });
+
+        return $paginator;
     }
 
 
@@ -257,52 +264,42 @@ class PenggunaanController extends Controller
 
         if ($barcode) {
             try {
-                // Query 1: Ambil info buku & semua total penggunaan sekaligus.
-                $statsQuery = DB::connection('mysql2')->table('items as i')
-                    ->select(
-                        'b.title AS Judul',
-                        'b.author AS Pengarang',
-                        DB::raw("SUM(CASE WHEN s.type = 'issue' THEN 1 ELSE 0 END) as issue_count"),
-                        DB::raw("SUM(CASE WHEN s.type = 'return' THEN 1 ELSE 0 END) as return_count"),
-                        DB::raw("SUM(CASE WHEN s.type = 'localuse' THEN 1 ELSE 0 END) as localuse_count")
-                    )
-                    ->leftJoin('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
-                    ->leftJoin('statistics as s', 'i.itemnumber', '=', 's.itemnumber')
-                    // Perubahan di sini: WHERE langsung ke kolom, tanpa TRIM().
-                    ->where('i.barcode', $barcode)
-                    ->groupBy('b.title', 'b.author');
+                // 1. Ambil Data Buku via Eloquent
+                $item = \App\Models\Koha\Item::with('biblio')->where('barcode', $barcode)->first();
 
-                // Filter Tahun pada Stats
-                if ($tahun) {
-                    $statsQuery->whereBetween('s.datetime', ["{$tahun}-01-01 00:00:00", "{$tahun}-12-31 23:59:59"]);
-                }
+                if ($item && $item->biblio) {
+                    $book = (object) [
+                        'Judul' => $item->biblio->title,
+                        'Pengarang' => $item->biblio->author,
+                    ];
 
-                $bookAndStats = $statsQuery->first();
+                    // 2. Query Statistik via Eloquent
+                    $statsQuery = \App\Models\Koha\Statistic::where('itemnumber', $item->itemnumber);
 
-                if ($bookAndStats && $bookAndStats->Judul) {
-                    $book = $bookAndStats;
-                    $usageStats->issue = (int) $bookAndStats->issue_count;
-                    $usageStats->return = (int) $bookAndStats->return_count;
-                    $usageStats->localuse = (int) $bookAndStats->localuse_count;
-                    $usageStats->total = $usageStats->issue + $usageStats->return + $usageStats->localuse;
-
-                    // Query 2: Ambil histori transaksi (dengan pagination).
-                    $historyQuery = DB::connection('mysql2')->table('statistics as s')
-                        ->select('s.datetime', 's.type')
-                        ->join('items as i', 's.itemnumber', '=', 'i.itemnumber')
-                        // Perubahan di sini juga.
-                        ->where('i.barcode', $barcode)
-                        ->orderBy('s.datetime', 'desc');
-
-                    if ($typeFilter !== 'all') {
-                        $historyQuery->where('s.type', 'like', $typeFilter);
-                    } else {
-                        $historyQuery->whereIn('s.type', ['issue', 'return', 'localuse']);
+                    if ($tahun) {
+                         $statsQuery->whereBetween('datetime', ["{$tahun}-01-01 00:00:00", "{$tahun}-12-31 23:59:59"]);
                     }
 
-                    // Filter Tahun pada History List
-                    if ($tahun) {
-                         $historyQuery->whereBetween('s.datetime', ["{$tahun}-01-01 00:00:00", "{$tahun}-12-31 23:59:59"]);
+                    // Clone untuk agregasi total
+                    $agregatStats = (clone $statsQuery)
+                        ->selectRaw("
+                            SUM(CASE WHEN type = 'issue' THEN 1 ELSE 0 END) as issue_count,
+                            SUM(CASE WHEN type = 'return' THEN 1 ELSE 0 END) as return_count,
+                            SUM(CASE WHEN type = 'localuse' THEN 1 ELSE 0 END) as localuse_count
+                        ")->first();
+
+                    $usageStats->issue = (int) ($agregatStats->issue_count ?? 0);
+                    $usageStats->return = (int) ($agregatStats->return_count ?? 0);
+                    $usageStats->localuse = (int) ($agregatStats->localuse_count ?? 0);
+                    $usageStats->total = $usageStats->issue + $usageStats->return + $usageStats->localuse;
+
+                    // 3. Query History List
+                    $historyQuery = (clone $statsQuery)->orderBy('datetime', 'desc');
+
+                    if ($typeFilter !== 'all') {
+                        $historyQuery->where('type', 'like', $typeFilter);
+                    } else {
+                        $historyQuery->whereIn('type', ['issue', 'return', 'localuse']);
                     }
 
                     $history = $historyQuery->paginate(10)->appends($request->query());
@@ -400,12 +397,12 @@ class PenggunaanController extends Controller
                 $fiksiPage = $request->input('fiksi_page', 1);
                 $cacheKeyFiksi = "sering_dibaca:fiksi:{$tahun}:{$bulan}:p{$fiksiPage}";
                 $queryFiksi = Cache::remember($cacheKeyFiksi, 3600, function() use ($lightQuery, $perPage) {
+                     $fiksiCodes = config('library.ddc.fiksi', ['812', '813', '823', '899']);
                      $paginator =  (clone $lightQuery)
-                        ->where(function ($q) {
-                            $q->where('bi.cn_class', 'LIKE', '812%')
-                                ->orWhere('bi.cn_class', 'LIKE', '813%')
-                                ->orWhere('bi.cn_class', 'LIKE', '823%')
-                                ->orWhere('bi.cn_class', 'LIKE', '899%');
+                        ->where(function ($q) use ($fiksiCodes) {
+                            foreach ($fiksiCodes as $code) {
+                                $q->orWhere('bi.cn_class', 'LIKE', $code . '%');
+                            }
                         })
                         ->groupBy('i.biblionumber')
                         ->orderBy('jumlah_penggunaan', 'desc')
@@ -420,12 +417,12 @@ class PenggunaanController extends Controller
                 $nonFiksiPage = $request->input('nonfiksi_page', 1);
                 $cacheKeyNonFiksi = "sering_dibaca:nonfiksi:{$tahun}:{$bulan}:p{$nonFiksiPage}";
                 $queryNonFiksi = Cache::remember($cacheKeyNonFiksi, 3600, function() use ($lightQuery, $perPage) {
+                    $fiksiCodes = config('library.ddc.fiksi', ['812', '813', '823', '899']);
                     $paginator = (clone $lightQuery)
-                        ->where(function ($q) {
-                            $q->where('bi.cn_class', 'NOT LIKE', '812%')
-                                ->where('bi.cn_class', 'NOT LIKE', '813%')
-                                ->where('bi.cn_class', 'NOT LIKE', '823%')
-                                ->where('bi.cn_class', 'NOT LIKE', '899%');
+                        ->where(function ($q) use ($fiksiCodes) {
+                            foreach ($fiksiCodes as $code) {
+                                $q->where('bi.cn_class', 'NOT LIKE', $code . '%');
+                            }
                         })
                         ->groupBy('i.biblionumber')
                         ->orderBy('jumlah_penggunaan', 'desc')
@@ -495,18 +492,20 @@ class PenggunaanController extends Controller
         $kategoriTitle = "";
 
         if ($kategori === 'fiksi') {
-            $query->where(function ($q) {
-                $q->where('bi.cn_class', 'LIKE', '812%')
-                    ->orWhere('bi.cn_class', 'LIKE', '813%')
-                    ->orWhere('bi.cn_class', 'LIKE', '899%');
+            $fiksiCodes = config('library.ddc.fiksi', ['812', '813', '823', '899']);
+            $query->where(function ($q) use ($fiksiCodes) {
+                foreach ($fiksiCodes as $code) {
+                    $q->orWhere('bi.cn_class', 'LIKE', $code . '%');
+                }
             });
             $kategoriLabel = "fiksi";
             $kategoriTitle = "Fiksi";
         } else { // Asumsi 'nonfiksi'
-            $query->where(function ($q) {
-                $q->where('bi.cn_class', 'NOT LIKE', '812%')
-                    ->where('bi.cn_class', 'NOT LIKE', '813%')
-                    ->where('bi.cn_class', 'NOT LIKE', '899%');
+            $fiksiCodes = config('library.ddc.fiksi', ['812', '813', '823', '899']);
+            $query->where(function ($q) use ($fiksiCodes) {
+                foreach ($fiksiCodes as $code) {
+                    $q->where('bi.cn_class', 'NOT LIKE', $code . '%');
+                }
             });
             $kategoriLabel = "nonfiksi";
             $kategoriTitle = "Non-Fiksi";

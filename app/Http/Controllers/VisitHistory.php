@@ -17,20 +17,6 @@ use Illuminate\Support\Facades\Cache;
 
 class VisitHistory extends Controller
 {
-    private $facultyMapping = [
-        'A' => 'FKIP - Fakultas Keguruan dan Ilmu Pendidikan',
-        'B' => 'FEB - Fakultas Ekonomi dan Bisnis',
-        'C' => 'FHIP - Fakultas Hukum dan Ilmu Politik',
-        'D' => 'FT - Fakultas Teknik',
-        'E' => 'FG - Fakultas Geografi',
-        'F' => 'FPsi - Fakultas Psikologi',
-        'G' => 'FAI - Fakultas Agama Islam',
-        'H' => 'FAI - Fakultas Agama Islam',
-        'K' => 'FF - Fakultas Farmasi',
-        'L' => 'FKI - Fakultas Komunikasi dan Informatika',
-    ];
-
-
     public function kunjunganFakultasTable(Request $request)
     {
         ini_set('memory_limit', '256M');
@@ -150,7 +136,7 @@ class VisitHistory extends Controller
 
                     // Filter fakultas server-side
                     if ($selectedFakultas && $selectedFakultas !== 'semua') {
-                        $fakItem = $prodiToFacultyMap[$kode] ?? $this->mapCodeToFaculty($kode, $this->facultyMapping);
+                        $fakItem = $prodiToFacultyMap[$kode] ?? \App\Helpers\FacultyHelper::mapCodeToFaculty($kode);
                         if ($fakItem !== $selectedFakultas) continue;
                     }
 
@@ -334,25 +320,7 @@ class VisitHistory extends Controller
                 'v.cardnumber' // Debug/Group need
             );
 
-        // Jika beda server fisik (jarang di dev local user), query ini akan fail. 
-        // Solusi fallback: Tetap fetch raw tapi select column specific, lalu map di PHP (sedikit lebih lambat dr SQL pure tapi faster than original code).
-        // Saya asumsikan user pakai Localhost XAMPP jadi bisa cross-db join.
-        // PERLU DISESUAIKAN NAMA DB NYA. Di config: 'mysql2' => database='koha'
-        // Di query saya pakai `koha.borrowers`. Perlu cek nama DB asli dari env.
-        // Config bilang: env('DB_SECOND_DATABASE', 'koha'). Saya akan pakai DB::raw untk safety join.
         
-        // REVISI STRATEGI: Karena saya tidak tahu pasti nama DB nya (bisa berubah di env),
-        // Join cross-database agak berisiko jika production beda server.
-        // TAPI code lama melakukan query massive "SELECT ... WHERE IN (...)" ke mysql2.
-        // Code lama: fetch all visits -> extract cardnumbers -> query borrowers whereIn -> map.
-        // Itu sebenernya sudah "best effort" untuk cross-db. Masalahnya ada di `processedData` loop array map massive.
-        // JIKA jumlah visit besar (misal 100rb), loop PHP mati.
-        
-        // STRATEGI HYBRID (SAFE & FAST):
-        // 1. Fetch data visitor (Grouped by date, cardnumber) -> Reduce row count drasticly (karena 1 orang bisa berkali2 sehari visitor corner)
-        // 2. Fetch borrower data for those cardnumbers (WhereIn).
-        // 3. Map di PHP.
-        // Ini mirip kode lama TAPI kita GROUP BY di SQL LEVEL DULU sebelum fetch ke PHP.
         
         $rawSelect = "DATE_FORMAT(visittime, '$sqlDateFormat') as tgl_raw";
         
@@ -369,9 +337,7 @@ class VisitHistory extends Controller
 
         // Union hasil group
         $unionResults = $qHistory->unionAll($qCorner)->get();
-        // Hasil: [tgl_group, cardnumber, cnt]
-        // Jumlah row = jumlah unik pengunjung per hari per tanggal. Jauh lebih sedikit dari total raw row.
-
+        
         // Collect Cardnumbers
         $cardNumbers = $unionResults->pluck('cardnumber')->unique()->values();
         
@@ -430,7 +396,7 @@ class VisitHistory extends Controller
                 // Kita perlu map kode ke fakultas
                 // Gunakan helper mapCodeToFaculty
                 $fakultasItem = $facultyMap[$item['kode_identifikasi']] ??
-                    $this->mapCodeToFaculty($item['kode_identifikasi'], $this->facultyMapping);
+                    \App\Helpers\FacultyHelper::mapCodeToFaculty($item['kode_identifikasi']);
                 return $fakultasItem === $fakultasFilter;
             });
         }
@@ -626,95 +592,21 @@ class VisitHistory extends Controller
         ]);
     }
     
-
-    private function mapCodeToFaculty($prodiCode, $facultyMapping)
-    {
-        // 1. Bersihkan Input
-        $prodiCode = strtoupper(trim($prodiCode));
-
-        $firstLetter = substr($prodiCode, 0, 1);
-        $firstTwoLetters = substr($prodiCode, 0, 2);
-        $firstThreeLetters = substr($prodiCode, 0, 3);
-
-        // 2. CEK KODE SPESIFIK (Gabungan dari kode lama & baru)
-        // FKIP
-        if (in_array($prodiCode, ['A510', 'A610', 'KIP/PSKGJ PAUD', 'Q100', 'S400', 'Q200', 'Q300', 'S200'])) {
-            return 'FKIP - Fakultas Keguruan dan Ilmu Pendidikan';
-        }
-
-        // FEB
-        if (in_array($prodiCode, ['W100', 'P100'])) {
-            return 'FEB - Fakultas Ekonomi dan Bisnis';
-        }
-
-        // FT (Teknik) - Gabungan U, S, dan D
-        if (in_array($prodiCode, ['U200', 'U100', 'S100', 'D100', 'D200', 'D400'])) {
-            return 'FT - Fakultas Teknik';
-        }
-
-        // FPsi (Psikologi) - Gabungan S, T, dan F
-        if (in_array($prodiCode, ['S300', 'T100', 'F100'])) {
-            return 'FPsi - Fakultas Psikologi';
-        }
-
-        // FAI (Agama Islam) - Kode spesifik
-        if (in_array($prodiCode, ['I000', 'O100', 'O300', 'O200', 'O000'])) {
-            return 'FAI - Fakultas Agama Islam';
-        }
-
-        // FHIP (Hukum) - Gabungan R dan C
-        if (in_array($prodiCode, ['R100', 'R200', 'C100'])) {
-            return 'FHIP - Fakultas Hukum dan Ilmu Politik';
-        }
-
-        // FF (Farmasi) - Gabungan V dan K
-        if (in_array($prodiCode, ['V100', 'K100'])) {
-            return 'FF - Fakultas Farmasi';
-        }
-
-        // KHUSUS: KSP (Kartu Sekali Kunjung) agar tidak masuk ke Farmasi (Prefix K)
-        if (str_starts_with($prodiCode, 'KSP') || $prodiCode === 'KSP') {
-            return 'Lainnya'; 
-        }
-
-        // 3. CEK BERDASARKAN PREFIX (HURUF DEPAN)
-
-        // FIK / FK / FKG
-        if (in_array($firstThreeLetters, ['J53', 'J52'])) return 'FKG - Fakultas Kedokteran Gigi';
-        if ($firstTwoLetters === 'J5') return 'FK - Fakultas Kedokteran';
-        // G biasanya Gizi/Kesmas (FIK), J adalah kode standar FIK
-        if ($firstLetter === 'J' || $firstLetter === 'G') return 'FIK - Fakultas Ilmu Kesehatan';
-
-        // FAI (Prefix Umum)
-        if (in_array($firstLetter, ['I', 'O', 'H'])) return 'FAI - Fakultas Agama Islam';
-
-        // 4. MAPPING STANDAR DARI ARRAY PROPERTY
-        if (isset($facultyMapping[$firstLetter])) {
-            return $facultyMapping[$firstLetter];
-        }
-
-        return 'Lainnya';
-    }
-
-
-
-
     // Function Utama: Sekarang jadi bersih dan hanya looping
     private function getProdiToFacultyMap($listprodi)
     {
         $map = [];
-        $facultyMapping = $this->facultyMapping ?? [];
 
         foreach ($listprodi as $prodi) {
             $prodiCode = $prodi->authorised_value;
-            // Panggil helper yang sudah lengkap logikanya
-            $map[$prodiCode] = $this->mapCodeToFaculty($prodiCode, $facultyMapping);
+            // Panggil helper yang sudah terpusat
+            $map[$prodiCode] = \App\Helpers\FacultyHelper::mapCodeToFaculty($prodiCode);
         }
 
         // Tambahan Manual yang tidak ada di database Prodi
         $manualCodes = ['DOSEN', 'TENDIK'];
         foreach ($manualCodes as $code) {
-            $map[$code] = $this->mapCodeToFaculty($code, $facultyMapping);
+            $map[$code] = \App\Helpers\FacultyHelper::mapCodeToFaculty($code);
         }
 
         // Override Nama Khusus (Opsional, untuk memastikan tampilan bagus)

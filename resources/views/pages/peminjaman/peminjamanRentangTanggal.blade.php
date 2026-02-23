@@ -203,66 +203,49 @@
                         <h6 class="fw-bold text-primary"><i class="fas fa-filter me-1"></i> Filter Data</h6>
                     </div>
                     <div class="card-body">
-                        <form method="GET" action="{{ route('peminjaman.peminjaman_rentang_tanggal') }}"
-                            class="row g-3 align-items-end" id="filterForm">
-
-                            <div class="col-md-3">
-                                <label for="filter_type" class="form-label small text-muted fw-bold">Tampilkan Data</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text  border-0"><i class="fas fa-list text-muted"></i></span>
-                                    <select name="filter_type" id="filter_type" class="form-select border-0  fw-semibold">
-                                        <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>
-                                            Harian (Per Hari)</option>
-                                        <option value="monthly" {{ ($filterType ?? '') == 'monthly' ? 'selected' : '' }}>
-                                            Bulanan (Per Bulan)</option>
-                                    </select>
-                                </div>
+                        <form method="GET" action="{{ route('peminjaman.keseluruhan') }}" class="row g-3 align-items-end" id="filterForm">
+                            <div class="col-md-2">
+                                <label for="filter_type" class="form-label small text-muted fw-bold">Mode Tampilan</label>
+                                <select name="filter_type" id="filter_type" class="form-select border-0 fw-bold">
+                                    <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>Harian</option>
+                                    <option value="monthly" {{ ($filterType ?? '') == 'monthly' ? 'selected' : '' }}>Bulanan</option>
+                                </select>
                             </div>
 
-                            <div class="col-md-4" id="dailyFilter"
-                                style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
+                            <div class="col-md-3" id="dailyFilter" style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
                                 <label class="form-label small text-muted fw-bold">Rentang Tanggal</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="date" name="start_date" id="start_date" class="form-control border-0 "
-                                        value="{{ $startDate ?? \Carbon\Carbon::now()->subDays(30)->format('Y-m-d') }}">
-                                    <span class="input-group-text border-0  text-muted">s.d.</span>
-                                    <input type="date" name="end_date" id="end_date" class="form-control border-0 "
-                                        value="{{ $endDate ?? \Carbon\Carbon::now()->format('Y-m-d') }}">
+                                <div class="input-group">
+                                    <input type="date" name="start_date" id="start_date" class="form-control border-0" value="{{ $startDate ?? \Carbon\Carbon::now()->subDays(30)->format('Y-m-d') }}">
+                                    <span class="input-group-text border-0 text-muted">s/d</span>
+                                    <input type="date" name="end_date" id="end_date" class="form-control border-0" value="{{ $endDate ?? \Carbon\Carbon::now()->format('Y-m-d') }}">
                                 </div>
                             </div>
 
-                            <div class="col-md-4" id="monthlyFilter"
-                                style="{{ ($filterType ?? '') == 'monthly' ? '' : 'display: none;' }}">
+                            <div class="col-md-3" id="monthlyFilter" style="{{ ($filterType ?? '') == 'monthly' ? '' : 'display: none;' }}">
                                 <label class="form-label small text-muted fw-bold">Rentang Tahun</label>
-                                <div class="input-group input-group-sm">
+                                <div class="input-group">
                                     @php
                                         $currentYear = date('Y');
                                         $loopStartYear = $currentYear - 10;
                                         $loopEndYear = $currentYear;
                                     @endphp
-                                    <select name="start_year" id="start_year" class="form-select border-0 ">
+                                    <select name="start_year" id="start_year" class="form-select border-0">
                                         @for ($year = $loopStartYear; $year <= $loopEndYear; $year++)
-                                            <option value="{{ $year }}"
-                                                {{ ($startYear ?? $currentYear) == $year ? 'selected' : '' }}>
-                                                {{ $year }}
-                                            </option>
+                                            <option value="{{ $year }}" {{ ($startYear ?? $currentYear) == $year ? 'selected' : '' }}>{{ $year }}</option>
                                         @endfor
                                     </select>
-                                    <span class="input-group-text border-0  text-muted">s.d.</span>
-                                    <select name="end_year" id="end_year" class="form-select border-0 ">
+                                    <span class="input-group-text border-0 text-muted">s.d.</span>
+                                    <select name="end_year" id="end_year" class="form-select border-0">
                                         @for ($year = $loopStartYear; $year <= $loopEndYear; $year++)
-                                            <option value="{{ $year }}"
-                                                {{ ($endYear ?? $currentYear) == $year ? 'selected' : '' }}>
-                                                {{ $year }}
-                                            </option>
+                                            <option value="{{ $year }}" {{ ($endYear ?? $currentYear) == $year ? 'selected' : '' }}>{{ $year }}</option>
                                         @endfor
                                     </select>
                                 </div>
                             </div>
 
-                            <div class="col-md-2 ms-auto">
-                                <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold shadow-sm">
-                                    <i class="fas fa-search me-1"></i> Tampilkan
+                            <div class="col-md-1 ms-auto">
+                                <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm">
+                                    <i class="fas fa-search me-1"></i> Cari
                                 </button>
                             </div>
                         </form>

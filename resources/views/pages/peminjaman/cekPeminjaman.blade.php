@@ -152,7 +152,7 @@
             <div class="col-lg-12">
                 <div class="card border-0 shadow-sm hover-lift">
                     <div class="card-body p-4">
-                        <form action="{{ route('peminjaman.check_history') }}" method="GET">
+                        <form action="{{ route('peminjaman.cek_pinjaman') }}" method="GET">
                             <label for="cardnumber" class="form-label fw-bold text-muted small text-uppercase">Cari
                                 Anggota</label>
                             <div class="input-group input-group-lg">

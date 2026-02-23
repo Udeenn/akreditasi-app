@@ -196,30 +196,37 @@
 
 {{-- Modal untuk Detail Buku --}}
 <div class="modal fade" id="detailBukuModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="detailBukuModalLabel">Detail Buku</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 py-3">
+                <div>
+                    <h5 class="modal-title fw-bold text-body" id="detailBukuModalLabel">
+                        <i class="fas fa-list-ul me-2"></i> Detail Penggunaan Koleksi
+                    </h5>
+                    <span class="text-muted small">Kategori <strong id="modal-kategori" class="text-primary"></strong> pada periode <strong id="modal-periode" class="text-primary"></strong></span>
+                </div>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <p>Menampilkan detail untuk kategori <strong id="modal-kategori" class="badge bg-primary"></strong>
-                    pada periode <strong id="modal-periode" class="badge bg-secondary"></strong>.</p>
-                <table class="table table-striped table-sm">
-                    <thead>
-                        <tr>
-                            <th style="width: 45%;">Judul Buku</th>
-                            <th>Barcode</th>
-                            <th style="width: 25%;">Waktu Transaksi</th>
-                            <th>Tipe</th>
-                        </tr>
-                    </thead>
-                    <tbody id="detailBukuTbody"></tbody>
-                </table>
+            <div class="modal-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="detailTable">
+                        <thead class="sticky-top" style="background-color: rgba(0, 0, 0, 0.02);">
+                            <tr>
+                                <th class="py-3 px-4 border-bottom-0" style="width: 45%;">Judul Buku</th>
+                                <th class="py-3 px-4 border-bottom-0 text-center">Barcode</th>
+                                <th class="py-3 px-4 border-bottom-0 text-center" style="width: 25%;">Waktu Transaksi</th>
+                                <th class="py-3 px-4 border-bottom-0 text-center">Tipe Transaksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailBukuTbody">
+                            {{-- Row Loading State atau Kosong --}}
+                        </tbody>
+                    </table>
+                </div>
+                <div id="detailBukuPagination" class="d-flex justify-content-center py-3 border-light"></div>
             </div>
-            <div class="modal-footer d-flex justify-content-between">
-                <div id="detailBukuPagination"></div>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            <div class="modal-footer border-0 py-3 d-flex justify-content-end">
+                <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -303,7 +310,7 @@
         });
 
         async function fetchDetailBuku(url) {
-            detailBukuTbody.innerHTML = '<tr><td colspan="3" class="text-center">Memuat data...</td></tr>';
+            detailBukuTbody.innerHTML = '<tr><td colspan="4" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="text-muted mt-2 small fw-bold">Sedang mengambil data...</p></td></tr>';
             detailBukuPaginationContainer.innerHTML = '';
 
             try {
@@ -314,7 +321,7 @@
             } catch (error) {
                 console.error('Error fetching book details:', error);
                 detailBukuTbody.innerHTML =
-                    '<tr><td colspan="3" class="text-center text-danger">Gagal memuat data.</td></tr>';
+                    '<tr><td colspan="4" class="text-center text-danger py-4 fw-bold"><i class="fas fa-exclamation-triangle me-2"></i>Gagal memuat data.</td></tr>';
             }
         }
 
@@ -322,33 +329,46 @@
             if (result.data && result.data.length > 0) {
                 let allRowsHtml = '';
                 result.data.forEach(item => {
+                    let badgeTipe = item.tipe_transaksi === 'issue' ?
+                                '<span class="badge bg-primary-soft text-primary rounded-pill px-3 py-2"><i class="fas fa-arrow-up me-1"></i>Pinjam</span>' :
+                                (item.tipe_transaksi === 'renew' ?
+                                    '<span class="badge bg-warning-soft text-warning rounded-pill px-3 py-2"><i class="fas fa-sync me-1"></i>Perpanjang</span>' :
+                                    (item.tipe_transaksi === 'return' ? 
+                                        '<span class="badge bg-success-soft text-success rounded-pill px-3 py-2"><i class="fas fa-arrow-down me-1"></i>Kembali</span>' :
+                                        `<span class="badge bg-info-soft text-info rounded-pill px-3 py-2">${item.tipe_transaksi}</span>`
+                                    )
+                                );
+
                     allRowsHtml += `
                 <tr>
-                    <td>${item.judul_buku}</td>
-                    <td>${item.barcode}</td>
-                    <td>${moment(item.waktu_transaksi).format('DD MMM YYYY, HH:mm')}</td>
-                    <td><span class="badge bg-primary">${item.tipe_transaksi}</span></td>
+                    <td class="px-4 fw-medium text-body"><i class="fas fa-book text-muted me-2"></i>${item.judul_buku}</td>
+                    <td class="text-center"><span class="badge border text-body rounded-pill px-3 py-2">${item.barcode}</span></td>
+                    <td class="text-center text-muted small"><i class="far fa-clock me-1"></i>${moment(item.waktu_transaksi).format('DD MMM YYYY, HH:mm')}</td>
+                    <td class="text-center">${badgeTipe}</td>
                 </tr>
             `;
                 });
                 detailBukuTbody.innerHTML = allRowsHtml;
 
-                let paginationHtml = '<ul class="pagination pagination-sm mb-0">';
+                let paginationHtml = '<nav><ul class="pagination pagination-sm justify-content-center mb-0">';
                 if (result.links) {
                     result.links.forEach(link => {
                         if (link.url) {
+                            let label = link.label.replace(/&laquo;|&raquo;/g, '').trim();
+                            if (label === 'Previous') label = '<i class="fas fa-chevron-left small"></i>';
+                            if (label === 'Next') label = '<i class="fas fa-chevron-right small"></i>';
                             paginationHtml += `
                         <li class="page-item ${link.active ? 'active' : ''} ${!link.url ? 'disabled' : ''}">
-                            <a class="page-link" href="${link.url}">${link.label.replace(/&laquo;|&raquo;/g, '').trim()}</a>
+                            <a class="page-link shadow-none" href="${link.url}">${label}</a>
                         </li>`;
                         }
                     });
                 }
-                paginationHtml += '</ul>';
+                paginationHtml += '</ul></nav>';
                 detailBukuPaginationContainer.innerHTML = paginationHtml;
             } else {
                 detailBukuTbody.innerHTML =
-                    '<tr><td colspan="3" class="text-center">Tidak ada data detail.</td></tr>';
+                    '<tr><td colspan="4" class="text-center py-5"><i class="fas fa-info-circle fa-2x text-muted mb-2 opacity-50"></i><p class="text-muted mb-0">Tidak ada data detail.</p></td></tr>';
             }
         }
 

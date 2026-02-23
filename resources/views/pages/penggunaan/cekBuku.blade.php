@@ -33,7 +33,7 @@
                 <h6 class="fw-bold text-primary"><i class="fas fa-search me-1"></i> Cari Barcode</h6>
             </div>
             <div class="card-body">
-                <form action="{{ route('penggunaan.cek_histori') }}" method="GET">
+                <form action="{{ route('penggunaan.cek_histori_buku_buku') }}" method="GET">
                     <div class="row g-2 align-items-center">
                         <div class="col-lg">
                             <div class="input-group">

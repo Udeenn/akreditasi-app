@@ -234,7 +234,7 @@
                         <h6 class="fw-bold text-primary mb-0"><i class="fas fa-filter me-2"></i> Filter Data</h6>
                     </div>
                     <div class="card-body pt-0">
-                        <form method="GET" action="{{ route('peminjaman.peminjaman_prodi_chart') }}"
+                        <form method="GET" action="{{ route('peminjaman.prodi') }}"
                             class="row g-3 align-items-end" id="filterForm">
                             <div class="col-md-2">
                                 <label for="filter_type" class="form-label small text-muted fw-bold">Mode Tampilan</label>
@@ -395,7 +395,7 @@
                                 <i class="fas fa-table me-2"></i>Rincian Data Sirkulasi
                             </h6>
                             <button type="button" id="exportCsvBtn"
-                                class="btn btn-success btn-sm fw-bold shadow-sm px-3 rounded-pill">
+                                class="btn btn-success btn-sm fw-bold shadow-sm px-3">
                                 <i class="fas fa-file-csv me-1"></i> Export CSV
                             </button>
                         </div>
@@ -448,10 +448,10 @@
                                                 </td>
                                                 <td class="text-center">
                                                     <button type="button"
-                                                        class="btn btn-sm btn-outline-primary view-detail-btn rounded-pill px-3 shadow-sm"
+                                                        class="btn btn-sm btn-primary shadow-sm view-detail-btn"
                                                         data-bs-toggle="modal" data-bs-target="#detailPeminjamanModal"
                                                         data-periode="{{ $stat->periode }}">
-                                                        <i class="fas fa-eye me-1"></i> Detail
+                                                        <i class="fas fa-eye"></i>
                                                     </button>
                                                 </td>
                                             </tr>
@@ -528,10 +528,10 @@
                     </div>
                     <div class="modal-footer border-0 py-3">
                         <a href="#" id="btnExportDetailCsv"
-                            class="btn btn-success btn-sm me-2 shadow-sm rounded-pill px-4">
+                            class="btn btn-success btn-sm me-2 shadow-sm px-4">
                             <i class="fas fa-file-csv me-1"></i> Export CSV
                         </a>
-                        <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4"
+                        <button type="button" class="btn btn-secondary btn-sm px-4"
                             data-bs-dismiss="modal">Tutup</button>
                     </div>
                 </div>

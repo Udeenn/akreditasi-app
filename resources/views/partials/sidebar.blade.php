@@ -130,12 +130,12 @@
         <ul class="nav flex-column mt-1 sub-menu">
             <li><a class="nav-link {{ request()->routeIs('peminjaman.peminjaman_fakultas') ? 'active' : '' }}"
                     href="{{ route('peminjaman.peminjaman_fakultas') }}">Per Fakultas</a></li>
-            <li><a class="nav-link {{ request()->routeIs('peminjaman.peminjaman_rentang_tanggal') ? 'active' : '' }}"
-                    href="{{ route('peminjaman.peminjaman_rentang_tanggal') }}">Keseluruhan</a></li>
-            <li><a class="nav-link {{ request()->routeIs('peminjaman.peminjaman_prodi_chart') ? 'active' : '' }}"
-                    href="{{ route('peminjaman.peminjaman_prodi_chart') }}">Civitas Akademika</a></li>
-            <li><a class="nav-link {{ request()->routeIs('peminjaman.check_history') ? 'active' : '' }}"
-                    href="{{ route('peminjaman.check_history') }}">Cek Pinjaman</a></li>
+            <li><a class="nav-link {{ request()->routeIs('peminjaman.keseluruhan') ? 'active' : '' }}"
+                    href="{{ route('peminjaman.keseluruhan') }}">Keseluruhan</a></li>
+            <li><a class="nav-link {{ request()->routeIs('peminjaman.prodi') ? 'active' : '' }}"
+                    href="{{ route('peminjaman.prodi') }}">Civitas Akademika</a></li>
+            <li><a class="nav-link {{ request()->routeIs('peminjaman.cek_pinjaman') ? 'active' : '' }}"
+                    href="{{ route('peminjaman.cek_pinjaman') }}">Cek Pinjaman</a></li>
             <li><a class="nav-link {{ request()->routeIs('peminjaman.berlangsung') ? 'active' : '' }}"
                     href="{{ route('peminjaman.berlangsung') }}">Sedang Berlangsung</a></li>
         </ul>
@@ -157,8 +157,8 @@
             <li><a class="nav-link {{ request()->routeIs('penggunaan.keterpakaian_koleksi') ? 'active' : '' }}"
                     href="{{ route('penggunaan.keterpakaian_koleksi') }}">Keterpakaian Koleksi</a>
             </li>
-            <li><a class="nav-link {{ request()->routeIs('penggunaan.cek_histori') ? 'active' : '' }}"
-                    href="{{ route('penggunaan.cek_histori') }}">Cek Histori Buku</a>
+            <li><a class="nav-link {{ request()->routeIs('penggunaan.cek_histori_buku_buku') ? 'active' : '' }}"
+                    href="{{ route('penggunaan.cek_histori_buku_buku') }}">Cek Histori Buku</a>
             </li>
             <li><a class="nav-link {{ request()->routeIs('penggunaan.sering_dibaca') ? 'active' : '' }}"
                     href="{{ route('penggunaan.sering_dibaca') }}">Buku Terlaris</a>
