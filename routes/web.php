@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Auth\AuthController;
+
 use App\Http\Controllers\Auth\CasController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
@@ -50,7 +50,7 @@ Route::middleware('auth')->group(function () {
     
     
     // Logout
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::post('/logout', [CasController::class, 'logout'])->name('logout');
     
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'totalStatistik'])->name('dashboard');
