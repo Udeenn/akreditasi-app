@@ -2,7 +2,7 @@
 
 
 use App\Http\Controllers\Auth\CasController;
-use App\Http\Controllers\Auth\LoginController;
+
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IjazahController;
 use App\Http\Controllers\MouController;
