@@ -658,11 +658,10 @@
 
                         <div class="d-flex align-items-center">
                             @guest
-                                <button type="button" class="btn btn-sm btn-outline-secondary text-body-emphasis"
-                                    data-bs-toggle="modal" data-bs-target="#loginModal"><i
-                                        class="fas fa-sign-in-alt me-1"></i>
+                                <a href="{{ route('cas.login') }}" class="btn btn-sm btn-outline-secondary text-body-emphasis">
+                                    <i class="fas fa-sign-in-alt me-1"></i>
                                     Login
-                                </button>
+                                </a>
                             @else
                                 <form action="{{ route('cas.logout') }}" method="POST" class="d-inline">
                                     @csrf
@@ -736,64 +735,6 @@
         </div>
     </div>
 
-    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title fw-bold" id="loginModalLabel">
-                        <i class="fas fa-user-shield me-2 text-primary"></i>
-                        Masuk Sebagai Staff Perpustakaan
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form method="POST" action="{{ route('login') }}">
-                    @csrf
-                    <div class="modal-body p-4">
-
-                        @if ($errors->any() && !$errors->has('username') && !$errors->has('password'))
-                            <div class="alert alert-danger">
-                                {{ $errors->first() }}
-                            </div>
-                        @endif
-
-                        <div class="mb-3">
-                            <label for="modal_username" class="form-label fw-bold">Username</label>
-                            <input id="modal_username" type="text"
-                                class="form-control form-control-lg @error('username') is-invalid @enderror"
-                                name="username" value="{{ old('username') }}" required autocomplete="username"
-                                autofocus placeholder="Masukkan username">
-                            @error('username')
-                                <div class="invalid-feedback">
-                                    {{ $message }}
-                                </div>
-                            @enderror
-
-                        </div>
-                        <div class="mb-3">
-                            <label for="modal_password" class="form-label fw-bold">Password</label>
-                            <input id="modal_password" type="password"
-                                class="form-control form-control-lg @error('password') is-invalid @enderror"
-                                name="password" value="{{ old('password') }}" required
-                                autocomplete="current-password" placeholder="Masukkan password">
-                            @error('password')
-                                <div class="invalid-feedback">
-                                    {{ $message }}
-                                </div>
-                            @enderror
-                        </div>
-                    </div>
-                    <div class="modal-footer border-0">
-                        <button type="button" class="btn btn-outline-secondary"
-                            data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary"
-                            style="--bs-btn-bg: #4A69FF; --bs-btn-border-color: #4A69FF;">
-                            Masuk
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 
     <div class="theme-fab">
         <button class="btn" id="theme-toggle" type="button" title="Ganti Tema">
@@ -842,18 +783,7 @@
                 $('#welcomeModalGreeting').text(greetingText + "!");
             }
 
-            @if (
-                $errors->has('username') ||
-                    $errors->has('password') ||
-                    ($errors->any() && !$errors->has('username') && !$errors->has('password')))
-                // 1. Tampilkan modal jika login GAGAL (ada error)
-                const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-                loginModal.show();
-            @elseif (session('show_login_modal'))
-                // 2. TAMPILKAN MODAL JIKA DIALIHKAN DARI HALAMAN PROTEKSI
-                const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-                loginModal.show();
-            @endif
+
 
 
             function updateTime() {

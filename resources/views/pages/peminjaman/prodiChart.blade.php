@@ -395,8 +395,7 @@
                                 <i class="fas fa-table me-2"></i>Rincian Data Sirkulasi
                             </h6>
                             <button type="button" id="exportCsvBtn"
-                                class="btn btn-success btn-sm fw-bold shadow-sm px-3">
-                                <i class="fas fa-file-csv me-1"></i> Export CSV
+                                class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
                             </button>
                         </div>
                         <div class="card-body p-0">
@@ -528,8 +527,7 @@
                     </div>
                     <div class="modal-footer border-0 py-3">
                         <a href="#" id="btnExportDetailCsv"
-                            class="btn btn-success btn-sm me-2 shadow-sm px-4">
-                            <i class="fas fa-file-csv me-1"></i> Export CSV
+                            class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
                         </a>
                         <button type="button" class="btn btn-secondary btn-sm px-4"
                             data-bs-dismiss="modal">Tutup</button>
@@ -863,3 +861,4 @@
         });
     </script>
 @endpush
+

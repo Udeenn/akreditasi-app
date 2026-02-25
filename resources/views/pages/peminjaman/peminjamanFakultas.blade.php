@@ -325,8 +325,7 @@
                             <h6 class="fw-bold m-0 text-primary">
                                 <i class="fas fa-table me-2"></i>Rincian Data Sirkulasi
                             </h6>
-                            <button type="button" id="exportCsvBtn" class="btn btn-success btn-sm fw-bold shadow-sm px-3 rounded-pill">
-                                <i class="fas fa-file-csv me-1"></i> Export CSV
+                            <button type="button" id="exportCsvBtn" class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
                             </button>
                         </div>
                         <div class="card-body p-0">
@@ -618,3 +617,4 @@
         });
     </script>
 @endpush
+

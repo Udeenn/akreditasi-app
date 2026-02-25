@@ -131,7 +131,7 @@
                         @endif
                     </h6>
                     <button type="submit" form="filterFormEjurnal" name="export_csv" value="1"
-                        class="btn btn-success btn-sm"><i class="fas fa-file-csv me-1"></i> Export CSV</button>
+                        class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV</button>
                 </div>
             @endif
             <div class="card-body">
@@ -256,3 +256,4 @@
         </script>
     @endpush
 @endsection
+

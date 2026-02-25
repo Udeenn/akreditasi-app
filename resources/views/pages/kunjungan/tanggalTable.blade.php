@@ -239,8 +239,7 @@
                     </nav>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-success" id="exportDetailPengunjungCsv">
-                        <i class="fas fa-file-csv me-2"></i> Export CSV
+                    <button type="button" class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
                     </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                 </div>
@@ -653,3 +652,4 @@
         });
     </script>
 @endpush
+

@@ -40,11 +40,7 @@ Route::prefix('cas')->name('cas.')->group(function () {
     Route::post('/logout', [CasController::class, 'logout'])->name('logout');
 });
 
-// Staff Login (Non-CAS) - untuk backward compatibility
-Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
-});
+
 
 // =============================================
 // PROTECTED ROUTES (Harus login CAS/Auth)
@@ -118,6 +114,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/export-detail-prodi', [PeminjamanController::class, 'exportDetailProdiCsv'])->name('export_detail_prodi');
         Route::get('/cek-pinjaman', [PeminjamanController::class, 'checkHistory'])->name('cek_pinjaman');
         Route::get('/berlangsung', [PeminjamanController::class, 'peminjamanBerlangsung'])->name('berlangsung');
+        Route::get('/berlangsung-data', [PeminjamanController::class, 'getBerlangsungDataTable'])->name('berlangsung_data');
         Route::get('/export-berlangsung-full-data', [PeminjamanController::class, 'getBerlangsungExportData'])->name('get_berlangsung_export_data');
         Route::get('/detail', [PeminjamanController::class, 'getDetailPeminjaman'])->name('get_detail');
         Route::get('/export-borrowing-full-data', [PeminjamanController::class, 'getBorrowingHistoryExportData'])->name('get_borrowing_export_data');

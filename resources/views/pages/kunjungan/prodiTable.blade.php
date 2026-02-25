@@ -250,8 +250,7 @@
                             <h6 class="fw-bold m-0 text-primary">
                                 <i class="fas fa-table me-2"></i>Rincian Data
                             </h6>
-                            <a href="{{ route('kunjungan.get_prodi_export_data', request()->query()) }}" class="btn btn-success btn-sm fw-bold shadow-sm">
-                                <i class="fas fa-file-csv me-2"></i>Export CSV
+                            <a href="{{ route('kunjungan.get_prodi_export_data', request()->query()) }}" class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
                             </a>
                         </div>
                         
@@ -644,3 +643,4 @@
     });
 </script>
 @endpush
+

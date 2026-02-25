@@ -60,7 +60,7 @@
                             placeholder="Cari ID, Nama Sertifikasi, Tahun..." value="{{ request('search') }}">
                         <button type="submit" class="btn btn-primary">Cari</button>
                         @if (request('search'))
-                            <a href="{{ route('sertifikasi.index') }}" class="btn btn-secondary ms-2">Reset</a>
+                            <a href="{{ route('sertifikasi.index') }}" class="btn btn-outline-secondary btn-sm px-4 fw-bold shadow-sm"><i class="fas fa-undo me-2"></i> Reset</a>
                         @endif
                     </form>
                 </div>
@@ -131,3 +131,4 @@
         </div>
     </div>
 @endsection
+

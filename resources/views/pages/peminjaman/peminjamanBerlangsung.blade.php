@@ -6,6 +6,7 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
 
     <style>
         /* --- MODERN DASHBOARD STYLING --- */
@@ -158,52 +159,23 @@
             color: white !important;
         }
 
-        /* 1. Kotak Utama (Selection) */
-        body.dark-mode .select2-container--bootstrap-5 .select2-selection {
-            background-color: #1e293b !important;
-            /* Warna Gelap */
-            border-color: #2b2b40 !important;
-            color: #ffffff !important;
-        }
-
-        /* 2. Teks di dalam kotak utama */
-        body.dark-mode .select2-container--bootstrap-5 .select2-selection__rendered {
-            color: #ffffff !important;
-            /* Teks Putih */
-        }
-
-        /* 3. Dropdown Menu (Wadah Opsi) */
-        body.dark-mode .select2-container--bootstrap-5 .select2-dropdown {
-            background-color: #1e293b !important;
-            border-color: #2b2b40 !important;
-            color: #ffffff !important;
-        }
-
-        /* 4. Kotak Input Pencarian (Search Box) - INI YANG KOTAK PUTIH DI GAMBAR */
         body.dark-mode .select2-container--bootstrap-5 .select2-search .select2-search__field {
             background-color: #1e293b !important;
-            /* Latar Input Gelap */
             border-color: #2b2b40 !important;
             color: #ffffff !important;
-            /* Teks Input Putih */
             caret-color: white;
-            /* Kursor Putih */
         }
 
-        /* 5. List Opsi */
         body.dark-mode .select2-results__option {
             color: #ffffff !important;
             background-color: #1e293b;
         }
 
-        /* 6. Opsi saat di-Hover/Dipilih */
         body.dark-mode .select2-container--bootstrap-5 .select2-results__option--highlighted[aria-selected] {
             background-color: #0d6efd !important;
-            /* Primary Blue */
             color: #ffffff !important;
         }
 
-        /* 7. Placeholder */
         body.dark-mode .select2-container--bootstrap-5 .select2-selection__placeholder {
             color: #a1a5b7 !important;
         }
@@ -221,8 +193,8 @@
                         class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
                         <div class="mb-3 mb-md-0 text-center text-md-start">
                             <h3 class="fw-bold mb-1"><i class="fas fa-tasks me-2"></i>Peminjaman Berlangsung</h3>
-                            <p class="mb-0 opacity-75">
-                                @if ($selectedProdiCode)
+                            <p class="mb-0 opacity-75 page-header-subtitle">
+                                @if ($selectedProdiCode && $selectedProdiCode !== 'semua')
                                     Menampilkan data aktif untuk: <strong>{{ $namaProdiFilter }}</strong>
                                 @else
                                     Daftar seluruh buku yang sedang dipinjam saat ini.
@@ -245,8 +217,7 @@
                         <h6 class="fw-bold text-primary mb-0"><i class="fas fa-filter me-2"></i> Filter Data</h6>
                     </div>
                     <div class="card-body pt-0 pb-4">
-                        <form method="GET" action="{{ route('peminjaman.berlangsung') }}"
-                            id="filterPeminjamanBerlangsungForm" class="row g-3 align-items-end">
+                        <form id="filterPeminjamanBerlangsungForm" class="row g-3 align-items-end">
                             <div class="col-md-9">
                                 <label for="prodi" class="form-label fw-bold small text-muted text-uppercase">Program
                                     Studi</label>
@@ -262,7 +233,7 @@
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm"
+                                <button type="button" id="btnTerapkanFilter" class="btn btn-primary w-100 fw-bold shadow-sm"
                                     style="padding: 0.6rem;">
                                     <i class="fas fa-search me-2"></i> Terapkan Filter
                                 </button>
@@ -275,7 +246,7 @@
 
         {{-- 3. RESULTS SECTION --}}
         <div class="card border-0 shadow-sm">
-            <div class="card-header  d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
                 <div class="d-flex align-items-center">
                     <div class="icon-box bg-primary-soft text-primary rounded-circle me-3"
                         style="width: 40px; height: 40px; display:flex; align-items:center; justify-content:center;">
@@ -283,143 +254,33 @@
                     </div>
                     <div>
                         <h6 class="fw-bold mb-0">Daftar Peminjaman</h6>
-                        @if ($dataExists)
-                            <small class="text-muted">Total:
-                                <strong>{{ number_format($activeLoans->total(), 0, ',', '.') }}</strong> Transaksi</small>
-                        @endif
+                        <small class="text-muted">Total:
+                            <strong id="totalCount">-</strong> Transaksi</small>
                     </div>
                 </div>
 
-                @if ($selectedProdiCode || $dataExists)
-                    <button type="button" id="exportCsvBtn"
-                        class="btn btn-success btn-sm rounded-pill px-4 shadow-sm fw-bold">
-                        <i class="fas fa-file-csv me-1"></i> Export CSV
-                    </button>
-                @endif
+                <button type="button" id="exportCsvBtn"
+                    class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
+                </button>
             </div>
 
             <div class="card-body p-0">
-                @if ($dataExists)
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="">
-                                <tr>
-                                    <th class="text-center" width="5%">No</th>
-                                    <th width="20%">Peminjam</th>
-                                    <th width="30%">Buku</th>
-                                    <th width="20%">Waktu Pinjam</th>
-                                    <th width="25%">Status Pengembalian</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($activeLoans as $index => $loan)
-                                    @php
-                                        $dueDate = \Carbon\Carbon::parse($loan->BatasWaktuPengembalian);
-                                        $isOverdue = $dueDate->isPast() && !$dueDate->isToday();
-                                        $isDueToday = $dueDate->isToday();
-                                    @endphp
-
-                                    <tr class="{{ $isOverdue ? 'tr-overdue' : '' }}">
-                                        <td class="text-center text-muted fw-bold">{{ $activeLoans->firstItem() + $index }}
-                                        </td>
-
-                                        {{-- Kolom Peminjam --}}
-                                        <td>
-                                            <div class="d-flex flex-column">
-                                                <span class="fw-bold ">{{ $loan->Peminjam }}</span>
-                                                {{-- Jika ada NIM/ID di object loan, bisa ditampilkan disini --}}
-                                                {{-- <small class="text-muted">{{ $loan->cardnumber }}</small> --}}
-                                            </div>
-                                        </td>
-
-                                        {{-- Kolom Buku --}}
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="fas fa-book text-muted me-3 opacity-50"></i>
-                                                <div>
-                                                    <span class="d-block fw-semibold text-truncate"
-                                                        style="max-width: 300px;" title="{{ $loan->JudulBuku }}">
-                                                        {{ $loan->JudulBuku }}
-                                                    </span>
-                                                    <small class="text-muted font-monospace  px-2 rounded border">
-                                                        <i class="fas fa-barcode me-1"></i> {{ $loan->BarcodeBuku }}
-                                                    </small>
-                                                </div>
-                                            </div>
-                                        </td>
-
-                                        {{-- Kolom Waktu Pinjam --}}
-                                        <td>
-                                            <div class="text-muted small">
-                                                <i class="far fa-calendar-alt me-1 text-primary"></i>
-                                                {{ \Carbon\Carbon::parse($loan->BukuDipinjamSaat)->format('d M Y') }}
-                                                <br>
-                                                <i class="far fa-clock me-1 text-primary ms-1"></i>
-                                                {{ \Carbon\Carbon::parse($loan->BukuDipinjamSaat)->format('H:i') }} WIB
-                                            </div>
-                                        </td>
-
-                                        {{-- Kolom Status --}}
-                                        <td>
-                                            @if ($isOverdue)
-                                                <div class="d-flex align-items-center">
-                                                    <span class="badge bg-danger-soft rounded-pill px-3 py-2 me-2">
-                                                        <i class="fas fa-exclamation-circle me-1"></i> TERLAMBAT
-                                                    </span>
-                                                    <small class="text-danger fw-bold">
-                                                        {{ $dueDate->diffForHumans(null, true) }}
-                                                    </small>
-                                                </div>
-                                                <small class="text-muted d-block mt-1">Batas:
-                                                    {{ $dueDate->format('d M Y') }}</small>
-                                            @elseif ($isDueToday)
-                                                <span class="badge bg-warning-soft rounded-pill px-3 py-2">
-                                                    <i class="fas fa-clock me-1"></i> HARI INI
-                                                </span>
-                                                <small class="text-muted d-block mt-1">Batas: {{ $dueDate->format('H:i') }}
-                                                    WIB</small>
-                                            @else
-                                                <div class="d-flex flex-column">
-                                                    <span
-                                                        class="badge bg-success-soft rounded-pill px-3 py-2 w-auto align-self-start">
-                                                        <i class="fas fa-check-circle me-1"></i> Dipinjam
-                                                    </span>
-                                                    <small class="text-muted mt-1">
-                                                        Sisa: {{ $dueDate->diffForHumans(null, true) }}
-                                                    </small>
-                                                </div>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {{-- Pagination --}}
-                    <div class="card-footer  border-0 py-3 d-flex justify-content-between align-items-center">
-                        <small class="text-muted">
-                            Showing {{ $activeLoans->firstItem() }} to {{ $activeLoans->lastItem() }} of
-                            {{ number_format($activeLoans->total()) }} results
-                        </small>
-                        {{ $activeLoans->withQueryString()->links('pagination::bootstrap-4') }}
-                    </div>
-                @else
-                    {{-- Empty State --}}
-                    <div class="text-center p-5">
-                        <div class="mb-3">
-                            <i class="fas fa-folder-open fa-3x text-muted opacity-25"></i>
-                        </div>
-                        <h5 class="fw-bold text-muted">Data Tidak Ditemukan</h5>
-                        <p class="text-muted mb-0">
-                            Tidak ada peminjaman berlangsung
-                            @if ($selectedProdiCode)
-                                untuk program studi <strong>{{ $namaProdiFilter }}</strong>
-                            @endif
-                            saat ini.
-                        </p>
-                    </div>
-                @endif
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="myTablePeminjamanBerlangsung"
+                        style="width:100%">
+                        <thead>
+                            <tr>
+                                <th class="text-center" width="5%">No</th>
+                                <th width="20%">Peminjam</th>
+                                <th width="30%">Buku</th>
+                                <th width="20%">Waktu Pinjam</th>
+                                <th width="25%">Status Pengembalian</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -427,7 +288,11 @@
 
 @push('scripts')
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/locale/id.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize Select2
@@ -435,6 +300,150 @@
                 theme: 'bootstrap-5',
                 placeholder: 'Pilih Program Studi...',
                 width: '100%'
+            });
+
+            // Initialize DataTables with Server-Side Processing
+            var table = $('#myTablePeminjamanBerlangsung').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "url": "{{ route('peminjaman.berlangsung_data') }}",
+                    "data": function(d) {
+                        // Baca nilai dropdown prodi SAAT INI (bukan static)
+                        d.prodi = $('#prodi').val();
+                    }
+                },
+                "columns": [{
+                        "data": null,
+                        "orderable": false,
+                        "searchable": false,
+                        "className": "text-center text-muted fw-bold",
+                        "render": function(data, type, row, meta) {
+                            return meta.row + meta.settings._iDisplayStart + 1;
+                        }
+                    },
+                    {
+                        "data": "Peminjam",
+                        "render": function(data) {
+                            return '<div class="d-flex flex-column"><span class="fw-bold">' +
+                                (data || '-') + '</span></div>';
+                        }
+                    },
+                    {
+                        "data": "JudulBuku",
+                        "render": function(data, type, row) {
+                            const title = data || '-';
+                            const barcode = row.BarcodeBuku || '';
+                            return '<div class="d-flex align-items-center">' +
+                                '<i class="fas fa-book text-muted me-3 opacity-50"></i>' +
+                                '<div>' +
+                                '<span class="d-block fw-semibold text-truncate" style="max-width: 300px;" title="' +
+                                title + '">' + title + '</span>' +
+                                '<small class="text-muted font-monospace px-2 rounded border">' +
+                                '<i class="fas fa-barcode me-1"></i> ' + barcode +
+                                '</small></div></div>';
+                        }
+                    },
+                    {
+                        "data": "BukuDipinjamSaat",
+                        "render": function(data) {
+                            if (!data) return '-';
+                            const m = moment(data);
+                            return '<div class="text-muted small">' +
+                                '<i class="far fa-calendar-alt me-1 text-primary"></i> ' +
+                                m.format('DD MMM YYYY') +
+                                '<br><i class="far fa-clock me-1 text-primary ms-1"></i> ' +
+                                m.format('HH:mm') + ' WIB</div>';
+                        }
+                    },
+                    {
+                        "data": "BatasWaktuPengembalian",
+                        "render": function(data) {
+                            if (!data) return '-';
+                            const dueDate = moment(data);
+                            const now = moment();
+                            const isToday = dueDate.isSame(now, 'day');
+                            const isOverdue = dueDate.isBefore(now, 'day');
+
+                            if (isOverdue) {
+                                const diff = now.diff(dueDate, 'days');
+                                return '<div class="d-flex align-items-center">' +
+                                    '<span class="badge bg-danger-soft rounded-pill px-3 py-2 me-2">' +
+                                    '<i class="fas fa-exclamation-circle me-1"></i> TERLAMBAT</span>' +
+                                    '<small class="text-danger fw-bold">' + diff +
+                                    ' hari</small></div>' +
+                                    '<small class="text-muted d-block mt-1">Batas: ' +
+                                    dueDate.format('DD MMM YYYY') + '</small>';
+                            } else if (isToday) {
+                                return '<span class="badge bg-warning-soft rounded-pill px-3 py-2">' +
+                                    '<i class="fas fa-clock me-1"></i> HARI INI</span>' +
+                                    '<small class="text-muted d-block mt-1">Batas: ' +
+                                    dueDate.format('HH:mm') + ' WIB</small>';
+                            } else {
+                                const diff = dueDate.diff(now, 'days');
+                                return '<div class="d-flex flex-column">' +
+                                    '<span class="badge bg-success-soft rounded-pill px-3 py-2 w-auto align-self-start">' +
+                                    '<i class="fas fa-check-circle me-1"></i> Dipinjam</span>' +
+                                    '<small class="text-muted mt-1">Sisa: ' + diff +
+                                    ' hari</small></div>';
+                            }
+                        }
+                    }
+                ],
+                "order": [
+                    [3, "desc"]
+                ],
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json"
+                },
+                "lengthMenu": [
+                    [10, 25, 50, 100],
+                    [10, 25, 50, 100]
+                ],
+                "pageLength": 10,
+                "dom": '<"d-flex justify-content-between mb-3 px-3 mt-3"lfP>t<"d-flex justify-content-between mt-3 px-3 mb-3"ip>',
+                "drawCallback": function(settings) {
+                    // Update total count di header
+                    var api = this.api();
+                    var total = api.page.info().recordsTotal;
+                    $('#totalCount').text(total.toLocaleString('id-ID'));
+
+                    // Highlight overdue rows
+                    api.rows().every(function() {
+                        var data = this.data();
+                        if (data.BatasWaktuPengembalian) {
+                            var dueDate = moment(data.BatasWaktuPengembalian);
+                            if (dueDate.isBefore(moment(), 'day')) {
+                                $(this.node()).addClass('tr-overdue');
+                            }
+                        }
+                    });
+                },
+                "createdRow": function(row, data) {
+                    if (data.BatasWaktuPengembalian) {
+                        var dueDate = moment(data.BatasWaktuPengembalian);
+                        if (dueDate.isBefore(moment(), 'day')) {
+                            $(row).addClass('tr-overdue');
+                        }
+                    }
+                }
+            });
+
+            // Tombol Filter: Reload DataTable via AJAX (tanpa reload halaman!)
+            $('#btnTerapkanFilter').on('click', function() {
+                // Update subtitle header
+                const prodiSelect = document.getElementById('prodi');
+                const selectedOption = prodiSelect.options[prodiSelect.selectedIndex];
+                const headerText = document.querySelector('.page-header-subtitle');
+                if (headerText) {
+                    if (prodiSelect.value && prodiSelect.value !== 'semua') {
+                        headerText.innerHTML = 'Menampilkan data aktif untuk: <strong>' + selectedOption.text.trim() + '</strong>';
+                    } else {
+                        headerText.textContent = 'Daftar seluruh buku yang sedang dipinjam saat ini.';
+                    }
+                }
+                // Reload DataTable (akan membaca d.prodi dari dropdown)
+                table.ajax.reload();
             });
 
             // Export CSV Logic
@@ -447,7 +456,6 @@
 
                     if (prodiCode && prodiCode !== 'semua') {
                         const selectedOption = prodiSelect.options[prodiSelect.selectedIndex];
-                        // Bersihkan nama prodi dari format "(KODE) - Nama"
                         const text = selectedOption.text;
                         const parts = text.split(' - ');
                         prodiName = parts.length > 1 ? parts[1] : text;
@@ -467,18 +475,36 @@
 
                         if (response.ok && result.data && result.data.length > 0) {
                             const delimiter = ';';
-                            // Header CSV
+                            let csv = [];
+
+                            // --- TITLE / INFO HEADER ---
+                            const selectedOption = prodiSelect.options[prodiSelect.selectedIndex];
+                            const filterLabel = (prodiCode && prodiCode !== 'semua')
+                                ? selectedOption.text.trim()
+                                : 'Semua Program Studi';
+                            const today = new Date();
+                            const exportDate = today.toLocaleDateString('id-ID', {
+                                day: 'numeric', month: 'long', year: 'numeric'
+                            });
+
+                            csv.push(`"Laporan Peminjaman Berlangsung"`);
+                            csv.push(`"Filter Program Studi"${delimiter}"${filterLabel}"`);
+                            csv.push(`"Tanggal Export"${delimiter}"${exportDate}"`);
+                            csv.push(`"Total Data"${delimiter}"${result.data.length}"`);
+                            csv.push(''); // Baris kosong pemisah
+
+                            // --- COLUMN HEADERS ---
                             const headers = ['No.', 'Waktu Pinjam', 'Judul Buku', 'Barcode', 'Peminjam',
                                 'Batas Waktu'
                             ];
-                            let csv = [headers.join(delimiter)];
+                            csv.push(headers.join(delimiter));
 
                             result.data.forEach((row, idx) => {
                                 csv.push([
                                     idx + 1,
                                     row.BukuDipinjamSaat,
-                                    `"${row.JudulBuku.replace(/"/g, '""')}"`, // Escape quotes
-                                    `"${row.BarcodeBuku}"`, // Force text format for barcode
+                                    `"${row.JudulBuku.replace(/"/g, '""')}"`,
+                                    `"${row.BarcodeBuku}"`,
                                     `"${row.Peminjam.replace(/"/g, '""')}"`,
                                     row.BatasWaktuPengembalian
                                 ].join(delimiter));

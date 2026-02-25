@@ -352,8 +352,7 @@
                             <h6 class="fw-bold m-0 text-primary">
                                 <i class="fas fa-table me-2"></i>Rincian Data Peminjaman
                             </h6>
-                            <button type="button" id="exportCsvBtn" class="btn btn-success btn-sm fw-bold shadow-sm">
-                                <i class="fas fa-file-csv me-1"></i> Export CSV
+                            <button type="button" id="exportCsvBtn" class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
                             </button>
                         </div>
                         <div class="card-body p-0">
@@ -363,7 +362,9 @@
                                         <tr>
                                             <th class="text-center py-3 px-4 border-bottom-0" width="5%">No</th>
                                             <th class="py-3 px-4 border-bottom-0">Periode</th>
-                                            <th class="text-center py-3 px-4 border-bottom-0">Buku Terpinjam</th>
+                                            <th class="text-center py-3 px-4 border-bottom-0">Peminjaman</th>
+                                            <th class="text-center py-3 px-4 border-bottom-0">Perpanjangan</th>
+                                            <th class="text-center py-3 px-4 border-bottom-0">Pengembalian</th>
                                             <th class="text-center py-3 px-4 border-bottom-0">Total Sirkulasi</th>
                                             <th class="text-center py-3 px-4 border-bottom-0">Aksi</th>
                                         </tr>
@@ -392,7 +393,15 @@
                                                 </td>
                                                 <td class="text-center">
                                                     <span
-                                                        class="badge bg-primary-soft text-primary rounded-pill px-3">{{ $stat->jumlah_peminjaman_buku }}</span>
+                                                        class="badge bg-primary-soft text-primary rounded-pill px-3">{{ $stat->jumlah_issue }}</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span
+                                                        class="badge bg-info-soft text-info rounded-pill px-3">{{ $stat->jumlah_renew }}</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span
+                                                        class="badge bg-success-soft text-success rounded-pill px-3">{{ $stat->jumlah_pengembalian }}</span>
                                                 </td>
                                                 <td class="text-center">
                                                     <span
@@ -400,10 +409,10 @@
                                                 </td>
                                                 <td class="text-center">
                                                     <button type="button"
-                                                        class="btn btn-sm btn-outline-primary view-detail-btn rounded-pill px-3 shadow-sm"
+                                                        class="btn btn-sm btn-outline-primary view-detail-btn px-3 shadow-sm"
                                                         data-bs-toggle="modal" data-bs-target="#detailPeminjamanModal"
                                                         data-periode="{{ $stat->periode }}">
-                                                        <i class="fas fa-eye me-1"></i> Detail
+                                                        <i class="fas fa-eye me-1"></i> 
                                                     </button>
                                                 </td>
                                             </tr>
@@ -484,10 +493,9 @@
                     </div>
                     <div class="modal-footer border-0 py-3">
                         <a href="#" id="btnExportDetailCsv"
-                            class="btn btn-success btn-sm me-2 shadow-sm rounded-pill px-4">
-                            <i class="fas fa-file-csv me-1"></i> Export CSV
+                            class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
                         </a>
-                        <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4"
+                        <button type="button" class="btn btn-secondary btn-sm px-4"
                             data-bs-dismiss="modal">Tutup</button>
                     </div>
                 </div>
@@ -798,7 +806,7 @@
 
                     csv.push(title);
                     csv.push("");
-                    const headers = ['No', 'Periode', 'Buku Terpinjam', 'Total Pengembalian',
+                    const headers = ['No', 'Periode', 'Peminjaman', 'Perpanjangan', 'Pengembalian',
                         'Total Sirkulasi', 'Total Peminjam'
                     ];
                     csv.push(headers.join(delimiter));
@@ -811,16 +819,17 @@
                         } else {
                             periode = moment(row.periode, 'YYYY-MM').format('MMMM YYYY');
                         }
-                        const pinjam = row.jumlah_peminjaman_buku || 0;
+                        const issue = row.jumlah_issue || 0;
+                        const renew = row.jumlah_renew || 0;
                         const kembali = row.jumlah_pengembalian || 0;
-                        const sirkulasi = row.total_sirkulasi || (parseInt(pinjam) + parseInt(
-                            kembali));
+                        const sirkulasi = row.total_sirkulasi || 0;
                         const peminjam = row.jumlah_peminjam_unik || 0;
 
                         let rowData = [
                             index + 1,
                             `"${periode}"`,
-                            pinjam,
+                            issue,
+                            renew,
                             kembali,
                             sirkulasi,
                             peminjam
@@ -855,3 +864,4 @@
         });
     </script>
 @endsection
+
