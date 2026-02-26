@@ -1108,7 +1108,7 @@ class VisitHistory extends Controller
                 }
 
                 return [
-                    'cardnumber'  => $visit->cardnumber,
+                    'cardnumber'  => strtoupper(trim($visit->cardnumber)),
                     'nama'        => $nama,
                     'kode_ident'  => strtoupper($kodeIdentifikasi)
                 ];
@@ -1419,13 +1419,13 @@ class VisitHistory extends Controller
 
         $totalVisitors = M_vishistory::whereBetween('visittime', [$startDate, $endDate])->count();
         $visitors = M_vishistory::select(
-            'visitorhistory.cardnumber',
+            DB::raw('UPPER(visitorhistory.cardnumber) as cardnumber'),
             'koha.borrowers.surname',
             DB::raw('COUNT(visitorhistory.id) as visit_count')
         )
             ->join('koha.borrowers', 'visitorhistory.cardnumber', '=', 'koha.borrowers.cardnumber')
             ->whereBetween('visittime', [$startDate, $endDate])
-            ->groupBy('visitorhistory.cardnumber', 'koha.borrowers.surname')
+            ->groupBy(DB::raw('UPPER(visitorhistory.cardnumber)'), 'koha.borrowers.surname')
             ->orderBy('koha.borrowers.surname', 'asc')
             ->paginate(5, ['*'], 'page', $page);
 
@@ -1468,13 +1468,13 @@ class VisitHistory extends Controller
         }
 
         $visitors = M_vishistory::select(
-            'visitorhistory.cardnumber',
+            DB::raw('UPPER(visitorhistory.cardnumber) as cardnumber'),
             'koha.borrowers.surname',
             DB::raw('COUNT(visitorhistory.id) as visit_count')
         )
             ->join('koha.borrowers', 'visitorhistory.cardnumber', '=', 'koha.borrowers.cardnumber')
             ->whereBetween('visittime', [$startDate, $endDate])
-            ->groupBy('visitorhistory.cardnumber', 'koha.borrowers.surname')
+            ->groupBy(DB::raw('UPPER(visitorhistory.cardnumber)'), 'koha.borrowers.surname')
             ->orderBy('koha.borrowers.surname', 'asc')
             ->get(); // Gunakan get() bukan paginate()
 
