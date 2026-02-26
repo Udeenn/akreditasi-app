@@ -98,7 +98,82 @@
             </div>
         </div>
 
-        {{-- 4. KUNJUNGAN WEBSITE & REPOSITORY --}}
+        {{-- 4. KUNJUNGAN & PEMINJAMAN PER FAKULTAS TAHUN 2026 --}}
+        <div class="row g-3 mb-4">
+            {{-- Kunjungan Per Fakultas --}}
+            <div class="col-lg-6">
+                <div class="card unified-card border-0 shadow-sm h-100">
+                    <div class="card-header border-0 d-flex align-items-center pt-3">
+                        <div class="icon-box me-2" style="width:32px; height:32px; font-size:0.8rem; background: #e8f4fd; color: #0d6efd;">
+                            <i class="fas fa-door-open"></i>
+                        </div>
+                        <h6 class="mb-0 fw-bold">Kunjungan Per Fakultas <span
+                                class="text-muted fw-normal">(2026)</span></h6>
+                    </div>
+                    <div class="card-body">
+                        @if(count($kunjunganFakultas) > 0)
+                            <ul class="list-group list-group-flush">
+                                @foreach ($kunjunganFakultas as $fakultas => $jumlah)
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 list-group-item-action">
+                                        <span class="text-body-emphasis small">{{ $fakultas }}</span>
+                                        <span class="badge bg-primary rounded-pill px-2 py-1">{{ number_format($jumlah) }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-2x mb-2 opacity-50"></i>
+                                <p class="mb-0 small">Belum ada data kunjungan</p>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="card-footer d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">Total Kunjungan:</small>
+                            <strong class="d-block fs-5 text-body-emphasis">{{ number_format(array_sum($kunjunganFakultas)) }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Peminjaman Per Fakultas --}}
+            <div class="col-lg-6">
+                <div class="card unified-card border-0 shadow-sm h-100">
+                    <div class="card-header border-0 d-flex align-items-center pt-3">
+                        <div class="icon-box me-2" style="width:32px; height:32px; font-size:0.8rem; background: #fce4ec; color: #e91e63;">
+                            <i class="fas fa-book-reader"></i>
+                        </div>
+                        <h6 class="mb-0 fw-bold">Peminjaman Per Fakultas <span
+                                class="text-muted fw-normal">(2026)</span></h6>
+                    </div>
+                    <div class="card-body">
+                        @if(count($peminjamanFakultas) > 0)
+                            <ul class="list-group list-group-flush">
+                                @foreach ($peminjamanFakultas as $fakultas => $jumlah)
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 list-group-item-action">
+                                        <span class="text-body-emphasis small">{{ $fakultas }}</span>
+                                        <span class="badge bg-danger rounded-pill px-2 py-1">{{ number_format($jumlah) }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-2x mb-2 opacity-50"></i>
+                                <p class="mb-0 small">Belum ada data peminjaman</p>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="card-footer d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">Total Peminjaman:</small>
+                            <strong class="d-block fs-5 text-body-emphasis">{{ number_format(array_sum($peminjamanFakultas)) }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- 5. KUNJUNGAN WEBSITE & REPOSITORY --}}
         @php
             $kunjunganWebsite = [
                 'Januari' => 0,
