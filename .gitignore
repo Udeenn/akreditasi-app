@@ -30,3 +30,5 @@ public/storage
 docker-compose.override.yml
 .docker/nginx/selfsigned.crt
 .docker/nginx/selfsigned.key
+DEPLOYMENT_GUIDE.md
+LOCAL_SETUP_GUIDE.md

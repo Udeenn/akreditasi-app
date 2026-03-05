@@ -6,104 +6,107 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
-
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    
     <style>
-        /* --- MODERN DASHBOARD STYLING --- */
-        :root {
-            --primary-soft: rgba(13, 110, 253, 0.1);
-            --success-soft: rgba(25, 135, 84, 0.1);
-            --warning-soft: rgba(255, 193, 7, 0.1);
-            --info-soft: rgba(13, 202, 240, 0.1);
+        /* Pastikan teks tabel dan info DataTable otomatis putih/terang */
+        #yajraTable,
+        .dataTables_info,
+        .dataTables_length label,
+        .dataTables_filter label {
+            color: var(--text-dark) !important;
         }
 
-        /* Card Styling Modern */
+        /* Memperbaiki baris tabel (TD) agar teksnya terlihat */
+        #yajraTable tbody td {
+            color: var(--text-dark) !important;
+        }
+
+        /* Memperbaiki Dropdown & Input agar tidak ada background putih yang menabrak teks */
+        .dataTables_length select,
+        .dataTables_filter input {
+            background-color: var(--bs-tertiary-bg) !important;
+            color: var(--text-dark) !important;
+            border: 1px solid var(--bs-border-color) !important;
+        }
+
+        .dataTables_wrapper .dataTables_length label,
+        .dataTables_wrapper .dataTables_filter label,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            color: var(--text-dark) !important;
+        }
+
+        /* Perbaiki input search agar background tidak putih terang */
+        .dataTables_filter input,
+        .dataTables_length select {
+            background-color: var(--sidebar-bg) !important;
+            color: var(--text-dark) !important;
+            border: 1px solid var(--bs-border-color) !important;
+        }
+
+        #yajraTable {
+            --bs-table-bg: transparent;
+            --bs-table-accent-bg: transparent;
+            --bs-table-striped-bg: transparent;
+            --bs-table-hover-bg: transparent;
+            color: var(--text-dark) !important;
+        }
+
+        #yajraTable thead th {
+            background-color: transparent !important;
+            color: var(--text-dark) !important;
+            border-bottom: 2px solid var(--bs-border-color);
+            letter-spacing: 0.5px;
+        }
+
+        #yajraTable tbody td {
+            background-color: transparent !important;
+            color: var(--text-dark) !important;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--bs-border-color);
+            vertical-align: middle;
+        }
+
+        #yajraTable tbody tr:hover {
+            background-color: transparent !important;
+            cursor: default;
+        }
+
+        /* Card mengikuti warna body/tema */
         .card {
-            border: none;
-            border-radius: 16px;
-            /* Lebih rounded */
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
             background-color: var(--bs-body-bg);
-            color: var(--bs-body-color);
-            overflow: hidden;
+            border-color: var(--bs-border-color);
         }
 
-        /* Header Putih di Light Mode */
         .card-header {
-            background-color: #ffffff;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            color: var(--bs-body-color);
-            padding-top: 1.25rem;
-            padding-bottom: 1.25rem;
+            background-color: var(--bs-body-bg);
+            border-bottom-color: var(--bs-border-color);
         }
 
-        .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+        /* Padding Kanan Kiri (Search, Length, Info, Pagination) */
+        div.dataTables_wrapper div.dataTables_length {
+            padding-left: 1.5rem !important;
+            padding-top: 1rem;
         }
 
-        /* 1. Light Mode: Samakan dengan input 'bg-light border-0' */
-        .select2-container--bootstrap-5 .select2-selection {
-            background-color: #f8f9fa !important;
-            /* Warna bg-light */
-            border: 1px solid transparent !important;
-            /* Hilangkan border tajam */
-            color: #1e293b;
-            border-radius: 0.375rem;
-            /* Samakan radius dengan form-control */
+        div.dataTables_wrapper div.dataTables_filter {
+            padding-right: 1.5rem !important;
+            padding-top: 1rem;
         }
 
-        /* Teks di dalam Select2 */
-        .select2-container--bootstrap-5 .select2-selection__rendered {
-            color: #1e293b !important;
-            font-weight: 600;
-            /* Sedikit tebal agar serasi */
-            font-size: 0.875rem;
+        div.dataTables_wrapper div.dataTables_info {
+            padding-top: 1.5rem !important;
+            padding-left: 1.5rem !important;
         }
 
-        /* Panah Dropdown */
-        .select2-container--bootstrap-5 .select2-selection__clear {
-            color: #6c757d !important;
+        div.dataTables_wrapper div.dataTables_paginate {
+            padding-top: 1.5rem !important;
+            padding-right: 1.5rem !important;
+            padding-bottom: 1rem;
         }
 
-        body.dark-mode .select2-container--bootstrap-5 .select2-selection {
-            background-color: #1e293b !important;
-            /* Gelap serasi dengan input lain */
-            border-color: #2b2b40 !important;
-            color: #ffffff !important;
-        }
-
-        /* Teks Terpilih */
-        body.dark-mode .select2-container--bootstrap-5 .select2-selection__rendered {
-            color: #ffffff !important;
-        }
-
-        /* Dropdown Menu (Saat dibuka) */
-        body.dark-mode .select2-container--bootstrap-5 .select2-dropdown {
-            background-color: #1e293b !important;
-            border-color: #2b2b40 !important;
-            color: #ffffff !important;
-        }
-
-        /* Input Pencarian di dalam Dropdown */
-        body.dark-mode .select2-container--bootstrap-5 .select2-search__field {
-            background-color: #1e293b !important;
-            border-color: #2b2b40 !important;
-            color: #ffffff !important;
-        }
-
-        /* Opsi List */
-        body.dark-mode .select2-results__option {
-            color: #ffffff !important;
-        }
-
-        /* Opsi saat di-hover/dipilih */
-        body.dark-mode .select2-results__option--highlighted[aria-selected] {
-            background-color: #0d6efd !important;
-            /* Warna Primary */
-            color: #ffffff !important;
-        }
-
-        /* Icon Box Modern */
+        /* Modern Styling Components */
         .icon-box {
             width: 56px;
             height: 56px;
@@ -111,93 +114,41 @@
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            /* Bulat penuh */
             font-size: 1.5rem;
             flex-shrink: 0;
         }
 
-        /* Custom Colors for Soft Backgrounds */
-        .bg-primary-soft {
-            background-color: var(--primary-soft);
-            color: #0d6efd;
-        }
+        .bg-primary-soft { background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; }
+        .bg-success-soft { background-color: rgba(25, 135, 84, 0.1); color: #198754; }
+        .bg-warning-soft { background-color: rgba(255, 193, 7, 0.1); color: #ffc107; }
+        .bg-info-soft { background-color: rgba(13, 202, 240, 0.1); color: #0dcaf0; }
 
-        .bg-success-soft {
-            background-color: var(--success-soft);
-            color: #198754;
-        }
-
-        .bg-warning-soft {
-            background-color: var(--warning-soft);
-            color: #ffc107;
-        }
-
-        .bg-info-soft {
-            background-color: var(--info-soft);
-            color: #0dcaf0;
-        }
-
-        /* Table Styling */
-        .table thead th {
-            background-color: rgba(0, 0, 0, 0.02);
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-            color: #6c757d;
-            border-bottom: 2px solid rgba(0, 0, 0, 0.05);
-            vertical-align: middle;
-        }
-
-        /* Dark Mode Adaptations */
-        body.dark-mode .card {
-            background-color: #1e1e2d;
-            border: 1px solid #2b2b40;
-            color: #ffffff;
-        }
-
-        body.dark-mode .card-header {
-            background-color: #1e293b !important;
-            border-bottom-color: #2b2b40;
-            color: #ffffff;
-        }
-
-        body.dark-mode .text-muted {
-            color: #a1a5b7 !important;
-        }
-
-        body.dark-mode .table {
-            color: #ffffff;
-            border-color: #2b2b40;
-        }
-
-        body.dark-mode .table thead th {
-            background-color: #2b2b40;
-            color: #ffffff;
-            border-bottom-color: #3f4254;
-        }
-
-        body.dark-mode .form-control,
-        body.dark-mode .form-select,
-        body.dark-mode .input-group-text {
-            background-color: #1b1b29;
-            border-color: #2b2b40;
-            color: #ffffff;
-        }
-
-        body.dark-mode .text-body {
+        /* Select2 Dark Mode Support */
+        body.dark-mode .select2-container--bootstrap-5 .select2-selection {
+            background-color: #1b1b29 !important;
+            border-color: #2b2b40 !important;
             color: #ffffff !important;
         }
-
-        body.dark-mode .modal-content {
-            background-color: #1e1e2d;
-            border: 1px solid #2b2b40;
-            color: #fff;
+        body.dark-mode .select2-container--bootstrap-5 .select2-selection__rendered {
+            color: #ffffff !important;
+        }
+        body.dark-mode .select2-container--bootstrap-5 .select2-dropdown {
+            background-color: #1e1e2d !important;
+            border-color: #2b2b40 !important;
+        }
+        body.dark-mode .select2-container--bootstrap-5 .select2-search__field {
+            background-color: #334155 !important;
+            border-color: #2b2b40 !important;
+            color: #ffffff !important;
+        }
+        body.dark-mode .select2-results__option {
+            color: #ffffff !important;
+        }
+        body.dark-mode .select2-results__option--highlighted {
+            background-color: #0d6efd !important;
+            color: white !important;
         }
 
-        body.dark-mode .btn-close {
-            filter: invert(1) grayscale(100%) brightness(200%);
-        }
     </style>
 @endpush
 
@@ -207,7 +158,7 @@
         {{-- 1. HEADER SECTION --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card border-0 shadow-sm overflow-hidden">
+                <div class="card border-0 shadow-sm overflow-hidden rounded-4">
                     <div
                         class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
                         <div class="mb-3 mb-md-0 text-center text-md-start">
@@ -229,7 +180,7 @@
         {{-- 2. FILTER SECTION --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card border-0 shadow-sm">
+                <div class="card border-0 shadow-sm rounded-4">
                     <div class="card-header border-bottom-0">
                         <h6 class="fw-bold text-primary mb-0"><i class="fas fa-filter me-2"></i> Filter Data</h6>
                     </div>
@@ -352,7 +303,7 @@
 
                 {{-- Card 4: Rerata --}}
                 <div class="col-xl-3 col-md-6">
-                    <div class="card border-0 shadow-sm h-100 hover-lift">
+                    <div class="card border-0 shadow-sm h-100 hover-lift rounded-4">
                         <div class="card-body p-4 d-flex align-items-center">
                             <div class="icon-box bg-success-soft me-3 rounded-circle">
                                 <i class="fas fa-chart-line"></i>
@@ -369,11 +320,11 @@
 
             {{-- 4. CHART SECTION --}}
             <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header border-0 pt-4 px-4">
-                            <h5 class="fw-bold mb-0 text-body">
-                                <i class="fas fa-chart-bar me-2 text-primary"></i>Tren Sirkulasi
+                <div class="col-lg-12">
+                    <div class="card border-0 shadow-sm h-100 rounded-4">
+                        <div class="card-header border-bottom-0 pt-4 px-4">
+                            <h5 class="fw-bold mb-0">
+                                <i class="fas fa-chart-line text-info me-2"></i>Tren Sirkulasi
                             </h5>
                         </div>
                         <div class="card-body px-4 pb-4">
@@ -388,7 +339,7 @@
             {{-- 5. TABEL DATA SECTION --}}
             <div class="row mb-5">
                 <div class="col-12">
-                    <div class="card border-0 shadow-sm">
+                    <div class="card border-0 shadow-sm rounded-4">
                         <div
                             class="card-header py-3 px-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
                             <h6 class="fw-bold m-0 text-primary">
@@ -398,24 +349,30 @@
                                 class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
                             </button>
                         </div>
-                        <div class="card-body p-0">
+                        <div class="card-body p-4">
+                            <!-- Custom Search Input -->
+                            <div class="mb-3">
+                                <input type="text" class="form-control" id="searchInput" placeholder="Cari periode...">
+                            </div>
+
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0" style="min-width: 700px;">
+                                <table id="yajraTable" class="table table-hover align-middle mb-0 unified-table" style="width:100%">
                                     <thead class="">
                                         <tr>
-                                            <th class="text-center py-3 px-4 border-bottom-0" width="5%">No</th>
+                                            <th class="text-center py-3 px-2 border-bottom-0" width="5%">No</th>
                                             <th class="py-3 px-4 border-bottom-0">Periode</th>
-                                            <th class="text-center py-3 px-4 border-bottom-0">Buku Terpinjam</th>
-                                            {{-- <th class="text-center py-3 px-4 border-bottom-0">Pengembalian</th> --}}
+                                            <th class="text-center py-3 px-4 border-bottom-0">Peminjaman</th>
+                                            <th class="text-center py-3 px-4 border-bottom-0">Perpanjangan</th>
+                                            <th class="text-center py-3 px-4 border-bottom-0">Pengembalian</th>
                                             <th class="text-center py-3 px-4 border-bottom-0">Total Sirkulasi</th>
                                             <th class="text-center py-3 px-4 border-bottom-0">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach ($statistics as $index => $stat)
+                                        @foreach ($allStatistics as $index => $stat)
                                             <tr>
                                                 <td class="text-center text-muted fw-bold">
-                                                    {{ $statistics->firstItem() + $index }}</td>
+                                                    {{ $index + 1 }}</td>
                                                 <td class="px-4 fw-medium text-body">
                                                     @if (($filterType ?? 'daily') == 'daily')
                                                         @if ($stat->periode)
@@ -435,12 +392,16 @@
                                                 </td>
                                                 <td class="text-center">
                                                     <span
-                                                        class="badge bg-primary-soft text-primary rounded-pill px-3">{{ number_format($stat->jumlah_buku_terpinjam) }}</span>
+                                                        class="badge bg-primary-soft text-primary rounded-pill px-3">{{ number_format($stat->jumlah_issue) }}</span>
                                                 </td>
-                                                {{-- <td class="text-center">
+                                                <td class="text-center">
                                                     <span
-                                                        class="badge bg-warning-soft text-dark rounded-pill px-3">{{ number_format($stat->jumlah_buku_kembali) }}</span>
-                                                </td> --}}
+                                                        class="badge bg-info-soft text-info rounded-pill px-3">{{ number_format($stat->jumlah_renew) }}</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span
+                                                        class="badge bg-success-soft text-success rounded-pill px-3">{{ number_format($stat->jumlah_pengembalian) }}</span>
+                                                </td>
                                                 <td class="text-center">
                                                     <span
                                                         class="badge border text-body rounded-pill px-3 fw-bold">{{ number_format($stat->total_sirkulasi) }}</span>
@@ -450,18 +411,13 @@
                                                         class="btn btn-sm btn-primary shadow-sm view-detail-btn"
                                                         data-bs-toggle="modal" data-bs-target="#detailPeminjamanModal"
                                                         data-periode="{{ $stat->periode }}">
-                                                        <i class="fas fa-eye"></i>
+                                                        <i class="fas fa-eye me-1"></i>
                                                     </button>
                                                 </td>
                                             </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
-                            </div>
-                        </div>
-                        <div class="card-footer  border-0 py-3">
-                            <div class="d-flex justify-content-end">
-                                {{ $statistics->appends(request()->except('page'))->links() }}
                             </div>
                         </div>
                     </div>
@@ -540,6 +496,8 @@
 
 @push('scripts')
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/locale/id.js"></script>
@@ -570,6 +528,42 @@
             toggleFilters();
             filterTypeSelect.addEventListener('change', toggleFilters);
 
+            // --- DATATABLES INIT ---
+            var table = $('#yajraTable').DataTable({
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json",
+                    "thousands": ".",
+                    "decimal": ",",
+                    "paginate": {
+                        "previous": "Sebelumnya",
+                        "next": "Selanjutnya"
+                    }
+                },
+                "paging": true,
+                "lengthChange": true,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "responsive": true,
+                "lengthMenu": [
+                    [10, 25, 50, 100, -1],
+                    [10, 25, 50, 100, "Semua"]
+                ],
+                "dom": '<"d-flex justify-content-between mb-3"lp>rt<"d-flex justify-content-between mt-3"ip>',
+                "columnDefs": [{
+                    "searchable": false,
+                    "orderable": false,
+                    "targets": [0, 6] // Kolom No dan Aksi tidak di-sort
+                }],
+                "order": []
+            });
+
+            // Bind Custom Search Input
+            $('#searchInput').on('keyup change', function() {
+                table.search(this.value).draw();
+            });
+
             // Chart Logic
             const fullStatistics = @json($allStatistics ?? []);
             const filterType = "{{ $filterType ?? 'daily' }}";
@@ -579,47 +573,24 @@
                     'D MMM YYYY' : 'MMM YYYY'));
                 const ctx = document.getElementById('peminjamanProdiChart').getContext('2d');
 
-                // Colors with Alpha for Fill
-                const color1 = 'rgba(78, 115, 223, 0.1)'; // Blue Soft
-                const border1 = '#4e73df';
-                const color2 = 'rgba(246, 194, 62, 0.1)'; // Yellow Soft
-                const border2 = '#f6c23e';
-                const color3 = 'rgba(28, 200, 138, 0.1)'; // Green Soft
-                const border3 = '#1cc88a';
+                let gradientBlue = ctx.createLinearGradient(0, 0, 0, 400);
+                gradientBlue.addColorStop(0, 'rgba(13, 110, 253, 0.5)');
+                gradientBlue.addColorStop(1, 'rgba(13, 110, 253, 0.05)');
 
                 new Chart(ctx, {
-                    type: 'line', // CHANGED TO LINE
+                    type: 'line',
                     data: {
                         labels: chartLabels,
                         datasets: [{
-                                label: 'Buku Terpinjam',
-                                data: fullStatistics.map(item => item.jumlah_buku_terpinjam),
-                                backgroundColor: color1,
-                                borderColor: border1,
-                                borderWidth: 2,
-                                tension: 0.4, // Smooth curve
-                                fill: true,
-                                pointRadius: 3
-                            },
-                            {
-                                label: 'Pengembalian',
-                                data: fullStatistics.map(item => item.jumlah_buku_kembali),
-                                backgroundColor: color2,
-                                borderColor: border2,
-                                borderWidth: 2,
-                                tension: 0.4,
-                                fill: true,
-                                pointRadius: 3
-                            },
-                            {
                                 label: 'Total Sirkulasi',
                                 data: fullStatistics.map(item => item.total_sirkulasi),
-                                backgroundColor: color3,
-                                borderColor: border3,
-                                borderWidth: 2,
+                                borderColor: '#0d6efd',
+                                backgroundColor: gradientBlue,
+                                pointBackgroundColor: '#0d6efd',
+                                pointBorderColor: '#fff',
                                 tension: 0.4,
                                 fill: true,
-                                pointRadius: 3
+                                borderWidth: 2
                             }
                         ]
                     },
@@ -633,9 +604,11 @@
                         scales: {
                             x: {
                                 grid: {
-                                    display: false
+                                    display: false,
+                                    drawBorder: false
                                 },
                                 ticks: {
+                                    maxTicksLimit: 10,
                                     color: "#858796",
                                     font: {
                                         size: 11
@@ -645,9 +618,12 @@
                             y: {
                                 beginAtZero: true,
                                 grid: {
-                                    color: "#f0f2f5"
+                                    color: "#e9ecef",
+                                    borderDash: [2],
+                                    drawBorder: false
                                 },
                                 ticks: {
+                                    padding: 10,
                                     color: "#858796",
                                     font: {
                                         size: 11
@@ -657,21 +633,26 @@
                         },
                         plugins: {
                             legend: {
-                                position: 'top',
-                                labels: {
-                                    usePointStyle: true,
-                                    boxWidth: 8,
-                                    padding: 20
-                                }
+                                display: false
                             },
                             tooltip: {
-                                backgroundColor: "rgba(255,255,255,0.95)",
-                                bodyColor: "#858796",
-                                titleColor: '#6e707e',
-                                borderColor: '#dddfeb',
-                                borderWidth: 1,
+                                backgroundColor: "rgba(33, 37, 41, 0.95)",
+                                bodyColor: "#ffffff",
+                                titleColor: '#ffffff',
+                                titleFont: {
+                                    size: 13,
+                                    weight: 'bold'
+                                },
+                                borderColor: '#6c757d',
+                                borderWidth: 0,
                                 padding: 12,
                                 displayColors: true,
+                                callbacks: {
+                                    title: function(context) {
+                                        const item = fullStatistics[context[0].dataIndex];
+                                        return (filterType === 'daily') ? moment(item.periode).format('D MMMM YYYY') : moment(item.periode, 'YYYY-MM').format('MMMM YYYY');
+                                    }
+                                }
                             }
                         }
                     }
@@ -688,10 +669,10 @@
             const detailTbody = document.getElementById('detailTbody');
             const modalPaginationContainer = document.getElementById('modalPagination');
 
-            document.querySelectorAll('.view-detail-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const periode = this.dataset.periode;
-                    const filterType = document.getElementById('filter_type').value;
+            $('#yajraTable').on('click', '.view-detail-btn', function(e) {
+                e.preventDefault();
+                const periode = this.dataset.periode;
+                const filterType = document.getElementById('filter_type').value;
                     const selectedProdiCode = document.getElementById('selected_prodi').value;
                     const btnExport = document.getElementById('btnExportDetailCsv');
 
@@ -711,7 +692,6 @@
                         `{{ route('peminjaman.peminjamDetail') }}?periode=${periode}&filter_type=${filterType}&prodi_code=${selectedProdiCode}`;
                     fetchDetailData(url);
                     detailModal.show();
-                });
             });
 
             modalPaginationContainer.addEventListener('click', function(event) {
@@ -823,7 +803,7 @@
                     csv.push([]); // Baris kosong (spacer)
 
                     // B. Header Tabel
-                    csv.push(['No', 'Periode', 'Buku Terpinjam', 'Buku Kembali', 'Total Sirkulasi'].join(
+                    csv.push(['No', 'Periode', 'Peminjaman', 'Perpanjangan', 'Pengembalian', 'Total Sirkulasi'].join(
                         delimiter));
 
                     // C. Data Tabel
@@ -835,8 +815,9 @@
                         csv.push([
                             index + 1,
                             `"${periode}"`,
-                            row.jumlah_buku_terpinjam,
-                            row.jumlah_buku_kembali,
+                            row.jumlah_issue,
+                            row.jumlah_renew,
+                            row.jumlah_pengembalian,
                             row.total_sirkulasi
                         ].join(delimiter));
                     });

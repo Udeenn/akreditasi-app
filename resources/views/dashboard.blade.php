@@ -176,8 +176,8 @@
         {{-- 5. KUNJUNGAN WEBSITE & REPOSITORY --}}
         @php
             $kunjunganWebsite = [
-                'Januari' => 0,
-                'Februari' => 0,
+                'Januari' => 19712,
+                'Februari' => 27973,
                 'Maret' => 0,
                 'April' => 0,
                 'Mei' => 0,
@@ -215,8 +215,8 @@
             $websiteCol2 = array_slice($kunjunganWebsite, 6, 6, true);
 
             $kunjunganRepository = [
-                'Januari' => 0,
-                'Februari' => 0,
+                'Januari' => 9343,
+                'Februari' => 13715,
                 'Maret' => 0,
                 'April' => 0,
                 'Mei' => 0,

@@ -673,8 +673,9 @@ class PeminjamanController extends Controller
 
                     $query->select(
                         DB::raw('DATE(s.datetime) as periode'),
-                        DB::raw('COUNT(CASE WHEN s.type IN ("issue", "renew") THEN 1 END) as jumlah_buku_terpinjam'),
-                        DB::raw('COUNT(CASE WHEN s.type = "return" THEN 1 END) as jumlah_buku_kembali'),
+                        DB::raw('SUM(CASE WHEN s.type = "issue" THEN 1 ELSE 0 END) as jumlah_issue'),
+                        DB::raw('SUM(CASE WHEN s.type = "renew" THEN 1 ELSE 0 END) as jumlah_renew'),
+                        DB::raw('SUM(CASE WHEN s.type = "return" THEN 1 ELSE 0 END) as jumlah_pengembalian'),
                         DB::raw('COUNT(DISTINCT s.borrowernumber) as jumlah_peminjam_unik'),
                         DB::raw('COUNT(*) as total_sirkulasi')
                     )
@@ -687,8 +688,9 @@ class PeminjamanController extends Controller
 
                     $query->select(
                         DB::raw('DATE_FORMAT(s.datetime, "%Y-%m") as periode'),
-                        DB::raw('COUNT(CASE WHEN s.type IN ("issue", "renew") THEN 1 END) as jumlah_buku_terpinjam'),
-                        DB::raw('COUNT(CASE WHEN s.type = "return" THEN 1 END) as jumlah_buku_kembali'),
+                        DB::raw('SUM(CASE WHEN s.type = "issue" THEN 1 ELSE 0 END) as jumlah_issue'),
+                        DB::raw('SUM(CASE WHEN s.type = "renew" THEN 1 ELSE 0 END) as jumlah_renew'),
+                        DB::raw('SUM(CASE WHEN s.type = "return" THEN 1 ELSE 0 END) as jumlah_pengembalian'),
                         DB::raw('COUNT(DISTINCT s.borrowernumber) as jumlah_peminjam_unik'),
                         DB::raw('COUNT(*) as total_sirkulasi')
                     )
@@ -697,16 +699,23 @@ class PeminjamanController extends Controller
                     ->orderBy('periode', 'ASC');
                 }
 
-                // --- EKSEKUSI (Hanya 1x Query Database) ---
+                // --- EKSEKUSI (Cepat dengan Redis Cache) ---
                 $queryForChart = clone $query;
-                $allStatistics = $queryForChart->get();
+                
+                // Generate Cache Key unik berdasarkan filter
+                $cacheKey = "peminjaman_prodi_{$filterType}_{$startYear}_{$endYear}_{$startDate}_{$endDate}_{$selectedProdiCode}";
+                
+                // Cache hasil query selama 60 menit (3600 detik)
+                $allStatistics = Cache::remember($cacheKey, 60 * 60, function () use ($queryForChart) {
+                    return $queryForChart->get();
+                });
 
                 if ($allStatistics->isNotEmpty()) {
                     $dataExists = true;
 
                     // Hitung Total dari Collection (Memory Operation, Cepat)
-                    $totalBooks = $allStatistics->sum('jumlah_buku_terpinjam');
-                    $totalReturns = $allStatistics->sum('jumlah_buku_kembali');
+                    $totalBooks = $allStatistics->sum('jumlah_issue') + $allStatistics->sum('jumlah_renew');
+                    $totalReturns = $allStatistics->sum('jumlah_pengembalian');
                     $totalCirculation = $allStatistics->sum('total_sirkulasi');
 
                     // Note: Total Peminjam Unik per periode tidak bisa dijumlahkan langsung untuk mendapatkan total unik global
@@ -727,18 +736,6 @@ class PeminjamanController extends Controller
                 });
 
                 $chartDatasets = [
-                    [
-                        'label' => 'Buku Terpinjam',
-                        'data' => $allStatistics->pluck('jumlah_buku_terpinjam'),
-                        'backgroundColor' => 'rgba(78, 115, 223, 0.1)', 'borderColor' => '#4e73df',
-                        'borderWidth' => 2, 'tension' => 0.4, 'fill' => true
-                    ],
-                    [
-                        'label' => 'Pengembalian',
-                        'data' => $allStatistics->pluck('jumlah_buku_kembali'),
-                        'backgroundColor' => 'rgba(246, 194, 62, 0.1)', 'borderColor' => '#f6c23e',
-                        'borderWidth' => 2, 'tension' => 0.4, 'fill' => true
-                    ],
                     [
                         'label' => 'Total Sirkulasi',
                         'data' => $allStatistics->pluck('total_sirkulasi'),

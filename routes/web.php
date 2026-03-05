@@ -33,6 +33,9 @@ Route::get('/', function () {
     return view('landing');
 })->name('home');
 
+// Login route (required by auth middleware)
+Route::get('/login', [CasController::class, 'login'])->name('login');
+
 // CAS Authentication Routes
 Route::prefix('cas')->name('cas.')->group(function () {
     Route::get('/login', [CasController::class, 'login'])->name('login');
