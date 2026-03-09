@@ -358,34 +358,13 @@ class PenggunaanController extends Controller
                 }
 
                 // --- OPTIMIZATION START ---
-                // Pisahkan Logic Export (Heavy) dan View (Light + Hydrate)
+                // Pisahkan Logic Export dan View
 
                 if ($request->query('export')) {
-                    // Logic Lama (Heavy Query) - Hanya dijalankan saat export CSV
-                    $baseQuery = DB::connection('mysql2')->table('statistics as s')
-                        ->select(
-                            DB::raw("MAX(CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]'))) AS judul_buku"),
-                            DB::raw("MAX(b.author) as pengarang"),
-                            DB::raw('COUNT(s.itemnumber) as jumlah_penggunaan'),
-                            DB::raw("(SELECT COUNT(*) FROM items WHERE items.biblionumber = b.biblionumber AND items.withdrawn = 0) as jumlah_eksemplar")
-                        )
-                        ->join('items as i', 's.itemnumber', '=', 'i.itemnumber')
-                        ->join('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
-                        ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
-                        ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
-                        ->whereIn('s.type', ['issue', 'return', 'localuse'])
-                        ->whereBetween('s.datetime', [$start_date, $end_date]);
-
-                    if ($request->query('export') === 'fiksi') {
-                        return $this->exportSeringDibacaCsv(clone $baseQuery, 'fiksi', $tahun, $bulan);
-                    }
-                    if ($request->query('export') === 'nonfiksi') {
-                        return $this->exportSeringDibacaCsv(clone $baseQuery, 'nonfiksi', $tahun, $bulan);
-                    }
+                    return $this->exportSeringDibacaCsv($request->query('export'), $tahun, $bulan, $start_date, $end_date);
                 }
 
-                // --- OPTIMIZED VIEW QUERY (2-Step) ---
-                // Step 1: Hitung Statistik & ID saja (Lightweight)
+                // --- VIEW QUERY (with biblioitems for cn_class filter + pagination) ---
                 $lightQuery = DB::connection('mysql2')->table('statistics as s')
                     ->select('i.biblionumber', DB::raw('COUNT(s.itemnumber) as jumlah_penggunaan'))
                     ->join('items as i', 's.itemnumber', '=', 'i.itemnumber')
@@ -452,7 +431,6 @@ class PenggunaanController extends Controller
 
     /**
      * Helper untuk mengisi detail buku dari ID yang sudah dipaginate.
-     * Menghindari join berat di query utama.
      */
     private function hydrateBookDetails($paginator)
     {
@@ -462,7 +440,6 @@ class PenggunaanController extends Controller
 
         if (empty($ids)) return;
 
-        // Ambil data detail XML & Eksemplar
         $details = DB::connection('mysql2')->table('biblio as b')
             ->select(
                 'b.biblionumber',
@@ -475,7 +452,6 @@ class PenggunaanController extends Controller
             ->get()
             ->keyBy('biblionumber');
 
-        // Map ke koleksi paginator
         $paginator->getCollection()->transform(function ($item) use ($details) {
             $detail = $details[$item->biblionumber] ?? null;
             $item->judul_buku = $detail ? $detail->judul_buku : 'Judul Tidak Diketahui';
@@ -485,41 +461,104 @@ class PenggunaanController extends Controller
         });
     }
 
-    private function exportSeringDibacaCsv($baseQuery, string $kategori, $tahun, $bulan)
+    private function exportSeringDibacaCsv(string $kategori, $tahun, $bulan, $start_date, $end_date)
     {
-        $query = $baseQuery;
-        $kategoriLabel = "";
-        $kategoriTitle = "";
+        set_time_limit(300);
 
-        if ($kategori === 'fiksi') {
-            $fiksiCodes = config('library.ddc.fiksi', ['812', '813', '823', '899']);
-            $query->where(function ($q) use ($fiksiCodes) {
-                foreach ($fiksiCodes as $code) {
-                    $q->orWhere('bi.cn_class', 'LIKE', $code . '%');
+        $fiksiCodes = config('library.ddc.fiksi', ['812', '813', '823', '899']);
+
+        // === CACHED: Seluruh proses berat di-cache 1 jam ===
+        $cacheKey = "export_sering_dibaca:{$kategori}:{$tahun}:{$bulan}";
+        $sortedData = Cache::remember($cacheKey, 3600, function () use ($kategori, $start_date, $end_date, $fiksiCodes) {
+
+            // Step 1: Query HANYA tabel statistics — ZERO JOIN
+            $itemCounts = []; // itemnumber => count
+
+            $current = Carbon::parse($start_date)->startOfDay();
+            $endDay = Carbon::parse($end_date)->endOfDay();
+
+            while ($current->lte($endDay)) {
+                $dayStart = $current->copy()->startOfDay();
+                $dayEnd = $current->copy()->endOfDay();
+
+                $dailyStats = DB::connection('mysql2')->table('statistics')
+                    ->select('itemnumber', DB::raw('COUNT(*) as cnt'))
+                    ->whereIn('type', ['issue', 'return', 'localuse'])
+                    ->whereBetween('datetime', [$dayStart, $dayEnd])
+                    ->whereNotNull('itemnumber')
+                    ->groupBy('itemnumber')
+                    ->get();
+
+                foreach ($dailyStats as $row) {
+                    $itemCounts[$row->itemnumber] = ($itemCounts[$row->itemnumber] ?? 0) + $row->cnt;
                 }
-            });
-            $kategoriLabel = "fiksi";
-            $kategoriTitle = "Fiksi";
-        } else { // Asumsi 'nonfiksi'
-            $fiksiCodes = config('library.ddc.fiksi', ['812', '813', '823', '899']);
-            $query->where(function ($q) use ($fiksiCodes) {
-                foreach ($fiksiCodes as $code) {
-                    $q->where('bi.cn_class', 'NOT LIKE', $code . '%');
+
+                $current->addDay();
+            }
+
+            if (empty($itemCounts)) {
+                return collect();
+            }
+
+            // Step 2: Map itemnumber → biblionumber (batch lookup ke tabel items)
+            $allItemNumbers = array_keys($itemCounts);
+            $itemToBiblio = [];
+
+            foreach (array_chunk($allItemNumbers, 500) as $chunk) {
+                $mappings = DB::connection('mysql2')->table('items')
+                    ->select('itemnumber', 'biblionumber')
+                    ->whereIn('itemnumber', $chunk)
+                    ->get();
+
+                foreach ($mappings as $map) {
+                    $itemToBiblio[$map->itemnumber] = $map->biblionumber;
                 }
-            });
-            $kategoriLabel = "nonfiksi";
-            $kategoriTitle = "Non-Fiksi";
-        }
+            }
 
-        $data = $query->groupBy('b.biblionumber')
-            ->orderBy('jumlah_penggunaan', 'desc')
-            ->get();
+            // Step 3: Aggregate by biblionumber di PHP
+            $biblioCounts = [];
+            foreach ($itemCounts as $itemnum => $count) {
+                $biblio = $itemToBiblio[$itemnum] ?? null;
+                if ($biblio !== null) {
+                    $biblioCounts[$biblio] = ($biblioCounts[$biblio] ?? 0) + $count;
+                }
+            }
 
+            // Step 4: Filter fiksi/nonfiksi
+            $fiksiBiblios = DB::connection('mysql2')->table('biblioitems')
+                ->where(function ($q) use ($fiksiCodes) {
+                    foreach ($fiksiCodes as $code) {
+                        $q->orWhere('cn_class', 'LIKE', $code . '%');
+                    }
+                })
+                ->pluck('biblionumber')
+                ->flip();
+
+            if ($kategori === 'fiksi') {
+                $biblioCounts = array_filter($biblioCounts, fn($cnt, $biblio) => $fiksiBiblios->has($biblio), ARRAY_FILTER_USE_BOTH);
+            } else {
+                $biblioCounts = array_filter($biblioCounts, fn($cnt, $biblio) => !$fiksiBiblios->has($biblio), ARRAY_FILTER_USE_BOTH);
+            }
+
+            // Step 5: Sort by count desc
+            arsort($biblioCounts);
+
+            // Convert ke collection of objects
+            $result = collect();
+            foreach ($biblioCounts as $biblio => $count) {
+                $result->push((object)['biblionumber' => $biblio, 'jumlah_penggunaan' => $count]);
+            }
+
+            return $result;
+        });
+
+        // === Generate CSV ===
+        $kategoriTitle = $kategori === 'fiksi' ? 'Fiksi' : 'Non-Fiksi';
         $bulanTitle = $bulan ? \Carbon\Carbon::create()->month($bulan)->format('F') : "Satu Tahun Penuh";
         $laporanTitle = "Laporan Buku Terlaris - Kategori: $kategoriTitle";
         $periodeTitle = "Periode: $bulanTitle $tahun";
 
-        $fileName = "export_sering_dibaca_${kategoriLabel}_${tahun}";
+        $fileName = "export_sering_dibaca_{$kategori}_{$tahun}";
         if ($bulan) {
             $fileName .= "_" . str_pad($bulan, 2, '0', STR_PAD_LEFT);
         }
@@ -533,20 +572,35 @@ class PenggunaanController extends Controller
             "Expires"             => "0"
         ];
 
-        $callback = function () use ($data, $laporanTitle, $periodeTitle) {
+        // Step 6: Stream CSV — hydrate judul+author per batch
+        $callback = function () use ($sortedData, $laporanTitle, $periodeTitle) {
             $delimiter = ';';
             $file = fopen('php://output', 'w');
             fputcsv($file, [$laporanTitle], $delimiter);
             fputcsv($file, [$periodeTitle], $delimiter);
             fputcsv($file, [], $delimiter);
             fputcsv($file, ['No', 'Judul Buku', 'Pengarang', 'Jumlah Penggunaan'], $delimiter);
-            foreach ($data as $index => $row) {
-                fputcsv($file, [
-                    $index + 1,
-                    $row->judul_buku,
-                    $row->pengarang,
-                    $row->jumlah_penggunaan
-                ], $delimiter);
+
+            $index = 0;
+            foreach ($sortedData->chunk(200) as $chunk) {
+                $ids = $chunk->pluck('biblionumber')->toArray();
+
+                $details = DB::connection('mysql2')->table('biblio')
+                    ->select('biblionumber', 'title', 'author')
+                    ->whereIn('biblionumber', $ids)
+                    ->get()
+                    ->keyBy('biblionumber');
+
+                foreach ($chunk as $row) {
+                    $index++;
+                    $detail = $details[$row->biblionumber] ?? null;
+                    fputcsv($file, [
+                        $index,
+                        $detail ? $detail->title : 'Judul Tidak Diketahui',
+                        $detail ? $detail->author : '-',
+                        $row->jumlah_penggunaan
+                    ], $delimiter);
+                }
             }
             fclose($file);
         };
