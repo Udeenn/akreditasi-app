@@ -114,7 +114,14 @@ class CasController extends Controller
 
     protected function getServiceUrl(): string
     {
-        return config('cas.service_url', config('cas.service_base_url', config('app.url')) . '/cas/callback');
+        $url = config('cas.service_base_url', config('app.url'));
+        
+        // Cek apakah url dari .env sudah mengandung /cas/callback
+        if (str_ends_with($url, '/cas/callback')) {
+            return $url;
+        }
+        
+        return rtrim($url, '/') . '/cas/callback';
     }
 
     protected function buildCasUrl(string $path, array $params = []): string
