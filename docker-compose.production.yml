@@ -15,8 +15,7 @@ services:
       start_period: 10s
     env_file:
       - .env
-    volumes:
-      # Production: TIDAK mount seluruh source code, pakai image build
+    # Production: TIDAK mount seluruh source code, pakai image build
     extra_hosts:
       - "host-gateway:host-gateway"  # Izinkan container akses ke network host
     networks:
