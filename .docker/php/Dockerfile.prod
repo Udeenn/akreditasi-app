@@ -70,6 +70,10 @@ RUN apk add --no-cache \
 COPY --from=builder /var/www/html .
 COPY --from=builder /usr/bin/composer /usr/bin/composer
 
+# Copy entrypoint production
+COPY .docker/php/entrypoint.prod.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Buat folder yang diperlukan dan set permission
 RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache vendor \
     && chown -R www-data:www-data storage bootstrap/cache vendor \
@@ -81,8 +85,9 @@ RUN echo 'listen = 9001' >> /usr/local/etc/php-fpm.d/zz-docker.conf
 USER www-data
 
 EXPOSE 9001
-CMD ["php-fpm"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 
-# setelah itu run
-# docker build -f Dockerfile.prod -t my-laravel-app:latest .
+# Build & run:
+# docker build -f .docker/php/Dockerfile.prod -t akreditasi-app:latest .
+# docker-compose up -d

@@ -16,9 +16,9 @@ class CheckAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check() && Auth::user()->role === 'admin') {
+        if (Auth::check() && Auth::user()->role === 'librarian') {
             return $next($request);
         }
-        abort(403, 'Access Denied!');
+        abort(403, 'Akses ditolak. Hanya pustakawan yang dapat mengakses halaman ini.');
     }
 }

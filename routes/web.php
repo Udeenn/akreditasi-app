@@ -43,6 +43,14 @@ Route::prefix('cas')->name('cas.')->group(function () {
     Route::post('/logout', [CasController::class, 'logout'])->name('logout');
 });
 
+// Dev-only login (hanya di environment local)
+if (app()->environment('local')) {
+    Route::get('/dev-login', function () {
+        return view('dev-login');
+    })->name('dev.login.form');
+    Route::post('/dev-login', [CasController::class, 'devLogin'])->name('dev.login');
+}
+
 
 
 // =============================================
@@ -146,11 +154,13 @@ Route::middleware('auth')->group(function () {
     });
 
     // =============================================
-    // Utilities (Admin only)
+    // Utilities (Librarian only)
     // =============================================
-    Route::get('/clear-cache', function () {
-        Artisan::call('cache:clear');
-        return redirect()->back()->with('success', 'Cache cleared!');
-    })->name('clear-cache');
+    Route::middleware('admin')->group(function () {
+        Route::get('/clear-cache', function () {
+            Artisan::call('cache:clear');
+            return redirect()->back()->with('success', 'Cache cleared!');
+        })->name('clear-cache');
+    });
 });
 

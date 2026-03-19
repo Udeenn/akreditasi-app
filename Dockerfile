@@ -1,38 +1,82 @@
+# ============================================================
+# Dockerfile - PRODUCTION
+# Akreditasi App - Laravel 11 / PHP 8.4
+# ============================================================
+# Multi-stage build untuk image production yang lebih kecil dan aman.
+# Stage 1 (builder): install semua dependency & compile assets.
+# Stage 2 (final):   hanya ambil artefak yang dibutuhkan runtime.
+# ============================================================
 
-FROM php:8.1-fpm-alpine
-
-# Set working directory
+# ---- STAGE 1: BUILDER ----
+FROM php:8.4-fpm AS builder
 WORKDIR /var/www/html
 
-# Install dependencies yang umum dibutuhkan Laravel
-RUN apk update && apk add --no-cache \
-    build-base shadow wget \
-    php81-common php81-cli php81-fpm \
-    php81-pdo php81-pdo_mysql php81-mysqlnd \
-    php81-tokenizer php81-xml php81-xmlwriter \
-    php81-session php81-mbstring php81-gd \
-    php81-curl php81-zip php81-bcmath \
-    php81-redis \
-    nginx curl
+# Install system dependencies dan PHP extensions
+RUN apt-get update && apt-get install -y \
+    git zip unzip \
+    libzip-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && pecl install redis && docker-php-ext-enable redis \
+    && docker-php-ext-install pdo_mysql zip gd bcmath \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# Install Composer dari official image
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Hapus cache
-RUN rm -rf /var/cache/apk/*
+# Copy composer files dulu agar layer cache optimal
+COPY composer.json composer.lock* ./
+RUN composer install --no-dev --no-interaction --no-scripts --optimize-autoloader
 
-# Copy file proyek ke dalam container
+# Copy seluruh kode aplikasi
 COPY . .
 
-# Install dependency via Composer
-RUN composer install --optimize-autoloader --no-dev --no-interaction
+# Buat direktori storage yang dibutuhkan Laravel
+RUN mkdir -p storage/framework/cache storage/framework/sessions \
+             storage/framework/views storage/logs bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+# Dump-autoload optimasi terakhir (tanpa dev deps)
+RUN rm -rf bootstrap/cache/*.php && composer dump-autoload --optimize
 
-# Expose port 9000 untuk PHP-FPM
-EXPOSE 9000
+# Bersihkan composer cache
+RUN rm -rf /root/.composer
 
-# Jalankan PHP-FPM
-CMD ["php-fpm"]
+
+# ---- STAGE 2: PRODUCTION IMAGE ----
+FROM php:8.4-fpm-alpine
+WORKDIR /var/www/html
+
+# Install runtime libraries + PHP extensions
+RUN apk add --no-cache \
+        libpng libjpeg freetype libzip \
+    && apk add --no-cache --virtual .build-deps \
+        libpng-dev libjpeg-turbo-dev freetype-dev libzip-dev $PHPIZE_DEPS \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql gd zip bcmath \
+    && apk del .build-deps
+
+# Salin hasil build dari stage builder
+COPY --from=builder /var/www/html .
+
+# Copy entrypoint production
+COPY .docker/php/entrypoint.prod.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Buat folder runtime & set permission
+RUN mkdir -p storage/framework/cache storage/framework/sessions \
+             storage/framework/views storage/logs bootstrap/cache vendor \
+    && chown -R www-data:www-data storage bootstrap/cache vendor \
+    && chmod -R 775 storage bootstrap/cache vendor
+
+# Gunakan port 9001 agar tidak konflik dengan Portainer (port 9000)
+RUN echo 'listen = 9001' >> /usr/local/etc/php-fpm.d/zz-docker.conf
+
+USER www-data
+
+EXPOSE 9001
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

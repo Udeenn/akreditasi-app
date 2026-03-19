@@ -16,19 +16,19 @@ class User extends Authenticatable
     protected $connection = 'mysql';
     protected $table = 'users';
 
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-    ];
-
     /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
      */
     protected $fillable = [
-        'username',
+        'cas_username',
+        'koha_patron_id',
+        'name',
         'email',
+        'categorycode',
+        'role',
+        'cardnumber',
         'password',
     ];
 
@@ -51,13 +51,27 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'password'          => 'hashed',
         ];
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    public function isLibrarian(): bool
+    {
+        return $this->role === 'librarian';
+    }
+
+    public function isPatron(): bool
+    {
+        return $this->role === 'patron';
     }
 
     public function findForAuth($username)
     {
-        return static::where('name', $username)->first();
+        return static::where('cas_username', $username)->first();
     }
 
     /**
@@ -66,7 +80,7 @@ class User extends Authenticatable
     public function toArray()
     {
         $attributes = parent::toArray();
-        
+
         array_walk_recursive($attributes, function (&$value) {
             if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
                 $value = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
