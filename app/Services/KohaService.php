@@ -24,6 +24,10 @@ class KohaService
      */
     protected function getAccessToken(): ?string
     {
+        if (empty($this->clientId) || empty($this->clientSecret)) {
+            return null;
+        }
+
         return Cache::remember('koha_oauth_token', 3500, function () {
             // Koha OAuth2 token endpoint — base URL without /api/v1
             $tokenUrl = preg_replace('#/api/v1$#', '', $this->baseUrl) . '/api/v1/oauth/token';

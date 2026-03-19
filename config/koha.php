@@ -19,7 +19,7 @@ return [
     'client_secret' => env('KOHA_CLIENT_SECRET', ''),
 
     // Basic Auth (fallback jika OAuth2 tidak dikonfigurasi)
-    'api_user'     => env('KOHA_API_USERNAME', ''),
+    'api_user'     => env('KOHA_API_USER', ''),
     'api_password' => env('KOHA_API_PASSWORD', ''),
 
     // Kode kategori yang dianggap librarian (pisahkan dengan koma jika lebih dari satu)
