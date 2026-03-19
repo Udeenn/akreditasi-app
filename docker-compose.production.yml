@@ -26,20 +26,16 @@ services:
     image: nginx:alpine
     container_name: akreditasi_nginx
     restart: unless-stopped
-    # Tidak expose port langsung ke host.
-    # Traffic masuk lewat Nginx reverse proxy di level server (proxy-network).
+    # Port tidak di-expose ke host — traffic masuk via Nginx Proxy Manager
     volumes:
       - ./.docker/nginx/datapustaka.conf:/etc/nginx/conf.d/default.conf
-      - ./.docker/nginx/selfsigned.crt:/etc/nginx/ssl/selfsigned.crt
-      - ./.docker/nginx/selfsigned.key:/etc/nginx/ssl/selfsigned.key
-      # Mount public directory saja untuk static assets
       - ./public:/var/www/html/public:ro
     depends_on:
       app:
         condition: service_healthy
     networks:
       - akreditasi-network
-      - proxy-network  # joined ke network gateway reverse proxy
+      - proxy-network
 
   # 3. Service Redis (Cache & Queue)
   redis:
@@ -50,11 +46,10 @@ services:
       - akreditasi-network
 
 networks:
-  # Network internal antar service dalam aplikasi ini
   akreditasi-network:
     driver: bridge
 
-  # Network eksternal milik Nginx reverse proxy (sudah dibuat terlebih dahulu).
-  # Buat sekali di server dengan: docker network create proxy-network
+  # Shared network dengan Nginx Proxy Manager
+  # Buat sekali: docker network create proxy-network
   proxy-network:
     external: true

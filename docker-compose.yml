@@ -1,29 +1,31 @@
 
 services:
-  # 1. Service Aplikasi (PHP-FPM)
+  # 1. Service Aplikasi (PHP-FPM) - Local Development
   app:
     build:
       context: .
-      dockerfile: .docker/php/Dockerfile.prod
+      dockerfile: .docker/php/Dockerfile.dev
     container_name: akreditasi_app
     restart: unless-stopped
     volumes:
       - ./.env:/var/www/html/.env
-      - .:/var/www/html # Sinkronisasi kode dari lokal ke container (Matikan di production jika ingin pakai image build)
+      - .:/var/www/html  # Mount kode lokal agar hot-reload aktif
+    extra_hosts:
+      - "host-gateway:host-gateway"  # Akses DB eksternal dari container
     networks:
       - akreditasi-network
 
   # 2. Service Web Server (Nginx)
   web:
     image: nginx:alpine
-    container_name: nginx
+    container_name: akreditasi_nginx_local
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./:/var/www/html
-      - ./.docker/nginx/datapustaka.conf:/etc/nginx/conf.d/default.conf
+      - ./.docker/nginx/local.conf:/etc/nginx/conf.d/default.conf
       - ./.docker/nginx/selfsigned.crt:/etc/nginx/ssl/selfsigned.crt
       - ./.docker/nginx/selfsigned.key:/etc/nginx/ssl/selfsigned.key
     depends_on:
