@@ -509,17 +509,4 @@ class KohaService
 
         return null;
     }
-
-    /**
-     * Determine role from Koha categorycode.
-     */
-    public function resolveRole(string $categorycode): string
-    {
-        $librarianCodes = array_map(
-            'strtoupper',
-            explode(',', config('koha.librarian_categorycodes', 'LIBRARIAN'))
-        );
-
-        return in_array(strtoupper($categorycode), $librarianCodes) ? 'librarian' : 'patron';
-    }
 }

@@ -41,17 +41,17 @@ class CasController extends Controller
 
         Log::info('CAS callback received', ['ticket' => substr($ticket, 0, 20) . '...']);
 
-        // Validate ticket with CAS server
-        $username = $this->validateTicket($ticket);
+        // Validate ticket with CAS server and get user data
+        $casData = $this->validateTicket($ticket);
 
-        if (!$username) {
+        if (!$casData || empty($casData['username'])) {
             return redirect()->route('home')->with('error', 'Login gagal: validasi tiket CAS gagal. Silakan coba lagi.');
         }
 
-        Log::info('CAS user authenticated', ['username' => $username]);
+        Log::info('CAS user authenticated', ['username' => $casData['username']]);
 
-        // Find or create user
-        $user = $this->findOrCreateUser($username);
+        // Find or create user using the combined SSO and Koha data
+        $user = $this->findOrCreateUser($casData);
 
         if (!$user) {
             return redirect()->route('home')->with('error', 'Akun Anda tidak ditemukan di sistem perpustakaan Koha. Hubungi pustakawan.');
@@ -126,11 +126,11 @@ class CasController extends Controller
 
     protected function buildCasUrl(string $path, array $params = []): string
     {
-        $host    = config('cas.host');
-        $port    = config('cas.port');
+        $host = config('cas.host');
+        $port = config('cas.port');
         $context = config('cas.context');
 
-        $scheme  = ($port == 443) ? 'https' : 'http';
+        $scheme = ($port == 443) ? 'https' : 'http';
         $portStr = (($scheme === 'https' && $port == 443) || ($scheme === 'http' && $port == 80)) ? '' : ":{$port}";
 
         $url = "{$scheme}://{$host}{$portStr}{$context}{$path}";
@@ -142,31 +142,47 @@ class CasController extends Controller
         return $url;
     }
 
-    protected function validateTicket(string $ticket): ?string
+    protected function validateTicket(string $ticket): ?array
     {
         $validateUrl = $this->buildCasUrl('/serviceValidate', [
             'service' => $this->getServiceUrl(),
-            'ticket'  => $ticket,
+            'ticket' => $ticket,
         ]);
 
         Log::info('CAS validating ticket', ['url' => $validateUrl]);
 
         try {
             $response = Http::withOptions([
-                'verify'  => !config('cas.disable_ssl_validation'),
+                'verify' => !config('cas.disable_ssl_validation'),
                 'timeout' => 10,
             ])->get($validateUrl);
 
             Log::info('CAS validation response', [
                 'status' => $response->status(),
-                'body'   => $response->body(),
+                'body' => $response->body(),
             ]);
 
             if ($response->successful()) {
                 $body = $response->body();
+                
+                $userData = [];
+                
                 if (preg_match('/<cas:user>(.*?)<\/cas:user>/s', $body, $matches)) {
-                    return trim($matches[1]);
+                    $userData['username'] = trim($matches[1]);
+                } else {
+                    return null;
                 }
+                
+                // Coba ambil nama dan email dari atribut CAS (format standar JASIG/Apereo)
+                if (preg_match('/<cas:nama>(.*?)<\/cas:nama>/s', $body, $matches) || preg_match('/<cas:name>(.*?)<\/cas:name>/s', $body, $matches) || preg_match('/<cas:fullName>(.*?)<\/cas:fullName>/s', $body, $matches)) {
+                    $userData['name'] = trim($matches[1]);
+                }
+                
+                if (preg_match('/<cas:email>(.*?)<\/cas:email>/s', $body, $matches)) {
+                    $userData['email'] = trim($matches[1]);
+                }
+
+                return $userData;
             }
         } catch (\Exception $e) {
             Log::error('CAS validation exception', ['error' => $e->getMessage()]);
@@ -175,47 +191,52 @@ class CasController extends Controller
         return null;
     }
 
-    protected function findOrCreateUser(string $username): ?User
+    protected function findOrCreateUser(array $casData): ?User
     {
-        // Always fetch latest patron data from Koha to sync categorycode/role
+        $username = $casData['username'];
+        $ssoName = $casData['name'] ?? null;
+        $ssoEmail = $casData['email'] ?? null;
+
+        // Fetch latest patron data from Koha to sync categorycode
         $patron = null;
         try {
             $kohaService = app(KohaService::class);
+            // Kodes di KohaService sekarang memakai cardnumber dulu baru userid
             $patron = $kohaService->getPatronByUsername($username);
         } catch (\Exception $e) {
             Log::error("Error fetching patron from Koha", ['username' => $username, 'error' => $e->getMessage()]);
         }
 
-        // Ambil categorycode dari response Koha
-        // Koha REST API mengembalikan field 'category_id', bukan 'categorycode'
+        // Determine categorycode and role from Koha exactly as requested
         $categorycode = $patron['category_id'] ?? $patron['categorycode'] ?? 'S';
-
-        // Gunakan resolveRole() dari KohaService agar konsisten dengan config KOHA_LIBRARIAN_CATEGORIES
-        $role = $kohaService->resolveRole($categorycode);
+        
+        // Memakai aturan yang kamu berikan:
+        $role = (strtoupper($categorycode) === 'LIBRARIAN') ? 'librarian' : 'patron';
 
         $user = User::where('cas_username', $username)->first();
 
         if ($user) {
-            // Always sync role & categorycode from Koha on every login
+            // Update sinkronisasi sesuai instruksimu
             $user->update([
-                'role'           => $role,
-                'categorycode'   => $categorycode,
+                'role'          => $role,
+                'categorycode'  => $categorycode,
                 'koha_patron_id' => $patron['patron_id'] ?? $user->koha_patron_id,
-                'cardnumber'     => $patron['cardnumber'] ?? $user->cardnumber,
-                'name'           => $patron ? trim(($patron['firstname'] ?? '') . ' ' . ($patron['surname'] ?? '')) : $user->name,
+                'cardnumber'    => $patron['cardnumber'] ?? $user->cardnumber,
+                'name'          => $ssoName ?: $user->name,
+                'email'         => $ssoEmail ?: $user->email,
             ]);
 
-            Log::info("User synced from Koha", ['username' => $username, 'role' => $role, 'categorycode' => $categorycode]);
+            Log::info("User synced from Koha and SSO", ['username' => $username, 'role' => $role, 'categorycode' => $categorycode]);
             return $user;
         }
 
-        // New user — create from Koha data or basic fallback
+        // New user — create from SSO and Koha data exactly as requested
         if ($patron) {
             return User::create([
                 'cas_username'   => $username,
                 'koha_patron_id' => $patron['patron_id'] ?? null,
-                'name'           => trim(($patron['firstname'] ?? '') . ' ' . ($patron['surname'] ?? '')),
-                'email'          => $patron['email'] ?? null,
+                'name'           => $ssoName ?: trim(($patron['firstname'] ?? '') . ' ' . ($patron['surname'] ?? '')),
+                'email'          => $ssoEmail ?: ($patron['email'] ?? null),
                 'categorycode'   => $categorycode,
                 'role'           => $role,
                 'cardnumber'     => $patron['cardnumber'] ?? null,
@@ -223,11 +244,12 @@ class CasController extends Controller
             ]);
         }
 
-        // Koha not reachable — create basic user
+        // Jika tidak ketemu di Koha tapi berhasil SSO
         Log::warning("CAS user {$username} not found in Koha, creating basic user");
         return User::create([
             'cas_username' => $username,
-            'name'         => $username,
+            'name'         => $ssoName ?: $username,
+            'email'        => $ssoEmail,
             'role'         => 'patron',
             'categorycode' => 'S',
             'password'     => bcrypt(str()->random(32)),
