@@ -215,6 +215,10 @@ class CasController extends Controller
 
         $user = User::where('cas_username', $username)->first();
 
+        // Data prioritas: SSO -> Koha -> Default
+        $finalName = $ssoName ?: ($patron['surname'] ?? $username);
+        $finalEmail = $ssoEmail ?: ($patron['email'] ?? null);
+
         if ($user) {
             // Update sinkronisasi sesuai instruksimu
             $user->update([
@@ -222,8 +226,8 @@ class CasController extends Controller
                 'categorycode'  => $categorycode,
                 'koha_patron_id' => $patron['patron_id'] ?? $user->koha_patron_id,
                 'cardnumber'    => $patron['cardnumber'] ?? $user->cardnumber,
-                'name'          => $ssoName ?: $user->name,
-                'email'         => $ssoEmail ?: $user->email,
+                'name'          => $finalName,
+                'email'         => $finalEmail,
             ]);
 
             Log::info("User synced from Koha and SSO", ['username' => $username, 'role' => $role, 'categorycode' => $categorycode]);
@@ -235,8 +239,8 @@ class CasController extends Controller
             return User::create([
                 'cas_username'   => $username,
                 'koha_patron_id' => $patron['patron_id'] ?? null,
-                'name'           => $ssoName ?: trim(($patron['firstname'] ?? '') . ' ' . ($patron['surname'] ?? '')),
-                'email'          => $ssoEmail ?: ($patron['email'] ?? null),
+                'name'           => $finalName,
+                'email'          => $finalEmail,
                 'categorycode'   => $categorycode,
                 'role'           => $role,
                 'cardnumber'     => $patron['cardnumber'] ?? null,
@@ -248,8 +252,8 @@ class CasController extends Controller
         Log::warning("CAS user {$username} not found in Koha, creating basic user");
         return User::create([
             'cas_username' => $username,
-            'name'         => $ssoName ?: $username,
-            'email'        => $ssoEmail,
+            'name'         => $finalName,
+            'email'        => $finalEmail,
             'role'         => 'patron',
             'categorycode' => 'S',
             'password'     => bcrypt(str()->random(32)),
