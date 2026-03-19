@@ -90,9 +90,9 @@ class KohaService
         // Cache patron data for 60 minutes
         return Cache::remember($cacheKey, 3600, function () use ($username) {
             try {
-                // First try searching by userid
+                // Prioritas utama: cari berdasarkan cardnumber (sesuai request user)
                 $response = $this->client()->get('/patrons', [
-                    'userid' => $username,
+                    'cardnumber' => $username,
                 ]);
 
                 if ($response->successful()) {
@@ -102,9 +102,9 @@ class KohaService
                     }
                 }
 
-                // Fallback: Try searching by cardnumber
+                // Fallback: coba cari berdasarkan userid jika cardnumber tidak ketemu
                 $response2 = $this->client()->get('/patrons', [
-                    'cardnumber' => $username,
+                    'userid' => $username,
                 ]);
 
                 if ($response2->successful()) {
