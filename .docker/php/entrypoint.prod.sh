@@ -20,10 +20,11 @@ else
     echo "[2/4] Storage link already exists, skipping..."
 fi
 
-# 3. Cache Laravel config, routes, views untuk performance
-# Gunakan || true agar php-fpm tetap start meski artisan gagal (misal DB timeout)
-echo "[3/4] Caching config, routes, and views..."
-php artisan config:cache 2>/dev/null || echo "  WARN: config:cache failed, skipping"
+# 3. Cache routes, views untuk performance
+# JANGAN cache config! Karena .env di-mount saat runtime, bukan saat build.
+# config:cache akan mengunci nilai KOSONG secara permanen.
+echo "[3/4] Caching routes and views..."
+php artisan config:clear 2>/dev/null || true
 php artisan route:cache  2>/dev/null || echo "  WARN: route:cache failed, skipping"
 php artisan view:cache   2>/dev/null || echo "  WARN: view:cache failed, skipping"
 php artisan event:cache  2>/dev/null || echo "  WARN: event:cache failed, skipping"
