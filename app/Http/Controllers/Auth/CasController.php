@@ -215,9 +215,10 @@ class CasController extends Controller
 
         $user = User::where('cas_username', $username)->first();
 
-        // Data prioritas: SSO -> Koha -> Default
-        $finalName = $ssoName ?: ($patron['surname'] ?? $username);
-        $finalEmail = $ssoEmail ?: ($patron['email'] ?? null);
+        // Data prioritas: Koha -> SSO -> Default
+        $kohaName = trim(($patron['firstname'] ?? '') . ' ' . ($patron['surname'] ?? ''));
+        $finalName = (!empty($kohaName) ? $kohaName : ($ssoName ?: $username));
+        $finalEmail = (!empty($patron['email']) ? $patron['email'] : ($ssoEmail ?: null));
 
         if ($user) {
             // Update sinkronisasi sesuai instruksimu

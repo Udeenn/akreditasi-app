@@ -95,7 +95,7 @@ class KohaService
         // Cache patron data for 60 minutes
         return Cache::remember($cacheKey, 3600, function () use ($username) {
             try {
-                // Prioritas utama: cari berdasarkan cardnumber (sesuai request user)
+                // Prioritas utama: cari berdasarkan cardnumber via API
                 $response = $this->client()->get('/patrons', [
                     'cardnumber' => $username,
                 ]);
@@ -107,7 +107,7 @@ class KohaService
                     }
                 }
 
-                // Fallback: coba cari berdasarkan userid jika cardnumber tidak ketemu
+                // Fallback: coba cari berdasarkan userid via API
                 $response2 = $this->client()->get('/patrons', [
                     'userid' => $username,
                 ]);
@@ -119,7 +119,18 @@ class KohaService
                     }
                 }
 
-                Log::warning('Koha: getPatronByUsername failed (not found by userid or cardnumber)', [
+                // Fallback terakhir: Ambil langsung dari Database (mysql2) karena API Koha gagal/401
+                $patronDb = \Illuminate\Support\Facades\DB::connection('mysql2')->table('borrowers')
+                    ->where('cardnumber', $username)
+                    ->orWhere('userid', $username)
+                    ->first();
+                    
+                if ($patronDb) {
+                    Log::info('Koha: getPatronByUsername fetched from DB fallback', ['username' => $username]);
+                    return (array) $patronDb;
+                }
+
+                Log::warning('Koha: getPatronByUsername failed (not found by userid or cardnumber, and not via DB)', [
                     'username' => $username,
                 ]);
             } catch (\Exception $e) {
