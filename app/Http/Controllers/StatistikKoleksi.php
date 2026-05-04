@@ -522,8 +522,19 @@ class StatistikKoleksi extends Controller
 
             $cacheKey = "stats_prosiding:{$prodi}:{$tahunTerakhir}";
             $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
-                $query = M_items::selectRaw(
-                    "
+                $query = $this->getBaseCollectionQuery($prodi, $tahunTerakhir);
+                $query->whereIn('items.itype', ['EPR', 'PR']);
+
+                if ($tahunTerakhir !== 'all') {
+                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
+                }
+
+                $totalQuery = (clone $query)->selectRaw("
+                    COUNT(DISTINCT b.biblionumber) as total_judul,
+                    COUNT(items.itemnumber) as total_eksemplar
+                ");
+
+                $query->selectRaw("
                 bi.cn_class as Kelas,
                 EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"a\"]') as Judul_a,
                 EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]') as Judul_b,
@@ -561,22 +572,7 @@ class StatistikKoleksi extends Controller
                 WHEN items.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
                 ELSE items.homebranch
                 END AS Lokasi"
-                )
-                    ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                    ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
-                    ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
-                    ->where('items.itemlost', 0)
-                    ->where('items.withdrawn', 0)
-                    ->whereIn('items.itype', ['EPR', 'PR']);
-
-                if ($prodi !== 'all') {
-                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                    QueryHelper::applyCnClassRules($query, $cnClasses);
-                }
-
-                if ($tahunTerakhir !== 'all') {
-                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
-                }
+                );
 
                 $query->orderBy('TahunTerbit', 'desc');
                 $query->groupBy('Judul_a', 'Judul_b', 'Judul_c', 'Pengarang', 'Nomor',  'TahunTerbit', 'Lokasi', 'Link_Prosiding', 'Kelas');
@@ -589,42 +585,18 @@ class StatistikKoleksi extends Controller
                     if (!empty($row->Judul_c)) {
                         $fullJudul .= ' / ' . $row->Judul_c;
                     }
-                    $row->Judul = $fullJudul;
-
-                    $row->Judul = html_entity_decode($row->Judul, ENT_QUOTES, 'UTF-8');
+                    $row->Judul = html_entity_decode($fullJudul, ENT_QUOTES, 'UTF-8');
                     $row->Penerbit = html_entity_decode($row->Penerbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
                     $row->Pengarang = html_entity_decode($row->Pengarang, ENT_QUOTES | ENT_HTML5, 'UTF-8');
                     return $row;
                 });
 
-                $totalQuery = M_items::selectRaw("
-                    COUNT(DISTINCT b.biblionumber) as total_judul,
-                    COUNT(items.itemnumber) as total_eksemplar
-                ")
-                    ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                    ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
-                    ->where('items.itemlost', 0)
-                    ->where('items.withdrawn', 0)
-                    ->whereIn('items.itype', ['EPR', 'PR']);
-
-                if ($prodi !== 'all') {
-                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                    // Terapkan aturan yang sama ke query total
-                    QueryHelper::applyCnClassRules($totalQuery, $cnClasses);
-                }
-
-                if ($tahunTerakhir !== 'all') {
-                    $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
-                }
-
                 $totals = $totalQuery->first();
-                $totalJudul = $totals->total_judul ?? 0;
-                $totalEksemplar = $totals->total_eksemplar ?? 0;
 
                 return [
                     'processedData' => $processedData,
-                    'totalJudul' => $totalJudul,
-                    'totalEksemplar' => $totalEksemplar
+                    'totalJudul' => $totals->total_judul ?? 0,
+                    'totalEksemplar' => $totals->total_eksemplar ?? 0
                 ];
             });
 
@@ -633,7 +605,21 @@ class StatistikKoleksi extends Controller
             $totalEksemplar = $cachedResult['totalEksemplar'];
 
             if ($request->has('export_csv')) {
-                return $this->exportCsvProsiding($processedData, $namaProdi, $tahunTerakhir);
+                $headers = ['No', 'Judul', 'Pengarang', 'Penerbit', 'Tahun Terbit', 'Nomor', 'Issue', 'Eksemplar', 'Lokasi', 'Link'];
+                return $this->streamCsvExport($processedData, $namaProdi, $tahunTerakhir, 'prosiding', 'Prosiding', $headers, function($row, &$i) {
+                    return [
+                        $i++,
+                        $row->Judul,
+                        $row->Pengarang,
+                        $row->Penerbit,
+                        (int) $row->TahunTerbit,
+                        $row->Nomor,
+                        (int) $row->Issue,
+                        (int) $row->Eksemplar,
+                        $row->Lokasi,
+                        $row->Link_Prosiding ?? ''
+                    ];
+                });
             } else {
                 $data = $processedData;
                 $dataExists = $data->isNotEmpty();
@@ -676,19 +662,32 @@ class StatistikKoleksi extends Controller
 
             $cacheKey = "stats_jurnal:{$prodi}:{$tahunTerakhir}";
             $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
-                $query = M_items::query()
-                    ->from('items') // Hapus alias 'as i'
-                    ->select(
-                        'bi.cn_class AS Kelas',
-                        DB::raw("GROUP_CONCAT(items.barcode ORDER BY items.barcode ASC SEPARATOR ', ') as Barcode"),
-                        DB::raw("CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]')) AS Judul"),
-                        'bi.publishercode AS Penerbit',
-                        'items.enumchron AS Nomor',
-                        'av.lib AS Jenis_Koleksi',
-                        'it.description AS Jenis_Item_Tipe',
-                        DB::raw('COUNT(DISTINCT items.enumchron) AS Issue'),
-                        DB::raw('COUNT(*) AS Eksemplar'),
-                        DB::raw("CASE
+                $query = $this->getBaseCollectionQuery($prodi, $tahunTerakhir);
+                
+                $query->leftJoin('itemtypes as it', 'it.itemtype', '=', 'items.itype')
+                    ->leftJoin('authorised_values as av', function ($join) {
+                        $join->on('av.authorised_value', '=', 'items.ccode')
+                            ->where('av.category', '=', 'CCODE');
+                    })
+                    ->whereIn('items.itype', ['JR', 'JRA', 'JRT'])
+                    ->where('items.barcode', 'not like', 'JE%')
+                    ->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
+
+                if ($tahunTerakhir !== 'all') {
+                    $query->whereRaw('RIGHT(items.enumchron, 4) >= ?', [date('Y') - (int)$tahunTerakhir]);
+                }
+
+                $query->select(
+                    'bi.cn_class AS Kelas',
+                    DB::raw("GROUP_CONCAT(items.barcode ORDER BY items.barcode ASC SEPARATOR ', ') as Barcode"),
+                    DB::raw("CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]')) AS Judul"),
+                    'bi.publishercode AS Penerbit',
+                    'items.enumchron AS Nomor',
+                    'av.lib AS Jenis_Koleksi',
+                    'it.description AS Jenis_Item_Tipe',
+                    DB::raw('COUNT(DISTINCT items.enumchron) AS Issue'),
+                    DB::raw('COUNT(*) AS Eksemplar'),
+                    DB::raw("CASE
                         WHEN items.homebranch = 'PUSAT' THEN 'Perpustakaan Pusat'
                         WHEN items.homebranch = 'GIZI' THEN 'Perpustakaan Gizi'
                         WHEN items.homebranch = 'FKG' THEN 'Perpustakaan Kedokteran Gigi'
@@ -710,47 +709,18 @@ class StatistikKoleksi extends Controller
                         WHEN items.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
                         ELSE items.homebranch
                     END AS Lokasi"),
-                        DB::raw("MAX(COALESCE(NULLIF(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"u\"]'), ''), NULLIF(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"a\"]'), ''))) as Link_Jurnal")
-                    )
-                    ->join('biblio as b', 'b.biblionumber', '=', 'items.biblionumber')
-                    ->join('biblioitems as bi', 'bi.biblionumber', '=', 'items.biblionumber')
-                    ->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'items.biblionumber')
-                    ->leftJoin('itemtypes as it', 'it.itemtype', '=', 'items.itype')
-                    ->leftJoin('authorised_values as av', function ($join) {
-                        $join->on('av.authorised_value', '=', 'items.ccode')
-                            ->where('av.category', '=', 'CCODE');
-                    })
-                    ->where('items.itemlost', 0)
-                    ->where('items.withdrawn', 0)
-                    ->whereIn('items.itype', ['JR', 'JRA', 'JRT'])
-                    ->where('items.barcode', 'not like', 'JE%')
-                    ->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
-
-                if ($prodi !== 'all') {
-                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                    QueryHelper::applyCnClassRules($query, $cnClasses);
-                }
-
-                if ($tahunTerakhir !== 'all') {
-                    $query->whereRaw('RIGHT(items.enumchron, 4) >= ?', [date('Y') - (int)$tahunTerakhir]);
-                }
+                    DB::raw("MAX(COALESCE(NULLIF(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"u\"]'), ''), NULLIF(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"a\"]'), ''))) as Link_Jurnal")
+                );
 
                 $query->groupBy('Judul', 'Kelas', 'bi.publishercode', 'Jenis_Koleksi', 'Jenis_Item_Tipe', 'Nomor', 'av.lib', 'it.description', 'items.homebranch');
                 $query->orderBy('Judul', 'asc');
 
                 $processedData = $query->get();
-                $totalJudul = 0;
-                $totalEksemplar = 0;
-
-                if ($processedData->isNotEmpty()) {
-                    $totalJudul = $processedData->count();
-                    $totalEksemplar = $processedData->sum('Eksemplar');
-                }
 
                 return [
                     'processedData' => $processedData,
-                    'totalJudul' => $totalJudul,
-                    'totalEksemplar' => $totalEksemplar
+                    'totalJudul' => $processedData->isNotEmpty() ? $processedData->count() : 0,
+                    'totalEksemplar' => $processedData->isNotEmpty() ? $processedData->sum('Eksemplar') : 0
                 ];
             });
 
@@ -759,7 +729,36 @@ class StatistikKoleksi extends Controller
             $totalEksemplar = $cachedResult['totalEksemplar'];
 
             if ($request->has('export_csv')) {
-                return $this->exportCsvJurnal($processedData, $namaProdi, $tahunTerakhir);
+                $headers = ['No', 'Judul', 'Penerbit', 'Nomor Edisi', 'Eksemplar', 'Jenis Koleksi', 'Jenis Item Tipe', 'Lokasi', 'Link'];
+                return $this->streamCsvExport($processedData, $namaProdi, $tahunTerakhir, 'jurnal_detail', 'Jurnal Detail', $headers, function($row, &$i, &$previousJudul) {
+                    if ($row->Judul !== $previousJudul) {
+                        $rowData = [
+                            $i++,
+                            $row->Judul,
+                            $row->Penerbit,
+                            $row->Nomor,
+                            $row->Eksemplar,
+                            $row->Jenis_Koleksi,
+                            $row->Jenis_Item_Tipe,
+                            $row->Lokasi,
+                            $row->Link_Jurnal ?? '',
+                        ];
+                        $previousJudul = $row->Judul;
+                    } else {
+                        $rowData = [
+                            $i++,
+                            '',
+                            '',
+                            $row->Nomor,
+                            $row->Eksemplar,
+                            $row->Jenis_Koleksi,
+                            $row->Jenis_Item_Tipe,
+                            $row->Lokasi,
+                            $row->Link_Jurnal ?? '',
+                        ];
+                    }
+                    return $rowData;
+                });
             } else {
                 $data = $processedData;
                 $dataExists = $data->isNotEmpty();
@@ -796,19 +795,32 @@ class StatistikKoleksi extends Controller
 
             $cacheKey = "stats_ejurnal:{$prodi}:{$tahunTerakhir}";
             $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
-                $query = M_items::query()
-                    ->from('items') // Hapus alias 'as i'
-                    ->select(
-                        'bi.cn_class AS Kelas',
-                        DB::raw("GROUP_CONCAT(items.barcode ORDER BY items.barcode ASC SEPARATOR ', ') as Barcode"),
-                        DB::raw("CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]')) AS Judul"),
-                        'bi.publishercode AS Penerbit',
-                        'items.enumchron AS Nomor',
-                        'av.lib AS Jenis_Koleksi',
-                        'it.description AS Jenis_Item_Tipe',
-                        DB::raw('COUNT(DISTINCT items.enumchron) AS Issue'),
-                        DB::raw('COUNT(*) AS Eksemplar'),
-                        DB::raw("CASE
+                $query = $this->getBaseCollectionQuery($prodi, $tahunTerakhir);
+                
+                $query->leftJoin('itemtypes as it', 'it.itemtype', '=', 'items.itype')
+                    ->leftJoin('authorised_values as av', function ($join) {
+                        $join->on('av.authorised_value', '=', 'items.ccode')
+                            ->where('av.category', '=', 'CCODE');
+                    })
+                    ->whereIn('items.itype', ['JR', 'JRA', 'JRT'])
+                    ->where('items.barcode', 'like', 'JE%') // Filter E-Jurnal (JE)
+                    ->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
+
+                if ($tahunTerakhir !== 'all') {
+                    $query->whereRaw('RIGHT(items.enumchron, 4) >= ?', [date('Y') - (int)$tahunTerakhir]);
+                }
+
+                $query->select(
+                    'bi.cn_class AS Kelas',
+                    DB::raw("GROUP_CONCAT(items.barcode ORDER BY items.barcode ASC SEPARATOR ', ') as Barcode"),
+                    DB::raw("CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]')) AS Judul"),
+                    'bi.publishercode AS Penerbit',
+                    'items.enumchron AS Nomor',
+                    'av.lib AS Jenis_Koleksi',
+                    'it.description AS Jenis_Item_Tipe',
+                    DB::raw('COUNT(DISTINCT items.enumchron) AS Issue'),
+                    DB::raw('COUNT(*) AS Eksemplar'),
+                    DB::raw("CASE
                         WHEN items.homebranch = 'PUSAT' THEN 'Perpustakaan Pusat'
                         WHEN items.homebranch = 'GIZI' THEN 'Perpustakaan Gizi'
                         WHEN items.homebranch = 'FKG' THEN 'Perpustakaan Kedokteran Gigi'
@@ -830,47 +842,18 @@ class StatistikKoleksi extends Controller
                         WHEN items.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
                         ELSE items.homebranch
                     END AS Lokasi"),
-                        DB::raw("MAX(COALESCE(NULLIF(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"u\"]'), ''), NULLIF(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"a\"]'), ''))) as Link_Ejurnal")
-                    )
-                    ->join('biblio as b', 'b.biblionumber', '=', 'items.biblionumber')
-                    ->join('biblioitems as bi', 'bi.biblionumber', '=', 'items.biblionumber')
-                    ->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'items.biblionumber')
-                    ->leftJoin('itemtypes as it', 'it.itemtype', '=', 'items.itype')
-                    ->leftJoin('authorised_values as av', function ($join) {
-                        $join->on('av.authorised_value', '=', 'items.ccode')
-                            ->where('av.category', '=', 'CCODE');
-                    })
-                    ->where('items.itemlost', 0)
-                    ->where('items.withdrawn', 0)
-                    ->whereIn('items.itype', ['JR', 'JRA', 'JRT'])
-                    ->where('items.barcode', 'like', 'JE%') // Filter E-Jurnal (JE)
-                    ->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
-
-                if ($prodi !== 'all') {
-                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                    QueryHelper::applyCnClassRules($query, $cnClasses);
-                }
-
-                if ($tahunTerakhir !== 'all') {
-                    $query->whereRaw('RIGHT(items.enumchron, 4) >= ?', [date('Y') - (int)$tahunTerakhir]);
-                }
+                    DB::raw("MAX(COALESCE(NULLIF(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"u\"]'), ''), NULLIF(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"a\"]'), ''))) as Link_Ejurnal")
+                );
 
                 $query->groupBy('Judul', 'Kelas', 'bi.publishercode', 'Jenis_Koleksi', 'Jenis_Item_Tipe', 'Nomor', 'av.lib', 'it.description', 'items.homebranch');
                 $query->orderBy('Judul', 'asc');
 
                 $processedData = $query->get();
-                $totalJudul = 0;
-                $totalEksemplar = 0;
-
-                if ($processedData->isNotEmpty()) {
-                    $totalJudul = $processedData->count();
-                    $totalEksemplar = $processedData->sum('Eksemplar');
-                }
 
                 return [
                     'processedData' => $processedData,
-                    'totalJudul' => $totalJudul,
-                    'totalEksemplar' => $totalEksemplar
+                    'totalJudul' => $processedData->isNotEmpty() ? $processedData->count() : 0,
+                    'totalEksemplar' => $processedData->isNotEmpty() ? $processedData->sum('Eksemplar') : 0
                 ];
             });
 
@@ -879,7 +862,36 @@ class StatistikKoleksi extends Controller
             $totalEksemplar = $cachedResult['totalEksemplar'];
 
             if ($request->has('export_csv')) {
-                return $this->exportCsvEjurnal($processedData, $namaProdi, $tahunTerakhir);
+                $headers = ['No', 'Judul', 'Penerbit', 'Nomor Edisi', 'Eksemplar', 'Jenis Koleksi', 'Jenis Item Tipe', 'Lokasi', 'Link'];
+                return $this->streamCsvExport($processedData, $namaProdi, $tahunTerakhir, 'e_jurnal_detail', 'E-Jurnal Detail', $headers, function($row, &$i, &$previousJudul) {
+                    if ($row->Judul !== $previousJudul) {
+                        $rowData = [
+                            $i++,
+                            $row->Judul,
+                            $row->Penerbit,
+                            $row->Nomor,
+                            $row->Eksemplar,
+                            $row->Jenis_Koleksi,
+                            $row->Jenis_Item_Tipe,
+                            $row->Lokasi,
+                            $row->Link_Ejurnal ?? '',
+                        ];
+                        $previousJudul = $row->Judul;
+                    } else {
+                        $rowData = [
+                            $i++,
+                            '',
+                            '',
+                            $row->Nomor,
+                            $row->Eksemplar,
+                            $row->Jenis_Koleksi,
+                            $row->Jenis_Item_Tipe,
+                            $row->Lokasi,
+                            $row->Link_Ejurnal ?? '',
+                        ];
+                    }
+                    return $rowData;
+                });
             } else {
                 $data = $processedData;
                 $dataExists = $data->isNotEmpty();
@@ -917,7 +929,19 @@ class StatistikKoleksi extends Controller
 
             $cacheKey = "stats_ebook:{$prodi}:{$tahunTerakhir}";
             $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
-                $query = M_items::selectRaw("
+                $query = $this->getBaseCollectionQuery($prodi, $tahunTerakhir);
+                $query->where('items.itype', 'EB');
+
+                if ($tahunTerakhir !== 'all') {
+                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                }
+
+                $totalQuery = (clone $query)->selectRaw("
+                    COUNT(DISTINCT b.biblionumber) as total_judul,
+                    COUNT(items.itemnumber) as total_eksemplar
+                ");
+
+                $query->selectRaw("
                     EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"a\"]') as Judul_a,
                     EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]') as Judul_b,
                     b.author as Pengarang,
@@ -933,22 +957,7 @@ class StatistikKoleksi extends Controller
                     EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"u\"]')
                 ) AS Link_Ebook,
                     MAX(items.biblionumber) as biblionumber
-                ")
-                    ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                    ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
-                    ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
-                    ->where('items.itemlost', 0)
-                    ->where('items.withdrawn', 0)
-                    ->where('items.itype', 'EB');
-
-                if ($prodi !== 'all') {
-                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                    QueryHelper::applyCnClassRules($query, $cnClasses);
-                }
-
-                if ($tahunTerakhir !== 'all') {
-                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
-                }
+                ");
 
                 $query->orderBy('Tahun_Terbit', 'desc')->orderBy('Judul_a', 'asc');
                 $query->groupBy('Judul_a', 'Judul_b', 'Pengarang', 'Kota_Terbit', 'Tahun_Terbit', 'Link_Ebook');
@@ -965,34 +974,12 @@ class StatistikKoleksi extends Controller
                     return $row;
                 });
 
-                $totalQuery = M_items::selectRaw("
-                    COUNT(DISTINCT b.biblionumber) as total_judul,
-                    COUNT(items.itemnumber) as total_eksemplar
-                ")
-                    ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                    ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
-                    ->where('items.itemlost', 0)
-                    ->where('items.withdrawn', 0)
-                    ->whereIn('items.itype', ['EB']);
-
-                if ($prodi !== 'all') {
-                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                    // Terapkan juga helpernya ke query total
-                    QueryHelper::applyCnClassRules($totalQuery, $cnClasses);
-                }
-
-                if ($tahunTerakhir !== 'all') {
-                    $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
-                }
-
                 $totals = $totalQuery->first();
-                $totalJudul = $totals->total_judul ?? 0;
-                $totalEksemplar = $totals->total_eksemplar ?? 0;
 
                 return [
                     'processedData' => $processedData,
-                    'totalJudul' => $totalJudul,
-                    'totalEksemplar' => $totalEksemplar
+                    'totalJudul' => $totals->total_judul ?? 0,
+                    'totalEksemplar' => $totals->total_eksemplar ?? 0
                 ];
             });
 
@@ -1001,7 +988,19 @@ class StatistikKoleksi extends Controller
             $totalEksemplar = $cachedResult['totalEksemplar'];
 
             if ($request->has('export_csv')) {
-                return $this->exportCsvEbook($processedData, $namaProdi, $tahunTerakhir);
+                $headers = ['No', 'Judul', 'Pengarang', 'Kota Terbit', 'Penerbit', 'Tahun Terbit', 'Eksemplar', 'Link'];
+                return $this->streamCsvExport($processedData, $namaProdi, $tahunTerakhir, 'ebook', 'E-Book', $headers, function($row, &$i) {
+                    return [
+                        $i++,
+                        $row->Judul,
+                        $row->Pengarang,
+                        $row->Kota_Terbit,
+                        $row->Penerbit,
+                        (int) $row->Tahun_Terbit,
+                        (int) $row->Eksemplar,
+                        $row->Link_Ebook
+                    ];
+                });
             } else {
                 $data = $processedData;
                 $dataExists = $data->isNotEmpty();
@@ -1045,7 +1044,14 @@ class StatistikKoleksi extends Controller
 
             $cacheKey = "stats_textbook:{$prodi}:{$tahunTerakhir}";
             $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
-                $query = M_items::selectRaw("
+                $query = $this->getBaseCollectionQuery($prodi, $tahunTerakhir);
+                $query->whereIn('items.itype', ['BKS', 'BKSA', 'BKSCA', 'BKSC']);
+
+                if ($tahunTerakhir !== 'all') {
+                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                }
+
+                $query->selectRaw("
                     EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"a\"]') as Judul_a,
                     EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]') as Judul_b,
                     b.author as Pengarang,
@@ -1075,24 +1081,7 @@ class StatistikKoleksi extends Controller
                     WHEN items.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
                     ELSE items.homebranch
                     END AS Lokasi
-                ")
-                    ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                    ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
-                    ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
-                    ->where('items.itemlost', 0)
-                    ->where('items.withdrawn', 0)
-                    ->whereIn('items.itype', ['BKS', 'BKSA', 'BKSCA', 'BKSC']);
-                // ->whereRaw('LEFT(items.ccode, 1) <> "R"');
-
-                if ($prodi !== 'all') {
-                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                    QueryHelper::applyCnClassRules($query, $cnClasses);
-                }
-
-
-                if ($tahunTerakhir !== 'all') {
-                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
-                }
+                ");
 
                 $query->orderBy('Tahun_Terbit', 'desc')
                     ->orderBy('Judul_a', 'asc');
@@ -1132,13 +1121,11 @@ class StatistikKoleksi extends Controller
                 }
 
                 $totals = $totalQuery->first();
-                $totalJudul = $totals->total_judul ?? 0;
-                $totalEksemplar = $totals->total_eksemplar ?? 0;
 
                 return [
                     'processedData' => $processedData,
-                    'totalJudul' => $totalJudul,
-                    'totalEksemplar' => $totalEksemplar
+                    'totalJudul' => $totals->total_judul ?? 0,
+                    'totalEksemplar' => $totals->total_eksemplar ?? 0
                 ];
             });
 
@@ -1147,7 +1134,19 @@ class StatistikKoleksi extends Controller
             $totalEksemplar = $cachedResult['totalEksemplar'];
 
             if ($request->has('export_csv')) {
-                return $this->exportCsvTextbook($processedData, $namaProdi, $tahunTerakhir);
+                $headers = ['No', 'Judul', 'Pengarang', 'Kota Terbit', 'Penerbit', 'Tahun Terbit', 'Eksemplar', 'Lokasi'];
+                return $this->streamCsvExport($processedData, $namaProdi, $tahunTerakhir, 'textbook', 'Buku Teks', $headers, function($row, &$i) {
+                    return [
+                        $i++,
+                        $row->Judul,
+                        $row->Pengarang,
+                        $row->Kota_Terbit,
+                        $row->Penerbit,
+                        (int) $row->Tahun_Terbit,
+                        (int) $row->Eksemplar,
+                        $row->Lokasi
+                    ];
+                });
             } else {
                 $data = $processedData;
                 $dataExists = $data->isNotEmpty();
@@ -1185,43 +1184,35 @@ class StatistikKoleksi extends Controller
             $cacheKey = "stats_periodikal:{$prodi}:{$tahunTerakhir}";
             $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
                 $periodicalTypes = ['MJA', 'MJI', 'MJIP', 'MJP'];
+                $query = $this->getBaseCollectionQuery($prodi, $tahunTerakhir);
+                $query->whereIn('items.itype', $periodicalTypes);
 
-                $query = M_items::select(
-                    'i.itype AS Jenis_kode',
+                if ($tahunTerakhir !== 'all') {
+                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                }
+
+                $totalQuery = (clone $query)->selectRaw("
+                    COUNT(DISTINCT b.biblionumber) as total_judul,
+                    COUNT(items.itemnumber) as total_eksemplar
+                ");
+
+                $query->select(
+                    'items.itype AS Jenis_kode',
                     't.description AS Jenis',
                     'bi.publishercode AS Penerbit',
                     'bi.place AS Tempat_Terbit',
                     'bi.publicationyear AS Tahun_Terbit',
                     'bi.cn_class as Kelas',
-                    'i.enumchron AS Nomor',
-                    'i.homebranch as Lokasi'
+                    'items.enumchron AS Nomor',
+                    'items.homebranch as Lokasi'
                 )
                     ->selectRaw("EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"a\"]') as Judul_a")
                     ->selectRaw("EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]') as Judul_b")
-                    ->selectRaw('COUNT(i.itemnumber) AS Issue')
-                    ->selectRaw('SUM(i.copynumber) AS Eksemplar')
-                    ->from('items as i')
-                    ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
-                    ->join('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
-                    ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
-                    ->join('itemtypes as t', 'i.itype', '=', 't.itemtype')
-                    ->where('i.itemlost', 0)
-                    ->where('i.withdrawn', 0)
-                    ->whereIn('i.itype', $periodicalTypes)
-                    ->groupBy('i.biblionumber');
+                    ->selectRaw('COUNT(items.itemnumber) AS Issue')
+                    ->selectRaw('SUM(items.copynumber) AS Eksemplar')
+                    ->join('itemtypes as t', 'items.itype', '=', 't.itemtype')
+                    ->groupBy('items.biblionumber');
 
-                // Terapkan filter prodi menggunakan helper
-                if ($prodi !== 'all') {
-                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                    QueryHelper::applyCnClassRules($query, $cnClasses);
-                }
-
-                // Terapkan filter tahun
-                if ($tahunTerakhir !== 'all') {
-                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
-                }
-
-                // Group by untuk rekapitulasi yang benar
                 $query->groupBy('Jenis_kode', 'Jenis', 'Judul_a', 'Judul_b', 'Nomor', 'Kelas', 'Lokasi', 'Penerbit', 'Tempat_Terbit', 'Tahun_Terbit');
 
                 $processedData = $query->get()->map(function ($row) {
@@ -1244,37 +1235,12 @@ class StatistikKoleksi extends Controller
                     return $row;
                 });
 
-                // Query untuk menghitung total
-                $totalQuery = M_items::query()
-                    ->from('items as i')
-                    ->selectRaw("
-                    COUNT(DISTINCT i.biblionumber) as total_judul,
-                    COUNT(i.itemnumber) as total_eksemplar
-                ")
-                    ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
-                    ->where('i.itemlost', 0)
-                    ->where('i.withdrawn', 0)
-                    ->whereIn('i.itype', $periodicalTypes);
-
-                // Terapkan filter prodi juga ke query total
-                if ($prodi !== 'all') {
-                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                    QueryHelper::applyCnClassRules($totalQuery, $cnClasses);
-                }
-
-                // Terapkan filter tahun juga ke query total
-                if ($tahunTerakhir !== 'all') {
-                    $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
-                }
-
                 $totals = $totalQuery->first();
-                $totalJudul = $totals->total_judul ?? 0;
-                $totalEksemplar = $totals->total_eksemplar ?? 0;
 
                 return [
                     'processedData' => $processedData,
-                    'totalJudul' => $totalJudul,
-                    'totalEksemplar' => $totalEksemplar
+                    'totalJudul' => $totals->total_judul ?? 0,
+                    'totalEksemplar' => $totals->total_eksemplar ?? 0
                 ];
             });
 
@@ -1283,7 +1249,21 @@ class StatistikKoleksi extends Controller
             $totalEksemplar = $cachedResult['totalEksemplar'];
 
             if ($request->has('export_csv')) {
-                return $this->exportCsvPeriodikal($processedData, $namaProdi, $tahunTerakhir);
+                $headers = ['No', 'Kelas', 'Jenis', 'Judul', 'Penerbit', 'Tahun Terbit', 'Nomor', 'Issue', 'Eksemplar', 'Lokasi'];
+                return $this->streamCsvExport($processedData, $namaProdi, $tahunTerakhir, 'periodikal', 'Periodikal', $headers, function($row, &$i) {
+                    return [
+                        $i++,
+                        $row->Kelas,
+                        $row->Jenis,
+                        $row->Judul,
+                        $row->Penerbit_Lengkap,
+                        $row->Tahun_Terbit,
+                        $row->Nomor,
+                        (int) $row->Issue,
+                        (int) $row->Eksemplar,
+                        $row->Lokasi,
+                    ];
+                });
             } else {
                 $data = $processedData;
                 $dataExists = $data->isNotEmpty();
@@ -1478,25 +1458,8 @@ class StatistikKoleksi extends Controller
                     WHEN items.homebranch = 'PSI' THEN 'Perpustakaan Pusat Studi Psikologi Islam'
                     WHEN items.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
                     ELSE items.homebranch
-                END AS Lokasi
-            ")
-                    ->from('items') // ALIAS 'as i' DIHAPUS
-                    ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                    ->join('biblio as b', 'items.biblionumber', '=', 'b.biblionumber')
-                    ->join('biblio_metadata as bm', 'b.biblionumber', '=', 'bm.biblionumber')
-                    ->where('items.itemlost', 0)
-                    ->where('items.withdrawn', 0)
-                    ->whereRaw('LEFT(items.itype,3) = "BKS"')
-                    ->whereRaw('LEFT(items.ccode,1) = "R"');
-
-                if ($prodi !== 'all') {
-                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                    QueryHelper::applyCnClassRules($query, $cnClasses);
-                }
-
-                if ($tahunTerakhir !== 'all') {
-                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
-                }
+                    END AS Lokasi
+                ");
 
                 $query->orderBy('Tahun_Terbit', 'desc');
                 $query->groupBy('Judul_a', 'Judul_b', 'Pengarang', 'Kota_Terbit', 'Tahun_Terbit', 'Kelas', 'Lokasi');
@@ -1513,36 +1476,12 @@ class StatistikKoleksi extends Controller
                     return $row;
                 });
 
-                // Perbaikan pada bagian Total Query (sudah menggunakan items)
-                $totalQuery = M_items::selectRaw("
-                COUNT(DISTINCT b.biblionumber) as total_judul,
-                COUNT(items.itemnumber) as total_eksemplar
-            ")
-                    ->from('items')
-                    ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                    ->join('biblio as b', 'b.biblionumber', '=', 'bi.biblionumber')
-                    ->where('items.itemlost', 0)
-                    ->where('items.withdrawn', 0)
-                    ->whereRaw('LEFT(items.itype,3) = "BKS"')
-                    ->whereRaw('LEFT(items.ccode,1) = "R"');
-
-                if ($prodi !== 'all') {
-                    $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-                    QueryHelper::applyCnClassRules($totalQuery, $cnClasses);
-                }
-
-                if ($tahunTerakhir !== 'all') {
-                    $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
-                }
-
                 $totals = $totalQuery->first();
-                $totalJudul = $totals->total_judul ?? 0;
-                $totalEksemplar = $totals->total_eksemplar ?? 0;
 
                 return [
                     'processedData' => $processedData,
-                    'totalJudul' => $totalJudul,
-                    'totalEksemplar' => $totalEksemplar
+                    'totalJudul' => $totals->total_judul ?? 0,
+                    'totalEksemplar' => $totals->total_eksemplar ?? 0
                 ];
             });
 
@@ -1551,7 +1490,19 @@ class StatistikKoleksi extends Controller
             $totalEksemplar = $cachedResult['totalEksemplar'];
 
             if ($request->has('export_csv')) {
-                return $this->exportCsvReferensi($processedData, $namaProdi, $tahunTerakhir);
+                $headers = ['No', 'Judul', 'Pengarang', 'Kota Terbit', 'Penerbit', 'Tahun Terbit', 'Eksemplar', 'Lokasi'];
+                return $this->streamCsvExport($processedData, $namaProdi, $tahunTerakhir, 'referensi', 'Referensi', $headers, function($row, &$i) {
+                    return [
+                        $i++,
+                        $row->Judul,
+                        $row->Pengarang,
+                        $row->Kota_Terbit,
+                        $row->Penerbit,
+                        (int) $row->Tahun_Terbit,
+                        (int) $row->Eksemplar,
+                        $row->Lokasi
+                    ];
+                });
             } else {
                 $data = $processedData;
                 $dataExists = $data->isNotEmpty();
@@ -1675,15 +1626,6 @@ class StatistikKoleksi extends Controller
         return response()->json($detailData);
     }
 
-    /**
-     * Ekspor data jurnal ke format CSV.
-     *
-     * @param \Illuminate\Support\Collection $data
-     * @param string $namaProdi
-     * @param string $tahunTerakhir
-     * @return \Symfony\Component\HttpFoundation\StreamedResponse
-     */
-
     public function eresource(Request $request)
     {
         return view('pages.dapus.eresource');
@@ -1691,10 +1633,33 @@ class StatistikKoleksi extends Controller
 
 
 
-    private function exportCsvJurnal($data, $namaProdi, $tahunTerakhir)
+    /**
+     * Get Base Collection Query with common joins and filters.
+     */
+    private function getBaseCollectionQuery($prodi, $tahunTerakhir = 'all')
     {
-        // --- 1. Siapkan Nama File ---
-        $filename = "koleksi_jurnal_detail";
+        $query = M_items::query()
+            ->from('items')
+            ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
+            ->join('biblio as b', 'b.biblionumber', '=', 'items.biblionumber')
+            ->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'items.biblionumber')
+            ->where('items.itemlost', 0)
+            ->where('items.withdrawn', 0);
+
+        if ($prodi !== 'all') {
+            $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
+            QueryHelper::applyCnClassRules($query, $cnClasses);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Stream CSV Export helper to prevent code duplication.
+     */
+    private function streamCsvExport($data, $namaProdi, $tahunTerakhir, $filePrefix, $titleText, $headers, $rowMapper)
+    {
+        $filename = "koleksi_" . $filePrefix;
         if ($namaProdi && $namaProdi !== 'Pilih Program Studi' && $namaProdi !== 'Semua Program Studi') {
             $cleanProdiName = preg_replace('/[^a-zA-Z0-9_]/', '', str_replace(' ', '_', $namaProdi));
             $filename .= "_" . $cleanProdiName;
@@ -1702,511 +1667,28 @@ class StatistikKoleksi extends Controller
         $filename .= "_" . ($tahunTerakhir !== 'all' ? $tahunTerakhir . "_tahun_terakhir" : "semua_tahun");
         $filename .= "_" . Carbon::now()->format('Ymd_His') . ".csv";
 
-        // --- 2. Siapkan Header CSV (Pastikan Sesuai!) ---
-        $headers = [
-            'No',               // 0
-            'Judul',            // 1
-            'Penerbit',         // 2
-            'Nomor Edisi',      // 3
-            // 'Issue',         // Dihapus dari header
-            'Eksemplar',        // 4
-            'Jenis Koleksi',    // 5
-            'Jenis Item Tipe',  // 6
-            'Lokasi',           // 7
-            'Link'              // 8
-        ]; // Total 9 Kolom
-
-        // --- 3. Definisikan Callback dengan Logika Pengosongan ---
-        $callback = function () use ($data, $headers, $namaProdi, $tahunTerakhir) {
+        $callback = function () use ($data, $headers, $namaProdi, $tahunTerakhir, $titleText, $rowMapper) {
             if (ob_get_level()) {
                 ob_end_clean();
             }
             $file = fopen('php://output', 'w');
             fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-            // Judul file CSV
-            $judulProdi = 'Daftar Koleksi Jurnal Detail - ' . ($namaProdi ?: 'Semua Program Studi');
-            $judulTahun = ($tahunTerakhir !== 'all') ? ('Filter Tahun: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun';
+            $judulProdi = 'Daftar Koleksi ' . $titleText . ' - ' . ($namaProdi ?: 'Semua Program Studi');
+            $judulTahun = ($tahunTerakhir !== 'all') ? ('Filter: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun';
+            
             fputcsv($file, [$judulProdi . ' - ' . $judulTahun], ';');
             fputcsv($file, [''], ';');
             fputcsv($file, $headers, ';');
 
             $i = 1;
-            $previousJudul = null;
+            $previousJudul = null; // Khusus untuk logika Jurnal/E-jurnal (pengosongan judul duplikat)
 
             foreach ($data as $row) {
-                $rowData = [];
-
-                if ($row->Judul !== $previousJudul) {
-                    $rowData = [
-                        $i++,
-                        $row->Judul,
-                        $row->Penerbit,
-                        $row->Nomor,
-                        // $row->Issue,
-                        $row->Eksemplar,
-                        $row->Jenis_Koleksi,
-                        $row->Jenis_Item_Tipe,
-                        $row->Lokasi,
-                        $row->Link_Jurnal ?? '',
-                    ];
-                    $previousJudul = $row->Judul;
-                } else {
-                    $rowData = [
-                        $i++,
-                        '',
-                        '',
-                        $row->Nomor,
-                        // $row->Issue,
-                        $row->Eksemplar,
-                        $row->Jenis_Koleksi,
-                        $row->Jenis_Item_Tipe,
-                        $row->Lokasi,
-                        $row->Link_Jurnal ?? '',
-                    ];
-                }
-                if (count($rowData) == count($headers)) {
+                $rowData = $rowMapper($row, $i, $previousJudul);
+                if (!empty($rowData)) {
                     fputcsv($file, $rowData, ';');
-                } else {
-                    Log::warning('CSV Export Jurnal: Column count mismatch for row.', ['expected' => count($headers), 'actual' => count($rowData), 'data' => $rowData]);
                 }
-            }
-            fclose($file);
-        };
-
-        return response()->streamDownload($callback, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ]);
-    }
-
-
-    private function exportCsvEjurnal($data, $namaProdi, $tahunTerakhir)
-    {
-        // --- 1. Siapkan Nama File ---
-        $filename = "koleksi_e_jurnal_detail";
-        if ($namaProdi && $namaProdi !== 'Pilih Program Studi' && $namaProdi !== 'Semua Program Studi') {
-            $cleanProdiName = preg_replace('/[^a-zA-Z0-9_]/', '', str_replace(' ', '_', $namaProdi));
-            $filename .= "_" . $cleanProdiName;
-        }
-        $filename .= "_" . ($tahunTerakhir !== 'all' ? $tahunTerakhir . "_tahun_terakhir" : "semua_tahun");
-        $filename .= "_" . Carbon::now()->format('Ymd_His') . ".csv";
-
-        // --- 2. Siapkan Header CSV (Pastikan Sesuai!) ---
-        $headers = [
-            'No',               // 0
-            'Judul',            // 1
-            'Penerbit',         // 2
-            'Nomor Edisi',      // 3
-            // 'Issue',         // Dihapus dari header
-            'Eksemplar',        // 4
-            'Jenis Koleksi',    // 5
-            'Jenis Item Tipe',  // 6
-            'Lokasi',           // 7
-            'Link'              // 8
-        ]; // Total 9 Kolom
-
-        // --- 3. Definisikan Callback dengan Logika Pengosongan ---
-        $callback = function () use ($data, $headers, $namaProdi, $tahunTerakhir) {
-
-            if (ob_get_level()) {
-                ob_end_clean();
-            }
-            $file = fopen('php://output', 'w');
-            fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF));
-
-            // Judul file CSV
-            $judulProdi = 'Daftar Koleksi E-Jurnal Detail - ' . ($namaProdi ?: 'Semua Program Studi');
-            $judulTahun = ($tahunTerakhir !== 'all') ? ('Filter Tahun: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun';
-            fputcsv($file, [$judulProdi . ' - ' . $judulTahun], ';');
-            fputcsv($file, [''], ';');
-            fputcsv($file, $headers, ';');
-
-            $i = 1;
-            $previousJudul = null;
-
-            foreach ($data as $row) {
-                $rowData = [];
-
-                if ($row->Judul !== $previousJudul) {
-                    $rowData = [
-                        $i++,
-                        $row->Judul,
-                        $row->Penerbit,
-                        $row->Nomor,
-                        // $row->Issue,
-                        $row->Eksemplar,
-                        $row->Jenis_Koleksi,
-                        $row->Jenis_Item_Tipe,
-                        $row->Lokasi,
-                        $row->Link_Jurnal ?? '',
-                    ];
-                    $previousJudul = $row->Judul;
-                } else {
-                    $rowData = [
-                        $i++,
-                        '',
-                        '',
-                        $row->Nomor,
-                        // $row->Issue,
-                        $row->Eksemplar,
-                        $row->Jenis_Koleksi,
-                        $row->Jenis_Item_Tipe,
-                        $row->Lokasi,
-                        $row->Link_Jurnal ?? '',
-                    ];
-                }
-                if (count($rowData) == count($headers)) {
-                    fputcsv($file, $rowData, ';');
-                } else {
-                    Log::warning('CSV Export E-Jurnal: Column count mismatch for row.', ['expected' => count($headers), 'actual' => count($rowData), 'data' => $rowData]);
-                }
-            }
-            fclose($file);
-        };
-
-        return response()->streamDownload($callback, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ]);
-    }
-
-    /**
-     * Ekspor data referensi ke format CSV.
-     *
-     * @param \Illuminate\Support\Collection $data
-     * @param string $namaProdi
-     * @param string $tahunTerakhir
-     * @return \Symfony\Component\HttpFoundation\StreamedResponse
-     */
-
-    private function exportCsvReferensi($data, $namaProdi, $tahunTerakhir)
-    {
-        $filename = "koleksi_referensi";
-        if ($namaProdi && $namaProdi !== 'Pilih Program Studi' && $namaProdi !== 'Semua Program Studi') {
-            $cleanProdiName = preg_replace('/[^a-zA-Z0-9 ]/', '', str_replace(' ', '_', $namaProdi));
-            $filename .= "_" . $cleanProdiName;
-        }
-        $filename .= "_" . ($tahunTerakhir !== 'all' ? $tahunTerakhir . "_tahun_terakhir" : "semua_tahun");
-        $filename .= "_" . Carbon::now()->format('Ymd_His') . ".csv";
-
-        $headers = [
-            'No',
-            'Judul',
-            'Pengarang',
-            'Kota Terbit',
-            'Penerbit',
-            'Tahun Terbit',
-            'Eksemplar',
-            'Lokasi',
-        ];
-
-        $callback = function () use ($data, $headers, $namaProdi, $tahunTerakhir) {
-            if (ob_get_level()) {
-                ob_end_clean();
-            }
-            $file = fopen('php://output', 'w');
-            fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF));
-
-            // Judul file CSV
-            $judulProdi = 'Daftar Koleksi Referensi - ' . ($namaProdi ?: 'Semua Program Studi');
-            $judulTahun = ($tahunTerakhir !== 'all') ? ('Tahun Terbit: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun Terbit';
-            fputcsv($file, [$judulProdi . ' - ' . $judulTahun], ';');
-            fputcsv($file, [''], ';');
-            fputcsv($file, $headers, ';');
-
-            $i = 1;
-            foreach ($data as $row) {
-                $rowData = [
-                    $i++,
-                    $row->Judul,
-                    $row->Pengarang,
-                    $row->Kota_Terbit,
-                    $row->Penerbit,
-                    (int) $row->Tahun_Terbit,
-                    (int) $row->Eksemplar,
-                    $row->Lokasi
-                ];
-                fputcsv($file, $rowData, ';');
-            }
-            fclose($file);
-        };
-
-        return response()->streamDownload($callback, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ]);
-    }
-
-
-    /**
-     * Ekspor data textbook ke format CSV.
-     *
-     * @param \Illuminate\Support\Collection $data
-     * @param string $namaProdi
-     * @param string $tahunTerakhir
-     * @return \Symfony\Component\HttpFoundation\StreamedResponse
-     */
-    private function exportCsvTextbook($data, $namaProdi, $tahunTerakhir)
-    {
-
-        $filename = "koleksi_textbook";
-        if ($namaProdi && $namaProdi !== 'Pilih Program Studi' && $namaProdi !== 'Semua Program Studi') {
-            $cleanProdiName = preg_replace('/[^a-zA-Z0-9 ]/', '', str_replace(' ', '_', $namaProdi));
-            $filename .= "_" . $cleanProdiName;
-        }
-        $filename .= "_" . ($tahunTerakhir !== 'all' ? $tahunTerakhir . "_tahun_terakhir" : "semua_tahun");
-        $filename .= "_" . Carbon::now()->format('Ymd_His') . ".csv";
-
-        $headers = [
-            'No',
-            'Judul',
-            'Pengarang',
-            'Kota Terbit',
-            'Penerbit',
-            'Tahun Terbit',
-            'Eksemplar',
-            'Lokasi'
-        ];
-
-        $callback = function () use ($data, $headers, $namaProdi, $tahunTerakhir) {
-            if (ob_get_level()) {
-                ob_end_clean();
-            }
-            $file = fopen('php://output', 'w');
-            fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF));
-
-            $judulProdi = 'Daftar Koleksi Buku Teks - ' . ($namaProdi ?: 'Semua Program Studi');
-            $judulTahun = ($tahunTerakhir !== 'all') ? ('Tahun Terbit: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun Terbit';
-            fputcsv($file, [$judulProdi . ' - ' . $judulTahun], ';');
-            fputcsv($file, [''], ';');
-            fputcsv($file, $headers, ';');
-
-            $i = 1;
-            foreach ($data as $row) {
-                $rowData = [
-                    $i++,
-                    $row->Judul,
-                    $row->Pengarang,
-                    $row->Kota_Terbit,
-                    $row->Penerbit,
-                    (int) $row->Tahun_Terbit,
-                    (int) $row->Eksemplar,
-                    $row->Lokasi
-                ];
-                fputcsv($file, $rowData, ';');
-            }
-            fclose($file);
-        };
-
-        return response()->streamDownload($callback, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ]);
-    }
-
-    /**
-     * Ekspor data e-book ke format CSV.
-     *
-     * @param \Illuminate\Support\Collection $data
-     * @param string $namaProdi
-     * @param string $tahunTerakhir
-     * @return \Symfony\Component\HttpFoundation\StreamedResponse
-     */
-    private function exportCsvEbook($data, $namaProdi, $tahunTerakhir)
-    {
-        $filename = "koleksi_ebook";
-        if ($namaProdi && $namaProdi !== 'Pilih Program Studi' && $namaProdi !== 'Semua Program Studi') {
-            $cleanProdiName = preg_replace('/[^a-zA-Z0-9 ]/', '', str_replace(' ', '_', $namaProdi));
-            $filename .= "_" . $cleanProdiName;
-        }
-        $filename .= "_" . ($tahunTerakhir !== 'all' ? $tahunTerakhir . "_tahun_terakhir" : "semua_tahun");
-        $filename .= "_" . Carbon::now()->format('Ymd_His') . ".csv";
-
-        $headers = [
-            'No',
-            'Judul',
-            'Pengarang',
-            'Kota Terbit',
-            'Penerbit',
-            'Tahun Terbit',
-            'Eksemplar',
-            'Link'
-        ];
-
-        $callback = function () use ($data, $headers, $namaProdi, $tahunTerakhir) {
-            if (ob_get_level()) {
-                ob_end_clean();
-            }
-            $file = fopen('php://output', 'w');
-            fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF));
-
-            $judulProdi = 'Daftar Koleksi E-Book - ' . ($namaProdi ?: 'Semua Program Studi');
-            $judulTahun = ($tahunTerakhir !== 'all') ? ('Tahun Terbit: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun Terbit';
-            fputcsv($file, [$judulProdi . ' - ' . $judulTahun], ';');
-            fputcsv($file, [''], ';');
-            fputcsv($file, $headers, ';');
-
-            $i = 1;
-            foreach ($data as $row) {
-                $rowData = [
-                    $i++,
-                    $row->Judul,
-                    $row->Pengarang,
-                    $row->Kota_Terbit,
-                    $row->Penerbit,
-                    (int) $row->Tahun_Terbit,
-                    (int) $row->Eksemplar,
-                    $row->Link_Ebook
-                ];
-                fputcsv($file, $rowData, ';');
-            }
-            fclose($file);
-        };
-
-        return response()->streamDownload($callback, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ]);
-    }
-
-    /**
-     * Ekspor data prosiding ke format CSV.
-     *
-     * @param \Illuminate\Support\Collection $data
-     * @param string $namaProdi
-     * @param string $tahunTerakhir
-     * @return \Symfony\Component\HttpFoundation\StreamedResponse
-     */
-    private function exportCsvProsiding($data, $namaProdi, $tahunTerakhir)
-    {
-
-        $filename = "koleksi_prosiding";
-        if ($namaProdi && $namaProdi !== 'Pilih Program Studi' && $namaProdi !== 'Semua Program Studi') {
-            $cleanProdiName = preg_replace('/[^a-zA-Z0-9 ]/', '', str_replace(' ', '_', $namaProdi));
-            $filename .= "_" . $cleanProdiName;
-        }
-        $filename .= "_" . ($tahunTerakhir !== 'all' ? $tahunTerakhir . "_tahun_terakhir" : "semua_tahun");
-        $filename .= "_" . Carbon::now()->format('Ymd_His') . ".csv";
-
-        // --- PERUBAHAN 1: Sesuaikan Headers CSV agar lengkap ---
-        $headers = [
-            'No',
-            //'Kelas',
-            'Judul',
-            'Pengarang',
-            'Penerbit',
-            'Tahun Terbit',
-            'Nomor',
-            'Issue',
-            'Eksemplar',
-            'Lokasi',
-            'Link'
-        ];
-
-        $callback = function () use ($data, $headers, $namaProdi, $tahunTerakhir) {
-            if (ob_get_level()) {
-                ob_end_clean();
-            }
-            $file = fopen('php://output', 'w');
-            fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF));
-
-            // Penyesuaian minor pada judul daftar
-            $judulProdi = 'Daftar Koleksi Prosiding - ' . ($namaProdi ?: 'Semua Program Studi');
-            $judulTahun = ($tahunTerakhir !== 'all') ? ('Tahun Terbit: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun Terbit';
-            fputcsv($file, [$judulProdi . ' - ' . $judulTahun], ';');
-            fputcsv($file, [''], ';'); // Baris kosong
-            fputcsv($file, $headers, ';');
-
-            $i = 1;
-            foreach ($data as $row) {
-                // --- PERUBAHAN 2: Sesuaikan Data per Baris agar lengkap ---
-                $rowData = [
-                    $i++,
-                    //$row->Kelas,
-                    $row->Judul,
-                    $row->Pengarang,
-                    $row->Penerbit,
-                    (int) $row->TahunTerbit,
-                    $row->Nomor,
-                    (int) $row->Issue,
-                    (int) $row->Eksemplar,
-                    $row->Lokasi,
-                    $row->Link
-                ];
-                fputcsv($file, $rowData, ';');
-            }
-            fclose($file);
-        };
-
-        return response()->streamDownload($callback, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ]);
-    }
-
-    /**
-     * Ekspor data periodikal ke format CSV.
-     *
-     * @param \Illuminate\Support\Collection $data
-     * @param string $namaProdi
-     * @param string $tahunTerakhir
-     * @return \Symfony\Component\HttpFoundation\StreamedResponse
-     */
-    private function exportCsvPeriodikal($data, $namaProdi, $tahunTerakhir)
-    {
-
-        $filename = "koleksi_periodikal";
-        if ($namaProdi && $namaProdi !== 'Pilih Program Studi' && $namaProdi !== 'Semua Program Studi') {
-            $cleanProdiName = preg_replace('/[^a-zA-Z0-9 ]/', '', str_replace(' ', '_', $namaProdi));
-            $filename .= "_" . $cleanProdiName;
-        }
-        $filename .= "_" . ($tahunTerakhir !== 'all' ? $tahunTerakhir . "_tahun_terakhir" : "semua_tahun");
-        $filename .= "_" . Carbon::now()->format('Ymd_His') . ".csv";
-
-        // --- PERUBAHAN 1: Sesuaikan Headers CSV agar lengkap ---
-        $headers = [
-            'No',
-            'Kelas',
-            'Jenis',
-            'Judul',
-            'Penerbit',
-            'Tahun Terbit',
-            'Nomor',
-            'Issue',
-            'Eksemplar',
-            'Lokasi'
-        ];
-
-        $callback = function () use ($data, $headers, $namaProdi, $tahunTerakhir) {
-            if (ob_get_level()) {
-                ob_end_clean();
-            }
-            $file = fopen('php://output', 'w');
-            fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF));
-
-            // Penyesuaian minor pada judul daftar
-            $judulProdi = 'Daftar Koleksi Periodikal - ' . ($namaProdi ?: 'Semua Program Studi');
-            $judulTahun = ($tahunTerakhir !== 'all') ? ('Tahun Terbit: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun Terbit';
-            fputcsv($file, [$judulProdi . ' - ' . $judulTahun], ';');
-            fputcsv($file, [''], ';'); // Baris kosong
-            fputcsv($file, $headers, ';');
-
-            $i = 1;
-            foreach ($data as $row) {
-                $rowData = [
-                    $i++,
-                    $row->Kelas,
-                    $row->Jenis,
-                    $row->Judul,
-                    $row->Penerbit_Lengkap, // Menggunakan gabungan penerbit & tempat terbit
-                    $row->Tahun_Terbit,
-                    $row->Nomor,
-                    (int) $row->Issue,
-                    (int) $row->Eksemplar,
-                    $row->Lokasi,
-                ];
-                fputcsv($file, $rowData, ';');
             }
             fclose($file);
         };

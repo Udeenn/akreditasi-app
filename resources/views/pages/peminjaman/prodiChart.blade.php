@@ -784,12 +784,12 @@
                         const sDate = document.getElementById('start_date').value;
                         const eDate = document.getElementById('end_date').value;
                         periodText = `Periode ${sDate} s.d. ${eDate}`;
-                        periodSuffixForFile = `${sDate}_sd_${eDate}`;
+                        periodSuffixForFile = `Harian_${sDate}_sd_${eDate}`;
                     } else {
                         const sYear = document.getElementById('start_year').value;
                         const eYear = document.getElementById('end_year').value;
                         periodText = `Tahun ${sYear} - ${eYear}`;
-                        periodSuffixForFile = `Tahun_${sYear}-${eYear}`;
+                        periodSuffixForFile = `Tahunan_${sYear}-${eYear}`;
                     }
 
                     // --- 2. SUSUN ISI CSV ---
@@ -829,7 +829,7 @@
 
                     // Nama File (Bersihkan karakter aneh untuk nama file)
                     const safeProdiName = selectedProdiText.replace(/[^a-z0-9]/gi, '_').replace(/_+/g, '_');
-                    const fileName = `Statistik_Sirkulasi_${safeProdiName}_${periodSuffixForFile}.csv`;
+                    const fileName = `Laporan_Peminjaman_${safeProdiName}_${periodSuffixForFile}.csv`;
 
                     const link = document.createElement("a");
                     link.href = URL.createObjectURL(blob);

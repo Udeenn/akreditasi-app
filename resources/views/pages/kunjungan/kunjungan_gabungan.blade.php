@@ -287,6 +287,17 @@
                                 </button>
                             </div>
                         </form>
+                        
+                        <form id="pdfExportForm" method="POST" action="{{ route('kunjungan.keseluruhan.export_pdf') }}" style="display:none;">
+                            @csrf
+                            <input type="hidden" name="filter_type" value="{{ $filterType ?? 'yearly' }}">
+                            <input type="hidden" name="start_year" value="{{ $startYear ?? '' }}">
+                            <input type="hidden" name="end_year" value="{{ $endYear ?? '' }}">
+                            <input type="hidden" name="start_date" value="{{ $startDate ?? '' }}">
+                            <input type="hidden" name="end_date" value="{{ $endDate ?? '' }}">
+                            <input type="hidden" name="lokasi" value="{{ $selectedLokasi ?? '' }}">
+                            <input type="hidden" name="chart_image_base64" id="chart_image_base64">
+                        </form>
                     </div>
                 </div>
             </div>
@@ -393,8 +404,11 @@
                                 <h6 class="fw-bold m-0 text-primary">
                                     <i class="fas fa-table me-2"></i>Rincian Data
                                 </h6>
-                                <button id="exportCsvBtn" class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
-                                </button>
+                                <div>
+                                    <button type="button" id="exportPdfBtn" class="btn btn-danger btn-sm fw-bold shadow-sm px-3 me-2"><i class="fas fa-file-pdf me-2"></i> Cetak PDF</button>
+                                    <button id="exportCsvBtn" class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
+                                    </button>
+                                </div>
                             </div>
                             <div class="card-body p-0">
                                 <!-- Custom Control Bar -->
@@ -634,7 +648,7 @@
                     });
                     const data = Object.values(chartData);
 
-                    new Chart(ctx2d, {
+                    window.kunjunganChartInstance = new Chart(ctx2d, {
                         type: 'line',
                         data: {
                             labels: labels,
@@ -686,6 +700,20 @@
                         }
                     });
                 }
+            }
+            // --- EXPORT PDF LOGIC ---
+            const exportPdfBtn = document.getElementById('exportPdfBtn');
+            const pdfExportForm = document.getElementById('pdfExportForm');
+            const chartImageInput = document.getElementById('chart_image_base64');
+            
+            if (exportPdfBtn) {
+                exportPdfBtn.addEventListener('click', function() {
+                    if (typeof window.kunjunganChartInstance !== 'undefined' && window.kunjunganChartInstance) {
+                        const base64Image = window.kunjunganChartInstance.toBase64Image();
+                        chartImageInput.value = base64Image;
+                    }
+                    pdfExportForm.submit();
+                });
             }
         });
     </script>

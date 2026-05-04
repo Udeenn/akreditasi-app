@@ -114,6 +114,7 @@ Route::middleware('auth')->group(function () {
     // Laporan
     // =============================================
     Route::get('/kunjungan/keseluruhan', [VisitHistory::class, 'laporanKunjunganGabungan'])->name('kunjungan.keseluruhan');
+    Route::post('/kunjungan/keseluruhan/export-pdf', [VisitHistory::class, 'exportPdfKunjunganGabungan'])->name('kunjungan.keseluruhan.export_pdf');
 
     // =============================================
     // Peminjaman
@@ -121,6 +122,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('peminjaman')->name('peminjaman.')->group(function () {
         Route::get('/keseluruhan', [PeminjamanController::class, 'pertanggal'])->name('keseluruhan');
         Route::get('/export-detail', [PeminjamanController::class, 'exportDetailCsv'])->name('export_detail');
+        Route::post('/keseluruhan/export-pdf', [PeminjamanController::class, 'exportPdfKeseluruhan'])->name('export_pdf_keseluruhan');
         Route::get('/prodi', [PeminjamanController::class, 'peminjamanProdiChart'])->name('prodi');
         Route::get('/export-detail-prodi', [PeminjamanController::class, 'exportDetailProdiCsv'])->name('export_detail_prodi');
         Route::get('/cek-pinjaman', [PeminjamanController::class, 'checkHistory'])->name('cek_pinjaman');

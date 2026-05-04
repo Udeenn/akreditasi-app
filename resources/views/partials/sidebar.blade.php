@@ -107,7 +107,7 @@
                     href="{{ route('kunjungan.fakultasTable') }}">Per Fakultas</a>
             </li>
             <li><a class="nav-link {{ request()->routeIs('kunjungan.keseluruhan') ? 'active' : '' }}"
-                    href="{{ route('kunjungan.keseluruhan') }}">Perpustakaan</a></li>
+                    href="{{ route('kunjungan.keseluruhan') }}">Keseluruhan</a></li>
             <li><a class="nav-link {{ request()->routeIs('kunjungan.prodi') ? 'active' : '' }}"
                     href="{{ route('kunjungan.prodi') }}">Civitas Akademika</a></li>
             <li><a class="nav-link {{ request()->routeIs('kunjungan.cekKehadiran') ? 'active' : '' }}"

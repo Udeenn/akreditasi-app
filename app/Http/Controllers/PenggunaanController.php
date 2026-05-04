@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
 
 class PenggunaanController extends Controller
 {
+    use \App\Traits\CsvExportable;
     public function keterpakaianKoleksi(Request $request)
     {
         if ($request->query('export') === 'csv') {
@@ -190,58 +191,39 @@ class PenggunaanController extends Controller
         })->values();
 
 
-        $fileName = 'keterpakaian_koleksi_';
+        $fileName = 'Laporan_Keterpakaian_Koleksi_';
         if ($filterType == 'daily') {
-            $start = Carbon::parse($request->input('start_date'))->format('Ymd');
-            $end = Carbon::parse($request->input('end_date'))->format('Ymd');
-            $fileName .= "harian_{$start}-{$end}.csv";
+            $start = Carbon::parse($request->input('start_date'))->format('Y-m-d');
+            $end = Carbon::parse($request->input('end_date'))->format('Y-m-d');
+            $fileName .= "Harian_{$start}_sd_{$end}.csv";
         } else { // monthly
             $start = Carbon::parse($request->input('start_month'))->format('Y-m');
             $end = Carbon::parse($request->input('end_month'))->format('Y-m');
-            $fileName .= "bulanan_{$start}-{$end}.csv";
+            $fileName .= "Bulanan_{$start}_sd_{$end}.csv";
         }
 
-        $headers = array(
-            "Content-type"        => "text/csv",
-            "Content-Disposition" => "attachment; filename=$fileName",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
-        );
+        $headerRow = ['Periode'];
+        foreach ($listKategori as $kategori) {
+            $headerRow[] = $kategori;
+        }
+        $headerRow[] = 'Total';
 
-        $callback = function () use ($dataTabel, $listKategori, $filterType) {
-            $file = fopen('php://output', 'w');
+        return $this->streamCsvExport($dataTabel, $fileName, $headerRow, function ($row) use ($listKategori, $filterType) {
+            $dataRow = [];
+            $periodeFormatted = ($filterType == 'daily')
+                ? Carbon::parse($row['periode'])->format('d M Y')
+                : Carbon::parse($row['periode'])->format('M Y');
+            $dataRow[] = $periodeFormatted;
 
-            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            $totalPerRow = collect($row)->except('periode')->sum();
 
-            // Header
-            $headerRow = ['Periode'];
             foreach ($listKategori as $kategori) {
-                $headerRow[] = $kategori;
+                $dataRow[] = $row[$kategori] ?? 0;
             }
-            $headerRow[] = 'Total';
-            fputcsv($file, $headerRow, ';');
-
-            // Body
-            foreach ($dataTabel as $row) {
-                $dataRow = [];
-                $periodeFormatted = ($filterType == 'daily')
-                    ? Carbon::parse($row['periode'])->format('d M Y')
-                    : Carbon::parse($row['periode'])->format('M Y');
-                $dataRow[] = $periodeFormatted;
-
-                $totalPerRow = collect($row)->except('periode')->sum();
-
-                foreach ($listKategori as $kategori) {
-                    $dataRow[] = $row[$kategori] ?? 0;
-                }
-                $dataRow[] = $totalPerRow;
-                fputcsv($file, $dataRow, ';');
-            }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+            $dataRow[] = $totalPerRow;
+            
+            return $dataRow;
+        });
     }
 
     public function cekBuku(Request $request)
@@ -558,53 +540,37 @@ class PenggunaanController extends Controller
         $laporanTitle = "Laporan Buku Terlaris - Kategori: $kategoriTitle";
         $periodeTitle = "Periode: $bulanTitle $tahun";
 
-        $fileName = "export_sering_dibaca_{$kategori}_{$tahun}";
+        $tipe = $bulan ? 'Bulanan' : 'Tahunan';
+        $fileName = "Laporan_Buku_Terlaris_{$kategoriTitle}_{$tipe}_{$tahun}";
         if ($bulan) {
             $fileName .= "_" . str_pad($bulan, 2, '0', STR_PAD_LEFT);
         }
         $fileName .= ".csv";
 
-        $headers = [
-            "Content-type"        => "text/csv",
-            "Content-Disposition" => "attachment; filename=$fileName",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
-        ];
+        $titles = [$laporanTitle, $periodeTitle];
+        $csvHeaders = ['No', 'Judul Buku', 'Pengarang', 'Jumlah Penggunaan'];
 
         // Step 6: Stream CSV — hydrate judul+author per batch
-        $callback = function () use ($sortedData, $laporanTitle, $periodeTitle) {
-            $delimiter = ';';
-            $file = fopen('php://output', 'w');
-            fputcsv($file, [$laporanTitle], $delimiter);
-            fputcsv($file, [$periodeTitle], $delimiter);
-            fputcsv($file, [], $delimiter);
-            fputcsv($file, ['No', 'Judul Buku', 'Pengarang', 'Jumlah Penggunaan'], $delimiter);
+        return $this->streamCsvExport($sortedData->chunk(200), $fileName, $csvHeaders, function ($chunk, &$index) {
+            $ids = $chunk->pluck('biblionumber')->toArray();
 
-            $index = 0;
-            foreach ($sortedData->chunk(200) as $chunk) {
-                $ids = $chunk->pluck('biblionumber')->toArray();
+            $details = DB::connection('mysql2')->table('biblio')
+                ->select('biblionumber', 'title', 'author')
+                ->whereIn('biblionumber', $ids)
+                ->get()
+                ->keyBy('biblionumber');
 
-                $details = DB::connection('mysql2')->table('biblio')
-                    ->select('biblionumber', 'title', 'author')
-                    ->whereIn('biblionumber', $ids)
-                    ->get()
-                    ->keyBy('biblionumber');
-
-                foreach ($chunk as $row) {
-                    $index++;
-                    $detail = $details[$row->biblionumber] ?? null;
-                    fputcsv($file, [
-                        $index,
-                        $detail ? $detail->title : 'Judul Tidak Diketahui',
-                        $detail ? $detail->author : '-',
-                        $row->jumlah_penggunaan
-                    ], $delimiter);
-                }
+            $results = [];
+            foreach ($chunk as $row) {
+                $detail = $details[$row->biblionumber] ?? null;
+                $results[] = [
+                    $index++,
+                    $detail ? $detail->title : 'Judul Tidak Diketahui',
+                    $detail ? $detail->author : '-',
+                    $row->jumlah_penggunaan
+                ];
             }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+            return $results;
+        }, $titles);
     }
 }

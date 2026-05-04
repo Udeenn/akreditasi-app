@@ -249,6 +249,16 @@
                                 </button>
                             </div>
                         </form>
+                        
+                        <form id="pdfExportForm" method="POST" action="{{ route('peminjaman.export_pdf_keseluruhan') }}" style="display:none;">
+                            @csrf
+                            <input type="hidden" name="filter_type" value="{{ $filterType ?? 'daily' }}">
+                            <input type="hidden" name="start_date" value="{{ $startDate ?? '' }}">
+                            <input type="hidden" name="end_date" value="{{ $endDate ?? '' }}">
+                            <input type="hidden" name="start_year" value="{{ $startYear ?? '' }}">
+                            <input type="hidden" name="end_year" value="{{ $endYear ?? '' }}">
+                            <input type="hidden" name="chart_image_base64" id="chart_image_base64">
+                        </form>
                     </div>
                 </div>
             </div>
@@ -352,8 +362,11 @@
                             <h6 class="fw-bold m-0 text-primary">
                                 <i class="fas fa-table me-2"></i>Rincian Data Peminjaman
                             </h6>
-                            <button type="button" id="exportCsvBtn" class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
-                            </button>
+                            <div>
+                                <button type="button" id="exportPdfBtn" class="btn btn-danger btn-sm fw-bold shadow-sm px-3 me-2"><i class="fas fa-file-pdf me-2"></i> Cetak PDF</button>
+                                <button type="button" id="exportCsvBtn" class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
+                                </button>
+                            </div>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
@@ -557,7 +570,7 @@
                 gradientInfo.addColorStop(0, 'rgba(13, 202, 240, 0.5)');
                 gradientInfo.addColorStop(1, 'rgba(13, 202, 240, 0.05)');
 
-                new Chart(ctx, {
+                window.peminjamanChartInstance = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: chartLabels,
@@ -793,19 +806,21 @@
                     const delimiter = ';';
                     let title = "Laporan Statistik Peminjaman";
 
-                    // Tambahkan detail periode ke judul (opsional, agar lebih informatif)
+                    let periodSuffixForFile = '';
                     if (filterType === 'daily') {
                         const startDate = document.getElementById('start_date').value;
                         const endDate = document.getElementById('end_date').value;
                         title += ` (Harian: ${startDate} s/d ${endDate})`;
+                        periodSuffixForFile = `Harian_${startDate}_sd_${endDate}`;
                     } else {
                         const startYear = document.getElementById('start_year').value;
                         const endYear = document.getElementById('end_year').value;
-                        title += ` (Bulanan: ${startYear} s/d ${endYear})`;
+                        title += ` (Tahunan: ${startYear} s/d ${endYear})`;
+                        periodSuffixForFile = `Tahunan_${startYear}_sd_${endYear}`;
                     }
 
-                    csv.push(title);
-                    csv.push("");
+                    csv.push([title]);
+                    csv.push([]);
                     const headers = ['No', 'Periode', 'Peminjaman', 'Perpanjangan', 'Pengembalian',
                         'Total Sirkulasi', 'Total Peminjam'
                     ];
@@ -846,8 +861,7 @@
                     });
 
                     const link = document.createElement("a");
-                    let fileName = 'statistik_sirkulasi_' + new Date().toISOString().slice(0, 10).replace(
-                        /-/g, '') + '.csv';
+                    let fileName = `Laporan_Peminjaman_Keseluruhan_${periodSuffixForFile}.csv`;
 
                     if (navigator.msSaveBlob) { // IE 10+
                         navigator.msSaveBlob(blob, fileName);
@@ -859,6 +873,26 @@
                         document.body.removeChild(link);
                         URL.revokeObjectURL(link.href); // Bersihkan memory
                     }
+                });
+            }
+            
+            // --- EXPORT PDF LOGIC ---
+            const exportPdfBtn = document.getElementById('exportPdfBtn');
+            const pdfExportForm = document.getElementById('pdfExportForm');
+            const chartImageInput = document.getElementById('chart_image_base64');
+            
+            if (exportPdfBtn) {
+                exportPdfBtn.addEventListener('click', function() {
+                    // Capture Chart as Base64 Image if chartInstance exists
+                    if (typeof window.peminjamanChartInstance !== 'undefined' && window.peminjamanChartInstance) {
+                        // setTimeout is used to ensure any animation is finished before capturing, 
+                        // but since it's user-triggered, it should already be fully rendered.
+                        const base64Image = window.peminjamanChartInstance.toBase64Image();
+                        chartImageInput.value = base64Image;
+                    }
+                    
+                    // Submit the hidden form
+                    pdfExportForm.submit();
                 });
             }
         });

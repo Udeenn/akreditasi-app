@@ -13,127 +13,10 @@ use Illuminate\Support\Facades\Cache;
 
 class PeminjamanController extends Controller
 {
+    use \App\Traits\CsvExportable;
 
 
-//     public function pertanggal(Request $request)
-// {
-//     $filterType = $request->input('filter_type', 'daily');
-
-//     // Inisialisasi Default Values
-//     $totalBooks = 0;
-//     $totalReturns = 0;
-//     $totalBorrowers = 0;
-//     $rerataPeminjaman = 0;
-//     $fullStatisticsForChart = collect();
-
-//     $statistics = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10, 1, [
-//         'path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(),
-//         'query' => $request->query(),
-//     ]);
-
-//     $hasFilter = $request->filled('start_date') || $request->filled('end_date') ||
-//                  $request->filled('start_year') || $request->filled('end_year');
-
-//     // Variabel View Default
-//     $startDate = $request->input('start_date', \Carbon\Carbon::now()->subDays(30)->format('Y-m-d'));
-//     $endDate   = $request->input('end_date', \Carbon\Carbon::now()->format('Y-m-d'));
-//     $startYear = $request->input('start_year', \Carbon\Carbon::now()->year);
-//     $endYear   = $request->input('end_year', \Carbon\Carbon::now()->year);
-
-//     if ($hasFilter) {
-//         try {
-//             // --- 1. SETUP TANGGAL ---
-//             if ($filterType == 'daily') {
-//                 $start = \Carbon\Carbon::parse($startDate)->startOfDay();
-//                 $end   = \Carbon\Carbon::parse($endDate)->endOfDay();
-//             } else {
-//                 if ($startYear > $endYear) {
-//                     [$startYear, $endYear] = [$endYear, $startYear];
-//                 }
-//                 $start = \Carbon\Carbon::createFromDate($startYear, 1, 1)->startOfDay();
-//                 $end   = \Carbon\Carbon::createFromDate($endYear, 12, 31)->endOfDay();
-//             }
-
-//             if ($start->greaterThan($end)) {
-//                 [$start, $end] = [$end, $start];
-//             }
-//             $startDate = $start->format('Y-m-d');
-//             $endDate   = $end->format('Y-m-d');
-
-//             // --- 2. QUERY SUMMARY (TOTAL) ---
-//             $summaryData = DB::connection('mysql2')->table('statistics as s')
-//                 ->select(
-//                     DB::raw('COUNT(CASE WHEN s.type IN ("issue", "renew") THEN 1 END) as total_books'),
-//                     DB::raw('COUNT(CASE WHEN s.type = "return" THEN 1 END) as total_returns'),
-//                     DB::raw('COUNT(DISTINCT CASE WHEN s.type IN ("issue", "renew") THEN s.borrowernumber END) as total_borrowers')
-//                 )
-//                 ->whereBetween('s.datetime', [$start, $end])
-//                 ->first();
-
-//             if ($summaryData) {
-//                 $totalBooks = $summaryData->total_books;
-//                 $totalReturns = $summaryData->total_returns;
-//                 $totalBorrowers = $summaryData->total_borrowers;
-//             }
-
-//             // --- 3. QUERY UTAMA (CHART & TABEL) ---
-//             // UPDATE: Kita ambil type 'return' juga, dan pakai SUM(CASE...) untuk memisahkan kolom
-//             $query = DB::connection('mysql2')->table('statistics as s')
-//                 ->whereIn('s.type', ['issue', 'renew', 'return']) // Sertakan 'return'
-//                 ->whereBetween('s.datetime', [$start, $end]);
-
-//             if ($filterType == 'daily') {
-//                 $query->select(
-//                     DB::raw('DATE(s.datetime) as periode'),
-//                     // Hitung Peminjaman
-//                     DB::raw('SUM(CASE WHEN s.type IN ("issue", "renew") THEN 1 ELSE 0 END) as jumlah_peminjaman_buku'),
-//                     // Hitung Pengembalian (BARU)
-//                     DB::raw('SUM(CASE WHEN s.type = "return" THEN 1 ELSE 0 END) as jumlah_pengembalian'),
-//                     // Hitung Peminjam Unik
-//                     DB::raw('COUNT(DISTINCT CASE WHEN s.type IN ("issue", "renew") THEN s.borrowernumber END) as jumlah_peminjam_unik')
-//                 );
-//             } else {
-//                 $query->select(
-//                     DB::raw('DATE_FORMAT(s.datetime, "%Y-%m") as periode'),
-//                     DB::raw('SUM(CASE WHEN s.type IN ("issue", "renew") THEN 1 ELSE 0 END) as jumlah_peminjaman_buku'),
-//                     DB::raw('SUM(CASE WHEN s.type = "return" THEN 1 ELSE 0 END) as jumlah_pengembalian'),
-//                     DB::raw('COUNT(DISTINCT CASE WHEN s.type IN ("issue", "renew") THEN s.borrowernumber END) as jumlah_peminjam_unik')
-//                 );
-//             }
-
-//             $fullStatisticsForChart = $query->groupBy('periode')
-//                 ->orderBy('periode', 'asc')
-//                 ->get();
-
-//             // --- 4. RERATA & PAGINASI ---
-//             $jumlahPeriode = $fullStatisticsForChart->count();
-//             $rerataPeminjaman = ($jumlahPeriode > 0) ? ($totalBooks / $jumlahPeriode) : 0;
-
-//             $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
-//             $perPage = 10;
-//             $items = $fullStatisticsForChart->slice(($page - 1) * $perPage, $perPage)->values();
-
-//             $statistics = new \Illuminate\Pagination\LengthAwarePaginator(
-//                 $items,
-//                 $fullStatisticsForChart->count(),
-//                 $perPage,
-//                 $page,
-//                 ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
-//             );
-
-//         } catch (\Exception $e) {
-//             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
-//         }
-//     }
-
-//     return view('pages.peminjaman.peminjamanRentangTanggal', compact(
-//         'statistics', 'fullStatisticsForChart', 'startDate', 'endDate',
-//         'startYear', 'endYear', 'filterType', 'totalBooks', 'totalReturns',
-//         'totalBorrowers', 'rerataPeminjaman'
-//     ));
-// }
-
-    public function pertanggal(Request $request)
+public function pertanggal(Request $request)
 {
     $filterType = $request->input('filter_type', 'daily');
 
@@ -249,6 +132,109 @@ class PeminjamanController extends Controller
     ));
 }
 
+    public function exportPdfKeseluruhan(Request $request)
+    {
+        $filterType = $request->input('filter_type', 'daily');
+
+        // Variabel View Default
+        $startDate = $request->input('start_date', \Carbon\Carbon::now()->subDays(30)->format('Y-m-d'));
+        $endDate   = $request->input('end_date', \Carbon\Carbon::now()->format('Y-m-d'));
+        $startYear = $request->input('start_year', \Carbon\Carbon::now()->year);
+        $endYear   = $request->input('end_year', \Carbon\Carbon::now()->year);
+        
+        $chartImage = $request->input('chart_image_base64');
+
+        $totalBooks = 0; $totalReturns = 0; $totalBorrowers = 0; $totalCirculation = 0; $rerataPeminjaman = 0;
+        $fullStatisticsForChart = collect();
+
+        try {
+            // --- 1. SETUP TANGGAL ---
+            if ($filterType == 'daily') {
+                $start = \Carbon\Carbon::parse($startDate)->startOfDay();
+                $end   = \Carbon\Carbon::parse($endDate)->endOfDay();
+                $periodeText = "Harian: " . $start->locale('id')->isoFormat('D MMMM YYYY') . " s/d " . $end->locale('id')->isoFormat('D MMMM YYYY');
+                $filename = "Laporan_Peminjaman_Keseluruhan_Harian_{$startDate}_sd_{$endDate}.pdf";
+            } else {
+                if ($startYear > $endYear) {
+                    [$startYear, $endYear] = [$endYear, $startYear];
+                }
+                $start = \Carbon\Carbon::createFromDate($startYear, 1, 1)->startOfDay();
+                $end   = \Carbon\Carbon::createFromDate($endYear, 12, 31)->endOfDay();
+                $periodeText = "Tahunan: {$startYear} s/d {$endYear}";
+                $filename = "Laporan_Peminjaman_Keseluruhan_Tahunan_{$startYear}_sd_{$endYear}.pdf";
+            }
+
+            if ($start->greaterThan($end)) {
+                [$start, $end] = [$end, $start];
+            }
+
+            // --- 2. QUERY SUMMARY (TOTAL) ---
+            $summaryData = DB::connection('mysql2')->table('statistics as s')
+                ->select(
+                    DB::raw('COUNT(CASE WHEN s.type IN ("issue", "renew") THEN 1 END) as total_books'),
+                    DB::raw('COUNT(CASE WHEN s.type = "return" THEN 1 END) as total_returns'),
+                    DB::raw('COUNT(DISTINCT CASE WHEN s.type IN ("issue", "renew") THEN s.borrowernumber END) as total_borrowers')
+                )
+                ->whereBetween('s.datetime', [$start, $end])
+                ->first();
+
+            if ($summaryData) {
+                $totalBooks = $summaryData->total_books;
+                $totalReturns = $summaryData->total_returns;
+                $totalBorrowers = $summaryData->total_borrowers;
+                $totalCirculation = $totalBooks + $totalReturns;
+            }
+
+            // --- 3. QUERY UTAMA ---
+            $query = DB::connection('mysql2')->table('statistics as s')
+                ->whereIn('s.type', ['issue', 'renew', 'return'])
+                ->whereBetween('s.datetime', [$start, $end]);
+
+            if ($filterType == 'daily') {
+                $query->select(
+                    DB::raw('DATE(s.datetime) as periode'),
+                    DB::raw('SUM(CASE WHEN s.type = "issue" THEN 1 ELSE 0 END) as jumlah_issue'),
+                    DB::raw('SUM(CASE WHEN s.type = "renew" THEN 1 ELSE 0 END) as jumlah_renew'),
+                    DB::raw('SUM(CASE WHEN s.type = "return" THEN 1 ELSE 0 END) as jumlah_pengembalian'),
+                    DB::raw('COUNT(*) as total_sirkulasi'),
+                    DB::raw('COUNT(DISTINCT CASE WHEN s.type IN ("issue", "renew") THEN s.borrowernumber END) as jumlah_peminjam_unik')
+                );
+            } else {
+                $query->select(
+                    DB::raw('DATE_FORMAT(s.datetime, "%Y-%m") as periode'),
+                    DB::raw('SUM(CASE WHEN s.type = "issue" THEN 1 ELSE 0 END) as jumlah_issue'),
+                    DB::raw('SUM(CASE WHEN s.type = "renew" THEN 1 ELSE 0 END) as jumlah_renew'),
+                    DB::raw('SUM(CASE WHEN s.type = "return" THEN 1 ELSE 0 END) as jumlah_pengembalian'),
+                    DB::raw('COUNT(*) as total_sirkulasi'),
+                    DB::raw('COUNT(DISTINCT CASE WHEN s.type IN ("issue", "renew") THEN s.borrowernumber END) as jumlah_peminjam_unik')
+                );
+            }
+
+            $fullStatisticsForChart = $query->groupBy('periode')->orderBy('periode', 'asc')->get();
+
+            $jumlahPeriode = $fullStatisticsForChart->count();
+            $rerataPeminjaman = ($jumlahPeriode > 0) ? ($totalCirculation / $jumlahPeriode) : 0;
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat generate PDF: ' . $e->getMessage());
+        }
+
+        // Get absolute path of logo
+        $logoPath = public_path('img/ums.png');
+        $logoBase64 = '';
+        if (file_exists($logoPath)) {
+            $logoData = file_get_contents($logoPath);
+            $logoBase64 = 'data:image/png;base64,' . base64_encode($logoData);
+        }
+
+        // To generate PDF
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.peminjaman.pdf.peminjamanKeseluruhan', compact(
+            'fullStatisticsForChart', 'filterType', 'periodeText', 'totalBooks', 'totalReturns',
+            'totalBorrowers', 'totalCirculation', 'rerataPeminjaman', 'chartImage', 'logoBase64'
+        ))->setPaper('a4', 'landscape');
+
+        return $pdf->download($filename);
+    }
 
     public function getDetailPeminjaman(Request $request)
     {
@@ -348,12 +334,12 @@ class PeminjamanController extends Controller
             $startOfDay = \Carbon\Carbon::parse($periode)->startOfDay();
             $endOfDay = \Carbon\Carbon::parse($periode)->endOfDay();
             $baseQuery->whereBetween('s.datetime', [$startOfDay, $endOfDay]);
-            $filenameDate = $periode;
+            $filenameDate = "Harian_{$periode}";
         } else {
             $startOfMonth = \Carbon\Carbon::parse($periode)->startOfMonth();
             $endOfMonth = \Carbon\Carbon::parse($periode)->endOfMonth();
             $baseQuery->whereBetween('s.datetime', [$startOfMonth, $endOfMonth]);
-            $filenameDate = \Carbon\Carbon::parse($periode)->format('m-Y');
+            $filenameDate = "Bulanan_" . \Carbon\Carbon::parse($periode)->format('m-Y');
         }
 
         // 3. Ambil Data
@@ -371,246 +357,30 @@ class PeminjamanController extends Controller
             ->get();
 
         // 4. Buat Streamed Response untuk CSV
-        $filename = "detail_peminjaman_keseluruhan_{$filenameDate}.csv";
+        $filename = "Laporan_Detail_Peminjaman_Keseluruhan_{$filenameDate}.csv";
+        $headers = ['No', 'NIM', 'Nama Peminjam', 'Judul Buku', 'Waktu Transaksi', 'Tipe Transaksi'];
 
-        $callback = function () use ($data) {
-            if (ob_get_level()) {
-                ob_end_clean();
-            }
-            $file = fopen('php://output', 'w');
+        return $this->streamCsvExport($data, $filename, $headers, function($row, $index) {
+            $tipe = match ($row->tipe_transaksi) {
+                'issue' => 'Pinjam',
+                'renew' => 'Perpanjang',
+                'return' => 'Kembali',
+                default => $row->tipe_transaksi,
+            };
 
-            // PERBAIKAN HEADER:
-            // BOM (Byte Order Mark) agar Excel baca UTF-8
-            fputs($file, "\xEF\xBB\xBF");
+            $fullName = trim($row->firstname . ' ' . $row->surname);
 
-            $delimiter = ';';
-
-            // Header CSV
-            fputcsv($file, ['No', 'NIM', 'Nama Peminjam', 'Judul Buku', 'Waktu Transaksi', 'Tipe Transaksi'], $delimiter);
-
-            foreach ($data as $index => $row) {
-                $tipe = match ($row->tipe_transaksi) {
-                    'issue' => 'Pinjam',
-                    'renew' => 'Perpanjang',
-                    'return' => 'Kembali',
-                    default => $row->tipe_transaksi,
-                };
-
-                // Nama digabung
-                $fullName = trim($row->firstname . ' ' . $row->surname);
-
-                fputcsv($file, [
-                    $index + 1,
-                    '="' . $row->nim . '"', // Format Text untuk NIM
-                    $fullName,
-                    $row->judul_buku,
-                    $row->waktu_transaksi,
-                    $tipe
-                ], $delimiter);
-            }
-
-            fclose($file);
-        };
-
-        $headers = [
-            "Content-type"        => "text/csv; charset=UTF-8",
-            "Content-Disposition" => "attachment; filename=$filename",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
-        ];
-
-        return response()->stream($callback, 200, $headers);
+            return [
+                $index,
+                '="' . $row->nim . '"', // Format Text untuk NIM
+                $fullName,
+                $row->judul_buku,
+                $row->waktu_transaksi,
+                $tipe
+            ];
+        });
     }
 
-
-    // public function peminjamanProdiChart(Request $request)
-    // {
-    //     // 1. Ambil Data Referensi Prodi
-    //     $prodiFromDb = \App\Models\M_Auv::on('mysql2')
-    //         ->select('authorised_value', 'lib')
-    //         ->where('category', 'PRODI')
-    //         ->whereRaw('CHAR_LENGTH(lib) >= 13')
-    //         ->onlyProdiTampil()
-    //         ->orderBy('authorised_value', 'asc')
-    //         ->get()
-    //         ->map(function ($prodi) {
-    //             $cleanedLib = $prodi->lib;
-    //             if (str_starts_with($cleanedLib, 'FAI/ ')) {
-    //                 $cleanedLib = substr($cleanedLib, 5);
-    //             }
-    //             $prodi->lib = trim($cleanedLib);
-    //             return (object) ['authorised_value' => $prodi->authorised_value, 'lib' => $prodi->lib];
-    //         });
-
-    //     $staticOptions = collect([
-    //         (object) ['authorised_value' => 'DOSEN', 'lib' => 'Dosen'],
-    //         (object) ['authorised_value' => 'STAFF', 'lib' => 'Tenaga Kependidikan (Staff)'],
-    //     ]);
-
-    //     $prodiOptions = $staticOptions->concat($prodiFromDb);
-
-    //     // 2. Setup Filter
-    //     $hasFilter = $request->hasAny(['filter_type', 'start_year', 'end_year', 'start_date', 'end_date', 'selected_prodi']);
-    //     $filterType = $request->input('filter_type', 'yearly');
-    //     $startYear = $request->input('start_year', \Carbon\Carbon::now()->year);
-    //     $endYear = $request->input('end_year', \Carbon\Carbon::now()->year);
-    //     $startDate = $request->input('start_date', \Carbon\Carbon::now()->subDays(30)->format('Y-m-d'));
-    //     $endDate = $request->input('end_date', \Carbon\Carbon::now()->format('Y-m-d'));
-    //     $selectedProdiCode = $request->input('selected_prodi', 'DOSEN');
-
-    //     // Inisialisasi Variable View
-    //     $statistics = collect();
-    //     $allStatistics = collect();
-    //     $chartLabels = collect();
-    //     $chartDatasets = [];
-    //     $dataExists = false;
-
-    //     $totalBooks = 0;      // Issue + Renew
-    //     $totalReturns = 0;    // Return
-    //     $totalBorrowers = 0;  // User Unik
-    //     $totalCirculation = 0; // Issue + Renew + Return
-    //     $rerataPeminjaman = 0;
-
-    //     try {
-    //         if ($hasFilter) {
-    //             // Query Dasar
-    //             $baseQuery = DB::connection('mysql2')->table('statistics as s')
-    //                 ->leftJoin('borrowers as b', 'b.borrowernumber', '=', 's.borrowernumber')
-    //                 ->whereIn('s.type', ['issue', 'renew', 'return']);
-
-    //             // Filter Prodi
-    //             switch (strtoupper($selectedProdiCode)) {
-    //                 case 'DOSEN':
-    //                     $baseQuery->where('b.categorycode', 'like', 'TC%');
-    //                     break;
-    //                 case 'STAFF':
-    //                     $baseQuery->where(function ($query) {
-    //                         $query->where('b.categorycode', 'like', 'STAF%')
-    //                             ->orWhere('b.categorycode', '=', 'LIBRARIAN');
-    //                     });
-    //                     break;
-    //                 default:
-    //                     $baseQuery->leftJoin('borrower_attributes as ba', 'ba.borrowernumber', '=', 'b.borrowernumber')
-    //                         ->where('ba.code', '=', 'PRODI')
-    //                         ->where('ba.attribute', '=', $selectedProdiCode);
-    //                     break;
-    //             }
-
-    //             $queryForTotals = clone $baseQuery;
-
-    //             // Filter Waktu & Select Columns
-    //             if ($filterType == 'daily') {
-    //                 if (\Carbon\Carbon::parse($startDate)->greaterThan(\Carbon\Carbon::parse($endDate))) {
-    //                     [$startDate, $endDate] = [$endDate, $startDate];
-    //                 }
-    //                 $queryForBoth = (clone $baseQuery)
-    //                     ->select(
-    //                         DB::raw('DATE(s.datetime) as periode'),
-    //                         DB::raw('COUNT(CASE WHEN s.type IN ("issue", "renew") THEN s.itemnumber ELSE NULL END) as jumlah_buku_terpinjam'),
-    //                         DB::raw('COUNT(DISTINCT s.borrowernumber) as jumlah_peminjam_unik'),
-    //                         DB::raw('COUNT(CASE WHEN s.type = "return" THEN s.itemnumber ELSE NULL END) as jumlah_buku_kembali'),
-    //                         DB::raw('COUNT(s.itemnumber) as total_sirkulasi') // Total semua tipe
-    //                     )
-    //                     ->whereBetween(DB::raw('DATE(s.datetime)'), [$startDate, $endDate])
-    //                     ->groupBy(DB::raw('DATE(s.datetime)'))
-    //                     ->orderBy(DB::raw('DATE(s.datetime)'), 'ASC');
-
-    //                 $queryForTotals->whereBetween(DB::raw('DATE(s.datetime)'), [$startDate, $endDate]);
-
-    //             } elseif ($filterType == 'yearly') {
-    //                 if ($startYear > $endYear) {
-    //                     [$startYear, $endYear] = [$endYear, $startYear];
-    //                 }
-    //                 $queryForBoth = (clone $baseQuery)
-    //                     ->select(
-    //                         DB::raw('DATE_FORMAT(s.datetime, "%Y-%m") as periode'),
-    //                         DB::raw('COUNT(CASE WHEN s.type IN ("issue", "renew") THEN s.itemnumber ELSE NULL END) as jumlah_buku_terpinjam'),
-    //                         DB::raw('COUNT(DISTINCT s.borrowernumber) as jumlah_peminjam_unik'),
-    //                         DB::raw('COUNT(CASE WHEN s.type = "return" THEN s.itemnumber ELSE NULL END) as jumlah_buku_kembali'),
-    //                         DB::raw('COUNT(s.itemnumber) as total_sirkulasi')
-    //                     )
-    //                     ->whereBetween(DB::raw('YEAR(s.datetime)'), [$startYear, $endYear])
-    //                     ->groupBy(DB::raw('DATE_FORMAT(s.datetime, "%Y-%m")'))
-    //                     ->orderBy(DB::raw('DATE_FORMAT(s.datetime, "%Y-%m")'), 'ASC');
-
-    //                 $queryForTotals->whereBetween(DB::raw('YEAR(s.datetime)'), [$startYear, $endYear]);
-    //             }
-
-    //             // Eksekusi Query
-    //             $allStatistics = (clone $queryForBoth)->get();
-
-    //             if ($allStatistics->isNotEmpty()) {
-    //                 $dataExists = true;
-
-    //                 // Hitung Grand Total dari query totals (lebih akurat untuk distinct borrowers)
-    //                 $totalsData = (clone $queryForTotals)->select(
-    //                     DB::raw('COUNT(CASE WHEN s.type IN ("issue", "renew") THEN s.itemnumber END) as total_buku'),
-    //                     DB::raw('COUNT(DISTINCT s.borrowernumber) as total_peminjam'),
-    //                     DB::raw('COUNT(CASE WHEN s.type = "return" THEN s.itemnumber END) as total_kembali')
-    //                 )->first();
-
-    //                 $totalBooks = $totalsData->total_buku;
-    //                 $totalBorrowers = $totalsData->total_peminjam;
-    //                 $totalReturns = $totalsData->total_kembali;
-
-    //                 // Total Sirkulasi = Pinjam + Kembali
-    //                 $totalCirculation = $totalBooks + $totalReturns;
-
-    //                 // Rerata per periode
-    //                 $jumlahPeriode = $allStatistics->count();
-    //                 $rerataPeminjaman = ($jumlahPeriode > 0) ? ($totalCirculation / $jumlahPeriode) : 0;
-    //             }
-
-    //             // Paginasi Manual
-    //             $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
-    //             $perPage = 10;
-    //             $currentItems = $allStatistics->slice(($page - 1) * $perPage, $perPage)->values();
-    //             $statistics = new \Illuminate\Pagination\LengthAwarePaginator(
-    //                 $currentItems, $allStatistics->count(), $perPage, $page,
-    //                 ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
-    //             );
-
-    //             // Chart Data
-    //             $chartLabels = $allStatistics->pluck('periode')->map(function ($periode) use ($filterType) {
-    //                 return $filterType == 'yearly'
-    //                     ? \Carbon\Carbon::createFromFormat('Y-m', $periode)->format('M Y')
-    //                     : \Carbon\Carbon::parse($periode)->format('d M Y');
-    //             });
-
-    //             $chartDatasets = [
-    //                 [
-    //                     'label' => 'Buku Terpinjam',
-    //                     'data' => $allStatistics->pluck('jumlah_buku_terpinjam'),
-    //                     'backgroundColor' => 'rgba(78, 115, 223, 0.8)',
-    //                     'borderColor' => '#4e73df', 'borderWidth' => 1, 'borderRadius' => 4
-    //                 ],
-    //                 [
-    //                     'label' => 'Pengembalian',
-    //                     'data' => $allStatistics->pluck('jumlah_buku_kembali'),
-    //                     'backgroundColor' => 'rgba(246, 194, 62, 0.8)',
-    //                     'borderColor' => '#f6c23e', 'borderWidth' => 1, 'borderRadius' => 4
-    //                 ],
-    //                 [
-    //                     'label' => 'Total Sirkulasi',
-    //                     'data' => $allStatistics->pluck('total_sirkulasi'),
-    //                     'backgroundColor' => 'rgba(28, 200, 138, 0.8)',
-    //                     'borderColor' => '#1cc88a', 'borderWidth' => 1, 'borderRadius' => 4
-    //                 ]
-    //             ];
-    //         }
-    //     } catch (\Exception $e) {
-    //         return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
-    //     }
-
-    //     return view('pages.peminjaman.prodiChart', compact(
-    //         'prodiOptions', 'startYear', 'endYear', 'selectedProdiCode',
-    //         'filterType', 'startDate', 'endDate', 'statistics',
-    //         'chartLabels', 'chartDatasets', 'dataExists',
-    //         'totalBooks', 'totalBorrowers', 'totalReturns', 'totalCirculation', 'rerataPeminjaman',
-    //         'hasFilter', 'allStatistics'
-    //     ));
-    // }
 
 
     public function peminjamanProdiChart(Request $request)
@@ -991,56 +761,31 @@ class PeminjamanController extends Controller
 
     // Bersihkan nama prodi untuk nama file (ganti spasi jadi underscore, hapus karakter aneh)
     $safeProdiName = preg_replace('/[^A-Za-z0-9]/', '_', $prodiName);
-    $filename = "Detail_Sirkulasi_{$safeProdiName}_{$periode}.csv";
-
-    $callback = function () use ($data, $prodiName, $periodeText) {
-        if (ob_get_level()) {
-            ob_end_clean();
-        }
-        $file = fopen('php://output', 'w');
-
-        // BOM untuk Excel agar karakter utf-8 terbaca
-        fputs($file, "\xEF\xBB\xBF");
-        $delimiter = ';';
-
-        // --- JUDUL DI DALAM CSV ---
-        fputcsv($file, ["Laporan Detail Sirkulasi - " . $prodiName], $delimiter);
-        fputcsv($file, ["Periode: " . $periodeText], $delimiter);
-        fputcsv($file, [], $delimiter); // Baris kosong sebagai pemisah
-
-        // --- HEADER TABEL ---
-        fputcsv($file, ['No', 'NIM', 'Nama Peminjam', 'Judul Buku', 'Waktu Transaksi', 'Tipe Transaksi'], $delimiter);
-
-        // --- ISI DATA ---
-        foreach ($data as $index => $row) {
-            $tipe = match ($row->tipe_transaksi) {
-                'issue' => 'Pinjam',
-                'renew' => 'Perpanjang',
-                'return' => 'Kembali',
-                default => $row->tipe_transaksi,
-            };
-
-            fputcsv($file, [
-                $index + 1,
-                '="' . $row->nim . '"', // Format Text NIM agar tidak jadi scientific number
-                trim($row->firstname . ' ' . $row->surname),
-                $row->judul_buku,
-                $row->waktu_transaksi,
-                $tipe
-            ], $delimiter);
-        }
-        fclose($file);
-    };
-
-    $headers = [
-        "Content-type" => "text/csv",
-        "Content-Disposition" => "attachment; filename=$filename",
-        "Pragma" => "no-cache",
-        "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-        "Expires" => "0"
+    $periodeSuffix = ($filterType === 'daily') ? "Harian_{$periode}" : "Bulanan_{$periode}";
+    $filename = "Laporan_Detail_Sirkulasi_{$safeProdiName}_{$periodeSuffix}.csv";
+    $csvHeaders = ['No', 'NIM', 'Nama Peminjam', 'Judul Buku', 'Waktu Transaksi', 'Tipe Transaksi'];
+    $titles = [
+        "Laporan Detail Sirkulasi - " . $prodiName,
+        "Periode: " . $periodeText
     ];
 
-    return response()->stream($callback, 200, $headers);
+    return $this->streamCsvExport($data, $filename, $csvHeaders, function($row, $index) {
+        $tipe = match ($row->tipe_transaksi) {
+            'issue' => 'Pinjam',
+            'renew' => 'Perpanjang',
+            'return' => 'Kembali',
+            default => $row->tipe_transaksi,
+        };
+
+        return [
+            $index,
+            '="' . $row->nim . '"', // Format Text NIM agar tidak jadi scientific number
+            trim($row->firstname . ' ' . $row->surname),
+            $row->judul_buku,
+            $row->waktu_transaksi,
+            $tipe
+        ];
+    }, $titles);
 }
 
     public function checkHistory(Request $request)
@@ -1240,27 +985,7 @@ class PeminjamanController extends Controller
     public function peminjamanBerlangsung(Request $request)
     {
         // Hanya load data ringan untuk filter dropdown, TANPA query berat ke Koha DB
-        $listProdiFromDb = M_Auv::where('category', 'PRODI')
-            ->whereRaw('CHAR_LENGTH(lib) >= 13')
-            ->onlyProdiTampil()
-            ->orderBy('authorised_value', 'asc')
-            ->get()
-            ->map(function ($prodi) {
-                $cleanedLib = $prodi->lib;
-                if (str_starts_with($cleanedLib, 'FAI/ ')) {
-                    $cleanedLib = substr($cleanedLib, 5);
-                }
-                $prodi->lib = trim($cleanedLib);
-                return $prodi;
-            })
-            ->pluck('lib', 'authorised_value')
-            ->toArray();
-
-        $staticValues = [
-            'DOSEN'  => 'Dosen',
-            'TENDIK' => 'Tenaga Kependidikan',
-        ];
-        $listProdi = $staticValues + $listProdiFromDb;
+        $listProdi = $this->getProdiListWithStaticOptions();
 
         $selectedProdiCode = $request->input('prodi', '');
         $namaProdiFilter = 'Semua Program Studi';
@@ -1370,28 +1095,7 @@ class PeminjamanController extends Controller
     public function getBerlangsungExportData(Request $request)
     {
         // 1. Setup Data Prodi & Static Values (Konsisten dengan peminjamanBerlangsung)
-        $listProdiFromDb = M_Auv::where('category', 'PRODI')
-            ->whereRaw('CHAR_LENGTH(lib) >= 13')
-            ->onlyProdiTampil()
-            ->orderBy('authorised_value', 'asc')
-            ->get()
-            ->map(function ($prodi) {
-                $cleanedLib = $prodi->lib;
-                if (str_starts_with($cleanedLib, 'FAI/ ')) {
-                    $cleanedLib = substr($cleanedLib, 5);
-                }
-                $prodi->lib = trim($cleanedLib);
-                return $prodi;
-            })
-            ->pluck('lib', 'authorised_value')
-            ->toArray();
-
-        $staticValues = [
-            'DOSEN'  => 'Dosen',
-            'TENDIK' => 'Tenaga Kependidikan',
-        ];
-
-        $listProdi = $staticValues + $listProdiFromDb;
+        $listProdi = $this->getProdiListWithStaticOptions();
 
         $selectedProdiCode = $request->input('prodi', '');
         $namaProdiFilter = 'Semua Program Studi';
@@ -1765,12 +1469,12 @@ class PeminjamanController extends Controller
         try {
             if ($filterType === 'monthly') {
                 $subJudul = "PERIODE TAHUNAN: $startYear s.d. $endYear";
-                $filePeriod = "tahun_{$startYear}_{$endYear}";
+                $filePeriod = "Tahunan_{$startYear}_sd_{$endYear}";
             } else {
                 $tglA = Carbon::parse($startDate)->locale('id')->isoFormat('D MMMM Y');
                 $tglAkh = Carbon::parse($endDate)->locale('id')->isoFormat('D MMMM Y');
                 $subJudul = "PERIODE HARIAN: $tglA s.d. $tglAkh";
-                $filePeriod = $startDate . "_sd_" . $endDate;
+                $filePeriod = "Harian_" . $startDate . "_sd_" . $endDate;
             }
         } catch (\Throwable $e) { $filePeriod = date('Ymd'); }
 
@@ -1780,73 +1484,89 @@ class PeminjamanController extends Controller
             $namaFileFakultas = "_" . preg_replace('/[^A-Za-z0-9]/', '_', $selectedFakultas);
         }
 
-        $fileName = 'laporan_peminjaman_fakultas' . $namaFileFakultas . '_' . $filePeriod . '.csv';
+        $fileName = 'Laporan_Peminjaman_Fakultas' . $namaFileFakultas . '_' . $filePeriod . '.csv';
         $tableData = $cachedResult['tableData'];
         $totalBorrowersUnik = $cachedResult['totalBorrowers'];
 
-        $callback = function () use ($tableData, $filterType, $judulLaporan, $subJudul, $totalBorrowersUnik) {
-            $file = fopen('php://output', 'w');
-            fwrite($file, "\xEF\xBB\xBF");
-            fputcsv($file, [$judulLaporan], ';');
-            fputcsv($file, [$subJudul], ';');
-            fputcsv($file, [], ';');
-            fputcsv($file, ['No', 'Periode', 'Kode Prodi', 'Nama Prodi', 'Peminjaman', 'Perpanjangan', 'Pengembalian', 'Total Sirkulasi', 'Peminjam'], ';');
+        $csvHeaders = ['No', 'Periode', 'Kode Prodi', 'Nama Prodi', 'Peminjaman', 'Perpanjangan', 'Pengembalian', 'Total Sirkulasi', 'Peminjam'];
+        $titles = [$judulLaporan, $subJudul];
+        
+        $footerRow = [
+            '', '', '', 'TOTAL KESELURUHAN', 
+            $cachedResult['totalIssues'], 
+            $cachedResult['totalRenews'], 
+            $cachedResult['totalReturns'], 
+            $cachedResult['totalCirculation'], 
+            $cachedResult['totalBorrowers']
+        ];
 
-            $no = 1;
-            $totalI = 0; $totalR = 0; $totalK = 0; $totalS = 0;
+        return $this->streamCsvExport($tableData, $fileName, $csvHeaders, function($row, &$index) use ($filterType) {
+            $rowArray = (array) $row;
+            $periodeDisplay = $rowArray['periode'] ?? '-';
+            try {
+                if ($filterType === 'monthly') {
+                    $periodeDisplay = Carbon::createFromFormat('Y-m', $periodeDisplay)->locale('id')->isoFormat('MMMM Y');
+                } else {
+                    $periodeDisplay = Carbon::parse($periodeDisplay)->locale('id')->isoFormat('dddd, D MMMM Y');
+                }
+            } catch (\Throwable $e) {}
 
-            foreach ($tableData as $row) {
-                // ... (Parsing row details)
-                $rowArray = (array) $row;
-                $periodeDisplay = $rowArray['periode'] ?? '-';
-                try {
-                    if ($filterType === 'monthly') {
-                        $periodeDisplay = Carbon::createFromFormat('Y-m', $periodeDisplay)->locale('id')->isoFormat('MMMM Y');
-                    } else {
-                        $periodeDisplay = Carbon::parse($periodeDisplay)->locale('id')->isoFormat('dddd, D MMMM Y');
+            $results = [];
+            if (!empty($rowArray['prodi_details'])) {
+                foreach ($rowArray['prodi_details'] as $detail) {
+                    $detArray = (array) $detail;
+                    $namaProdiStr = $detArray['prodi'] ?? '';
+                    
+                    $kodeProdi = '';
+                    $namaOnly = $namaProdiStr;
+                    if (str_contains($namaProdiStr, ' - ')) {
+                        $parts = explode(' - ', $namaProdiStr, 2);
+                        $kodeProdi = $parts[0];
+                        $namaOnly = $parts[1];
                     }
-                } catch (\Throwable $e) {}
-
-                if (!empty($rowArray['prodi_details'])) {
-                    foreach ($rowArray['prodi_details'] as $detail) {
-                        $detArray = (array) $detail;
-                        $namaProdiStr = $detArray['prodi'] ?? '';
-                        
-                        $kodeProdi = '';
-                        $namaOnly = $namaProdiStr;
-                        if (str_contains($namaProdiStr, ' - ')) {
-                            $parts = explode(' - ', $namaProdiStr, 2);
-                            $kodeProdi = $parts[0];
-                            $namaOnly = $parts[1];
-                        }
-                        
-                        $i = $detArray['jumlah_issue'] ?? 0;
-                        $r = $detArray['jumlah_renew'] ?? 0;
-                        $k = $detArray['jumlah_buku_kembali'] ?? 0;
-                        $s = $detArray['total_sirkulasi'] ?? 0;
-                        $u = $detArray['jumlah_peminjam_unik'] ?? 0;
-                        
-                        fputcsv($file, [
-                            $no++, $periodeDisplay, $kodeProdi, $namaOnly, $i, $r, $k, $s, $u
-                        ], ';');
-
-                        $totalI += $i;
-                        $totalR += $r;
-                        $totalK += $k;
-                        $totalS += $s;
-                    }
+                    
+                    $i = $detArray['jumlah_issue'] ?? 0;
+                    $r = $detArray['jumlah_renew'] ?? 0;
+                    $k = $detArray['jumlah_buku_kembali'] ?? 0;
+                    $s = $detArray['total_sirkulasi'] ?? 0;
+                    $u = $detArray['jumlah_peminjam_unik'] ?? 0;
+                    
+                    $results[] = [
+                        $index++, $periodeDisplay, $kodeProdi, $namaOnly, $i, $r, $k, $s, $u
+                    ];
                 }
             }
-
-            fputcsv($file, [], ';');
-            // Gunakan totalBorrowersUnik (asli tanpa duplikasi) untuk Total Peminjam
-            fputcsv($file, ['', '', '', 'TOTAL KESELURUHAN', $totalI, $totalR, $totalK, $totalS, $totalBorrowersUnik], ';');
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, [
-            'Content-Type' => 'text/csv; charset=utf-8',
-            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
-        ]);
+            return $results;
+        }, $titles, $footerRow);
     }
+
+    /**
+     * Helper untuk mendapatkan daftar prodi lengkap dengan tambahan opsi statis
+     */
+    private function getProdiListWithStaticOptions()
+    {
+        $listProdiFromDb = \App\Models\M_Auv::where('category', 'PRODI')
+            ->whereRaw('CHAR_LENGTH(lib) >= 13')
+            ->onlyProdiTampil()
+            ->orderBy('authorised_value', 'asc')
+            ->get()
+            ->map(function ($prodi) {
+                $cleanedLib = $prodi->lib;
+                if (str_starts_with($cleanedLib, 'FAI/ ')) {
+                    $cleanedLib = substr($cleanedLib, 5);
+                }
+                $prodi->lib = trim($cleanedLib);
+                return $prodi;
+            })
+            ->pluck('lib', 'authorised_value')
+            ->toArray();
+
+        $staticValues = [
+            'DOSEN'  => 'Dosen',
+            'TENDIK' => 'Tenaga Kependidikan',
+        ];
+
+        return $staticValues + $listProdiFromDb;
+    }
+
 }
