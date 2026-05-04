@@ -17,10 +17,8 @@ class StatistikKoleksi extends Controller
 {
     public function __construct()
     {
-        // Tingkatkan beban memory limit dan timeout untuk Production
-        // Karena Statistik Koleksi menarik data puluhan ribu row dari MySQL
-        ini_set('memory_limit', '1024M'); // 1 GB Memory
-        ini_set('max_execution_time', 600); // 10 Menit Timeout
+        ini_set('memory_limit', '1024M');
+        ini_set('max_execution_time', 600);
     }
 
 

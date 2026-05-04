@@ -178,9 +178,9 @@
             $kunjunganWebsite = [
                 'Januari' => 19712,
                 'Februari' => 27973,
-                'Maret' => 0,
-                'April' => 0,
-                'Mei' => 0,
+                'Maret' => 11792,
+                'April' => 19810,
+                'Mei' => 1183,
                 'Juni' => 0,
                 'Juli' => 0,
                 'Agustus' => 0,
@@ -217,9 +217,9 @@
             $kunjunganRepository = [
                 'Januari' => 9343,
                 'Februari' => 13715,
-                'Maret' => 0,
-                'April' => 0,
-                'Mei' => 0,
+                'Maret' => 6257,
+                'April' => 9545,
+                'Mei' => 781,
                 'Juni' => 0,
                 'Juli' => 0,
                 'Agustus' => 0,
@@ -285,7 +285,7 @@
                             <strong
                                 class="d-block fs-5 text-body-emphasis">{{ number_format($totalKunjunganWebsite) }}</strong>
                         </div>
-                        <a href="http://statcounter.com/p13060651/summary/?guest=1" target="_blank"
+                        <a href="https://statcounter.com/p13060651/summary/monthly-pvn-currentyear/?account_id=7636188&login_id=2&code=43ca6bbd15f284fbea5c47fc6ea5440a&guest_login=1" target="_blank"
                             class="btn btn-outline-primary btn-sm px-3">
                             <i class="fas fa-external-link-alt me-1"></i> Lihat Detail
                         </a>
@@ -339,7 +339,7 @@
                             <strong
                                 class="d-block fs-5 text-body-emphasis">{{ number_format($totalKunjunganRepository) }}</strong>
                         </div>
-                        <a href="http://statcounter.com/p13060683/summary/?guest=1" target="_blank"
+                        <a href="https://statcounter.com/p13060683/summary/monthly-pvn-currentyear/?account_id=7636188&login_id=3&code=7634ebe683db73cdbbd72e2b84881b29&guest_login=1" target="_blank"
                             class="btn btn-outline-primary btn-sm px-3">
                             <i class="fas fa-external-link-alt me-1"></i> Lihat Detail
                         </a>
