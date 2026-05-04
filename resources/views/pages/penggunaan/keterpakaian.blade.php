@@ -67,6 +67,16 @@
                                 class="fas fa-search me-1"></i>Terapkan</button>
                     </div>
                 </form>
+                
+                <form id="pdfExportForm" method="POST" action="{{ route('penggunaan.keterpakaian_koleksi.export_pdf') }}" style="display:none;">
+                    @csrf
+                    <input type="hidden" name="filter_type" value="{{ $filterType ?? 'monthly' }}">
+                    <input type="hidden" name="start_month" value="{{ $startMonth ?? '' }}">
+                    <input type="hidden" name="end_month" value="{{ $endMonth ?? '' }}">
+                    <input type="hidden" name="start_date" value="{{ $startDate ?? '' }}">
+                    <input type="hidden" name="end_date" value="{{ $endDate ?? '' }}">
+                    <input type="hidden" name="chart_image_base64" id="chart_image_base64">
+                </form>
             </div>
         </div>
     </div>
@@ -134,8 +144,10 @@
             <div class="card unified-card border-0 shadow-sm">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="mb-0 fw-bold"><i class="fas fa-table me-1 text-primary"></i> Hasil Analisis</h6>
-                    <button id="exportCsvBtn" class="btn btn-success btn-sm"><i class="fas fa-file-csv me-2"></i>Export
-                        CSV</button>
+                    <div>
+                        <button type="button" id="exportPdfBtn" class="btn btn-danger btn-sm me-2"><i class="fas fa-file-pdf me-2"></i>Cetak PDF</button>
+                        <button id="exportCsvBtn" class="btn btn-success btn-sm"><i class="fas fa-file-csv me-2"></i>Export CSV</button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -410,7 +422,7 @@
                 };
             });
 
-            new Chart(ctx, {
+            window.keterpakaianChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
@@ -453,6 +465,22 @@
                         }
                     }
                 }
+                }
+            });
+        }
+
+        // --- EXPORT PDF LOGIC ---
+        const exportPdfBtn = document.getElementById('exportPdfBtn');
+        const pdfExportForm = document.getElementById('pdfExportForm');
+        const chartImageInput = document.getElementById('chart_image_base64');
+        
+        if (exportPdfBtn) {
+            exportPdfBtn.addEventListener('click', function() {
+                if (typeof window.keterpakaianChartInstance !== 'undefined' && window.keterpakaianChartInstance) {
+                    const base64Image = window.keterpakaianChartInstance.toBase64Image();
+                    chartImageInput.value = base64Image;
+                }
+                pdfExportForm.submit();
             });
         }
     });

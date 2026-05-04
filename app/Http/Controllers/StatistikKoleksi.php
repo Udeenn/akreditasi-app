@@ -1426,64 +1426,78 @@ class StatistikKoleksi extends Controller
 
             $cacheKey = "stats_referensi:{$prodi}:{$tahunTerakhir}";
             $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
-                $query = M_items::selectRaw("
-                bi.cn_class as Kelas,
-                EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"a\"]') as Judul_a,
-                EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]') as Judul_b,
-                b.author as Pengarang,
-                bi.place AS Kota_Terbit,
-                MAX(bi.publishercode) AS Penerbit_Raw,
-                MAX(bi.place) AS Place_Raw,
-                MAX(CONCAT(COALESCE(bi.publishercode,''), ' ', COALESCE(bi.place,''))) AS Penerbit,
-                bi.publicationyear AS Tahun_Terbit,
-                COUNT(items.itemnumber) AS Eksemplar,
-                CASE
-                    WHEN items.homebranch = 'PUSAT' THEN 'Perpustakaan Pusat'
-                    WHEN items.homebranch = 'GIZI' THEN 'Perpustakaan Gizi'
-                    WHEN items.homebranch = 'FKG' THEN 'Perpustakaan Kedokteran Gigi'
-                    WHEN items.homebranch = 'PSIKO' THEN 'Perpustakaan Psikologi'
-                    WHEN items.homebranch = 'INF' THEN 'Perpustakaan Informatika'
-                    WHEN items.homebranch = 'FIK' THEN 'Perpustakaan FIK'
-                    WHEN items.homebranch = 'MATH' THEN 'Perpustakaan Matematika FKIP'
-                    WHEN items.homebranch = 'LIPK' THEN 'LIPK'
-                    WHEN items.homebranch = 'TILIB' THEN 'Perpustakaan Teknik Industri'
-                    WHEN items.homebranch = 'MAPRO' THEN 'Perpustakaan Magister Psikologi'
-                    WHEN items.homebranch = 'MEDLIB' THEN 'Perpustakaan Kedokteran'
-                    WHEN items.homebranch = 'PAUD' THEN 'Perpustakaan PAUD'
-                    WHEN items.homebranch = 'POG' THEN 'Perpustakaan Pendidikan Olahraga'
-                    WHEN items.homebranch = 'PESMA' THEN 'Perpustakaan Pesma Haji Mas Mansyur'
-                    WHEN items.homebranch = 'PGSDKRA' THEN 'Perpustakaan PGSD'
-                    WHEN items.homebranch = 'PASCA' THEN 'Perpustakaan Postgraduate'
-                    WHEN items.homebranch = 'RSGM' THEN 'Perpustakaan Rumah Sakit Gigi dan Mulut'
-                    WHEN items.homebranch = 'PSI' THEN 'Perpustakaan Pusat Studi Psikologi Islam'
-                    WHEN items.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
-                    ELSE items.homebranch
-                    END AS Lokasi
-                ");
+    // 1. Gunakan Base Query agar JOIN otomatis terpasang
+    $query = $this->getBaseCollectionQuery($prodi, $tahunTerakhir);
 
-                $query->orderBy('Tahun_Terbit', 'desc');
-                $query->groupBy('Judul_a', 'Judul_b', 'Pengarang', 'Kota_Terbit', 'Tahun_Terbit', 'Kelas', 'Lokasi');
+    // 2. Tambahkan filter spesifik untuk Referensi (Buku ber-ccode 'R')
+    $query->whereRaw('LEFT(items.itype,3) = "BKS"')
+          ->whereRaw('LEFT(items.ccode,1) = "R"');
 
-                $processedData = $query->get()->map(function ($row) {
-                    $fullJudul = $row->Judul_a;
-                    if (!empty($row->Judul_b)) {
-                        $fullJudul .= ' ' . $row->Judul_b;
-                    }
-                    $row->Judul = html_entity_decode($fullJudul, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                    $row->Pengarang = html_entity_decode($row->Pengarang, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                    $row->Penerbit = html_entity_decode($row->Penerbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                    $row->Kota_Terbit = html_entity_decode($row->Kota_Terbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                    return $row;
-                });
+    // 3. Masukkan SelectRaw Anda
+    $query->selectRaw("
+        bi.cn_class as Kelas,
+        EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"a\"]') as Judul_a,
+        EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]') as Judul_b,
+        b.author as Pengarang,
+        bi.place AS Kota_Terbit,
+        MAX(bi.publishercode) AS Penerbit_Raw,
+        MAX(bi.place) AS Place_Raw,
+        MAX(CONCAT(COALESCE(bi.publishercode,''), ' ', COALESCE(bi.place,''))) AS Penerbit,
+        bi.publicationyear AS Tahun_Terbit,
+        COUNT(items.itemnumber) AS Eksemplar,
+        CASE
+            WHEN items.homebranch = 'PUSAT' THEN 'Perpustakaan Pusat'
+            WHEN items.homebranch = 'GIZI' THEN 'Perpustakaan Gizi'
+            WHEN items.homebranch = 'FKG' THEN 'Perpustakaan Kedokteran Gigi'
+            WHEN items.homebranch = 'PSIKO' THEN 'Perpustakaan Psikologi'
+            WHEN items.homebranch = 'INF' THEN 'Perpustakaan Informatika'
+            WHEN items.homebranch = 'FIK' THEN 'Perpustakaan FIK'
+            WHEN items.homebranch = 'MATH' THEN 'Perpustakaan Matematika FKIP'
+            WHEN items.homebranch = 'LIPK' THEN 'LIPK'
+            WHEN items.homebranch = 'TILIB' THEN 'Perpustakaan Teknik Industri'
+            WHEN items.homebranch = 'MAPRO' THEN 'Perpustakaan Magister Psikologi'
+            WHEN items.homebranch = 'MEDLIB' THEN 'Perpustakaan Kedokteran'
+            WHEN items.homebranch = 'PAUD' THEN 'Perpustakaan PAUD'
+            WHEN items.homebranch = 'POG' THEN 'Perpustakaan Pendidikan Olahraga'
+            WHEN items.homebranch = 'PESMA' THEN 'Perpustakaan Pesma Haji Mas Mansyur'
+            WHEN items.homebranch = 'PGSDKRA' THEN 'Perpustakaan PGSD'
+            WHEN items.homebranch = 'PASCA' THEN 'Perpustakaan Postgraduate'
+            WHEN items.homebranch = 'RSGM' THEN 'Perpustakaan Rumah Sakit Gigi dan Mulut'
+            WHEN items.homebranch = 'PSI' THEN 'Perpustakaan Pusat Studi Psikologi Islam'
+            WHEN items.homebranch = 'FG' THEN 'Perpustakaan Fakultas Geografi'
+            ELSE items.homebranch
+        END AS Lokasi
+    ");
 
-                $totals = $totalQuery->first();
+    $query->orderBy('Tahun_Terbit', 'desc');
+    $query->groupBy('Judul_a', 'Judul_b', 'Pengarang', 'Kota_Terbit', 'Tahun_Terbit', 'Kelas', 'Lokasi');
 
-                return [
-                    'processedData' => $processedData,
-                    'totalJudul' => $totals->total_judul ?? 0,
-                    'totalEksemplar' => $totals->total_eksemplar ?? 0
-                ];
-            });
+    $processedData = $query->get()->map(function ($row) {
+        $fullJudul = $row->Judul_a;
+        if (!empty($row->Judul_b)) {
+            $fullJudul .= ' ' . $row->Judul_b;
+        }
+        $row->Judul = html_entity_decode($fullJudul, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $row->Pengarang = html_entity_decode($row->Pengarang, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $row->Penerbit = html_entity_decode($row->Penerbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $row->Kota_Terbit = html_entity_decode($row->Kota_Terbit, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        return $row;
+    });
+
+    // 4. Definisikan totalQuery untuk menghitung total judul/eksemplar
+    $totalQuery = (clone $query); 
+    // Hapus select sebelumnya dan ganti dengan count
+    $totals = $totalQuery->selectRaw("
+        COUNT(DISTINCT items.biblionumber) as total_judul,
+        COUNT(items.itemnumber) as total_eksemplar
+    ")->first();
+
+    return [
+        'processedData' => $processedData,
+        'totalJudul' => $totals->total_judul ?? 0,
+        'totalEksemplar' => $totals->total_eksemplar ?? 0
+    ];
+});
 
             $processedData = $cachedResult['processedData'];
             $totalJudul = $cachedResult['totalJudul'];

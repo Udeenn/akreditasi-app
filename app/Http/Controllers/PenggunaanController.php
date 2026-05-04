@@ -100,6 +100,96 @@ class PenggunaanController extends Controller
         ));
     }
 
+    public function exportPdfKeterpakaianKoleksi(Request $request)
+    {
+        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '512M');
+
+        $filterType = $request->input('filter_type', 'monthly');
+        $startMonth = $request->input('start_month', \Carbon\Carbon::now()->startOfYear()->format('Y-m'));
+        $endMonth = $request->input('end_month', \Carbon\Carbon::now()->format('Y-m'));
+        $startDate = $request->input('start_date', \Carbon\Carbon::now()->subDays(29)->format('Y-m-d'));
+        $endDate = $request->input('end_date', \Carbon\Carbon::now()->format('Y-m-d'));
+        $chartImage = $request->input('chart_image_base64');
+
+        $dataTabel = collect();
+        $listKategori = [];
+        $ccodeDescriptions = collect();
+        $totalPenggunaan = 0;
+        $rerataPenggunaan = 0;
+        $kategoriPopuler = ['nama' => 'N/A', 'jumlah' => 0];
+        
+        try {
+            $query = DB::connection('mysql2')->table('statistics')
+                ->select(
+                    DB::raw("CASE WHEN ccode LIKE 'R%' THEN 'Referensi' ELSE ccode END as kategori"),
+                    DB::raw('COUNT(*) as jumlah')
+                )
+                ->whereIn('type', ['issue', 'return', 'localuse'])
+                ->whereNotNull('ccode')
+                ->where('ccode', '!=', '');
+
+            if ($filterType == 'daily') {
+                $query->addSelect(DB::raw('DATE(datetime) as periode'))
+                    ->whereBetween('datetime', [\Carbon\Carbon::parse($startDate)->startOfDay(), \Carbon\Carbon::parse($endDate)->endOfDay()])
+                    ->groupBy('periode', 'kategori');
+                $filename = "Laporan_Keterpakaian_Koleksi_Harian_{$startDate}_sd_{$endDate}.pdf";
+                $start = \Carbon\Carbon::parse($startDate)->locale('id')->isoFormat('D MMMM YYYY');
+                $end = \Carbon\Carbon::parse($endDate)->locale('id')->isoFormat('D MMMM YYYY');
+                $periodeText = "Periode Harian: {$start} - {$end}";
+            } else {
+                $query->addSelect(DB::raw("LEFT(datetime, 7) as periode"))
+                    ->whereRaw("LEFT(datetime, 7) BETWEEN ? AND ?", [$startMonth, $endMonth])
+                    ->groupBy('periode', 'kategori');
+                $filename = "Laporan_Keterpakaian_Koleksi_Bulanan_{$startMonth}_sd_{$endMonth}.pdf";
+                $periodeText = "Periode Bulanan: {$startMonth} - {$endMonth}";
+            }
+
+            $results = $query->orderBy('periode', 'asc')->get();
+
+            $ccodeDescriptions = DB::connection('mysql2')->table('authorised_values')
+                ->where('category', 'CCODE')
+                ->pluck('lib', 'authorised_value');
+            $ccodeDescriptions['Referensi'] = 'Gabungan semua koleksi referensi (R-...)';
+
+            if (!$results->isEmpty()) {
+                $listKategori = $results->pluck('kategori')->unique()->sort()->values()->all();
+                $dataTabel = $results->groupBy('periode')->map(function ($items, $periode) use ($listKategori) {
+                    $row = ['periode' => $periode];
+                    foreach ($listKategori as $kategori) {
+                        $row[$kategori] = $items->where('kategori', $kategori)->first()->jumlah ?? 0;
+                    }
+                    return $row;
+                })->values();
+
+                $totalPenggunaan = $dataTabel->sum(fn($row) => collect($row)->only($listKategori)->sum());
+
+                $jumlahPeriode = $dataTabel->count();
+                $rerataPenggunaan = ($jumlahPeriode > 0) ? ($totalPenggunaan / $jumlahPeriode) : 0;
+
+                $kategoriSums = $results->groupBy('kategori')->map(fn($items) => $items->sum('jumlah'));
+                $kategoriPopuler['nama'] = $kategoriSums->sortDesc()->keys()->first();
+                $kategoriPopuler['jumlah'] = $kategoriSums->sortDesc()->first();
+            }
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan saat generate PDF: ' . $e->getMessage());
+        }
+
+        $logoPath = public_path('img/ums.png');
+        $logoBase64 = '';
+        if (file_exists($logoPath)) {
+            $logoData = file_get_contents($logoPath);
+            $logoBase64 = 'data:image/png;base64,' . base64_encode($logoData);
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.penggunaan.pdf.keterpakaianKoleksi', compact(
+            'dataTabel', 'listKategori', 'ccodeDescriptions', 'filterType', 'periodeText',
+            'totalPenggunaan', 'kategoriPopuler', 'rerataPenggunaan', 'chartImage', 'logoBase64'
+        ))->setPaper('a4', 'landscape');
+
+        return $pdf->download($filename);
+    }
+
     public function getKeterpakaianDetail(Request $request)
     {
         $request->validate([

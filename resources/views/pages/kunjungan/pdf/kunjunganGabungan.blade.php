@@ -122,7 +122,7 @@
                 </td>
                 <td width="70%" class="header-text">
                     <h2>UNIVERSITAS MUHAMMADIYAH SURAKARTA</h2>
-                    <h3>PERPUSTAKAAN PUSAT</h3>
+                    <h3>UPT PERPUSTAKAAN DAN LAYANAN DIGITAL</h3>
                     <p>Jl. A. Yani, Mendungan, Pabelan, Kec. Kartasura, Kabupaten Sukoharjo, Jawa Tengah 57162</p>
                 </td>
                 <td width="15%"></td>

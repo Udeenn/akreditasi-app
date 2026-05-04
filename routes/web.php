@@ -141,6 +141,7 @@ Route::middleware('auth')->group(function () {
     // Statistik Penggunaan
     // =============================================
     Route::get('/statistik/keterpakaian-koleksi', [PenggunaanController::class, 'keterpakaianKoleksi'])->name('penggunaan.keterpakaian_koleksi');
+    Route::post('/statistik/keterpakaian-koleksi/export-pdf', [PenggunaanController::class, 'exportPdfKeterpakaianKoleksi'])->name('penggunaan.keterpakaian_koleksi.export_pdf');
     Route::get('/statistik/keterpakaian-koleksi/detail', [PenggunaanController::class, 'getKeterpakaianDetail'])->name('statistik.keterpakaian_koleksi.detail');
     Route::get('/statistik/cek-histori-buku', [PenggunaanController::class, 'cekBuku'])->name('penggunaan.cek_histori_buku_buku');
     Route::get('/statistik/sering-dibaca', [PenggunaanController::class, 'seringDibaca'])->name('penggunaan.sering_dibaca');

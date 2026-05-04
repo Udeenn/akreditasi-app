@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Laporan Peminjaman Keseluruhan</title>
+    <title>Laporan Keterpakaian Koleksi</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -85,14 +85,18 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
+            table-layout: fixed;
+            word-wrap: break-word;
         }
         .data-table th, .data-table td {
             border: 1px solid #000;
-            padding: 6px;
+            padding: 4px;
             text-align: center;
+            font-size: 8px; 
         }
         .data-table th {
             background-color: #f4f4f4;
+            font-size: 9px;
         }
         .footer {
             margin-top: 30px;
@@ -132,7 +136,7 @@
 
     <!-- JUDUL LAPORAN -->
     <div class="report-title">
-        LAPORAN REKAPITULASI PEMINJAMAN KESELURUHAN
+        LAPORAN STATISTIK KETERPAKAIAN KOLEKSI
     </div>
     <div class="report-periode">
         {{ $periodeText }}
@@ -141,62 +145,78 @@
     <!-- RINGKASAN STATISTIK -->
     <table class="summary-box">
         <tr>
-            <th>Total Peminjaman</th>
-            <th>Total Perpanjangan & Pengembalian</th>
-            <th>Total Sirkulasi</th>
-            <th>Total Peminjam (Unik)</th>
-            <th>Rata-rata Peminjaman (per Hari/Bulan)</th>
+            <th>Total Keterpakaian</th>
+            <th>Rata-rata Keterpakaian (per {{ $filterType == 'daily' ? 'Hari' : 'Bulan' }})</th>
+            <th>Kategori Paling Populer</th>
         </tr>
         <tr>
-            <td>{{ number_format($totalBooks, 0, ',', '.') }} Eksemplar</td>
-            <td>{{ number_format($totalReturns, 0, ',', '.') }} Eksemplar</td>
-            <td>{{ number_format($totalCirculation, 0, ',', '.') }} Transaksi</td>
-            <td>{{ number_format($totalBorrowers, 0, ',', '.') }} Pemustaka</td>
-            <td>{{ number_format($rerataPeminjaman, 2, ',', '.') }} Transaksi</td>
+            <td>{{ number_format($totalPenggunaan, 0, ',', '.') }} Transaksi</td>
+            <td>{{ number_format($rerataPenggunaan, 2, ',', '.') }} Transaksi</td>
+            <td>
+                {{ $kategoriPopuler['nama'] }} 
+                ({{ number_format($kategoriPopuler['jumlah'], 0, ',', '.') }})
+            </td>
         </tr>
     </table>
 
     <!-- GRAFIK CHART.JS -->
     @if($chartImage)
         <div class="chart-container">
-            <h4>Grafik Tren Peminjaman</h4>
-            <img src="{{ $chartImage }}" alt="Grafik Peminjaman">
+            <h4>Grafik Tren Keterpakaian Berdasarkan Kategori</h4>
+            <img src="{{ $chartImage }}" alt="Grafik Keterpakaian Koleksi">
         </div>
     @endif
 
     <!-- TABEL DATA -->
     <table class="data-table">
         <thead>
-            <tr>
-                <th>No</th>
-                <th>{{ $filterType == 'daily' ? 'Tanggal' : 'Bulan' }}</th>
-                <th>Peminjaman (Issue)</th>
-                <th>Perpanjangan (Renew)</th>
-                <th>Pengembalian (Return)</th>
-                <th>Total Sirkulasi</th>
-                <th>Peminjam (Unik)</th>
-            </tr>
+            @if(count($listKategori) > 0)
+                <tr>
+                    <th rowspan="2">No</th>
+                    <th rowspan="2">{{ $filterType == 'daily' ? 'Tanggal' : 'Bulan' }}</th>
+                    <th colspan="{{ count($listKategori) }}">Berdasarkan Kategori (Tipe Koleksi)</th>
+                    <th rowspan="2">Total Keterpakaian</th>
+                </tr>
+                <tr>
+                    @foreach($listKategori as $kat)
+                        <th style="font-size: 8px;">{{ $kat }}</th>
+                    @endforeach
+                </tr>
+            @else
+                <tr>
+                    <th>No</th>
+                    <th>{{ $filterType == 'daily' ? 'Tanggal' : 'Bulan' }}</th>
+                    <th>Berdasarkan Kategori (Tipe Koleksi)</th>
+                    <th>Total Keterpakaian</th>
+                </tr>
+            @endif
         </thead>
         <tbody>
-            @forelse($fullStatisticsForChart as $index => $row)
+            @forelse($dataTabel as $index => $row)
+                @php
+                    $rowTotal = 0;
+                @endphp
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>
+                    <td style="text-align: left;">
                         @if($filterType == 'daily')
-                            {{ \Carbon\Carbon::parse($row->periode)->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
+                            {{ \Carbon\Carbon::parse($row['periode'])->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
                         @else
-                            {{ \Carbon\Carbon::parse($row->periode)->locale('id')->isoFormat('MMMM YYYY') }}
+                            {{ \Carbon\Carbon::parse($row['periode'])->locale('id')->isoFormat('MMMM YYYY') }}
                         @endif
                     </td>
-                    <td>{{ number_format($row->jumlah_issue, 0, ',', '.') }}</td>
-                    <td>{{ number_format($row->jumlah_renew, 0, ',', '.') }}</td>
-                    <td>{{ number_format($row->jumlah_pengembalian, 0, ',', '.') }}</td>
-                    <td>{{ number_format($row->total_sirkulasi, 0, ',', '.') }}</td>
-                    <td>{{ number_format($row->jumlah_peminjam_unik, 0, ',', '.') }}</td>
+                    @foreach($listKategori as $kat)
+                        @php
+                            $val = $row[$kat] ?? 0;
+                            $rowTotal += $val;
+                        @endphp
+                        <td>{{ number_format($val, 0, ',', '.') }}</td>
+                    @endforeach
+                    <td style="font-weight: bold;">{{ number_format($rowTotal, 0, ',', '.') }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7">Tidak ada data untuk periode ini.</td>
+                    <td colspan="{{ count($listKategori) + 3 }}">Tidak ada data keterpakaian.</td>
                 </tr>
             @endforelse
         </tbody>
