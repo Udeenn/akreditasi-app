@@ -12448,8 +12448,9 @@ final class CnClassHelperr
     private static function normalizeCn(string $cn): string
     {
         $cn = trim($cn);
-        $cn = preg_replace('/[^0-9.]/', '', $cn) ?? '';
-        $cn = preg_replace('/\.{2,}/', '.', $cn) ?? '';
+        // HANYA ambil bagian pertama sebelum spasi untuk membuang author/tahun
+        $parts = explode(' ', $cn);
+        $cn = $parts[0] ?? '';
         return rtrim($cn, '.');
     }
 }
