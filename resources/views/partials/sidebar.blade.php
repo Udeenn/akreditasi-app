@@ -189,6 +189,20 @@
         <span class="nav-text">Pemustaka Teraktif</span>
     </a>
 </li>
+
+{{-- ── Librarian Only Section ── --}}
+@auth
+@if(Auth::user()->isLibrarian())
+<li class="nav-label small text-muted text-uppercase mt-3 mb-2">Admin</li>
+<li class="nav-item">
+    <a class="nav-link {{ Route::currentRouteName() === 'admin.activity-log' ? 'active' : '' }}"
+        href="{{ route('admin.activity-log') }}">
+        <i class="fas fa-shield-halved nav-icon"></i>
+        <span class="nav-text">Audit Trail</span>
+    </a>
+</li>
+@endif
+@endauth
 </ul>
 
 {{-- <ul class="nav flex-column mt-auto py-3 border-top border-light-subtle">

@@ -14,6 +14,109 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{{ asset('css/unified-components.css') }}">
+    {{-- NProgress (top loading bar) --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css">
+    <style>
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.08));
+            background: transparent;
+        }
+        .breadcrumb {
+            font-size: 0.8rem;
+            gap: 0;
+        }
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: '/';
+            color: var(--text-light, #9ca3af);
+            opacity: 0.5;
+            padding: 0 0.4rem;
+        }
+        .breadcrumb-item a,
+        .breadcrumb-home {
+            color: var(--primary-color, #4A69FF);
+            text-decoration: none;
+            transition: opacity 0.15s;
+        }
+        .breadcrumb-item a:hover,
+        .breadcrumb-home:hover {
+            opacity: 0.7;
+        }
+        .breadcrumb-item.active {
+            color: var(--text-dark, #1f2937);
+            font-weight: 500;
+        }
+        .breadcrumb-group {
+            color: var(--text-light, #6b7280);
+        }
+        body.dark-mode .breadcrumb-item.active {
+            color: rgba(255,255,255,0.85);
+        }
+        body.dark-mode .breadcrumb-group {
+            color: rgba(255,255,255,0.45);
+        }
+        /* ── NProgress custom style ── */
+        #nprogress .bar {
+            background: linear-gradient(90deg, #4A69FF, #818cf8, #4A69FF) !important;
+            background-size: 200% 100% !important;
+            animation: shimmerBar 1.4s ease infinite !important;
+            height: 3px !important;
+            box-shadow: 0 0 10px #4A69FF, 0 0 5px #818cf8 !important;
+        }
+        #nprogress .peg {
+            box-shadow: 0 0 10px #4A69FF, 0 0 5px #818cf8 !important;
+        }
+        #nprogress .spinner-icon {
+            display: none !important; /* Sembunyikan spinner kecil bawaan NProgress */
+        }
+        @keyframes shimmerBar {
+            0%   { background-position: 200% center; }
+            100% { background-position: -200% center; }
+        }
+
+        /* ── Page overlay loader ── */
+        #page-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 1.25rem;
+            background: rgba(10, 10, 30, 0.82);
+            backdrop-filter: blur(6px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+        #page-loader.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .loader-ring {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 3px solid rgba(74, 105, 255, 0.15);
+            border-top-color: #4A69FF;
+            border-right-color: #818cf8;
+            animation: spin 0.8s cubic-bezier(0.6, 0.2, 0.4, 0.8) infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: rgba(255,255,255,0.55);
+            letter-spacing: 0.5px;
+            animation: fadePulse 1.6s ease-in-out infinite;
+        }
+        @keyframes fadePulse {
+            0%, 100% { opacity: 0.4; }
+            50%       { opacity: 0.9; }
+        }
+    </style>
 
     @stack('styles')
 
@@ -464,6 +567,16 @@
         }
 
 
+        @keyframes pulseWarning {
+            0%, 100% { transform: scale(1); box-shadow: 0 8px 24px rgba(245, 158, 11, 0.3); }
+            50% { transform: scale(1.08); box-shadow: 0 12px 32px rgba(245, 158, 11, 0.5); }
+        }
+
+        /* Progress ring for countdown */
+        #sessionTimeoutModal .modal-content {
+            transition: none;
+        }
+
         .modal-backdrop {
             backdrop-filter: blur(5px);
             background-color: rgba(15, 23, 42, 0.3);
@@ -624,6 +737,16 @@
 </head>
 
 <body class="{{ isset($_COOKIE['theme']) && $_COOKIE['theme'] == 'dark' ? 'dark-mode' : '' }}">
+
+    {{-- ====================================================== --}}
+    {{-- GLOBAL PAGE LOADER OVERLAY --}}
+    {{-- Dipicu oleh link/form dengan atribut data-heavy="true" --}}
+    {{-- ====================================================== --}}
+    <div id="page-loader" role="status" aria-label="Memuat halaman...">
+        <div class="loader-ring"></div>
+        <span class="loader-text">Memuat data&hellip;</span>
+    </div>
+
     <div class="main-wrapper">
         {{-- Sidebar --}}
         <aside id="sidebar" class="sidebar">
@@ -702,6 +825,7 @@
                             </div>
                         </div>
                     </div>
+                    <!-- @include('partials.breadcrumb') -->
                     @yield('content')
                 </main>
 
@@ -735,6 +859,69 @@
         </div>
     </div>
 
+    {{-- ============================================================ --}}
+    {{-- SESSION TIMEOUT WARNING MODAL --}}
+    {{-- Hanya ditampilkan untuk user yang sudah login --}}
+    {{-- ============================================================ --}}
+    @auth
+    <div class="modal fade" id="sessionTimeoutModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="sessionTimeoutModalLabel" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 1.25rem; overflow: hidden;">
+
+                {{-- Gradient header bar --}}
+                <div style="height: 6px; background: linear-gradient(90deg, #f59e0b, #ef4444);"></div>
+
+                <div class="modal-body p-4 p-md-5 text-center">
+                    {{-- Animated icon --}}
+                    <div class="mb-4" style="position: relative; display: inline-block;">
+                        <div style="
+                            width: 90px; height: 90px; border-radius: 50%;
+                            background: linear-gradient(135deg, #fef3c7, #fde68a);
+                            display: flex; align-items: center; justify-content: center;
+                            margin: 0 auto;
+                            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.3);
+                            animation: pulseWarning 2s ease-in-out infinite;
+                        ">
+                            <i class="fas fa-clock" style="font-size: 2.5rem; color: #d97706;"></i>
+                        </div>
+                    </div>
+
+                    <h4 class="fw-bold mb-2" id="sessionTimeoutModalLabel" style="color: var(--text-dark);">
+                        Sesi Hampir Berakhir!
+                    </h4>
+                    <p class="text-muted mb-1">
+                        Anda tidak aktif selama beberapa saat. Sesi akan otomatis berakhir dalam:
+                    </p>
+
+                    {{-- Countdown display --}}
+                    <div class="my-3" style="
+                        font-size: 3rem; font-weight: 800; letter-spacing: -1px;
+                        background: linear-gradient(135deg, #f59e0b, #ef4444);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                    " id="sessionCountdownDisplay">02:00</div>
+
+                    <p class="text-muted small mb-4">
+                        Klik <strong>Lanjutkan Sesi</strong> untuk tetap login, atau tunggu hingga otomatis logout.
+                    </p>
+
+                    <div class="d-flex gap-3 justify-content-center">
+                        <button type="button" id="btnExtendSession" class="btn btn-primary px-4 py-2" style="border-radius: 0.75rem; font-weight: 600;">
+                            <i class="fas fa-rotate-right me-2"></i>Lanjutkan Sesi
+                        </button>
+                        <form action="{{ route('cas.logout') }}" method="POST" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-danger px-4 py-2" style="border-radius: 0.75rem; font-weight: 600;">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout Sekarang
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endauth
 
     <div class="theme-fab">
         <button class="btn" id="theme-toggle" type="button" title="Ganti Tema">
@@ -746,6 +933,8 @@
     {{-- JS LINKS --}}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {{-- NProgress: harus dimuat sebelum inline script yang memakainya --}}
+    <script src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
     @stack('scripts')
 
     <script>
@@ -887,7 +1076,217 @@
             });
 
 
+        // ============================================================
+        // SESSION TIMEOUT LOGIC (Frontend Guard)
+        // ============================================================
+        @auth
+        (function () {
+            // Timeout dari config server (menit) → dikonversi ke detik
+            const IDLE_TIMEOUT_SECONDS = {{ config('session.idle_timeout', 30) }} * 60;
+            // Tampilkan warning 2 menit sebelum logout
+            const WARNING_BEFORE_SECONDS = 120;
 
+            let idleTimer = null;
+            let countdownTimer = null;
+            let warningModal = null;
+            let countdownSeconds = WARNING_BEFORE_SECONDS;
+
+            // Inisialisasi modal Bootstrap
+            const modalEl = document.getElementById('sessionTimeoutModal');
+            if (modalEl) {
+                warningModal = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
+            }
+
+            function formatTime(seconds) {
+                const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+                const s = String(seconds % 60).padStart(2, '0');
+                return `${m}:${s}`;
+            }
+
+            function startCountdown() {
+                countdownSeconds = WARNING_BEFORE_SECONDS;
+                const display = document.getElementById('sessionCountdownDisplay');
+                if (display) display.textContent = formatTime(countdownSeconds);
+
+                countdownTimer = setInterval(function () {
+                    countdownSeconds--;
+                    if (display) display.textContent = formatTime(countdownSeconds);
+
+                    if (countdownSeconds <= 0) {
+                        clearInterval(countdownTimer);
+                        // Paksa logout via form submit
+                        const logoutForm = modalEl ? modalEl.querySelector('form') : null;
+                        if (logoutForm) {
+                            logoutForm.submit();
+                        } else {
+                            window.location.href = '{{ route("cas.login") }}';
+                        }
+                    }
+                }, 1000);
+            }
+
+            function showWarning() {
+                if (warningModal) {
+                    warningModal.show();
+                    startCountdown();
+                }
+            }
+
+            function hideWarning() {
+                if (warningModal) {
+                    warningModal.hide();
+                }
+                clearInterval(countdownTimer);
+            }
+
+            function resetIdleTimer() {
+                clearTimeout(idleTimer);
+                // Tampilkan warning saat mendekati batas idle
+                const warnAfter = (IDLE_TIMEOUT_SECONDS - WARNING_BEFORE_SECONDS) * 1000;
+                if (warnAfter > 0) {
+                    idleTimer = setTimeout(showWarning, warnAfter);
+                }
+            }
+
+            // Tombol "Lanjutkan Sesi" → ping server untuk refresh last_activity
+            const btnExtend = document.getElementById('btnExtendSession');
+            if (btnExtend) {
+                btnExtend.addEventListener('click', function () {
+                    hideWarning();
+                    // Kirim request ringan ke server untuk refresh sesi
+                    fetch('{{ url("/dashboard") }}', {
+                        method: 'HEAD',
+                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
+                        credentials: 'same-origin'
+                    }).then(function(res) {
+                        if (res.status === 401 || res.status === 419) {
+                            window.location.href = '{{ route("cas.login") }}';
+                        }
+                    }).catch(function() {
+                        // Abaikan error jaringan
+                    });
+                    resetIdleTimer();
+                });
+            }
+
+            // Pantau aktivitas user
+            const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+            activityEvents.forEach(function (event) {
+                document.addEventListener(event, function () {
+                    // Sembunyikan modal jika muncul dan user aktif kembali
+                    if (warningModal && modalEl && modalEl.classList.contains('show')) {
+                        // Jangan reset saat modal terbuka – biarkan user klik tombol
+                        return;
+                    }
+                    resetIdleTimer();
+                }, { passive: true });
+            });
+
+            // Handle jika server mengembalikan 401 (session expired di sisi server)
+            const originalFetch = window.fetch;
+            window.fetch = function (...args) {
+                return originalFetch.apply(this, args).then(function (response) {
+                    if (response.status === 401) {
+                        const cloned = response.clone();
+                        cloned.json().then(function (data) {
+                            if (data && data.session_expired) {
+                                window.location.href = '{{ route("cas.login") }}';
+                            }
+                        }).catch(function() {});
+                    }
+                    return response;
+                });
+            };
+
+            // Mulai timer saat halaman dimuat
+            resetIdleTimer();
+        })();
+        @endauth
+
+        // ============================================================
+        // GLOBAL PAGE LOADER (NProgress + Overlay)
+        // ============================================================
+        (function () {
+            // Konfigurasi NProgress
+            NProgress.configure({
+                showSpinner: false,
+                trickleSpeed: 120,
+                minimum: 0.12,
+                easing: 'ease',
+                speed: 400,
+            });
+
+            const loader = document.getElementById('page-loader');
+
+            function showLoader() {
+                NProgress.start();
+                if (loader) loader.classList.add('show');
+            }
+
+            function hideLoader() {
+                NProgress.done();
+                if (loader) loader.classList.remove('show');
+            }
+
+            // ── Intercept semua klik link internal ──
+            document.addEventListener('click', function (e) {
+                const anchor = e.target.closest('a');
+                if (!anchor) return;
+
+                const href = anchor.getAttribute('href');
+                if (!href) return;
+
+                // Skip: external, hash, javascript:, data-no-loader
+                const isExternal  = anchor.hostname && anchor.hostname !== window.location.hostname;
+                const isHash      = href.startsWith('#');
+                const isJs        = href.startsWith('javascript');
+                const isSkip      = anchor.hasAttribute('data-no-loader');
+                const isBlank     = anchor.target === '_blank';
+                const isDownload  = anchor.hasAttribute('download');
+
+                if (isExternal || isHash || isJs || isSkip || isBlank || isDownload) return;
+
+                // Overlay hanya untuk link yang bukan navigasi sidebar ringan
+                // Gunakan atribut data-heavy="true" untuk trigger overlay
+                if (anchor.hasAttribute('data-heavy')) {
+                    showLoader();
+                } else {
+                    NProgress.start();
+                }
+            }, true);
+
+            // ── Intercept submit form ──
+            document.addEventListener('submit', function (e) {
+                const form = e.target;
+                if (!form || form.hasAttribute('data-no-loader')) return;
+                // Form dengan data-heavy → overlay, lainnya hanya NProgress
+                if (form.hasAttribute('data-heavy')) {
+                    showLoader();
+                } else {
+                    NProgress.start();
+                }
+            }, true);
+
+            // ── Selesai saat halaman terbuka penuh ──
+            window.addEventListener('pageshow', function (e) {
+                hideLoader();
+            });
+
+            // ── Jika kembali dari history (back button) ──
+            window.addEventListener('popstate', function () {
+                hideLoader();
+            });
+
+            // ── Fallback: hide loader setelah 10 detik (safety net) ──
+            let safetyTimer = null;
+            document.addEventListener('click', function (e) {
+                const anchor = e.target.closest('a[href]');
+                if (!anchor) return;
+                clearTimeout(safetyTimer);
+                safetyTimer = setTimeout(hideLoader, 10000);
+            }, true);
+
+        })();
 
         });
     </script>

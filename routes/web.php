@@ -164,6 +164,11 @@ Route::middleware('auth')->group(function () {
             Artisan::call('cache:clear');
             return redirect()->back()->with('success', 'Cache cleared!');
         })->name('clear-cache');
+
+        // Audit Trail — Activity Log
+        Route::get('/admin/activity-log', [\App\Http\Controllers\ActivityLogController::class, 'index'])
+            ->name('admin.activity-log');
+        Route::get('/admin/activity-log/export', [\App\Http\Controllers\ActivityLogController::class, 'export'])
+            ->name('admin.activity-log.export');
     });
 });
-

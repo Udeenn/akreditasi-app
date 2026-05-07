@@ -38,6 +38,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Idle Timeout (Auto Logout)
+    |--------------------------------------------------------------------------
+    |
+    | Batas waktu tidak aktif (menit) sebelum user otomatis di-logout.
+    | Nilai ini digunakan oleh SessionTimeout middleware.
+    | Atur SESSION_IDLE_TIMEOUT di file .env Anda.
+    |
+    */
+
+    'idle_timeout' => (int) env('SESSION_IDLE_TIMEOUT', 30),
+
+    /*
+    |--------------------------------------------------------------------------
     | Session Encryption
     |--------------------------------------------------------------------------
     |

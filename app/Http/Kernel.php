@@ -21,6 +21,7 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \Illuminate\Foundation\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+        \App\Http\Middleware\SecurityHeaders::class, // HTTP Security Headers
     ];
 
     /**
@@ -37,6 +38,8 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerifyCsrfToken::class, // <-- Middleware CSRF
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             // \Illuminate\Session\Middleware\AuthenticateSession::class, // Aktifkan jika pakai Auth Session
+            \App\Http\Middleware\SessionTimeout::class, // Auto-logout saat idle
+            \App\Http\Middleware\LogActivity::class,    // Audit trail log
         ],
 
         'api' => [
@@ -54,7 +57,9 @@ class Kernel extends HttpKernel
      * @var array<string, class-string|string>
      */
     protected $middlewareAliases = [
-        'auth' => \App\Http\Middleware\Authenticate::class,
+        'auth'             => \App\Http\Middleware\Authenticate::class,
+        'session.timeout'  => \App\Http\Middleware\SessionTimeout::class,
+        'log.activity'     => \App\Http\Middleware\LogActivity::class,
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
         'can' => \Illuminate\Auth\Middleware\Authorize::class,
