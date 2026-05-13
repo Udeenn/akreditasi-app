@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'scopus' => [
+        'api_key' => env('SCOPUS_API_KEY'),
+        'url' => env('SCOPUS_URL', 'https://api.elsevier.com/content/search/scopus'),
+    ],
+
 ];

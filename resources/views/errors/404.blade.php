@@ -242,7 +242,7 @@
         </div>
 
         <div class="brand-footer">
-            &copy; {{ date('Y') }} <span>Perpustakaan UMS</span> · Library Data Akreditasi
+            &copy; {{ date('Y') }} <span>UPT Perpustakaan dan Layanan Digital UMS</span> · Library Data Akreditasi
         </div>
     </div>
 

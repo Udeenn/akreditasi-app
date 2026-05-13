@@ -16,7 +16,7 @@
                                 <i class="fas fa-chart-line me-2"></i>Pemustaka Teraktif
                             </h3>
                             <p class="mb-0 opacity-75">
-                                Menampilkan daftar pemustaka teraktif di perpustakaan UMS selama satu tahun
+                                Menampilkan daftar pemustaka teraktif di UPT Perpustakaan dan Layanan Digital UMS selama satu tahun
                                 @if ($hasFilter)
                                     — Periode: <strong>{{ $tahun }}</strong>
                                 @endif

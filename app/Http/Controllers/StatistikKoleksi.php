@@ -1306,6 +1306,45 @@ class StatistikKoleksi extends Controller
         return view('pages.dapus.eresource');
     }
 
+    public function searchScopus(Request $request)
+    {
+        $query = $request->input('query', '');
+        if (empty($query)) {
+            return response()->json(['error' => 'Query tidak boleh kosong'], 400);
+        }
+
+        $apiKey = config('services.scopus.api_key') ?: env('SCOPUS_API_KEY', '084a902b2b13bcebed5e401e22585d7e');
+        $baseUrl = config('services.scopus.url') ?: env('SCOPUS_URL', 'https://api.elsevier.com/content/search/scopus');
+        
+        if (empty($apiKey)) {
+            return response()->json(['error' => 'API Key Scopus belum dikonfigurasi'], 500);
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'X-ELS-APIKey' => $apiKey,
+                'Accept' => 'application/json'
+            ])->get($baseUrl, [
+                'query' => $query,
+                'count' => $request->input('count', 10),
+                'start' => $request->input('start', 0),
+            ]);
+
+            if ($response->successful()) {
+                return response()->json($response->json());
+            }
+
+            return response()->json([
+                'error' => 'Gagal mengambil data dari Scopus',
+                'details' => $response->json()
+            ], $response->status());
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Scopus search error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json(['error' => 'Terjadi kesalahan internal: ' . $e->getMessage()], 500);
+        }
+    }
+
 
 
     /**

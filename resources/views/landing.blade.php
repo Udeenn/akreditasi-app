@@ -548,7 +548,7 @@
             <div class="col-lg-7 hero-content">
                 <div class="hero-badge">
                     <i class="fas fa-sparkles"></i>
-                    Perpustakaan UMS
+                    UPT Perpustakaan dan Layanan Digital UMS
                 </div>
                 
                 <h1 class="hero-title">
@@ -622,7 +622,7 @@
                     </a>
 
                     <p class="footer-text">
-                        &copy; {{ date('Y') }} <a href="#">Perpustakaan UMS</a>
+                        &copy; {{ date('Y') }} <a href="#">UPT Perpustakaan dan Layanan Digital UMS</a>
                     </p>
                 </div>
             </div>

@@ -106,6 +106,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/referensi', [StatistikKoleksi::class, 'referensi'])->name('referensi');
         Route::get('/prodi', [StatistikKoleksi::class, 'koleksiPerprodi'])->name('prodi');
         Route::get('/eresource', [StatistikKoleksi::class, 'eresource'])->name('eresource');
+        Route::get('/eresource/search-scopus', [StatistikKoleksi::class, 'searchScopus'])->name('searchScopus');
         Route::get('/detail', [StatistikKoleksi::class, 'getDetailKoleksi'])->name('detail');
         Route::get('/rekap-fakultas', [StatistikKoleksi::class, 'rekapPerFakultas'])->name('rekap_fakultas');
     });

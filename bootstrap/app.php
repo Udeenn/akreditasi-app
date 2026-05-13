@@ -12,10 +12,23 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // ── Alias middleware ──────────────────────────────────────────
         $middleware->alias([
-            'admin' => \App\Http\Middleware\CheckAdmin::class,
+            'admin'           => \App\Http\Middleware\CheckAdmin::class,
+            'session.timeout' => \App\Http\Middleware\SessionTimeout::class,
+            'log.activity'    => \App\Http\Middleware\LogActivity::class,
         ]);
+
+        // ── Proxy trust ───────────────────────────────────────────────
         $middleware->trustProxies(at: '*');
+
+        // ── Web group tambahan ────────────────────────────────────────
+        // LogActivity & SessionTimeout HARUS didaftarkan di sini karena
+        // Laravel 12 mengabaikan app/Http/Kernel.php secara otomatis.
+        $middleware->web(append: [
+            \App\Http\Middleware\SessionTimeout::class,
+            \App\Http\Middleware\LogActivity::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (AuthenticationException $e, $request) {
