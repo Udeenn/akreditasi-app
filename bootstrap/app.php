@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // LogActivity & SessionTimeout HARUS didaftarkan di sini karena
         // Laravel 12 mengabaikan app/Http/Kernel.php secara otomatis.
         $middleware->web(append: [
+            \App\Http\Middleware\SecurityHeaders::class,
             \App\Http\Middleware\SessionTimeout::class,
             \App\Http\Middleware\LogActivity::class,
         ]);
