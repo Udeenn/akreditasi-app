@@ -151,10 +151,10 @@
                             '" class="rounded-circle shadow-sm me-3" width="45" height="45" alt="Avatar">
                                 <div>
                                     <div class="fw-bold  mb-0 text-truncate" style="max-width: 200px;">' .
-                            $p->nama .
+                            e($p->nama) .
                             '</div>
                                     <div class="small text-muted font-monospace">' .
-                            $p->cardnumber .
+                            e($p->cardnumber) .
                             '</div>
                                 </div>
                             </div>
@@ -163,7 +163,7 @@
                             <span class="badge ' .
                             $badgeClass .
                             ' rounded-pill px-3 fw-normal">' .
-                            $p->kategori .
+                            e($p->kategori) .
                             '</span>
                         </td>
                         <td class="text-end pe-4">
@@ -172,7 +172,7 @@
                             number_format($p->jumlah, 0, ',', '.') .
                             '</span>
                                 <span class="text-muted small text-uppercase">' .
-                            $unit .
+                            e($unit) .
                             '</span>
                             </div>
                         </td>
