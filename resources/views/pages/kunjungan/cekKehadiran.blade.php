@@ -2,128 +2,7 @@
 
 @section('title', 'Cek Kunjungan Per Bulan')
 
-@push('styles')
-    <style>
-        /* --- MODERN DASHBOARD STYLING --- */
-        :root {
-            --primary-soft: rgba(13, 110, 253, 0.1);
-            --success-soft: rgba(25, 135, 84, 0.1);
-            --danger-soft: rgba(220, 53, 69, 0.1);
-            --warning-soft: rgba(255, 193, 7, 0.1);
-            --info-soft: rgba(13, 202, 240, 0.1);
-        }
-
-        /* Card Styling */
-        .card {
-            border: none;
-            border-radius: 12px !important;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            background-color: var(--bs-body-bg);
-            color: var(--text-dark);
-            overflow: hidden !important;
-        }
-
-        /* Header Putih di Light Mode */
-        .card-header {
-            background-color: #ffffff;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            color: var(--text-dark);
-        }
-
-        .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
-        }
-
-        /* Icon Box */
-        .icon-box {
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            font-size: 1.25rem;
-        }
-
-        .bg-primary-soft {
-            background-color: var(--primary-soft);
-            color: #0d6efd;
-        }
-
-        .bg-success-soft {
-            background-color: var(--success-soft);
-            color: #198754;
-        }
-
-        .bg-danger-soft {
-            background-color: var(--danger-soft);
-            color: #dc3545;
-        }
-
-        /* Table Styling */
-        .table thead th {
-            background-color: rgba(0, 0, 0, 0.02);
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-            color: #6c757d;
-            border-bottom: 2px solid rgba(0, 0, 0, 0.05);
-        }
-
-        /* --- DARK MODE ADAPTATION --- */
-        body.dark-mode .card {
-            background-color: #1e1e2d;
-            border: 1px solid #2b2b40;
-            color: #ffffff;
-            border-radius: 12px !important;
-            overflow: hidden !important;
-        }
-
-        body.dark-mode .card-header {
-            background-color: #1e293b !important;
-            border-bottom-color: #2b2b40;
-            color: #ffffff;
-        }
-
-        body.dark-mode .text-muted {
-            color: #a1a5b7 !important;
-        }
-
-        body.dark-mode .table {
-            color: #ffffff;
-            border-color: #2b2b40;
-        }
-
-        body.dark-mode .table thead th {
-            background-color: #2b2b40;
-            color: #ffffff;
-            border-bottom-color: #3f4254;
-        }
-
-        body.dark-mode .form-control,
-        body.dark-mode .form-select {
-            background-color: #1b1b29;
-            border-color: #2b2b40;
-            color: #ffffff;
-        }
-
-        body.dark-mode .text-body {
-            color: #ffffff !important;
-        }
-
-        body.dark-mode .modal-content {
-            background-color: #1e1e2d;
-            border-color: #2b2b40;
-            color: #fff;
-        }
-
-        body.dark-mode .btn-close {
-            filter: invert(1) grayscale(100%) brightness(200%);
-        }
-    </style>
-@endpush
+{{-- Shared styles loaded from unified-components.css --}}
 
 @section('content')
     <div class="container-fluid px-3 px-md-4 py-4">
@@ -338,7 +217,7 @@
                             </div>
                         </div>
                         @if ($dataKunjungan->hasPages())
-                            <div class="card-footer border-0 py-3">
+                            <div class="card-footer px-4 border-0 py-3 bg-transparent">
                                 <div class="d-flex justify-content-end">
                                     {{ $dataKunjungan->appends(request()->query())->links() }}
                                 </div>

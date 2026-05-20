@@ -131,6 +131,61 @@
         background: #1e293b;
         border-color: var(--border-color);
     }
+
+    /* ── Mobile responsive ── */
+    @media (max-width: 767.98px) {
+        .page-hero {
+            padding: 1.25rem 1rem;
+            border-radius: 14px;
+        }
+        .page-hero h4 { font-size: 1.15rem; }
+        .stat-glass {
+            padding: 0.9rem 1rem;
+            border-radius: 12px;
+        }
+        .stat-value { font-size: 1.35rem; }
+        .stat-label { font-size: 0.7rem; }
+        .stat-icon { width: 40px; height: 40px; font-size: 1rem; }
+        .filter-card { padding: 1rem; border-radius: 12px; }
+
+        /* Table → card layout on mobile */
+        .log-table-desktop { display: none !important; }
+        .log-cards-mobile { display: block !important; }
+    }
+
+    @media (min-width: 768px) {
+        .log-cards-mobile { display: none !important; }
+        .log-table-desktop { display: block !important; }
+    }
+
+    /* Mobile log cards */
+    .log-card-item {
+        background: var(--sidebar-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+        margin-bottom: 0.5rem;
+        transition: background 0.15s ease;
+    }
+    .log-card-item:active {
+        background: var(--primary-light);
+    }
+    .log-card-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .log-card-row + .log-card-row { margin-top: 0.4rem; }
+    .log-card-url {
+        font-size: 0.75rem;
+        color: var(--text-light);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+        margin-top: 0.3rem;
+    }
 </style>
 @endpush
 
@@ -212,17 +267,17 @@
         {{-- Filter Card --}}
         <div class="filter-card mb-3">
             <form method="GET" action="{{ route('admin.activity-log') }}" class="row g-2 align-items-end" id="filterForm">
-                <div class="col-md-2">
+                <div class="col-6 col-md-2">
                     <label class="form-label small fw-semibold mb-1">Dari Tanggal</label>
                     <input type="date" name="date_from" class="form-control form-control-sm"
                            value="{{ $dateFrom }}" max="{{ now()->toDateString() }}">
                 </div>
-                <div class="col-md-2">
+                <div class="col-6 col-md-2">
                     <label class="form-label small fw-semibold mb-1">Sampai Tanggal</label>
                     <input type="date" name="date_to" class="form-control form-control-sm"
                            value="{{ $dateTo }}" max="{{ now()->toDateString() }}">
                 </div>
-                <div class="col-md-2">
+                <div class="col-6 col-md-2">
                     <label class="form-label small fw-semibold mb-1">Role</label>
                     <select name="role" class="form-select form-select-sm">
                         <option value="">Semua</option>
@@ -230,19 +285,28 @@
                         <option value="patron"    {{ request('role') === 'patron'    ? 'selected' : '' }}>Pengguna</option>
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-6 col-md-2">
                     <label class="form-label small fw-semibold mb-1">Username</label>
                     <input type="text" name="username" class="form-control form-control-sm"
                            placeholder="Cari username..." value="{{ request('username') }}">
                 </div>
-                <div class="col-md-2">
+                <div class="col-5 col-md-2">
                     <label class="form-label small fw-semibold mb-1">Route / URL</label>
                     <input type="text" name="route" class="form-control form-control-sm"
-                           placeholder="cth: koleksi, dashboard" value="{{ request('route') }}">
+                           placeholder="cth: koleksi" value="{{ request('route') }}">
                 </div>
-                <div class="col-md-2 d-flex gap-1">
-                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
-                        <i class="fas fa-filter me-1"></i>Filter
+                <div class="col-3 col-md-1">
+                    <label class="form-label small fw-semibold mb-1">Tampil</label>
+                    <select name="per_page" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
+                        <option value="20" {{ request('per_page') == 20 ? 'selected' : '' }}>20</option>
+                        <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+                        <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
+                    </select>
+                </div>
+                <div class="col-4 col-md-1 d-flex gap-1 align-items-end">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1" title="Filter">
+                        <i class="fas fa-filter"></i>
                     </button>
                     <a href="{{ route('admin.activity-log') }}" class="btn btn-outline-secondary btn-sm" title="Reset">
                         <i class="fas fa-rotate-left"></i>
@@ -283,84 +347,129 @@
                         <p class="mb-0">Tidak ada aktivitas pada rentang tanggal ini.</p>
                     </div>
                 @else
-                    <div class="table-responsive">
-                        <table class="table log-table mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Waktu</th>
-                                    <th>Pengguna</th>
-                                    <th>Role</th>
-                                    <th>Metode</th>
-                                    <th>Halaman / URL</th>
-                                    <th>IP</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($logs as $log)
-                                <tr class="log-row" role="button" style="cursor:pointer;"
-                                    data-id="{{ $log->id }}"
-                                    data-time="{{ $log->created_at->format('d M Y, H:i:s') }}"
-                                    data-username="{{ $log->username ?? '-' }}"
-                                    data-name="{{ $log->user_name ?? '-' }}"
-                                    data-role="{{ $log->user_role ?? '-' }}"
-                                    data-method="{{ $log->method }}"
-                                    data-route="{{ $log->route_name ?? '-' }}"
-                                    data-url="{{ $log->url }}"
-                                    data-ip="{{ $log->ip_address ?? '-' }}"
-                                    data-status="{{ $log->status_code ?? '-' }}"
-                                    data-ua="{{ $log->user_agent ?? '-' }}">
-                                    <td class="text-nowrap" style="color: var(--text-light);">
-                                        <span title="{{ $log->created_at->format('d M Y H:i:s') }}">
-                                            {{ $log->created_at->format('d/m H:i') }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="fw-semibold" style="color: var(--text-dark); font-size:0.82rem;">
-                                            {{ $log->username ?? '-' }}
-                                        </div>
-                                        <div style="color: var(--text-light); font-size:0.75rem;">
-                                            {{ $log->user_name ?? '' }}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        @if($log->user_role === 'librarian')
-                                            <span class="badge badge-librarian rounded-pill">Pustakawan</span>
-                                        @else
-                                            <span class="badge badge-patron rounded-pill">Pengguna</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-{{ $log->method_badge }}-subtle text-{{ $log->method_badge }} rounded-pill px-2">
-                                            {{ $log->method }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        @if($log->route_name)
-                                            <div class="fw-medium" style="font-size:0.82rem; color: var(--primary-color);">
-                                                {{ $log->route_name }}
+                    {{-- Desktop: table --}}
+                    <div class="log-table-desktop">
+                        <div class="table-responsive">
+                            <table class="table log-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Waktu</th>
+                                        <th>Pengguna</th>
+                                        <th>Role</th>
+                                        <th>Metode</th>
+                                        <th>Halaman / URL</th>
+                                        <th>IP</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($logs as $log)
+                                    <tr class="log-row" role="button" style="cursor:pointer;"
+                                        data-id="{{ $log->id }}"
+                                        data-time="{{ $log->created_at->timezone('Asia/Jakarta')->format('d M Y, H:i:s') }}"
+                                        data-username="{{ $log->username ?? '-' }}"
+                                        data-name="{{ $log->user_name ?? '-' }}"
+                                        data-role="{{ $log->user_role ?? '-' }}"
+                                        data-method="{{ $log->method }}"
+                                        data-route="{{ $log->route_name ?? '-' }}"
+                                        data-url="{{ $log->url }}"
+                                        data-ip="{{ $log->ip_address ?? '-' }}"
+                                        data-status="{{ $log->status_code ?? '-' }}"
+                                        data-ua="{{ $log->user_agent ?? '-' }}">
+                                        <td class="text-nowrap" style="color: var(--text-light);">
+                                            <span title="{{ $log->created_at->timezone('Asia/Jakarta')->format('d M Y H:i:s') }}">
+                                                {{ $log->created_at->timezone('Asia/Jakarta')->format('d/m H:i') }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold" style="color: var(--text-dark); font-size:0.82rem;">
+                                                {{ $log->username ?? '-' }}
                                             </div>
-                                        @endif
-                                        <div class="url-cell" title="{{ $log->url }}" style="color: var(--text-light); font-size:0.75rem;">
-                                            {{ $log->url }}
-                                        </div>
-                                    </td>
-                                    <td style="font-size:0.8rem; color: var(--text-light);">
-                                        {{ $log->ip_address ?? '-' }}
-                                    </td>
-                                    <td>
-                                        @php
-                                            $sc = $log->status_code;
-                                            $scColor = $sc >= 500 ? 'danger' : ($sc >= 400 ? 'warning' : 'success');
-                                        @endphp
-                                        <span class="badge bg-{{ $scColor }}-subtle text-{{ $scColor }} rounded-pill">
-                                            {{ $sc ?? '-' }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                                            <div style="color: var(--text-light); font-size:0.75rem;">
+                                                {{ $log->user_name ?? '' }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if($log->user_role === 'librarian')
+                                                <span class="badge badge-librarian rounded-pill">Pustakawan</span>
+                                            @else
+                                                <span class="badge badge-patron rounded-pill">Pengguna</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ $log->method_badge }}-subtle text-{{ $log->method_badge }} rounded-pill px-2">
+                                                {{ $log->method }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if($log->route_name)
+                                                <div class="fw-medium" style="font-size:0.82rem; color: var(--primary-color);">
+                                                    {{ $log->route_name }}
+                                                </div>
+                                            @endif
+                                            <div class="url-cell" title="{{ $log->url }}" style="color: var(--text-light); font-size:0.75rem;">
+                                                {{ $log->url }}
+                                            </div>
+                                        </td>
+                                        <td style="font-size:0.8rem; color: var(--text-light);">
+                                            {{ $log->ip_address ?? '-' }}
+                                        </td>
+                                        <td>
+                                            @php
+                                                $sc = $log->status_code;
+                                                $scColor = $sc >= 500 ? 'danger' : ($sc >= 400 ? 'warning' : 'success');
+                                            @endphp
+                                            <span class="badge bg-{{ $scColor }}-subtle text-{{ $scColor }} rounded-pill">
+                                                {{ $sc ?? '-' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- Mobile: card list --}}
+                    <div class="log-cards-mobile px-3 py-2">
+                        @foreach($logs as $log)
+                        <div class="log-card-item log-row" role="button"
+                            data-id="{{ $log->id }}"
+                            data-time="{{ $log->created_at->timezone('Asia/Jakarta')->format('d M Y, H:i:s') }}"
+                            data-username="{{ $log->username ?? '-' }}"
+                            data-name="{{ $log->user_name ?? '-' }}"
+                            data-role="{{ $log->user_role ?? '-' }}"
+                            data-method="{{ $log->method }}"
+                            data-route="{{ $log->route_name ?? '-' }}"
+                            data-url="{{ $log->url }}"
+                            data-ip="{{ $log->ip_address ?? '-' }}"
+                            data-status="{{ $log->status_code ?? '-' }}"
+                            data-ua="{{ $log->user_agent ?? '-' }}">
+                            <div class="log-card-row">
+                                <div>
+                                    <span class="fw-semibold" style="font-size:0.85rem; color: var(--text-dark);">{{ $log->username ?? '-' }}</span>
+                                    @if($log->user_role === 'librarian')
+                                        <span class="badge badge-librarian rounded-pill ms-1" style="font-size:0.65rem;">Pustakawan</span>
+                                    @else
+                                        <span class="badge badge-patron rounded-pill ms-1" style="font-size:0.65rem;">Pengguna</span>
+                                    @endif
+                                </div>
+                                <div class="d-flex align-items-center gap-1">
+                                    @php
+                                        $sc = $log->status_code;
+                                        $scColor = $sc >= 500 ? 'danger' : ($sc >= 400 ? 'warning' : 'success');
+                                    @endphp
+                                    <span class="badge bg-{{ $log->method_badge }}-subtle text-{{ $log->method_badge }} rounded-pill" style="font-size:0.65rem;">{{ $log->method }}</span>
+                                    <span class="badge bg-{{ $scColor }}-subtle text-{{ $scColor }} rounded-pill" style="font-size:0.65rem;">{{ $sc ?? '-' }}</span>
+                                </div>
+                            </div>
+                            <div class="log-card-row">
+                                <span style="font-size:0.78rem; color: var(--primary-color); font-weight:500;">{{ $log->route_name ?? '-' }}</span>
+                                <span style="font-size:0.72rem; color: var(--text-light);">{{ $log->created_at->timezone('Asia/Jakarta')->format('d/m H:i') }}</span>
+                            </div>
+                            <div class="log-card-url" title="{{ $log->url }}">{{ $log->url }}</div>
+                        </div>
+                        @endforeach
                     </div>
 
                     {{-- Pagination --}}

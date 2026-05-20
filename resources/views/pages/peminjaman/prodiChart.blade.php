@@ -7,62 +7,18 @@
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
-    
+    {{-- Shared styles loaded from unified-components.css --}}
     <style>
-        /* Pastikan teks tabel dan info DataTable otomatis putih/terang */
-        #yajraTable,
-        .dataTables_info,
-        .dataTables_length label,
-        .dataTables_filter label {
-            color: var(--text-dark) !important;
-        }
-
-        /* Memperbaiki baris tabel (TD) agar teksnya terlihat */
-        #yajraTable tbody td {
-            color: var(--text-dark) !important;
-        }
-
-        /* Memperbaiki Dropdown & Input agar tidak ada background putih yang menabrak teks */
-        .dataTables_length select,
-        .dataTables_filter input {
-            background-color: var(--bs-tertiary-bg) !important;
-            color: var(--text-dark) !important;
-            border: 1px solid var(--bs-border-color) !important;
-        }
-
-        .dataTables_wrapper .dataTables_length label,
-        .dataTables_wrapper .dataTables_filter label,
-        .dataTables_wrapper .dataTables_info,
-        .dataTables_wrapper .dataTables_paginate {
-            color: var(--text-dark) !important;
-        }
-
-        /* Perbaiki input search agar background tidak putih terang */
-        .dataTables_filter input,
-        .dataTables_length select {
-            background-color: var(--sidebar-bg) !important;
-            color: var(--text-dark) !important;
-            border: 1px solid var(--bs-border-color) !important;
-        }
-
+        /* === PAGE-SPECIFIC: #yajraTable DataTables transparency overrides === */
         #yajraTable {
             --bs-table-bg: transparent;
             --bs-table-accent-bg: transparent;
             --bs-table-striped-bg: transparent;
             --bs-table-hover-bg: transparent;
-            color: var(--text-dark) !important;
-        }
-
-        #yajraTable thead th {
-            background-color: transparent !important;
-            color: var(--text-dark) !important;
-            border-bottom: 2px solid var(--bs-border-color);
-            letter-spacing: 0.5px;
         }
 
         #yajraTable tbody td {
             background-color: transparent !important;
-            color: var(--text-dark) !important;
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid var(--bs-border-color);
             vertical-align: middle;
@@ -73,18 +29,7 @@
             cursor: default;
         }
 
-        /* Card mengikuti warna body/tema */
-        .card {
-            background-color: var(--bs-body-bg);
-            border-color: var(--bs-border-color);
-        }
-
-        .card-header {
-            background-color: var(--bs-body-bg);
-            border-bottom-color: var(--bs-border-color);
-        }
-
-        /* Padding Kanan Kiri (Search, Length, Info, Pagination) */
+        /* DataTables padding overrides for this page */
         div.dataTables_wrapper div.dataTables_length {
             padding-left: 1.5rem !important;
             padding-top: 1rem;
@@ -105,50 +50,6 @@
             padding-right: 1.5rem !important;
             padding-bottom: 1rem;
         }
-
-        /* Modern Styling Components */
-        .icon-box {
-            width: 56px;
-            height: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            flex-shrink: 0;
-        }
-
-        .bg-primary-soft { background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; }
-        .bg-success-soft { background-color: rgba(25, 135, 84, 0.1); color: #198754; }
-        .bg-warning-soft { background-color: rgba(255, 193, 7, 0.1); color: #ffc107; }
-        .bg-info-soft { background-color: rgba(13, 202, 240, 0.1); color: #0dcaf0; }
-
-        /* Select2 Dark Mode Support */
-        body.dark-mode .select2-container--bootstrap-5 .select2-selection {
-            background-color: #1b1b29 !important;
-            border-color: #2b2b40 !important;
-            color: #ffffff !important;
-        }
-        body.dark-mode .select2-container--bootstrap-5 .select2-selection__rendered {
-            color: #ffffff !important;
-        }
-        body.dark-mode .select2-container--bootstrap-5 .select2-dropdown {
-            background-color: #1e1e2d !important;
-            border-color: #2b2b40 !important;
-        }
-        body.dark-mode .select2-container--bootstrap-5 .select2-search__field {
-            background-color: #334155 !important;
-            border-color: #2b2b40 !important;
-            color: #ffffff !important;
-        }
-        body.dark-mode .select2-results__option {
-            color: #ffffff !important;
-        }
-        body.dark-mode .select2-results__option--highlighted {
-            background-color: #0d6efd !important;
-            color: white !important;
-        }
-
     </style>
 @endpush
 

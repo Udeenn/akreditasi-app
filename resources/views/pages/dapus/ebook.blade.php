@@ -235,6 +235,7 @@
 
                 function updateCustomInfo() {
                     var pageInfo = table.page.info();
+                    if (!pageInfo) return;
                     let formatter = new Intl.NumberFormat('id-ID');
                     let formattedTotal = formatter.format(pageInfo.recordsTotal);
                     let infoText = `${formattedTotal}`;

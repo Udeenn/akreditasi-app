@@ -7,179 +7,7 @@
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
-
-    <style>
-        /* --- MODERN DASHBOARD STYLING --- */
-        :root {
-            --primary-soft: rgba(13, 110, 253, 0.1);
-            --success-soft: rgba(25, 135, 84, 0.1);
-            --warning-soft: rgba(255, 193, 7, 0.1);
-            --danger-soft: rgba(220, 53, 69, 0.1);
-            --info-soft: rgba(13, 202, 240, 0.1);
-        }
-
-        /* Card Styling */
-        .card {
-            border: none;
-            border-radius: 16px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            background-color: var(--bs-body-bg);
-            color: var(--bs-body-color);
-            overflow: hidden;
-        }
-
-        .card-header {
-            background-color: #ffffff;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            padding: 1.25rem 1.5rem;
-        }
-
-        .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
-        }
-
-        /* Badge Soft */
-        .badge.bg-danger-soft {
-            background-color: var(--danger-soft);
-            color: #dc3545;
-        }
-
-        .badge.bg-warning-soft {
-            background-color: var(--warning-soft);
-            color: #856404;
-        }
-
-        .badge.bg-success-soft {
-            background-color: var(--success-soft);
-            color: #198754;
-        }
-
-        .badge.bg-primary-soft {
-            background-color: var(--primary-soft);
-            color: #0d6efd;
-        }
-
-        /* Table Styling */
-        .table thead th {
-            background-color: rgba(0, 0, 0, 0.02);
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-            color: #6c757d;
-            border-bottom: 2px solid rgba(0, 0, 0, 0.05);
-            padding: 1rem;
-        }
-
-        .table td {
-            padding: 1rem 1rem;
-            vertical-align: middle;
-        }
-
-        .table-hover tbody tr:hover {
-            background-color: rgba(0, 0, 0, 0.015);
-        }
-
-        /* Row Highlight for Overdue */
-        .tr-overdue {
-            background-color: rgba(220, 53, 69, 0.03) !important;
-        }
-
-        .tr-overdue:hover {
-            background-color: rgba(220, 53, 69, 0.06) !important;
-        }
-
-        /* --- SELECT2 CUSTOMIZATION --- */
-        .select2-container--bootstrap-5 .select2-selection {
-            border-color: #dee2e6;
-            padding: 0.5rem 1rem;
-            height: auto;
-            border-radius: 0.5rem;
-        }
-
-        .select2-container--bootstrap-5.select2-container--focus .select2-selection,
-        .select2-container--bootstrap-5.select2-container--open .select2-selection {
-            box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
-            border-color: #86b7fe;
-        }
-
-        /* Dark Mode Fixes */
-        body.dark-mode .card {
-            background-color: #1e1e2d;
-            border: 1px solid #2b2b40;
-            color: #ffffff;
-        }
-
-        body.dark-mode .card-header {
-            background-color: #1e293b !important;
-            border-bottom-color: #2b2b40;
-            color: #ffffff;
-        }
-
-        body.dark-mode .text-muted {
-            color: #a1a5b7 !important;
-        }
-
-        body.dark-mode .table {
-            color: #ffffff;
-            border-color: #2b2b40;
-        }
-
-        body.dark-mode .table thead th {
-            background-color: #2b2b40;
-            color: #ffffff;
-            border-bottom-color: #3f4254;
-        }
-
-        body.dark-mode .form-control,
-        body.dark-mode .form-select {
-            background-color: #1e293b;
-            border-color: #2b2b40;
-            color: #ffffff;
-        }
-
-        body.dark-mode .select2-container--bootstrap-5 .select2-selection {
-            background-color: #1e293b !important;
-            border-color: #2b2b40 !important;
-            color: #ffffff !important;
-        }
-
-        body.dark-mode .select2-container--bootstrap-5 .select2-dropdown {
-            background-color: #1e293b !important;
-            border-color: #2b2b40 !important;
-        }
-
-        body.dark-mode .select2-container--bootstrap-5 .select2-selection__rendered {
-            color: #ffffff !important;
-        }
-
-        body.dark-mode .select2-results__option--highlighted {
-            background-color: #0d6efd !important;
-            color: white !important;
-        }
-
-        body.dark-mode .select2-container--bootstrap-5 .select2-search .select2-search__field {
-            background-color: #1e293b !important;
-            border-color: #2b2b40 !important;
-            color: #ffffff !important;
-            caret-color: white;
-        }
-
-        body.dark-mode .select2-results__option {
-            color: #ffffff !important;
-            background-color: #1e293b;
-        }
-
-        body.dark-mode .select2-container--bootstrap-5 .select2-results__option--highlighted[aria-selected] {
-            background-color: #0d6efd !important;
-            color: #ffffff !important;
-        }
-
-        body.dark-mode .select2-container--bootstrap-5 .select2-selection__placeholder {
-            color: #a1a5b7 !important;
-        }
-    </style>
+    {{-- Shared styles loaded from unified-components.css --}}
 @endpush
 
 @section('content')
@@ -246,7 +74,7 @@
 
         {{-- 3. RESULTS SECTION --}}
         <div class="card border-0 shadow-sm">
-            <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <div class="card-header px-4 py-3 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
                 <div class="d-flex align-items-center">
                     <div class="icon-box bg-primary-soft text-primary rounded-circle me-3"
                         style="width: 40px; height: 40px; display:flex; align-items:center; justify-content:center;">
@@ -405,7 +233,9 @@
                 "drawCallback": function(settings) {
                     // Update total count di header
                     var api = this.api();
-                    var total = api.page.info().recordsTotal;
+                    var pageInfo = api.page.info();
+                    if (!pageInfo) return;
+                    var total = pageInfo.recordsTotal;
                     $('#totalCount').text(total.toLocaleString('id-ID'));
 
                     // Highlight overdue rows

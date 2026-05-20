@@ -690,13 +690,7 @@
         /* === RESPONSIVE === */
         @media (max-width: 991.98px) {
             .sidebar {
-                transform: translateX(-100%);
-            }
-
-            .sidebar.show {
-                z-index: 1050;
-                transform: translateX(0);
-                box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+                display: none !important;
             }
 
             .content-area,
@@ -705,8 +699,22 @@
                 width: 100%;
             }
 
+            .content-area {
+                padding: 1rem;
+                padding-bottom: calc(1rem + 80px); /* space for bottom nav */
+            }
+
+            .app-header {
+                padding: 0.75rem 1rem;
+            }
+
             .header-left .sidebar-toggle-btn {
-                display: block;
+                display: none; /* No longer needed, bottom nav replaces it */
+            }
+
+            /* Theme FAB: move above bottom nav */
+            .theme-fab {
+                bottom: 5.5rem !important;
             }
 
             .sidebar-backdrop {
@@ -726,8 +734,175 @@
                 opacity: 1;
                 visibility: visible;
             }
+        }
 
+        /* ===== MOBILE BOTTOM NAV BAR ===== */
+        .mobile-bottom-nav {
+            display: none;
+        }
 
+        @media (max-width: 991.98px) {
+            .mobile-bottom-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 1050;
+                background-color: var(--sidebar-bg);
+                border-top: 1px solid var(--border-color);
+                padding: 0.35rem 0;
+                padding-bottom: calc(0.35rem + env(safe-area-inset-bottom, 0px));
+                justify-content: space-around;
+                align-items: center;
+                box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+                backdrop-filter: blur(12px);
+            }
+
+            .mobile-bottom-nav .bnav-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-decoration: none;
+                color: var(--text-light);
+                font-size: 0.65rem;
+                font-weight: 500;
+                padding: 0.25rem 0.5rem;
+                border-radius: 10px;
+                transition: all 0.2s ease;
+                position: relative;
+                flex: 1;
+                max-width: 80px;
+                -webkit-tap-highlight-color: transparent;
+                cursor: pointer;
+                background: none;
+                border: none;
+            }
+
+            .mobile-bottom-nav .bnav-item i {
+                font-size: 1.2rem;
+                margin-bottom: 2px;
+                transition: transform 0.2s ease;
+            }
+
+            .mobile-bottom-nav .bnav-item.active,
+            .mobile-bottom-nav .bnav-item:active {
+                color: var(--primary-color);
+            }
+
+            .mobile-bottom-nav .bnav-item.active i {
+                transform: scale(1.1);
+            }
+
+            .mobile-bottom-nav .bnav-item.active::after {
+                content: '';
+                position: absolute;
+                top: -4px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 20px;
+                height: 3px;
+                border-radius: 3px;
+                background: var(--primary-color);
+            }
+
+            /* --- Slide-up menu panel --- */
+            .mobile-menu-panel {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 1051;
+                background-color: var(--sidebar-bg);
+                border-top-left-radius: 20px;
+                border-top-right-radius: 20px;
+                box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.15);
+                transform: translateY(100%);
+                transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+                max-height: 75vh;
+                overflow-y: auto;
+                overscroll-behavior: contain;
+            }
+
+            .mobile-menu-panel.show {
+                transform: translateY(0);
+            }
+
+            .mobile-menu-panel .panel-handle {
+                display: flex;
+                justify-content: center;
+                padding: 0.75rem 0 0.25rem;
+                cursor: pointer;
+            }
+
+            .mobile-menu-panel .panel-handle::after {
+                content: '';
+                width: 40px;
+                height: 4px;
+                border-radius: 4px;
+                background: var(--border-color);
+            }
+
+            .mobile-menu-panel .panel-body {
+                padding: 0.5rem 1rem 1.5rem;
+                padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+            }
+
+            .mobile-menu-panel .panel-section-label {
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                font-weight: 700;
+                color: var(--text-light);
+                letter-spacing: 0.05em;
+                padding: 0.75rem 0.5rem 0.35rem;
+                margin-top: 0.25rem;
+            }
+
+            .mobile-menu-panel .panel-nav-link {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.7rem 0.75rem;
+                border-radius: 10px;
+                text-decoration: none;
+                color: var(--text-dark);
+                font-size: 0.88rem;
+                font-weight: 500;
+                transition: all 0.15s ease;
+            }
+
+            .mobile-menu-panel .panel-nav-link:active {
+                background-color: var(--primary-light);
+                transform: scale(0.98);
+            }
+
+            .mobile-menu-panel .panel-nav-link.active {
+                background-color: var(--primary-color);
+                color: #fff;
+            }
+
+            .mobile-menu-panel .panel-nav-link i {
+                width: 24px;
+                text-align: center;
+                font-size: 0.95rem;
+            }
+
+            .mobile-menu-overlay {
+                position: fixed;
+                inset: 0;
+                z-index: 1050;
+                background: rgba(0, 0, 0, 0.35);
+                backdrop-filter: blur(2px);
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s ease, visibility 0.3s ease;
+            }
+
+            .mobile-menu-overlay.show {
+                opacity: 1;
+                visibility: visible;
+            }
         }
 
         .sidebar .collapse {
@@ -835,6 +1010,132 @@
     </div>
 
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    {{-- ===== MOBILE BOTTOM NAV BAR ===== --}}
+    @php
+        $currentRoute = Route::currentRouteName();
+        $isKoleksi = request()->routeIs('koleksi.*');
+        $isAnalitik = request()->routeIs(['kunjungan.*', 'peminjaman.*', 'penggunaan.*', 'reward.*']);
+    @endphp
+    <nav class="mobile-bottom-nav" id="mobileBottomNav">
+        <a href="{{ route('dashboard') }}" class="bnav-item {{ $currentRoute === 'dashboard' ? 'active' : '' }}">
+            <i class="fas fa-home"></i>
+            <span>Beranda</span>
+        </a>
+        <button type="button" class="bnav-item {{ $isKoleksi ? 'active' : '' }}" data-panel="koleksi">
+            <i class="fas fa-book"></i>
+            <span>Koleksi</span>
+        </button>
+        <button type="button" class="bnav-item {{ $isAnalitik ? 'active' : '' }}" data-panel="analitik">
+            <i class="fas fa-chart-bar"></i>
+            <span>Analitik</span>
+        </button>
+        <button type="button" class="bnav-item" data-panel="more">
+            <i class="fas fa-ellipsis-h"></i>
+            <span>Lainnya</span>
+        </button>
+    </nav>
+
+    {{-- Mobile overlay --}}
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+    {{-- Slide-up panel: Koleksi --}}
+    <div class="mobile-menu-panel" id="panelKoleksi">
+        <div class="panel-handle" data-panel-close></div>
+        <div class="panel-body">
+            <div class="panel-section-label">Daftar Koleksi</div>
+            <a href="{{ route('koleksi.rekap_fakultas') }}" class="panel-nav-link {{ request()->routeIs('koleksi.rekap_fakultas') ? 'active' : '' }}">
+                <i class="fas fa-university"></i> Per Fakultas
+            </a>
+            <a href="{{ route('koleksi.textbook') }}" class="panel-nav-link {{ request()->routeIs('koleksi.textbook') ? 'active' : '' }}">
+                <i class="fas fa-book-open"></i> Text Book
+            </a>
+            <a href="{{ route('koleksi.ebook') }}" class="panel-nav-link {{ request()->routeIs('koleksi.ebook') ? 'active' : '' }}">
+                <i class="fas fa-tablet-alt"></i> E-Book
+            </a>
+            <a href="{{ route('koleksi.jurnal') }}" class="panel-nav-link {{ request()->routeIs('koleksi.jurnal') ? 'active' : '' }}">
+                <i class="fas fa-newspaper"></i> Journal
+            </a>
+            <a href="{{ route('koleksi.ejurnal') }}" class="panel-nav-link {{ request()->routeIs('koleksi.ejurnal') ? 'active' : '' }}">
+                <i class="fas fa-globe"></i> E-Journal
+            </a>
+            <a href="{{ route('koleksi.prosiding') }}" class="panel-nav-link {{ request()->routeIs('koleksi.prosiding') ? 'active' : '' }}">
+                <i class="fas fa-file-alt"></i> Prosiding
+            </a>
+            <a href="{{ route('koleksi.referensi') }}" class="panel-nav-link {{ request()->routeIs('koleksi.referensi') ? 'active' : '' }}">
+                <i class="fas fa-bookmark"></i> Referensi
+            </a>
+            <a href="{{ route('koleksi.eresource') }}" class="panel-nav-link {{ request()->routeIs('koleksi.eresource') ? 'active' : '' }}">
+                <i class="fas fa-database"></i> E-Resource
+            </a>
+        </div>
+    </div>
+
+    {{-- Slide-up panel: Analitik --}}
+    <div class="mobile-menu-panel" id="panelAnalitik">
+        <div class="panel-handle" data-panel-close></div>
+        <div class="panel-body">
+            <div class="panel-section-label">Kunjungan</div>
+            <a href="{{ route('kunjungan.fakultasTable') }}" class="panel-nav-link {{ request()->routeIs('kunjungan.fakultasTable') ? 'active' : '' }}">
+                <i class="fas fa-university"></i> Per Fakultas
+            </a>
+            <a href="{{ route('kunjungan.keseluruhan') }}" class="panel-nav-link {{ request()->routeIs('kunjungan.keseluruhan') ? 'active' : '' }}">
+                <i class="fas fa-chart-line"></i> Keseluruhan
+            </a>
+            <a href="{{ route('kunjungan.prodi') }}" class="panel-nav-link {{ request()->routeIs('kunjungan.prodi') ? 'active' : '' }}">
+                <i class="fas fa-users"></i> Civitas Akademika
+            </a>
+            <a href="{{ route('kunjungan.cekKehadiran') }}" class="panel-nav-link {{ request()->routeIs('kunjungan.cekKehadiran') ? 'active' : '' }}">
+                <i class="fas fa-search"></i> Cek Kunjungan
+            </a>
+
+            <div class="panel-section-label">Peminjaman</div>
+            <a href="{{ route('peminjaman.peminjaman_fakultas') }}" class="panel-nav-link {{ request()->routeIs('peminjaman.peminjaman_fakultas') ? 'active' : '' }}">
+                <i class="fas fa-university"></i> Per Fakultas
+            </a>
+            <a href="{{ route('peminjaman.keseluruhan') }}" class="panel-nav-link {{ request()->routeIs('peminjaman.keseluruhan') ? 'active' : '' }}">
+                <i class="fas fa-chart-area"></i> Keseluruhan
+            </a>
+            <a href="{{ route('peminjaman.prodi') }}" class="panel-nav-link {{ request()->routeIs('peminjaman.prodi') ? 'active' : '' }}">
+                <i class="fas fa-user-graduate"></i> Civitas Akademika
+            </a>
+            <a href="{{ route('peminjaman.cek_pinjaman') }}" class="panel-nav-link {{ request()->routeIs('peminjaman.cek_pinjaman') ? 'active' : '' }}">
+                <i class="fas fa-search"></i> Cek Pinjaman
+            </a>
+            <a href="{{ route('peminjaman.berlangsung') }}" class="panel-nav-link {{ request()->routeIs('peminjaman.berlangsung') ? 'active' : '' }}">
+                <i class="fas fa-clock"></i> Sedang Berlangsung
+            </a>
+
+            <div class="panel-section-label">Statistik Sirkulasi</div>
+            <a href="{{ route('penggunaan.keterpakaian_koleksi') }}" class="panel-nav-link {{ request()->routeIs('penggunaan.keterpakaian_koleksi') ? 'active' : '' }}">
+                <i class="fas fa-barcode"></i> Keterpakaian Koleksi
+            </a>
+            <a href="{{ route('penggunaan.cek_histori_buku_buku') }}" class="panel-nav-link {{ request()->routeIs('penggunaan.cek_histori_buku_buku') ? 'active' : '' }}">
+                <i class="fas fa-history"></i> Cek Histori Buku
+            </a>
+            <a href="{{ route('penggunaan.sering_dibaca') }}" class="panel-nav-link {{ request()->routeIs('penggunaan.sering_dibaca') ? 'active' : '' }}">
+                <i class="fas fa-trophy"></i> Buku Terlaris
+            </a>
+        </div>
+    </div>
+
+    {{-- Slide-up panel: Lainnya --}}
+    <div class="mobile-menu-panel" id="panelMore">
+        <div class="panel-handle" data-panel-close></div>
+        <div class="panel-body">
+            <div class="panel-section-label">Lainnya</div>
+            <a href="{{ route('reward.pemustaka_teraktif') }}" class="panel-nav-link {{ request()->routeIs('reward.pemustaka_teraktif') ? 'active' : '' }}">
+                <i class="fas fa-gift"></i> Pemustaka Teraktif
+            </a>
+            @auth
+            @if(Auth::user()->isLibrarian())
+            <a href="{{ route('admin.activity-log') }}" class="panel-nav-link {{ request()->routeIs('admin.activity-log') ? 'active' : '' }}">
+                <i class="fas fa-shield-halved"></i> Audit Trail
+            </a>
+            @endif
+            @endauth
+        </div>
+    </div>
 
     <div class="modal fade" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeModalLabel">
         <div class="modal-dialog modal-dialog-centered welcome-modal-animate">
@@ -1016,8 +1317,7 @@
             if (toggleBtn) {
                 toggleBtn.addEventListener('click', function() {
                     if (isMobile()) {
-                        sidebar.classList.toggle('show');
-                        sidebarBackdrop.classList.toggle('show');
+                        // No-op: bottom nav handles mobile navigation now
                     } else {
                         body.classList.toggle('sidebar-collapsed');
 
@@ -1037,6 +1337,71 @@
                     }
                 });
             }
+
+            // ============================================================
+            // MOBILE BOTTOM NAV — slide-up panels
+            // ============================================================
+            (function() {
+                const overlay = document.getElementById('mobileMenuOverlay');
+                const panels = {
+                    koleksi: document.getElementById('panelKoleksi'),
+                    analitik: document.getElementById('panelAnalitik'),
+                    more: document.getElementById('panelMore'),
+                };
+                let activePanel = null;
+
+                function closeAllPanels() {
+                    Object.values(panels).forEach(function(p) {
+                        if (p) p.classList.remove('show');
+                    });
+                    if (overlay) overlay.classList.remove('show');
+                    activePanel = null;
+                }
+
+                // Bottom nav buttons
+                document.querySelectorAll('.mobile-bottom-nav .bnav-item[data-panel]').forEach(function(btn) {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        var panelName = btn.getAttribute('data-panel');
+                        var panel = panels[panelName];
+                        if (!panel) return;
+
+                        if (activePanel === panelName) {
+                            closeAllPanels();
+                        } else {
+                            closeAllPanels();
+                            panel.classList.add('show');
+                            if (overlay) overlay.classList.add('show');
+                            activePanel = panelName;
+                        }
+                    });
+                });
+
+                // Close on overlay tap
+                if (overlay) {
+                    overlay.addEventListener('click', closeAllPanels);
+                }
+
+                // Close on panel handle tap
+                document.querySelectorAll('[data-panel-close]').forEach(function(handle) {
+                    handle.addEventListener('click', closeAllPanels);
+                });
+
+                // Swipe-down to close
+                Object.values(panels).forEach(function(panel) {
+                    if (!panel) return;
+                    var startY = 0;
+                    panel.addEventListener('touchstart', function(e) {
+                        startY = e.touches[0].clientY;
+                    }, { passive: true });
+                    panel.addEventListener('touchmove', function(e) {
+                        var diff = e.touches[0].clientY - startY;
+                        if (diff > 60) {
+                            closeAllPanels();
+                        }
+                    }, { passive: true });
+                });
+            })();
 
             const themeToggle = document.getElementById('theme-toggle');
 

@@ -226,130 +226,29 @@
 
 @push('styles')
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    {{-- Shared styles loaded from unified-components.css --}}
     <style>
-        /* Pastikan teks tabel dan info DataTable otomatis putih/terang */
-        #yajraTable,
-        .dataTables_info,
-        .dataTables_length label,
-        .dataTables_filter label {
-            color: var(--text-dark) !important;
-        }
-
-        /* Memperbaiki baris tabel (TD) agar teksnya terlihat */
-        #yajraTable tbody td {
-            color: var(--text-dark) !important;
-        }
-
-        /* Memperbaiki teks di dalam kotak 'Empty State' */
-        .bg-tertiary h4,
-        .bg-tertiary p {
-            color: var(--text-dark) !important;
-        }
-
-        /* Memperbaiki Dropdown & Input agar tidak ada background putih yang menabrak teks */
-        .dataTables_length select,
-        .dataTables_filter input {
-            background-color: var(--bs-tertiary-bg) !important;
-            color: var(--text-dark) !important;
-            border: 1px solid var(--bs-border-color) !important;
-        }
-
-        .table-dark-custom {
-            --bs-table-color: #ffffff;
-            /* Memaksa warna teks tabel jadi putih */
-        }
-
-        .dataTables_wrapper .dataTables_length label,
-        .dataTables_wrapper .dataTables_filter label,
-        .dataTables_wrapper .dataTables_info,
-        .dataTables_wrapper .dataTables_paginate {
-            color: var(--text-dark) !important;
-        }
-
-        /* Perbaiki input search agar background tidak putih terang */
-        .dataTables_filter input,
-        .dataTables_length select {
-            background-color: var(--sidebar-bg) !important;
-            color: var(--text-dark) !important;
-            border: 1px solid var(--bs-border-color) !important;
-        }
-
-        .card-body.bg-primary h3,
-        .card-body.bg-primary p {
-            color: #ffffff !important;
-        }
-
-        .dataTables_filter input {
-            background-color: var(--sidebar-bg) !important;
-            color: var(--text-dark) !important;
-            border: 1px solid var(--bs-border-color) !important;
-        }
-
-        /* Memperbaiki Dropdown 'Show entries' */
-        .dataTables_length select {
-            background-color: var(--sidebar-bg) !important;
-            color: var(--text-dark) !important;
-            border: 1px solid var(--bs-border-color) !important;
-        }
-
-        /* Memastikan chart mengikuti warna teks tema */
-        #kunjunganChart {
-            color: var(--text-dark);
-        }
-
+        /* === PAGE-SPECIFIC: #yajraTable DataTables transparency overrides === */
         #yajraTable {
             --bs-table-bg: transparent;
             --bs-table-accent-bg: transparent;
             --bs-table-striped-bg: transparent;
             --bs-table-hover-bg: transparent;
-            color: var(--text-dark) !important;
-        }
-
-        #yajraTable thead th {
-            background-color: transparent !important;
-            color: var(--text-dark) !important;
-            border-bottom: 2px solid var(--bs-border-color);
-            letter-spacing: 0.5px;
         }
 
         #yajraTable tbody td {
             background-color: transparent !important;
-            color: var(--text-dark) !important;
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid var(--bs-border-color);
             vertical-align: middle;
         }
 
-        /* 4. Hapus Efek Hover (Sesuai Request) */
         #yajraTable tbody tr:hover {
             background-color: transparent !important;
             cursor: default;
         }
 
-        /* --- 2. LAYOUT & PADDING FIXES --- */
-
-        /* Card mengikuti warna body/tema */
-        .card {
-            background-color: var(--bs-body-bg);
-            border-color: var(--bs-border-color);
-        }
-
-        .card-header {
-            background-color: var(--bs-body-bg);
-            border-bottom-color: var(--bs-border-color);
-        }
-
-        /* Input & Select mengikuti tema */
-        .form-control,
-        .form-select {
-            border-radius: 8px;
-            padding: 0.6rem 0.85rem;
-            background-color: var(--bs-body-bg);
-            color: var(--bs-body-color);
-            border-color: var(--bs-border-color);
-        }
-
-        /* Padding Kanan Kiri (Search, Length, Info, Pagination) */
+        /* DataTables padding overrides for this page */
         div.dataTables_wrapper div.dataTables_length {
             padding-left: 1.5rem !important;
             padding-top: 1rem;
@@ -373,11 +272,6 @@
 
         .fw-extrabold {
             font-weight: 800;
-        }
-
-        .btn {
-            border-radius: 8px;
-            transition: all 0.2s ease;
         }
 
         /* Child Rows (Accordion) Styling */

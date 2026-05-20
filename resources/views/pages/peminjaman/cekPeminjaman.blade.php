@@ -2,128 +2,7 @@
 
 @section('title', 'Cek Histori Peminjaman')
 
-@push('styles')
-    <style>
-        /* --- MODERN STYLING (CONSISTENT THEME) --- */
-        :root {
-            --primary-soft: rgba(13, 110, 253, 0.1);
-            --success-soft: rgba(25, 135, 84, 0.1);
-            --danger-soft: rgba(220, 53, 69, 0.1);
-            --warning-soft: rgba(255, 193, 7, 0.1);
-        }
-
-        /* Card Styling */
-        .card {
-            border: none;
-            border-radius: 16px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            background-color: var(--bs-body-bg);
-            color: var(--bs-body-color);
-            overflow: hidden;
-        }
-
-        .card-header {
-            background-color: #ffffff;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            padding: 1.25rem 1.5rem;
-        }
-
-        .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
-        }
-
-        /* Icon Box */
-        .icon-box {
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-size: 1.25rem;
-            flex-shrink: 0;
-        }
-
-        .bg-primary-soft {
-            background-color: var(--primary-soft);
-            color: #0d6efd;
-        }
-
-        .bg-success-soft {
-            background-color: var(--success-soft);
-            color: #198754;
-        }
-
-        .bg-danger-soft {
-            background-color: var(--danger-soft);
-            color: #dc3545;
-        }
-
-        .bg-warning-soft {
-            background-color: var(--warning-soft);
-            color: #ffc107;
-        }
-
-        /* Table Styling */
-        .table thead th {
-            background-color: rgba(0, 0, 0, 0.02);
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-            color: #6c757d;
-            border-bottom: 2px solid rgba(0, 0, 0, 0.05);
-            padding: 1rem;
-        }
-
-        .table td {
-            padding: 1rem;
-            vertical-align: middle;
-        }
-
-        /* Dark Mode */
-        body.dark-mode .card {
-            background-color: #1e1e2d;
-            border: 1px solid #2b2b40;
-            color: #ffffff;
-        }
-
-        body.dark-mode .card-header {
-            background-color: #1e1e2d !important;
-            border-bottom-color: #2b2b40;
-            color: #ffffff;
-        }
-
-        body.dark-mode .text-muted {
-            color: #a1a5b7 !important;
-        }
-
-        body.dark-mode .table {
-            color: #ffffff;
-            border-color: #2b2b40;
-        }
-
-        body.dark-mode .table thead th {
-            background-color: #2b2b40;
-            color: #ffffff;
-            border-bottom-color: #3f4254;
-        }
-
-        body.dark-mode .form-control,
-        body.dark-mode .form-select {
-            background-color: #1b1b29;
-            border-color: #2b2b40;
-            color: #ffffff;
-        }
-
-        body.dark-mode .input-group-text {
-            background-color: #2b2b40;
-            border-color: #2b2b40;
-            color: #ffffff;
-        }
-    </style>
-@endpush
+{{-- Shared styles loaded from unified-components.css --}}
 
 @section('content')
     <div class="container-fluid px-3 px-md-4 py-4">
@@ -245,7 +124,7 @@
                 <div class="col-lg-8">
                     {{-- A. Borrowing History --}}
                     <div class="card border-0 shadow-sm mb-4">
-                        <div class="card-header  d-flex justify-content-between align-items-center">
+                        <div class="card-header px-4 py-3 d-flex justify-content-between align-items-center">
                             <h6 class="fw-bold text-success mb-0">
                                 <i class="fas fa-history me-2"></i>Riwayat Peminjaman
                             </h6>
@@ -267,15 +146,15 @@
                                     <table class="table table-hover align-middle mb-0">
                                         <thead class="">
                                             <tr>
-                                                <th style="width: 50%;">Buku</th>
+                                                <th class="px-4" style="width: 50%;">Buku</th>
                                                 <th style="width: 20%;">Tipe Transaksi</th>
-                                                <th style="width: 30%;">Waktu</th>
+                                                <th class="px-4" style="width: 30%;">Waktu</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @foreach ($borrowingHistory as $history)
                                                 <tr>
-                                                    <td>
+                                                    <td class="px-4">
                                                         <div class="d-flex align-items-center">
                                                             <div class="icon-box  text-muted me-3 rounded-3"
                                                                 style="width: 40px; height: 40px; font-size: 1rem;">
@@ -300,7 +179,7 @@
                                                                     class="fas fa-redo me-1"></i> Perpanjang</span>
                                                         @endif
                                                     </td>
-                                                    <td class="text-muted small">
+                                                    <td class="text-muted small px-4">
                                                         <i class="far fa-calendar-alt me-1"></i>
                                                         {{ \Carbon\Carbon::parse($history->datetime)->format('d M Y, H:i') }}
                                                     </td>
@@ -309,18 +188,20 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <div class="card-footer  border-0 py-3">
-                                    <div class="d-flex justify-content-end">
-                                        {{ $borrowingHistory->appends(request()->input())->links() }}
-                                    </div>
-                                </div>
                             @endif
                         </div>
+                        @if ($borrowingHistory->isNotEmpty())
+                        <div class="card-footer px-4 py-3 border-0 bg-transparent">
+                            <div class="d-flex justify-content-end">
+                                {{ $borrowingHistory->appends(request()->input())->links() }}
+                            </div>
+                        </div>
+                        @endif
                     </div>
 
                     {{-- B. Return History --}}
                     <div class="card border-0 shadow-sm">
-                        <div class="card-header  d-flex justify-content-between align-items-center">
+                        <div class="card-header px-4 py-3 d-flex justify-content-between align-items-center">
                             <h6 class="fw-bold text-danger mb-0">
                                 <i class="fas fa-undo-alt me-2"></i>Riwayat Pengembalian
                             </h6>
@@ -342,15 +223,15 @@
                                     <table class="table table-hover align-middle mb-0">
                                         <thead class="">
                                             <tr>
-                                                <th style="width: 50%;">Buku</th>
+                                                <th class="px-4" style="width: 50%;">Buku</th>
                                                 <th style="width: 20%;">Tipe Transaksi</th>
-                                                <th style="width: 30%;">Waktu</th>
+                                                <th class="px-4" style="width: 30%;">Waktu</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @foreach ($returnHistory as $history)
                                                 <tr>
-                                                    <td>
+                                                    <td class="px-4">
                                                         <div class="d-flex align-items-center">
                                                             <div class="icon-box  text-muted me-3 rounded-3"
                                                                 style="width: 40px; height: 40px; font-size: 1rem;">
@@ -368,7 +249,7 @@
                                                         <span class="badge bg-danger-soft text-danger rounded-pill px-3"><i
                                                                 class="fas fa-arrow-up me-1"></i> Kembali</span>
                                                     </td>
-                                                    <td class="text-muted small">
+                                                    <td class="text-muted small px-4">
                                                         <i class="far fa-calendar-alt me-1"></i>
                                                         {{ \Carbon\Carbon::parse($history->datetime)->format('d M Y, H:i') }}
                                                     </td>
@@ -377,13 +258,15 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <div class="card-footer  border-0 py-3">
-                                    <div class="d-flex justify-content-end">
-                                        {{ $returnHistory->appends(request()->input())->links() }}
-                                    </div>
-                                </div>
                             @endif
                         </div>
+                        @if ($returnHistory->isNotEmpty())
+                        <div class="card-footer px-4 py-3 border-0 bg-transparent">
+                            <div class="d-flex justify-content-end">
+                                {{ $returnHistory->appends(request()->input())->links() }}
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>

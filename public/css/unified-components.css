@@ -1,7 +1,7 @@
 /* ============================================================
    UNIFIED COMPONENTS CSS
    Extracted from the modern dashboard styling used across
-   kunjungan and peminjaman pages.
+   kunjungan, peminjaman, dapus, and activity-log pages.
    ============================================================ */
 
 /* --- ROOT VARIABLES (Soft background colors for icon-boxes / stat cards) --- */
@@ -65,20 +65,26 @@
 }
 
 
-/* --- CARD STYLING --- */
+/* --- CARD STYLING (global .card + .unified-card) --- */
+.card,
 .unified-card {
     border: none;
     border-radius: 12px !important;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     background-color: var(--bs-body-bg);
-    color: var(--text-dark);
+    color: var(--bs-body-color);
     overflow: hidden !important;
 }
 
-.unified-card .card-header {
+.card-header {
     background-color: #ffffff;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    color: var(--text-dark);
+}
+
+/* Fallback padding if no Bootstrap padding utility is used */
+.card-header:not([class*="px-"]):not([class*="p-"]),
+.card-footer:not([class*="px-"]):not([class*="p-"]) {
+    padding: 1.25rem 1.5rem;
 }
 
 
@@ -98,10 +104,12 @@
     justify-content: center;
     border-radius: 12px;
     font-size: 1.25rem;
+    flex-shrink: 0;
 }
 
 
-/* --- TABLE STYLING --- */
+/* --- TABLE STYLING (global .table + .unified-table) --- */
+.table thead th,
 .unified-table thead th {
     background-color: rgba(0, 0, 0, 0.02);
     font-weight: 600;
@@ -148,9 +156,80 @@
 
 
 /* --- SELECT2 FOCUS STYLING --- */
+.select2-container--bootstrap-5 .select2-selection {
+    border-color: #dee2e6;
+    padding: 0.5rem 1rem;
+    height: auto;
+    border-radius: 0.5rem;
+}
+
 .select2-container--bootstrap-5.select2-container--focus .select2-selection,
 .select2-container--bootstrap-5.select2-container--open .select2-selection {
     box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+    border-color: #86b7fe;
+}
+
+
+/* --- BADGE SOFT UTILITIES --- */
+.badge.bg-danger-soft {
+    background-color: var(--danger-soft);
+    color: #dc3545;
+}
+
+.badge.bg-warning-soft {
+    background-color: var(--warning-soft);
+    color: #856404;
+}
+
+.badge.bg-success-soft {
+    background-color: var(--success-soft);
+    color: #198754;
+}
+
+.badge.bg-primary-soft {
+    background-color: var(--primary-soft);
+    color: #0d6efd;
+}
+
+.badge.bg-info-soft {
+    background-color: var(--info-soft);
+    color: #0dcaf0;
+}
+
+
+/* --- DATATABLES LIGHT MODE OVERRIDES --- */
+.dataTables_wrapper .dataTables_length select,
+.dataTables_wrapper .dataTables_filter input {
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 6px;
+    padding: 4px 8px;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: #0d6efd !important;
+    color: white !important;
+    border: 1px solid #0d6efd !important;
+    border-radius: 50%;
+}
+
+div.dataTables_wrapper div.dataTables_length select {
+    width: auto;
+    display: inline-block;
+    margin: 0 0.5rem;
+}
+
+div.dataTables_wrapper div.dataTables_info {
+    padding-top: 0;
+}
+
+
+/* --- ROW HIGHLIGHT FOR OVERDUE --- */
+.tr-overdue {
+    background-color: rgba(220, 53, 69, 0.03) !important;
+}
+
+.tr-overdue:hover {
+    background-color: rgba(220, 53, 69, 0.06) !important;
 }
 
 
@@ -159,12 +238,16 @@
    ============================================================ */
 
 /* Cards */
+body.dark-mode .card,
 body.dark-mode .unified-card {
     background-color: #1e1e2d;
     border: 1px solid #2b2b40;
     color: #ffffff;
+    border-radius: 12px !important;
+    overflow: hidden !important;
 }
 
+body.dark-mode .card-header,
 body.dark-mode .unified-card .card-header {
     background-color: #1e293b !important;
     border-bottom-color: #2b2b40;
@@ -181,11 +264,13 @@ body.dark-mode .text-body {
 }
 
 /* Tables */
+body.dark-mode .table,
 body.dark-mode .unified-table {
     color: #ffffff;
     border-color: #2b2b40;
 }
 
+body.dark-mode .table thead th,
 body.dark-mode .unified-table thead th {
     background-color: #2b2b40;
     color: #ffffff;
@@ -212,6 +297,11 @@ body.dark-mode .btn-close {
     filter: invert(1) grayscale(100%) brightness(200%);
 }
 
+/* Progress */
+body.dark-mode .progress {
+    background-color: #ffffff;
+}
+
 /* List group items */
 body.dark-mode .list-group-item strong {
     color: #ffffff !important;
@@ -234,6 +324,10 @@ body.dark-mode .select2-container--bootstrap-5 .select2-selection__rendered {
     color: #ffffff !important;
 }
 
+body.dark-mode .select2-container--bootstrap-5 .select2-selection__placeholder {
+    color: #a1a5b7 !important;
+}
+
 body.dark-mode .select2-container--bootstrap-5 .select2-selection__arrow b {
     border-color: #adb5bd transparent transparent transparent !important;
 }
@@ -243,14 +337,17 @@ body.dark-mode .select2-container--bootstrap-5 .select2-dropdown {
     border-color: #2b2b40 !important;
 }
 
-body.dark-mode .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
-    background-color: #1e293b !important;
+body.dark-mode .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field,
+body.dark-mode .select2-container--bootstrap-5 .select2-search .select2-search__field {
+    background-color: #334155 !important;
     border-color: #2b2b40 !important;
     color: #ffffff !important;
+    caret-color: white;
 }
 
 body.dark-mode .select2-results__option {
     color: #ffffff !important;
+    background-color: #1e293b;
 }
 
 body.dark-mode .select2-results__option--highlighted {
@@ -294,7 +391,7 @@ body.dark-mode .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
     color: #ffffff !important;
 }
 
-/* --- SIDEBAR BRAND LOGO --- */
+
 /* --- SIDEBAR BRAND LOGO TOGGLE --- */
 /* Default (Light Mode): Show logo-light, Hide logo-dark */
 .logo-light {

@@ -17,7 +17,8 @@ class ActivityLogController extends Controller
         [$query, $dateFrom, $dateTo] = $this->buildQuery($request);
 
         // ── Paginate ──────────────────────────────────────────────
-        $logs = $query->paginate(50)->withQueryString();
+        $perPage = $request->input('per_page', 10);
+        $logs = $query->paginate($perPage)->withQueryString();
 
         // ── Summary stats (untuk hari yang difilter) ──────────────
         $statsQuery = ActivityLog::whereBetween('created_at', [
@@ -74,7 +75,7 @@ class ActivityLogController extends Controller
                 foreach ($rows as $log) {
                     fputcsv($out, [
                         $no++,
-                        $log->created_at->format('d/m/Y H:i:s'),
+                        $log->created_at->timezone('Asia/Jakarta')->format('d/m/Y H:i:s'),
                         $log->username     ?? '-',
                         $log->user_name    ?? '-',
                         $log->user_role    ?? '-',
