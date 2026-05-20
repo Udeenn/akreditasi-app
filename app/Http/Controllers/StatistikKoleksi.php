@@ -113,6 +113,17 @@ class StatistikKoleksi extends Controller
                 
                 $targetProdiCodes = array_keys($prodiToFacultyMap, $selectedFaculty);
                 
+                // Gabungkan semua rules dari target prodi untuk pre-filter query DB
+                $combinedRules = [];
+                foreach ($targetProdiCodes as $prodiCode) {
+                    $rules = CnClassHelperr::getCnClassByProdi($prodiCode);
+                    if ($rules) {
+                        $combinedRules = array_merge($combinedRules, $rules);
+                    }
+                }
+                // Hapus duplikat untuk mengurangi beban query
+                $combinedRules = array_unique($combinedRules, SORT_REGULAR);
+                
                 $countsPerProdi = [];
                 foreach ($targetProdiCodes as $prodiCode) {
                     $countsPerProdi[$prodiCode] = [
@@ -125,7 +136,7 @@ class StatistikKoleksi extends Controller
                     ];
                 }
 
-                $processCategory = function($category, $itypes, $isSerial = false, $isCcodeR = false, $isBarcodeJE = false, $isNotBarcodeJE = false) use (&$countsPerProdi, $targetProdiCodes, $tahunTerakhir) {
+                $processCategory = function($category, $itypes, $isSerial = false, $isCcodeR = false, $isBarcodeJE = false, $isNotBarcodeJE = false) use (&$countsPerProdi, $targetProdiCodes, $tahunTerakhir, $combinedRules) {
                     $q = M_items::query()
                         ->from('items')
                         ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
@@ -169,6 +180,11 @@ class StatistikKoleksi extends Controller
                          } else {
                              $q->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
                          }
+                     }
+
+                     // OPTIMASI: Pre-filter query DB hanya untuk cn_class yang sesuai dengan fakultas ini
+                     if (!empty($combinedRules)) {
+                         QueryHelper::applyCnClassRules($q, $combinedRules);
                      }
 
                      // Eksekusi pakai cursor untuk hemat RAM

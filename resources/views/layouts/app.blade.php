@@ -737,7 +737,9 @@
         }
 
         /* ===== MOBILE BOTTOM NAV BAR ===== */
-        .mobile-bottom-nav {
+        .mobile-bottom-nav,
+        .mobile-menu-panel,
+        .mobile-menu-overlay {
             display: none;
         }
 
@@ -809,6 +811,7 @@
 
             /* --- Slide-up menu panel --- */
             .mobile-menu-panel {
+                display: block;
                 position: fixed;
                 bottom: 0;
                 left: 0;
@@ -889,6 +892,7 @@
             }
 
             .mobile-menu-overlay {
+                display: block;
                 position: fixed;
                 inset: 0;
                 z-index: 1050;

@@ -81,7 +81,6 @@
                             href="{{ route('koleksi.referensi') }}">Referensi</a></li>
                     <li><a class="nav-link {{ request()->routeIs('koleksi.eresource') ? 'active' : '' }}"
                             href="{{ route('koleksi.eresource') }}">E-Resource</a></li>
-        </li>
         {{-- <li><a class="nav-link {{ request()->routeIs('koleksi.periodikal') ? 'active' : '' }}"
                             href="{{ route('koleksi.periodikal') }}">Majalah</a></li> --}}
 
