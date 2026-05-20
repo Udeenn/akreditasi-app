@@ -26,6 +26,7 @@ class SecurityHeaders
         'https://cdnjs.cloudflare.com',
         'https://code.jquery.com',
         'https://unpkg.com',
+        'https://cdn.datatables.net',
     ];
 
     protected array $allowedStyleSources = [
@@ -34,6 +35,7 @@ class SecurityHeaders
         'https://cdn.jsdelivr.net',
         'https://cdnjs.cloudflare.com',
         'https://fonts.googleapis.com',
+        'https://cdn.datatables.net',
     ];
 
     protected array $allowedFontSources = [
@@ -53,6 +55,8 @@ class SecurityHeaders
 
     protected array $allowedConnectSources = [
         "'self'",
+        'https://cdn.jsdelivr.net',
+        'https://cdn.datatables.net',
     ];
 
     protected array $allowedFrameSources = [

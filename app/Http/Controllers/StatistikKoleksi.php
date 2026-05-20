@@ -205,8 +205,8 @@ class StatistikKoleksi extends Controller
                 };
 
                 // Proses semua kategori
-                $processCategory('Jurnal', ['JR', 'JRA', 'JRT'], true, false, false, true);
-                $processCategory('E-Jurnal', ['JR', 'JRA', 'JRT'], true, false, true, false);
+                $processCategory('Jurnal', ['JR', 'JRA', 'JRT', 'EJ'], true, false, false, true);
+                $processCategory('E-Jurnal', ['JR', 'JRA', 'JRT', 'EJ'], true, false, true, false);
                 $processCategory('Textbook', ['BKS', 'BKSA', 'BKSCA', 'BKSC'], false, false, false, false);
                 $processCategory('E-Book', 'EB', false, false, false, false);
                 $processCategory('Prosiding', ['PR', 'EPR'], true, false, false, false);
@@ -426,7 +426,7 @@ class StatistikKoleksi extends Controller
             $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
                 // 1. Total Query
                 $totalQuery = $this->getBaseCollectionTotalQuery($prodi, $tahunTerakhir);
-                $totalQuery->whereIn('items.itype', ['JR', 'JRA', 'JRT'])
+                $totalQuery->whereIn('items.itype', ['JR', 'JRA', 'JRT', 'EJ'])
                     ->where('items.barcode', 'not like', 'JE%')
                     ->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
                 if ($tahunTerakhir !== 'all') {
@@ -445,7 +445,7 @@ class StatistikKoleksi extends Controller
                         $join->on('av.authorised_value', '=', 'items.ccode')
                             ->where('av.category', '=', 'CCODE');
                     })
-                    ->whereIn('items.itype', ['JR', 'JRA', 'JRT'])
+                    ->whereIn('items.itype', ['JR', 'JRA', 'JRT', 'EJ'])
                     ->where('items.barcode', 'not like', 'JE%')
                     ->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
 
@@ -573,7 +573,7 @@ class StatistikKoleksi extends Controller
             $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
                 // 1. Total Query
                 $totalQuery = $this->getBaseCollectionTotalQuery($prodi, $tahunTerakhir);
-                $totalQuery->whereIn('items.itype', ['JR', 'JRA', 'JRT'])
+                $totalQuery->whereIn('items.itype', ['JR', 'JRA', 'JRT', 'EJ'])
                     ->where('items.barcode', 'like', 'JE%')
                     ->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
                 if ($tahunTerakhir !== 'all') {
@@ -592,7 +592,7 @@ class StatistikKoleksi extends Controller
                         $join->on('av.authorised_value', '=', 'items.ccode')
                             ->where('av.category', '=', 'CCODE');
                     })
-                    ->whereIn('items.itype', ['JR', 'JRA', 'JRT'])
+                    ->whereIn('items.itype', ['JR', 'JRA', 'JRT', 'EJ'])
                     ->where('items.barcode', 'like', 'JE%') // Filter E-Jurnal (JE)
                     ->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
 
@@ -1234,7 +1234,9 @@ class StatistikKoleksi extends Controller
                     ->join('itemtypes as t', 'i.itype', '=', 't.itemtype')
                     ->where('i.itemlost', 0)
                     ->where('i.withdrawn', 0)
-                    ->whereIn('bi.cn_class', $cnClasses);
+                    ->where(function($q) use ($cnClasses) {
+                        QueryHelper::applyCnClassRules($q, $cnClasses);
+                    });
 
                 if ($tahunTerakhir !== 'all') {
                     $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
@@ -1301,7 +1303,9 @@ class StatistikKoleksi extends Controller
                     ->join('itemtypes as t', 'i.itype', '=', 't.itemtype')
                     ->where('i.itemlost', 0)
                     ->where('i.withdrawn', 0)
-                    ->whereIn('bi.cn_class', $cnClasses)
+                    ->where(function($q) use ($cnClasses) {
+                        QueryHelper::applyCnClassRules($q, $cnClasses);
+                    })
                     ->where('t.description', $jenis);
 
                 if ($tahunTerakhir !== 'all') {
