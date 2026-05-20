@@ -422,7 +422,7 @@ class StatistikKoleksi extends Controller
             $prodiMapping = $listprodi->pluck('lib', 'authorised_value')->toArray();
             $namaProdi = $prodiMapping[$prodi] ?? 'Tidak Ditemukan';
 
-            $cacheKey = "stats_jurnal:{$prodi}:{$tahunTerakhir}";
+            $cacheKey = "stats_jurnal_v2:{$prodi}:{$tahunTerakhir}";
             $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
                 // 1. Total Query
                 $totalQuery = $this->getBaseCollectionTotalQuery($prodi, $tahunTerakhir);
@@ -569,12 +569,13 @@ class StatistikKoleksi extends Controller
             $prodiMapping = $listprodi->pluck('lib', 'authorised_value')->toArray();
             $namaProdi = $prodiMapping[$prodi] ?? 'Tidak Ditemukan';
 
-            $cacheKey = "stats_ejurnal:{$prodi}:{$tahunTerakhir}";
+            $cacheKey = "stats_ejurnal_v2:{$prodi}:{$tahunTerakhir}";
             $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir) {
                 // 1. Total Query
                 $totalQuery = $this->getBaseCollectionTotalQuery($prodi, $tahunTerakhir);
-                $totalQuery->whereIn('items.itype', ['JR', 'JRA', 'JRT', 'EJ'])
-                    ->where('items.barcode', 'like', 'JE%')
+                // $totalQuery->whereIn('items.itype', ['JR', 'JRA', 'JRT', 'EJ'])
+                $totalQuery->whereIn('items.itype', ['EJ'])
+                    // ->where('items.barcode', 'like', 'JE%')
                     ->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
                 if ($tahunTerakhir !== 'all') {
                     $totalQuery->whereRaw('RIGHT(items.enumchron, 4) >= ?', [date('Y') - (int)$tahunTerakhir]);
@@ -592,8 +593,9 @@ class StatistikKoleksi extends Controller
                         $join->on('av.authorised_value', '=', 'items.ccode')
                             ->where('av.category', '=', 'CCODE');
                     })
-                    ->whereIn('items.itype', ['JR', 'JRA', 'JRT', 'EJ'])
-                    ->where('items.barcode', 'like', 'JE%') // Filter E-Jurnal (JE)
+                    // ->whereIn('items.itype', ['JR', 'JRA', 'JRT', 'EJ'])
+                    ->whereIn('items.itype', ['EJ'])
+                    // ->where('items.barcode', 'like', 'JE%') // Filter E-Jurnal (JE)
                     ->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
 
                 if ($tahunTerakhir !== 'all') {
