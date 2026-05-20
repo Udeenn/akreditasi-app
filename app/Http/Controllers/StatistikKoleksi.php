@@ -438,7 +438,7 @@ class StatistikKoleksi extends Controller
                 }
 
                 $query->select(
-                    'bi.cn_class AS Kelas',
+                    DB::raw('MAX(bi.cn_class) AS Kelas'),
                     DB::raw("GROUP_CONCAT(items.barcode ORDER BY items.barcode ASC SEPARATOR ', ') as Barcode"),
                     DB::raw("MAX(CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]'))) AS Judul"),
                     DB::raw('MAX(bi.publishercode) AS Penerbit'),
@@ -585,7 +585,7 @@ class StatistikKoleksi extends Controller
                 }
 
                 $query->select(
-                    'bi.cn_class AS Kelas',
+                    DB::raw('MAX(bi.cn_class) AS Kelas'),
                     DB::raw("GROUP_CONCAT(items.barcode ORDER BY items.barcode ASC SEPARATOR ', ') as Barcode"),
                     DB::raw("MAX(CONCAT_WS(' ', b.title, EXTRACTVALUE(bm.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]'))) AS Judul"),
                     DB::raw('MAX(bi.publishercode) AS Penerbit'),
