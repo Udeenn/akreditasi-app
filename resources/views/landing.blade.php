@@ -552,12 +552,12 @@
                 </div>
                 
                 <h1 class="hero-title">
-                    Aplikasi Pendukung<br>
-                    <span class="highlight">Akreditasi Prodi</span>
+                    Sistem Penyedia Statistik<br>
+                    <span class="highlight">Perpustakaan</span>
                 </h1>
                 
                 <p class="hero-description">
-                    Platform terintegrasi untuk mengakses data statistik perpustakaan yang mendukung 
+                    Platform untuk mengakses data statistik perpustakaan yang mendukung 
                     proses akreditasi program studi di Universitas Muhammadiyah Surakarta.
                 </p>
 
