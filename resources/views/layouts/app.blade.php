@@ -1151,9 +1151,7 @@
                     <h4 class="modal-title fw-bold mb-2" id="welcomeModalGreeting">Selamat Datang!</h4>
 
                     <p class="text-muted">
-                        Selamat datang di <b>Sistem Perpustakaan Pendukung Data Akreditasi Prodi</b>. Silahkan Jelajahi
-                        data
-                        statistik Perpustakaan dengan mudah.
+                        Selamat datang di <b>Sistem Statistik UPT Perpustakaan dan Layanan Digital UMS</b>. Silahkan Jelajahi
                     </p>
 
                     <button type="button" class="btn btn-primary btn-lg mt-3" data-bs-dismiss="modal">
