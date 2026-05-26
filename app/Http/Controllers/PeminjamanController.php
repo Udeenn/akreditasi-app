@@ -389,8 +389,7 @@ public function pertanggal(Request $request)
         $prodiFromDb = \App\Models\M_Auv::getCachedProdiList()
             ->sortBy('authorised_value')
             ->map(function ($prodi) {
-                $lib = str_starts_with($prodi->lib, 'FAI/ ') ? substr($prodi->lib, 5) : $prodi->lib;
-                return (object) ['authorised_value' => $prodi->authorised_value, 'lib' => trim($lib)];
+                return (object) ['authorised_value' => $prodi->authorised_value, 'lib' => trim($prodi->lib)];
             });
 
         $staticOptions = collect([
@@ -686,12 +685,7 @@ public function pertanggal(Request $request)
             ->first();
 
         if ($prodiDb) {
-            // Bersihkan nama (misal hapus "FAI/ " jika ada, sesuai logic sebelumnya)
-            $lib = $prodiDb->lib;
-            if (str_starts_with($lib, 'FAI/ ')) {
-                $lib = substr($lib, 5);
-            }
-            $prodiName = trim($lib);
+            $prodiName = trim($prodiDb->lib);
         }
     }
 
@@ -1214,8 +1208,7 @@ public function pertanggal(Request $request)
         // 2. Build daftar fakultas untuk dropdown
         $allProdiListObj = M_Auv::getCachedProdiList();
         $prodiMap = $allProdiListObj->mapWithKeys(function ($prodi) {
-            $lib = str_starts_with($prodi->lib, 'FAI/ ') ? substr($prodi->lib, 5) : $prodi->lib;
-            return [trim($prodi->authorised_value) => trim($lib)];
+            return [trim($prodi->authorised_value) => trim($prodi->lib)];
         })->toArray();
         $listFakultas = $allProdiListObj->map(function ($prodi) {
             return \App\Helpers\FacultyHelper::mapCodeToFaculty($prodi->authorised_value);
@@ -1551,11 +1544,7 @@ public function pertanggal(Request $request)
             ->orderBy('authorised_value', 'asc')
             ->get()
             ->map(function ($prodi) {
-                $cleanedLib = $prodi->lib;
-                if (str_starts_with($cleanedLib, 'FAI/ ')) {
-                    $cleanedLib = substr($cleanedLib, 5);
-                }
-                $prodi->lib = trim($cleanedLib);
+                $prodi->lib = trim($prodi->lib);
                 return $prodi;
             })
             ->pluck('lib', 'authorised_value')

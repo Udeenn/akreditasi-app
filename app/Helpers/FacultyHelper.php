@@ -58,7 +58,7 @@ class FacultyHelper
         }
 
         // FAI (Agama Islam)
-        if (in_array($prodiCode, ['I000', 'O100', 'O300', 'O200', 'O000'])) {
+        if (in_array($prodiCode, ['I000', 'O100', 'O300', 'O200', 'O000', 'G000', 'G100', 'G108', 'H100'])) {
             return 'FAI - Fakultas Agama Islam';
         }
 
@@ -82,7 +82,7 @@ class FacultyHelper
         // FIK / FK / FKG
         if (in_array($firstThreeLetters, ['J53', 'J52'])) return 'FKG - Fakultas Kedokteran Gigi';
         if ($firstTwoLetters === 'J5') return 'FK - Fakultas Kedokteran';
-        if ($firstLetter === 'J' || $firstLetter === 'G') return 'FIK - Fakultas Ilmu Kesehatan';
+        if ($firstLetter === 'J') return 'FIK - Fakultas Ilmu Kesehatan';
 
         // FAI (Prefix Umum)
         if (in_array($firstLetter, ['I', 'O', 'H'])) return 'FAI - Fakultas Agama Islam';
