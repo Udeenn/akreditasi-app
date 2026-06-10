@@ -8,7 +8,7 @@
         </div>
         <div class="d-flex flex-column">
              <h5 class="sidebar-title m-0 fw-bold tracking-tight" style="font-size: 1.15rem; letter-spacing: -0.02em;">Library Data</h5>
-             <small class="text-muted" style="font-size: 0.75rem;">Accreditation Support</small>
+             <small class="text-muted" style="font-size: 0.75rem;">Sistem Penyedia Statistik</small>
         </div>
     </a>
 </div>

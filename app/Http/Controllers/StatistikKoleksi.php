@@ -141,6 +141,7 @@ class StatistikKoleksi extends Controller
                         ->from('items')
                         ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
                         ->join('biblio as b', 'items.biblionumber', '=', 'b.biblionumber')
+                        ->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'items.biblionumber')
                         ->select(
                             'items.biblionumber',
                             'items.enumchron',
@@ -178,7 +179,7 @@ class StatistikKoleksi extends Controller
                          if (in_array('JR', (array)$itypes)) {
                              $q->whereRaw('RIGHT(items.enumchron, 4) >= ?', [date('Y') - (int)$tahunTerakhir]);
                          } else {
-                             $q->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                             $q->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
                          }
                      }
 
@@ -281,7 +282,7 @@ class StatistikKoleksi extends Controller
                 $totalQuery = $this->getBaseCollectionTotalQuery($prodi, $tahunTerakhir);
                 $totalQuery->whereIn('items.itype', ['EPR', 'PR']);
                 if ($tahunTerakhir !== 'all') {
-                    $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                    $totalQuery->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
                 }
                 $totals = $totalQuery->selectRaw("
                     COUNT(DISTINCT items.biblionumber) as total_judul,
@@ -293,7 +294,7 @@ class StatistikKoleksi extends Controller
                 $query->whereIn('items.itype', ['EPR', 'PR']);
 
                 if ($tahunTerakhir !== 'all') {
-                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                    $query->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
                 }
 
                 $query->selectRaw("
@@ -303,7 +304,7 @@ class StatistikKoleksi extends Controller
                 MAX(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"c\"]')) as Judul_c,
                 MAX(b.author) as Pengarang,
                 MAX(CONCAT(COALESCE(bi.publishercode,''), ' ', COALESCE(bi.place,''))) AS Penerbit,
-                MAX(bi.publicationyear) AS TahunTerbit,
+                MAX(CASE WHEN EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"260\"]/subfield[@code=\"c\"]') REGEXP '[0-9]{4}' THEN EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"260\"]/subfield[@code=\"c\"]') ELSE bi.publicationyear END) AS TahunTerbit,
                 items.enumchron AS Nomor,
                 COUNT(DISTINCT items.itemnumber) AS Issue,
                 COUNT(items.itemnumber) AS Eksemplar,
@@ -725,7 +726,7 @@ class StatistikKoleksi extends Controller
                 $totalQuery = $this->getBaseCollectionTotalQuery($prodi, $tahunTerakhir);
                 $totalQuery->where('items.itype', 'EB');
                 if ($tahunTerakhir !== 'all') {
-                    $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                    $totalQuery->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
                 }
                 $totals = $totalQuery->selectRaw("
                     COUNT(DISTINCT items.biblionumber) as total_judul,
@@ -737,7 +738,7 @@ class StatistikKoleksi extends Controller
                 $query->where('items.itype', 'EB');
 
                 if ($tahunTerakhir !== 'all') {
-                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                    $query->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
                 }
 
                 $query->selectRaw("
@@ -748,7 +749,7 @@ class StatistikKoleksi extends Controller
                     MAX(bi.publishercode) AS Penerbit_Raw,
                     MAX(bi.place) AS Place_Raw,
                     MAX(CONCAT(COALESCE(bi.publishercode,''), ' ', COALESCE(bi.place,''))) AS Penerbit,
-                    MAX(bi.publicationyear) AS Tahun_Terbit,
+                    MAX(CASE WHEN EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"260\"]/subfield[@code=\"c\"]') REGEXP '[0-9]{4}' THEN EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"260\"]/subfield[@code=\"c\"]') ELSE bi.publicationyear END) AS Tahun_Terbit,
                     COUNT(items.itemnumber) AS Eksemplar,
                     MAX(IF(
                     EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"a\"]') <> '',
@@ -849,7 +850,7 @@ class StatistikKoleksi extends Controller
                            ->whereRaw('LEFT(items.ccode, 1) <> "R"');
 
                 if ($tahunTerakhir !== 'all') {
-                    $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                    $totalQuery->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
                 }
 
                 $totals = $totalQuery->selectRaw("
@@ -862,7 +863,7 @@ class StatistikKoleksi extends Controller
                 $query->whereIn('items.itype', ['BKS', 'BKSA', 'BKSCA', 'BKSC']);
 
                 if ($tahunTerakhir !== 'all') {
-                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                    $query->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
                 }
 
                 $query->selectRaw("
@@ -871,7 +872,7 @@ class StatistikKoleksi extends Controller
                     MAX(b.author) as Pengarang,
                     MAX(bi.place) AS Kota_Terbit,
                     MAX(bi.publishercode) AS Penerbit,
-                    MAX(bi.publicationyear) AS Tahun_Terbit,
+                    MAX(CASE WHEN EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"260\"]/subfield[@code=\"c\"]') REGEXP '[0-9]{4}' THEN EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"260\"]/subfield[@code=\"c\"]') ELSE bi.publicationyear END) AS Tahun_Terbit,
                     COUNT(items.itemnumber) AS Eksemplar,
                     GROUP_CONCAT(DISTINCT CASE
                     WHEN items.homebranch = 'PUSAT' THEN 'Perpustakaan Pusat'
@@ -981,7 +982,7 @@ class StatistikKoleksi extends Controller
                 $totalQuery->whereIn('items.itype', $periodicalTypes);
 
                 if ($tahunTerakhir !== 'all') {
-                    $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                    $totalQuery->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
                 }
 
                 $totals = $totalQuery->selectRaw("
@@ -994,7 +995,7 @@ class StatistikKoleksi extends Controller
                 $query->whereIn('items.itype', $periodicalTypes);
 
                 if ($tahunTerakhir !== 'all') {
-                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                    $query->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
                 }
 
                 $query->select(
@@ -1002,7 +1003,7 @@ class StatistikKoleksi extends Controller
                     't.description AS Jenis',
                     'bi.publishercode AS Penerbit',
                     'bi.place AS Tempat_Terbit',
-                    'bi.publicationyear AS Tahun_Terbit',
+                    DB::raw("CASE WHEN ExtractValue(bm.metadata, '//datafield[@tag=\"260\"]/subfield[@code=\"c\"]') REGEXP '[0-9]{4}' THEN ExtractValue(bm.metadata, '//datafield[@tag=\"260\"]/subfield[@code=\"c\"]') ELSE bi.publicationyear END AS Tahun_Terbit"),
                     'bi.cn_class as Kelas',
                     'items.enumchron AS Nomor'
                 )
@@ -1012,7 +1013,7 @@ class StatistikKoleksi extends Controller
                     ->selectRaw('COUNT(items.itemnumber) AS Issue')
                     ->selectRaw('SUM(items.copynumber) AS Eksemplar')
                     ->join('itemtypes as t', 'items.itype', '=', 't.itemtype')
-                    ->groupBy('items.biblionumber', 'items.itype', 't.description', 'bi.publishercode', 'bi.place', 'bi.publicationyear', 'bi.cn_class', 'items.enumchron');
+                    ->groupBy('items.biblionumber', 'items.itype', 't.description', 'bi.publishercode', 'bi.place', DB::raw("ExtractValue(bm.metadata, '//datafield[@tag=\"260\"]/subfield[@code=\"c\"]')"), 'bi.cn_class', 'items.enumchron');
 
                 $processedData = $query->get()->map(function ($row) {
                     $fullJudul = $row->Judul_a;
@@ -1104,7 +1105,7 @@ class StatistikKoleksi extends Controller
                            ->whereRaw('LEFT(items.ccode, 1) = "R"');
                 
                 if ($tahunTerakhir !== 'all') {
-                    $totalQuery->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                    $totalQuery->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
                 }
                 
                 $totals = $totalQuery->selectRaw("
@@ -1118,7 +1119,7 @@ class StatistikKoleksi extends Controller
                       ->whereRaw('LEFT(items.ccode, 1) = "R"');
 
                 if ($tahunTerakhir !== 'all') {
-                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
+                    $query->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
                 }
 
                 $query->selectRaw("
@@ -1130,7 +1131,7 @@ class StatistikKoleksi extends Controller
                 MAX(bi.publishercode) AS Penerbit_Raw,
                 MAX(bi.place) AS Place_Raw,
                 MAX(CONCAT(COALESCE(bi.publishercode,''), ' ', COALESCE(bi.place,''))) AS Penerbit,
-                MAX(bi.publicationyear) AS Tahun_Terbit,
+                MAX(CASE WHEN EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"260\"]/subfield[@code=\"c\"]') REGEXP '[0-9]{4}' THEN EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"260\"]/subfield[@code=\"c\"]') ELSE bi.publicationyear END) AS Tahun_Terbit,
                 COUNT(items.itemnumber) AS Eksemplar,
                 GROUP_CONCAT(DISTINCT CASE
                     WHEN items.homebranch = 'PUSAT' THEN 'Perpustakaan Pusat'
@@ -1233,6 +1234,7 @@ class StatistikKoleksi extends Controller
                     ->selectRaw('COUNT(i.itemnumber) AS Eksemplar')
                     ->from('items as i')
                     ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
+                    ->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'i.biblionumber')
                     ->join('itemtypes as t', 'i.itype', '=', 't.itemtype')
                     ->where('i.itemlost', 0)
                     ->where('i.withdrawn', 0)
@@ -1241,7 +1243,7 @@ class StatistikKoleksi extends Controller
                     });
 
                 if ($tahunTerakhir !== 'all') {
-                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
+                    $query->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
                 }
 
                 $data = $query->groupBy('Jenis', 'Koleksi')
@@ -1295,13 +1297,14 @@ class StatistikKoleksi extends Controller
                 $query = M_items::select(
                     'b.title AS Judul',
                     DB::raw('MIN(bi.cn_class) AS Kelas'),
-                    DB::raw('MIN(bi.publicationyear) AS TahunTerbit'),
+                    DB::raw("MIN(CASE WHEN ExtractValue(bm.metadata, '//datafield[@tag=\"260\"]/subfield[@code=\"c\"]') REGEXP '[0-9]{4}' THEN ExtractValue(bm.metadata, '//datafield[@tag=\"260\"]/subfield[@code=\"c\"]') ELSE bi.publicationyear END) AS TahunTerbit"),
                     DB::raw('SUM(CASE WHEN i.itemlost = 0 AND i.withdrawn = 0 THEN 1 ELSE 0 END) AS Eksemplar'),
                     DB::raw('GROUP_CONCAT(DISTINCT i.homebranch ORDER BY i.homebranch SEPARATOR ", ") AS Lokasi')
                 )
                     ->from('items as i')
                     ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
                     ->join('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
+                    ->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'i.biblionumber')
                     ->join('itemtypes as t', 'i.itype', '=', 't.itemtype')
                     ->where('i.itemlost', 0)
                     ->where('i.withdrawn', 0)
@@ -1311,7 +1314,7 @@ class StatistikKoleksi extends Controller
                     ->where('t.description', $jenis);
 
                 if ($tahunTerakhir !== 'all') {
-                    $query->whereRaw('bi.publicationyear >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
+                    $query->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
                 }
 
                 return $query->groupBy('b.title')
@@ -1399,6 +1402,7 @@ class StatistikKoleksi extends Controller
             ->from('items')
             ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
             ->join('biblio as b', 'b.biblionumber', '=', 'items.biblionumber')
+            ->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'items.biblionumber')
             ->where('items.itemlost', 0)
             ->where('items.withdrawn', 0);
 
