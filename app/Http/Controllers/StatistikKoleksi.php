@@ -860,7 +860,8 @@ class StatistikKoleksi extends Controller
 
                 // 2. Ambil data detail dengan optimasi GROUP BY
                 $query = $this->getBaseCollectionQuery($prodi, $tahunTerakhir);
-                $query->whereIn('items.itype', ['BKS', 'BKSA', 'BKSCA', 'BKSC']);
+                $query->whereIn('items.itype', ['BKS', 'BKSA', 'BKSCA', 'BKSC'])
+                      ->whereRaw('LEFT(items.ccode, 1) <> "R"');
 
                 if ($tahunTerakhir !== 'all') {
                     $query->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);

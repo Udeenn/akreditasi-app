@@ -65,7 +65,7 @@ class QueryHelper
         // Jika kosong, pakai items.itemcallnumber.
         // COALESCE(NULLIF(x, ''), y) adalah cara standar SQL untuk "Jika X kosong/null, ambil Y".
         // Gunakan SUBSTRING_INDEX untuk mengambil bagian kelas sebelum spasi (buang author/tahun)
-        $targetColumn = DB::raw("COALESCE(NULLIF(bi.cn_class, ''), SUBSTRING_INDEX(items.itemcallnumber, ' ', 1))");
+        $targetColumn = DB::raw("TRIM(TRAILING '.' FROM SUBSTRING_INDEX(TRIM(COALESCE(NULLIF(bi.cn_class, ''), items.itemcallnumber)), ' ', 1))");
 
         return $queryBuilder->where(function ($q) use ($rules, $targetColumn) {
             $exactMatches = [];
