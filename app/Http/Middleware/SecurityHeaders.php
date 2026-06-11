@@ -27,6 +27,7 @@ class SecurityHeaders
         'https://code.jquery.com',
         'https://unpkg.com',
         'https://cdn.datatables.net',
+        'https://static.cloudflareinsights.com',
     ];
 
     protected array $allowedStyleSources = [
@@ -57,6 +58,7 @@ class SecurityHeaders
         "'self'",
         'https://cdn.jsdelivr.net',
         'https://cdn.datatables.net',
+        'https://cloudflareinsights.com',
     ];
 
     protected array $allowedFrameSources = [
