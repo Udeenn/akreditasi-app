@@ -13,9 +13,16 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use App\Services\ProdiService;
+use App\Services\BorrowerService;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private ProdiService $prodiService,
+        private BorrowerService $borrowerService
+    ) {}
+
     public function totalStatistik()
     {
         // Kunjungan Harian - Cache 5 menit (berubah sering)
@@ -80,11 +87,11 @@ class DashboardController extends Controller
         $formatTotalEbooks = number_format($totalEbooks, 0, ',', '.');
         $formatTotalJurnal = number_format($totalJurnal, 0, ',', '.');
 
-        // === KUNJUNGAN PER FAKULTAS TAHUN 2026 ===
-        $kunjunganFakultas = Cache::remember('dashboard_kunjungan_fakultas_2026', 3600, function () {
-            $tahun = 2026;
-            $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-            $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+        // === KUNJUNGAN PER FAKULTAS TAHUN INI ===
+        $currentYear = Carbon::now()->year;
+        $kunjunganFakultas = Cache::remember("dashboard_kunjungan_fakultas_{$currentYear}", 3600, function () use ($currentYear) {
+            $start = Carbon::createFromDate($currentYear, 1, 1)->startOfDay();
+            $end = Carbon::createFromDate($currentYear, 12, 31)->endOfDay();
 
             // Query visitorhistory + visitorcorner
             $qHistory = DB::connection('mysql')->table('visitorhistory')
@@ -99,44 +106,19 @@ class DashboardController extends Controller
 
             $rawData = $qHistory->unionAll($qCorner)->get();
 
-            // Fetch borrower info with PRODI attribute
-            $cardNumbers = $rawData->pluck('cardnumber')->unique()->values();
-            $borrowerInfo = [];
-            foreach ($cardNumbers->chunk(1000) as $chunk) {
-                $rows = DB::connection('mysql2')->table('borrowers as b')
-                    ->leftJoin('borrower_attributes as ba', function ($j) {
-                        $j->on('ba.borrowernumber', '=', 'b.borrowernumber')->where('ba.code', '=', 'PRODI');
-                    })
-                    ->whereIn('b.cardnumber', $chunk->all())
-                    ->select('b.cardnumber', 'b.categorycode', 'ba.attribute as prodi_code')
-                    ->get();
-                foreach ($rows as $r) {
-                    $borrowerInfo[strtoupper(trim($r->cardnumber))] = $r;
-                }
-            }
+            // Fetch borrower info with PRODI attribute using BorrowerService
+            $cardNumbers = $rawData->pluck('cardnumber');
+            $borrowerInfo = $this->borrowerService->getBorrowerInfoByCardnumbers($cardNumbers);
 
             // Map to faculty
             $fakultasCount = [];
             foreach ($rawData as $row) {
                 $cn = strtoupper(trim($row->cardnumber));
                 $info = $borrowerInfo[$cn] ?? null;
-                $cat = strtoupper(trim($info->categorycode ?? ''));
-                $prodi = trim($info->prodi_code ?? '');
+                $cat = $info->categorycode ?? '';
+                $prodi = $info->prodi_code ?? '';
 
-                // Determine prodi code
-                $kode = null;
-                if (str_starts_with($cat, 'TC') || str_starts_with($cat, 'DOSEN')) $kode = 'DOSEN';
-                elseif (str_starts_with($cat, 'STAF') || str_contains($cat, 'LIB') || $cat === 'LIBRARIAN') $kode = 'TENDIK';
-                elseif (!empty($prodi)) $kode = strtoupper(trim($prodi));
-
-                if (!$kode) {
-                    if (str_starts_with($cn, 'VIP')) $kode = 'DOSEN';
-                    elseif (strlen($cn) <= 9 && !preg_match('/^[A-Z]\d{3}/', $cn)) $kode = 'TENDIK';
-                    elseif (strlen($cn) >= 4) $kode = substr($cn, 0, 4);
-                    else $kode = 'UNKNOWN';
-                }
-                $kode = strtoupper(trim($kode));
-
+                $kode = $this->prodiService->identifyProdiCode($cn, $cat, $prodi);
                 $fakultas = FacultyHelper::mapCodeToFaculty($kode);
 
                 // Exclude non-faculty entries
@@ -151,11 +133,10 @@ class DashboardController extends Controller
             return $fakultasCount;
         });
 
-        // === PEMINJAMAN PER FAKULTAS TAHUN 2026 ===
-        $peminjamanFakultas = Cache::remember('dashboard_peminjaman_fakultas_2026', 3600, function () {
-            $tahun = 2026;
-            $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-            $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+        // === PEMINJAMAN PER FAKULTAS TAHUN INI ===
+        $peminjamanFakultas = Cache::remember("dashboard_peminjaman_fakultas_{$currentYear}", 3600, function () use ($currentYear) {
+            $start = Carbon::createFromDate($currentYear, 1, 1)->startOfDay();
+            $end = Carbon::createFromDate($currentYear, 12, 31)->endOfDay();
 
             $rawData = DB::connection('mysql2')->table('statistics as s')
                 ->leftJoin('borrowers as b', 'b.borrowernumber', '=', 's.borrowernumber')
@@ -171,18 +152,11 @@ class DashboardController extends Controller
 
             $fakultasCount = [];
             foreach ($rawData as $row) {
-                $catCode = strtoupper(trim($row->categorycode ?? ''));
-                $cardnumber = strtoupper(trim($row->cardnumber ?? ''));
-                $prodiCode = trim($row->prodi_code ?? '');
+                $catCode = $row->categorycode ?? '';
+                $cardnumber = $row->cardnumber ?? '';
+                $prodiCode = $row->prodi_code ?? '';
 
-                $kode = null;
-                if (str_starts_with($catCode, 'TC') || str_starts_with($catCode, 'DOSEN')) $kode = 'DOSEN';
-                elseif (str_starts_with($catCode, 'STAF') || str_contains($catCode, 'LIB') || $catCode === 'LIBRARIAN') $kode = 'TENDIK';
-                elseif (!empty($prodiCode)) $kode = strtoupper(trim($prodiCode));
-                elseif (strlen($cardnumber) >= 4 && preg_match('/^[A-Z]\d{3}/', $cardnumber)) $kode = substr($cardnumber, 0, 4);
-
-                if (!$kode) $kode = 'UNKNOWN';
-
+                $kode = $this->prodiService->identifyProdiCode($cardnumber, $catCode, $prodiCode);
                 $fakultas = FacultyHelper::mapCodeToFaculty($kode);
 
                 $blacklist = ['Lainnya', 'Dosen', 'Dosen & Pengajar', 'Tendik', 'Tenaga Kependidikan'];

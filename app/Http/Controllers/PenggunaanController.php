@@ -103,7 +103,6 @@ class PenggunaanController extends Controller
     public function exportPdfKeterpakaianKoleksi(Request $request)
     {
         ini_set('max_execution_time', 300);
-        ini_set('memory_limit', '512M');
 
         $filterType = $request->input('filter_type', 'monthly');
         $startMonth = $request->input('start_month', \Carbon\Carbon::now()->startOfYear()->format('Y-m'));
@@ -535,7 +534,6 @@ class PenggunaanController extends Controller
 
     private function exportSeringDibacaCsv(string $kategori, $tahun, $bulan, $start_date, $end_date)
     {
-        set_time_limit(300);
 
         $fiksiCodes = config('library.ddc.fiksi', ['812', '813', '823', '899']);
 

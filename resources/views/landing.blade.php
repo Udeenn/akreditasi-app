@@ -1,669 +1,472 @@
 <!DOCTYPE html>
-<html lang="id" data-theme="dark">
+<html lang="id">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Pendukung Akreditasi Prodi - UMS Library</title>
+    <title>Sistem Statistik - UPT Perpustakaan UMS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="shortcut icon" href="{{ asset('img/logo4.png') }}" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         :root {
-            --bg-primary: #0a0a1a;
-            --bg-secondary: #0f0f2a;
-            --bg-card: rgba(255, 255, 255, 0.03);
-            --text-primary: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.7);
-            --text-muted: rgba(255, 255, 255, 0.4);
-            --accent-1: #4A69FF;
-            --accent-2: #5B7AFF;
-            --accent-3: #6D8BFF;
-            --glow-color: rgba(74, 105, 255, 0.4);
+            /* Palet Warna Utama (Sesuai dengan dashboard app.blade.php) */
+            --primary-color: #4A69FF;
+            --primary-hover: #3b54cc;
+            --primary-light: #eef2ff;
+            --main-bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            --border-color: #e2e8f0;
+            --accent-color: #f4b136;
         }
 
-        [data-theme="light"] {
-            --bg-primary: #f0f4ff;
-            --bg-secondary: #e0e7ff;
-            --bg-card: rgba(255, 255, 255, 0.8);
-            --text-primary: #1e293b;
-            --text-secondary: #4A69FF;
-            --text-muted: #5B7AFF;
-            --glow-color: rgba(74, 105, 255, 0.2);
+        [data-theme="dark"] {
+            --primary-light: rgba(74, 105, 255, 0.15);
+            --main-bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-dark: #e2e8f0;
+            --text-light: #94a3b8;
+            --border-color: #334155;
         }
 
         body {
             font-family: 'Inter', sans-serif;
+            background-color: var(--main-bg);
+            color: var(--text-dark);
             min-height: 100vh;
-            background: var(--bg-primary);
-            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
             overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Navbar Sederhana */
+        .navbar-custom {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 1.15rem;
+        }
+
+        .brand-logo img {
+            height: 45px;
+            object-fit: contain;
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+
+        .brand-text span:last-child {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        /* Main Wrapper - Split Design */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
             position: relative;
+            padding: 3rem 0;
         }
 
-        /* Animated Background */
-        .bg-animated {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            overflow: hidden;
-        }
-
-        .bg-animated::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: 
-                radial-gradient(circle at 20% 80%, var(--accent-1) 0%, transparent 25%),
-                radial-gradient(circle at 80% 20%, var(--accent-2) 0%, transparent 25%),
-                radial-gradient(circle at 40% 40%, var(--accent-3) 0%, transparent 20%);
-            animation: bgFloat 20s ease-in-out infinite;
-            opacity: 0.15;
-        }
-
-        @keyframes bgFloat {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            33% { transform: translate(2%, 2%) rotate(5deg); }
-            66% { transform: translate(-2%, 1%) rotate(-5deg); }
-        }
-
-        /* Floating Particles */
-        .particles {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        .particle {
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            background: var(--accent-1);
-            border-radius: 50%;
-            opacity: 0.6;
-            animation: float 15s infinite;
-        }
-
-        .particle:nth-child(2) { left: 20%; animation-delay: -2s; background: var(--accent-2); }
-        .particle:nth-child(3) { left: 40%; animation-delay: -4s; background: var(--accent-3); }
-        .particle:nth-child(4) { left: 60%; animation-delay: -6s; }
-        .particle:nth-child(5) { left: 80%; animation-delay: -8s; background: var(--accent-2); }
-        .particle:nth-child(6) { left: 10%; animation-delay: -10s; }
-        .particle:nth-child(7) { left: 30%; animation-delay: -12s; background: var(--accent-3); }
-        .particle:nth-child(8) { left: 50%; animation-delay: -14s; }
-        .particle:nth-child(9) { left: 70%; animation-delay: -3s; background: var(--accent-2); }
-        .particle:nth-child(10) { left: 90%; animation-delay: -7s; }
-
-        @keyframes float {
-            0% { transform: translateY(100vh) scale(0); opacity: 0; }
-            10% { opacity: 0.6; }
-            90% { opacity: 0.6; }
-            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
-        }
-
-        /* Main Container */
-        .landing-wrapper {
+        /* Hero Section (Left) */
+        .hero-section {
+            padding-right: 2rem;
             position: relative;
             z-index: 10;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            padding: 2rem 0;
         }
 
-        /* Theme Toggle */
-        .theme-toggle {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            z-index: 100;
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .theme-toggle:hover {
-            transform: rotate(180deg) scale(1.1);
-            box-shadow: 0 0 30px var(--glow-color);
-        }
-
-        .theme-toggle i {
-            font-size: 1.3rem;
-            color: var(--text-primary);
-        }
-
-        /* Hero Section */
-        .hero-content {
-            padding: 2rem;
-        }
-
-        .hero-badge {
+        .badge-status {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
-            border: 1px solid rgba(99, 102, 241, 0.3);
+            gap: 6px;
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            padding: 6px 14px;
             border-radius: 50px;
-            padding: 0.5rem 1.25rem;
             font-size: 0.85rem;
-            color: var(--accent-1);
+            font-weight: 600;
             margin-bottom: 1.5rem;
-            animation: fadeInUp 0.8s ease;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
         }
 
-        [data-theme="light"] .hero-badge {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
-        }
-
-        .hero-badge i {
-            font-size: 0.9rem;
+        .badge-status i {
+            color: var(--accent-color);
         }
 
         .hero-title {
-            font-size: 3.5rem;
+            font-size: 3rem;
             font-weight: 700;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-            animation: fadeInUp 0.8s ease 0.1s both;
+            line-height: 1.2;
+            color: var(--text-dark);
+            margin-bottom: 1.25rem;
+            letter-spacing: -0.02em;
         }
 
-        .hero-title .highlight {
-            background: linear-gradient(135deg, var(--accent-1), var(--accent-2), var(--accent-3));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .hero-title span {
+            color: var(--primary-color);
         }
 
-        .hero-description {
-            font-size: 1.15rem;
-            color: var(--text-secondary);
-            line-height: 1.8;
+        .hero-desc {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            line-height: 1.6;
             margin-bottom: 2.5rem;
-            max-width: 520px;
-            animation: fadeInUp 0.8s ease 0.2s both;
+            max-width: 550px;
         }
 
-        /* Stats Cards */
-        .stats-row {
-            display: flex;
+        /* Feature List (Clean Text Style) */
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 2rem 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 1rem;
-            margin-bottom: 2rem;
-            animation: fadeInUp 0.8s ease 0.3s both;
         }
 
-        .stat-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 1rem;
-            padding: 1.25rem 1.5rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            flex: 1;
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            color: var(--text-dark);
+            font-weight: 500;
         }
 
-        .stat-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-1);
-            box-shadow: 0 10px 40px var(--glow-color);
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .stat-label {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* Login Card */
-        .login-section {
-            padding: 2rem;
-            animation: fadeInUp 0.8s ease 0.4s both;
-        }
-
-        .login-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 2rem;
-            padding: 3rem;
-            max-width: 420px;
-            margin: 0 auto;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .login-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--accent-1), var(--accent-2), var(--accent-3));
-        }
-
-        [data-theme="light"] .login-card {
-            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.15);
-        }
-
-        .login-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-            border-radius: 1.5rem;
+        .feature-list i {
+            color: var(--primary-color);
+            background-color: var(--primary-light);
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 1.5rem;
-            box-shadow: 0 10px 30px var(--glow-color);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
         }
 
-        .login-icon i {
-            font-size: 2rem;
-            color: white;
+        /* Auth Card (Right) */
+        .auth-container {
+            position: relative;
         }
 
-        .login-title {
-            font-size: 1.75rem;
-            font-weight: 600;
+        .auth-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 1.25rem;
+            padding: 2.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            position: relative;
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        .auth-card-header {
             text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-icon {
+            width: 64px;
+            height: 64px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin: 0 auto 1.25rem;
+            box-shadow: 0 4px 10px rgba(74, 105, 255, 0.2);
+        }
+
+        .auth-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
             margin-bottom: 0.5rem;
         }
 
-        .login-subtitle {
-            color: var(--text-muted);
-            text-align: center;
-            margin-bottom: 2rem;
+        .auth-subtitle {
             font-size: 0.95rem;
+            color: var(--text-light);
         }
 
-        .btn-login {
+        .btn-sso {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.75rem;
+            gap: 10px;
             width: 100%;
-            padding: 1.1rem 2rem;
-            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            padding: 14px 20px;
+            background-color: var(--primary-color);
+            color: #ffffff;
             border: none;
-            border-radius: 1rem;
-            color: white;
+            border-radius: 10px;
             font-size: 1rem;
             font-weight: 600;
             text-decoration: none;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
+            transition: all 0.2s ease;
         }
 
-        .btn-login::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transition: left 0.5s ease;
+        .btn-sso:hover {
+            background-color: var(--primary-hover);
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(74, 105, 255, 0.2);
         }
 
-        .btn-login:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px var(--glow-color);
-            color: white;
-        }
-
-        .btn-login:hover::before {
-            left: 100%;
-        }
-
-        .btn-login i {
-            font-size: 1.2rem;
-        }
-
-        /* Features Grid */
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
+        .auth-footer {
+            text-align: center;
             margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.85rem;
+            color: var(--text-light);
         }
 
-        .feature-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 1rem;
-            background: var(--bg-card);
-            border-radius: 1rem;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s ease;
+        /* Theme Switch (FAB Bottom Right) */
+        .theme-fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1051;
         }
 
-        .feature-item:hover {
-            border-color: var(--accent-1);
-            transform: translateX(5px);
-        }
-
-        .feature-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
-            border-radius: 0.75rem;
+        .theme-fab #theme-toggle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
+            font-size: 1.2rem;
+            background-color: var(--card-bg);
+            color: var(--text-light);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
         }
 
-        .feature-icon i {
-            color: var(--accent-1);
-            font-size: 1rem;
+        .theme-fab #theme-toggle:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+            color: var(--primary-color);
         }
 
-        .feature-text {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
+        #theme-toggle .fa-sun {
+            display: none;
         }
 
-        /* Footer */
-        .footer-text {
-            text-align: center;
-            margin-top: 2rem;
-            color: var(--text-muted);
-            font-size: 0.85rem;
+        [data-theme="dark"] #theme-toggle .fa-sun {
+            display: inline-block;
         }
 
-        .footer-text a {
-            color: var(--accent-1);
-            text-decoration: none;
+        [data-theme="dark"] #theme-toggle .fa-moon {
+            display: none;
         }
 
-        /* Alert Container */
-        .alert-container {
-            position: fixed;
-            top: 1.5rem;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            max-width: 400px;
-        }
 
-        /* Animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
 
         /* Responsive */
-        @media (max-width: 991px) {
-            .hero-title {
-                font-size: 2.5rem;
-            }
-            
-            .hero-content {
+        @media (max-width: 991.98px) {
+            .hero-section {
+                padding-right: 0;
+                margin-bottom: 3rem;
                 text-align: center;
             }
-            
-            .hero-description {
-                margin: 0 auto 2rem;
+            .hero-desc {
+                margin: 0 auto 2.5rem;
             }
-            
-            .stats-row {
-                justify-content: center;
-            }
-
-            .features-grid {
+            .feature-list {
+                text-align: left;
                 max-width: 400px;
-                margin: 2rem auto 0;
+                margin: 0 auto 2rem;
             }
         }
 
-        @media (max-width: 576px) {
+        @media (max-width: 767.98px) {
             .hero-title {
-                font-size: 2rem;
+                font-size: 2.25rem;
             }
-            
-            .login-card {
-                padding: 2rem 1.5rem;
-            }
-            
-            .stats-row {
-                flex-direction: column;
-            }
-            
-            .features-grid {
+            .feature-list {
                 grid-template-columns: 1fr;
             }
-
-            .theme-toggle {
-                top: 1rem;
-                right: 1rem;
-                width: 44px;
-                height: 44px;
+            .auth-card {
+                padding: 2rem 1.5rem;
             }
         }
     </style>
 </head>
 
 <body>
-    <!-- Animated Background -->
-    <div class="bg-animated"></div>
-    
-    <!-- Floating Particles -->
-    <div class="particles">
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-    </div>
 
-    <!-- Theme Toggle -->
-    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
-        <i class="fas fa-moon" id="theme-icon"></i>
-    </button>
+    <!-- Content -->
+    <main class="main-wrapper">
+        <div class="container">
+            <!-- Alert Handling -->
+            @if (session('error') || session('success') || session('warning'))
+            <div class="row justify-content-center mb-4">
+                <div class="col-md-8 text-center position-relative" style="z-index: 20;">
+                    @if(session('error'))
+                    <div class="alert alert-danger alert-dismissible fade show d-inline-block text-start w-100" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i> {{ session('error') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    @endif
+                    
+                    @if(session('success'))
+                    <div class="alert alert-success alert-dismissible fade show d-inline-block text-start w-100" role="alert">
+                        <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    @endif
 
-    <!-- Alert Messages -->
-    @if (session('error'))
-        <div class="alert-container">
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-circle me-2"></i>
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        </div>
-    @endif
-
-    @if (session('success'))
-        <div class="alert-container">
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        </div>
-    @endif
-
-    @if (session('warning'))
-        <div class="alert-container">
-            <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                <i class="fas fa-clock me-2"></i>
-                {{ session('warning') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        </div>
-    @endif
-
-    <!-- Main Content -->
-    <div class="container landing-wrapper">
-        <div class="row align-items-center w-100">
-            <!-- Left: Hero Section -->
-            <div class="col-lg-7 hero-content">
-                <div class="hero-badge">
-                    <i class="fas fa-sparkles"></i>
-                    UPT Perpustakaan dan Layanan Digital UMS
-                </div>
-                
-                <h1 class="hero-title">
-                    Sistem Penyedia Statistik<br>
-                    <span class="highlight">Perpustakaan</span>
-                </h1>
-                
-                <p class="hero-description">
-                    Platform untuk mengakses data statistik perpustakaan yang mendukung 
-                    proses akreditasi program studi di Universitas Muhammadiyah Surakarta.
-                </p>
-
-                <div class="stats-row">
-                    <div class="stat-card">
-                        <div class="stat-number">50+</div>
-                        <div class="stat-label">Prodi</div>
+                    @if(session('warning'))
+                    <div class="alert alert-warning alert-dismissible fade show d-inline-block text-start w-100" role="alert">
+                        <i class="fas fa-clock me-2"></i> {{ session('warning') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-number">100K+</div>
-                        <div class="stat-label">Koleksi</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">Real-time</div>
-                        <div class="stat-label">Data</div>
-                    </div>
-                </div>
-
-                <div class="features-grid">
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                        <span class="feature-text">Statistik Kunjungan</span>
-                    </div>
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="fas fa-book-open"></i>
-                        </div>
-                        <span class="feature-text">Data Koleksi</span>
-                    </div>
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <span class="feature-text">Laporan Pemustaka</span>
-                    </div>
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="fas fa-file-export"></i>
-                        </div>
-                        <span class="feature-text">Export Data</span>
-                    </div>
+                    @endif
                 </div>
             </div>
+            @endif
 
-            <!-- Right: Login Section -->
-            <div class="col-lg-5 login-section">
-                <div class="login-card">
-                    <div class="login-icon">
-                        <i class="fas fa-fingerprint"></i>
+            <div class="row align-items-center">
+                <!-- Left: Hero Text -->
+                <div class="col-lg-7 hero-section">
+                    <div class="badge-status">
+                        UPT Perpustakaan dan Layanan Digital UMS
                     </div>
                     
-                    <h2 class="login-title">Selamat Datang</h2>
-                    <p class="login-subtitle">
-                        Masuk menggunakan akun SSO UMS Anda
+                    <h1 class="hero-title">
+                        Data Statistik Untuk<br>
+                        <span>Keperluan Prodi</span>
+                    </h1>
+                    
+                    <p class="hero-desc">
+                        Platform resmi penyedia layanan data statistik perpustakaan guna mempermudah proses penyusunan borang akreditasi Program Studi di lingkungan Universitas Muhammadiyah Surakarta.
                     </p>
 
-                    <a href="{{ route('cas.login') }}" class="btn-login">
-                        <i class="fas fa-sign-in-alt"></i>
-                        Login dengan SSO UMS
-                    </a>
+                    <ul class="feature-list">
+                        <li>
+                            <i class="fas fa-book-open"></i>
+                            <span>Rekapitulasi Koleksi</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-users"></i>
+                            <span>Data Kunjungan Harian</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-hand-holding-heart"></i>
+                            <span>Statistik Sirkulasi</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-file-csv"></i>
+                            <span>Export Laporan Cepat</span>
+                        </li>
+                    </ul>
+                </div>
 
-                    <p class="footer-text">
-                        &copy; {{ date('Y') }} <a href="#">UPT Perpustakaan dan Layanan Digital UMS</a>
-                    </p>
+                <!-- Right: Login Box -->
+                <div class="col-lg-5 auth-container">
+                    <div class="auth-card">
+                        <div class="auth-card-header">
+                            <div class="auth-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <h2 class="auth-title">Akses Dasbor</h2>
+                            <p class="auth-subtitle">Gunakan akun Single Sign-On (SSO) CAS UMS Anda untuk melanjutkan.</p>
+                        </div>
+
+                        <a href="{{ route('cas.login') }}" class="btn-sso">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Masuk dengan SSO UMS
+                        </a>
+
+                        <div class="auth-footer">
+                            UPT Perpustakaan dan Layanan Digital UMS        
+                        <br>    
+                            Universitas Muhammadiyah Surakarta &copy; {{ date('Y') }} 
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </main>
+
+    <!-- FAB Theme Toggle -->
+    <div class="theme-fab">
+        <button class="btn" id="theme-toggle" type="button" title="Ganti Tema" onclick="toggleTheme()">
+            <i class="fas fa-moon"></i>
+            <i class="fas fa-sun"></i>
+        </button>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Theme Management
-        function getTheme() {
-            return localStorage.getItem('theme') || 'dark';
-        }
+        // Theme Management (Selaras dengan Dashboard app.blade.php)
+        const getTheme = () => {
+            return localStorage.getItem('theme') || 'light';
+        };
+        
+        const updateIcon = (theme) => {
+            const icon = document.getElementById('theme-icon');
+            const logo = document.getElementById('landing-logo');
+            if (icon) {
+                icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            }
+            if (logo) {
+                logo.src = theme === 'dark' ? '{{ asset("img/logo4.png") }}' : '{{ asset("img/logo4a.png") }}';
+            }
+        };
 
-        function setTheme(theme) {
+        const setTheme = (theme) => {
             document.documentElement.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
             updateIcon(theme);
-        }
+        };
 
-        function updateIcon(theme) {
-            const icon = document.getElementById('theme-icon');
-            icon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
-        }
-
-        function toggleTheme() {
+        const toggleTheme = () => {
             const newTheme = getTheme() === 'dark' ? 'light' : 'dark';
             setTheme(newTheme);
-        }
+        };
 
-        // Initialize
+        // Initialization
         document.addEventListener('DOMContentLoaded', () => {
-            setTheme(getTheme());
+            const currentTheme = getTheme();
+            setTheme(currentTheme);
+            
+            // Auto dismiss alerts
+            setTimeout(() => {
+                document.querySelectorAll('.alert').forEach(alert => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
         });
-
-        // Auto-dismiss alerts
-        setTimeout(() => {
-            document.querySelectorAll('.alert').forEach(alert => {
-                new bootstrap.Alert(alert).close();
-            });
-        }, 5000);
     </script>
 </body>
-
 </html>

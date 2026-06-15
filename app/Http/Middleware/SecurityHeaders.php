@@ -135,7 +135,7 @@ class SecurityHeaders
             "frame-src "  . implode(' ', $this->allowedFrameSources),
             "object-src 'none'",
             "base-uri 'self'",
-            "form-action 'self'",
+            "form-action 'self' " . config('app.url') . " https://" . config('cas.host'),
             "upgrade-insecure-requests",
         ];
 

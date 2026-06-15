@@ -12358,6 +12358,8 @@ final class CnClassHelperr
             // Informatika
             'L200' => 'FKI-INFOR', // S1 Informatika
             'L208' => 'FKI-INFOR', // S2 Informatika
+            'L400' => 'FKI-INFOR', // S1 Kecerdasan Buatan (Inherit Informatika)
+            'L900' => 'FKI-INFOR', // S3 Informatika (Inherit Informatika)
             // Sistem Informasi
             'L300' => 'FKI-SI', // S1
 

@@ -207,7 +207,7 @@
         @else
             <div class="row justify-content-center mt-5">
                 <div class="col-md-6">
-                    <div class="text-center p-5 border rounded-4 shadow-sm">
+                    <div class="text-center p-5 rounded-4 shadow-sm">
                         <div class="mb-3 text-primary opacity-50">
                             <i class="fas fa-search fa-4x"></i>
                         </div>

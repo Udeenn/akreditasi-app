@@ -98,7 +98,7 @@
             </div>
         </div>
 
-        {{-- 4. KUNJUNGAN & PEMINJAMAN PER FAKULTAS TAHUN 2026 --}}
+        {{-- 4. KUNJUNGAN & PEMINJAMAN PER FAKULTAS TAHUN INI --}}
         <div class="row g-3 mb-4">
             {{-- Kunjungan Per Fakultas --}}
             <div class="col-lg-6">
@@ -108,7 +108,7 @@
                             <i class="fas fa-door-open"></i>
                         </div>
                         <h6 class="mb-0 fw-bold">Kunjungan Per Fakultas <span
-                                class="text-muted fw-normal">(2026)</span></h6>
+                                class="text-muted fw-normal">({{ date('Y') }})</span></h6>
                     </div>
                     <div class="card-body">
                         @if(count($kunjunganFakultas) > 0)
@@ -144,7 +144,7 @@
                             <i class="fas fa-book-reader"></i>
                         </div>
                         <h6 class="mb-0 fw-bold">Peminjaman Per Fakultas <span
-                                class="text-muted fw-normal">(2026)</span></h6>
+                                class="text-muted fw-normal">({{ date('Y') }})</span></h6>
                     </div>
                     <div class="card-body">
                         @if(count($peminjamanFakultas) > 0)

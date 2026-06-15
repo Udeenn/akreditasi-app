@@ -81,15 +81,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/prodi/data', [VisitHistory::class, 'getProdiData'])->name('prodi.data');
         Route::get('/harian', [VisitHistory::class, 'kunjunganTanggalTable'])->name('tanggalTable');
         Route::get('/fakultas', [VisitHistory::class, 'kunjunganFakultasTable'])->name('fakultasTable');
-        Route::get('/fakultas/export', [VisitHistory::class, 'exportCsvFakultas'])->name('fakultasExport');
+        Route::get('/fakultas/export', [VisitHistory::class, 'exportCsvFakultas'])->name('fakultasExport')->middleware('throttle:exports');
         Route::get('/cek-kehadiran', [VisitHistory::class, 'cekKehadiran'])->name('cekKehadiran');
-        Route::get('/export-kehadiran-full-data', [VisitHistory::class, 'getKehadiranExportData'])->name('get_export_data');
-        Route::get('/export-harian-full-data', [VisitHistory::class, 'getKunjunganHarianExportData'])->name('get_harian_export_data');
-        Route::get('/export-prodi-full-data', [VisitHistory::class, 'getProdiExportData'])->name('get_prodi_export_data');
+        Route::get('/export-kehadiran-full-data', [VisitHistory::class, 'getKehadiranExportData'])->name('get_export_data')->middleware('throttle:exports');
+        Route::get('/export-harian-full-data', [VisitHistory::class, 'getKunjunganHarianExportData'])->name('get_harian_export_data')->middleware('throttle:exports');
+        Route::get('/export-prodi-full-data', [VisitHistory::class, 'getProdiExportData'])->name('get_prodi_export_data')->middleware('throttle:exports');
         Route::get('/get-detail-pengunjung', [VisitHistory::class, 'getDetailPengunjung'])->name('get_detail_pengunjung');
         Route::get('/get-detail-pengunjung-harian', [VisitHistory::class, 'getDetailPengunjungHarian'])->name('get_detail_pengunjung_harian');
-        Route::get('/export-pdf', [VisitHistory::class, 'exportPdf'])->name('export_pdf');
-        Route::get('/get-detail-pengunjung-harian-export', [VisitHistory::class, 'getDetailPengunjungHarianExport'])->name('get_detail_pengunjung_harian_export');
+        Route::get('/export-pdf', [VisitHistory::class, 'exportPdf'])->name('export_pdf')->middleware('throttle:exports');
+        Route::get('/get-detail-pengunjung-harian-export', [VisitHistory::class, 'getDetailPengunjungHarianExport'])->name('get_detail_pengunjung_harian_export')->middleware('throttle:exports');
         Route::get('/get-lokasi-detail', [VisitHistory::class, 'getLokasiDetail'])->name('get_lokasi_detail');
     });
 
@@ -115,34 +115,34 @@ Route::middleware('auth')->group(function () {
     // Laporan
     // =============================================
     Route::get('/kunjungan/keseluruhan', [VisitHistory::class, 'laporanKunjunganGabungan'])->name('kunjungan.keseluruhan');
-    Route::post('/kunjungan/keseluruhan/export-pdf', [VisitHistory::class, 'exportPdfKunjunganGabungan'])->name('kunjungan.keseluruhan.export_pdf');
+    Route::post('/kunjungan/keseluruhan/export-pdf', [VisitHistory::class, 'exportPdfKunjunganGabungan'])->name('kunjungan.keseluruhan.export_pdf')->middleware('throttle:exports');
 
     // =============================================
     // Peminjaman
     // =============================================
     Route::prefix('peminjaman')->name('peminjaman.')->group(function () {
         Route::get('/keseluruhan', [PeminjamanController::class, 'pertanggal'])->name('keseluruhan');
-        Route::get('/export-detail', [PeminjamanController::class, 'exportDetailCsv'])->name('export_detail');
-        Route::post('/keseluruhan/export-pdf', [PeminjamanController::class, 'exportPdfKeseluruhan'])->name('export_pdf_keseluruhan');
+        Route::get('/export-detail', [PeminjamanController::class, 'exportDetailCsv'])->name('export_detail')->middleware('throttle:exports');
+        Route::post('/keseluruhan/export-pdf', [PeminjamanController::class, 'exportPdfKeseluruhan'])->name('export_pdf_keseluruhan')->middleware('throttle:exports');
         Route::get('/prodi', [PeminjamanController::class, 'peminjamanProdiChart'])->name('prodi');
-        Route::get('/export-detail-prodi', [PeminjamanController::class, 'exportDetailProdiCsv'])->name('export_detail_prodi');
+        Route::get('/export-detail-prodi', [PeminjamanController::class, 'exportDetailProdiCsv'])->name('export_detail_prodi')->middleware('throttle:exports');
         Route::get('/cek-pinjaman', [PeminjamanController::class, 'checkHistory'])->name('cek_pinjaman');
         Route::get('/berlangsung', [PeminjamanController::class, 'peminjamanBerlangsung'])->name('berlangsung');
         Route::get('/berlangsung-data', [PeminjamanController::class, 'getBerlangsungDataTable'])->name('berlangsung_data');
-        Route::get('/export-berlangsung-full-data', [PeminjamanController::class, 'getBerlangsungExportData'])->name('get_berlangsung_export_data');
+        Route::get('/export-berlangsung-full-data', [PeminjamanController::class, 'getBerlangsungExportData'])->name('get_berlangsung_export_data')->middleware('throttle:exports');
         Route::get('/detail', [PeminjamanController::class, 'getDetailPeminjaman'])->name('get_detail');
-        Route::get('/export-borrowing-full-data', [PeminjamanController::class, 'getBorrowingHistoryExportData'])->name('get_borrowing_export_data');
-        Route::get('/export-return-full-data', [PeminjamanController::class, 'getReturnHistoryExportData'])->name('get_return_export_data');
+        Route::get('/export-borrowing-full-data', [PeminjamanController::class, 'getBorrowingHistoryExportData'])->name('get_borrowing_export_data')->middleware('throttle:exports');
+        Route::get('/export-return-full-data', [PeminjamanController::class, 'getReturnHistoryExportData'])->name('get_return_export_data')->middleware('throttle:exports');
         Route::get('/peminjam-detail', [PeminjamanController::class, 'getPeminjamDetail'])->name('peminjamDetail');
         Route::get('/fakultas', [PeminjamanController::class, 'peminjamanFakultasTable'])->name('peminjaman_fakultas');
-        Route::get('/export-fakultas', [PeminjamanController::class, 'exportCsvPeminjamanFakultas'])->name('export_fakultas');
+        Route::get('/export-fakultas', [PeminjamanController::class, 'exportCsvPeminjamanFakultas'])->name('export_fakultas')->middleware('throttle:exports');
     });
 
     // =============================================
     // Statistik Penggunaan
     // =============================================
     Route::get('/statistik/keterpakaian-koleksi', [PenggunaanController::class, 'keterpakaianKoleksi'])->name('penggunaan.keterpakaian_koleksi');
-    Route::post('/statistik/keterpakaian-koleksi/export-pdf', [PenggunaanController::class, 'exportPdfKeterpakaianKoleksi'])->name('penggunaan.keterpakaian_koleksi.export_pdf');
+    Route::post('/statistik/keterpakaian-koleksi/export-pdf', [PenggunaanController::class, 'exportPdfKeterpakaianKoleksi'])->name('penggunaan.keterpakaian_koleksi.export_pdf')->middleware('throttle:exports');
     Route::get('/statistik/keterpakaian-koleksi/detail', [PenggunaanController::class, 'getKeterpakaianDetail'])->name('statistik.keterpakaian_koleksi.detail');
     Route::get('/statistik/cek-histori-buku', [PenggunaanController::class, 'cekBuku'])->name('penggunaan.cek_histori_buku_buku');
     Route::get('/statistik/sering-dibaca', [PenggunaanController::class, 'seringDibaca'])->name('penggunaan.sering_dibaca');
@@ -152,9 +152,9 @@ Route::middleware('auth')->group(function () {
     // =============================================
     Route::prefix('reward')->name('reward.')->group(function () {
         Route::get('/pemustaka-teraktif', [RewardController::class, 'pemustakaTeraktif'])->name('pemustaka_teraktif');
-        Route::get('/pemustaka-teraktif/export-csv', [RewardController::class, 'exportCsvPemustakaTeraktif'])->name('export_csv_pemustaka_teraktif');
+        Route::get('/pemustaka-teraktif/export-csv', [RewardController::class, 'exportCsvPemustakaTeraktif'])->name('export_csv_pemustaka_teraktif')->middleware('throttle:exports');
         Route::get('/peminjam-teraktif', [RewardController::class, 'peminjamTeraktif'])->name('peminjam_teraktif');
-        Route::get('/peminjam-teraktif/export-csv', [RewardController::class, 'exportCsvPeminjamTeraktif'])->name('export_csv_peminjam_teraktif');
+        Route::get('/peminjam-teraktif/export-csv', [RewardController::class, 'exportCsvPeminjamTeraktif'])->name('export_csv_peminjam_teraktif')->middleware('throttle:exports');
     });
 
     // =============================================
@@ -170,6 +170,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/activity-log', [\App\Http\Controllers\ActivityLogController::class, 'index'])
             ->name('admin.activity-log');
         Route::get('/admin/activity-log/export', [\App\Http\Controllers\ActivityLogController::class, 'export'])
-            ->name('admin.activity-log.export');
+            ->name('admin.activity-log.export')->middleware('throttle:exports');
     });
 });
