@@ -161,7 +161,7 @@
                                         <td>{{ $row->Pengarang }}</td>
                                         <td>{{ $row->Kota_Terbit }}</td>
                                         <td>{{ $row->Penerbit }}</td>
-                                        <td>{{ $row->Tahun_Terbit }}</td>
+                                        <td>{{ $row->TahunTerbit }}</td>
                                         <td>{{ $row->Eksemplar }}</td>
                                         <td>{{ $row->Lokasi }}</td>
                                     </tr>

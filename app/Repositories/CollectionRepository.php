@@ -89,7 +89,8 @@ class CollectionRepository
             MAX(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]')) as Judul_b,
             MAX(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"c\"]')) as Judul_c,
             MAX(b.author) as Pengarang,
-            MAX(CONCAT(COALESCE(bi.publishercode,''), ' ', COALESCE(bi.place,''))) AS Penerbit,
+            MAX(bi.place) AS Kota_Terbit,
+            MAX(bi.publishercode) AS Penerbit,
             MAX(CASE WHEN EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"260\"]/subfield[@code=\"c\"]') REGEXP '[0-9]{4}' THEN EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"260\"]/subfield[@code=\"c\"]') ELSE bi.publicationyear END) AS TahunTerbit,
             COUNT(items.itemnumber) AS Eksemplar,
             GROUP_CONCAT(DISTINCT CASE

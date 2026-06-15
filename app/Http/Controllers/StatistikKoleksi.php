@@ -21,6 +21,7 @@ class StatistikKoleksi extends Controller
         private ProdiService $prodiService
     ) {
         ini_set('max_execution_time', 600);
+        ini_set('memory_limit', '512M');
     }
 
     public function rekapPerFakultas(Request $request)
@@ -107,7 +108,7 @@ class StatistikKoleksi extends Controller
                         $key = $isSerial ? $row->biblionumber . '_' . $row->enumchron : $row->biblionumber;
 
                         foreach ($targetProdiCodes as $prodiCode) {
-                            if (CnClassHelper::isValidCnClass($prodiCode, $actualClass)) {
+                            if (CnClassHelperr::isValidCnClass($prodiCode, $actualClass)) {
                                 $countsPerProdi[$prodiCode][$category]['judul'][$key] = true;
                                 $countsPerProdi[$prodiCode][$category]['eksemplar']++;
                             }
@@ -152,6 +153,7 @@ class StatistikKoleksi extends Controller
     private function handleCollectionRequest(Request $request, string $type, string $viewName, string $title)
     {
         $listprodi = M_Auv::where('category', 'PRODI')->whereRaw('CHAR_LENGTH(lib) >= 13')->onlyProdiTampil()->orderBy('authorised_value', 'asc')->get();
+        
         $prodiOptionAll = new \stdClass();
         $prodiOptionAll->authorised_value = 'all';
         $prodiOptionAll->lib = 'Semua Program Studi';
@@ -249,6 +251,7 @@ class StatistikKoleksi extends Controller
     public function koleksiPerprodi(Request $request)
     {
         $listprodi = M_eprodi::all();
+        
         $prodi = $request->input('prodi');
         $tahunTerakhir = $request->input('tahun', 'all');
 

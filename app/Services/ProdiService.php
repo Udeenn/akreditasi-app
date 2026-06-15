@@ -32,8 +32,6 @@ class ProdiService
         'XA'      => 'Alumni Universitas',
         'LB'      => 'Anggota Luar Biasa',
         'XC'      => 'Anggota Luar Biasa (Exchange)',
-        'L400'    => 'S1 Kecerdasan Buatan',
-        'L900'    => 'S3 Informatika',
     ];
 
     /**

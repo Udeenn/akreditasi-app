@@ -145,6 +145,7 @@ class CollectionStatisticsService
                 if (!empty($row->Judul_c)) $fullJudul .= ' / ' . $row->Judul_c;
                 
                 $row->Judul = html_entity_decode($fullJudul, ENT_QUOTES, 'UTF-8');
+                $row->Kota_Terbit = html_entity_decode($row->Kota_Terbit ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
                 $row->Penerbit = html_entity_decode($row->Penerbit ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
                 $row->Pengarang = html_entity_decode($row->Pengarang ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
                 
