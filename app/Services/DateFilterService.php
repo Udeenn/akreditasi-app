@@ -46,7 +46,7 @@ class DateFilterService
         $tahunAwal    = (int) $request->input('tahun_awal', $request->input('start_year', Carbon::now()->year));
         $tahunAkhir   = (int) $request->input('tahun_akhir', $request->input('end_year', Carbon::now()->year));
 
-        if ($filterType === 'yearly') {
+        if ($filterType === 'yearly' || $filterType === 'monthly') {
             if ($tahunAwal > $tahunAkhir) {
                 [$tahunAwal, $tahunAkhir] = [$tahunAkhir, $tahunAwal];
             }
@@ -83,7 +83,7 @@ class DateFilterService
      */
     public function getDisplayPeriod(string $filterType, $start, $end, int $tahunAwal = 0, int $tahunAkhir = 0): string
     {
-        if ($filterType === 'yearly') {
+        if ($filterType === 'yearly' || $filterType === 'monthly') {
             return "Tahun {$tahunAwal}" . ($tahunAwal != $tahunAkhir ? " s.d. {$tahunAkhir}" : "");
         }
 

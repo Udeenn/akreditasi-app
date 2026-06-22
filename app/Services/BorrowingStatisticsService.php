@@ -21,21 +21,21 @@ class BorrowingStatisticsService
     {
         $cacheKey = 'peminjaman_fakultas_v3_' . md5(json_encode([
             'filterType' => $filterType,
-            'start' => ($filterType == 'yearly') ? "$startYear-01-01" : $startDate,
-            'end' => ($filterType == 'yearly') ? "$endYear-12-31" : $endDate,
+            'start' => (in_array($filterType, ['yearly', 'monthly'])) ? "$startYear-01-01" : $startDate,
+            'end' => (in_array($filterType, ['yearly', 'monthly'])) ? "$endYear-12-31" : $endDate,
             'selectedFakultas' => $selectedFakultas,
         ]));
 
         return Cache::remember($cacheKey, 3600, function () use ($filterType, $startDate, $endDate, $startYear, $endYear, $selectedFakultas) {
             
-            if ($filterType == 'daily') {
-                $start = Carbon::parse($startDate)->startOfDay();
-                $end = Carbon::parse($endDate)->endOfDay();
-                $sqlDateFormat = '%Y-%m-%d';
-            } else {
+            if (in_array($filterType, ['yearly', 'monthly'])) {
                 $start = Carbon::createFromDate($startYear, 1, 1)->startOfDay();
                 $end = Carbon::createFromDate($endYear, 12, 31)->endOfDay();
                 $sqlDateFormat = '%Y-%m';
+            } else {
+                $start = Carbon::parse($startDate)->startOfDay();
+                $end = Carbon::parse($endDate)->endOfDay();
+                $sqlDateFormat = '%Y-%m-%d';
             }
 
             $rawData = $this->statisticsRepository->getBorrowingStatisticsByDateRange($start, $end, $sqlDateFormat);
@@ -100,13 +100,28 @@ class BorrowingStatisticsService
                 ];
             })->sortBy('periode')->values();
 
+            // Build chartData for the chart
+            $chartData = $tableData->map(function ($row) use ($filterType) {
+                $label = (in_array($filterType, ['yearly', 'monthly']))
+                    ? \Carbon\Carbon::createFromFormat('Y-m', $row['periode'])->format('M Y')
+                    : \Carbon\Carbon::parse($row['periode'])->format('d M Y');
+                return [
+                    'label'        => $label,
+                    'issue'        => $row['jumlah_issue'],
+                    'renew'        => $row['jumlah_renew'],
+                    'pengembalian' => $row['jumlah_buku_kembali'],
+                    'sirkulasi'    => $row['total_sirkulasi'],
+                ];
+            })->values()->toArray();
+
             return [
-                'totalIssues' => $totalIssues,
-                'totalRenews' => $totalRenews,
-                'totalReturns' => $totalReturns,
-                'totalCirculation' => $totalCirculation,
-                'totalBorrowers' => $totalBorrowers,
-                'tableData' => $tableData->toArray(),
+                'totalIssues'     => $totalIssues,
+                'totalRenews'     => $totalRenews,
+                'totalReturns'    => $totalReturns,
+                'totalCirculation'=> $totalCirculation,
+                'totalBorrowers'  => $totalBorrowers,
+                'tableData'       => $tableData->toArray(),
+                'chartData'       => $chartData,
             ];
         });
     }
@@ -118,21 +133,21 @@ class BorrowingStatisticsService
     {
         $cacheKey = 'peminjaman_prodi_v3_' . md5(json_encode([
             'filterType' => $filterType,
-            'start' => ($filterType == 'yearly') ? "$startYear-01-01" : $startDate,
-            'end' => ($filterType == 'yearly') ? "$endYear-12-31" : $endDate,
+            'start' => (in_array($filterType, ['yearly', 'monthly'])) ? "$startYear-01-01" : $startDate,
+            'end' => (in_array($filterType, ['yearly', 'monthly'])) ? "$endYear-12-31" : $endDate,
             'selectedProdi' => $selectedProdi,
         ]));
 
         return Cache::remember($cacheKey, 3600, function () use ($filterType, $startDate, $endDate, $startYear, $endYear, $selectedProdi) {
             
-            if ($filterType == 'daily') {
-                $start = Carbon::parse($startDate)->startOfDay();
-                $end = Carbon::parse($endDate)->endOfDay();
-                $sqlDateFormat = '%Y-%m-%d';
-            } else {
+            if (in_array($filterType, ['yearly', 'monthly'])) {
                 $start = Carbon::createFromDate($startYear, 1, 1)->startOfDay();
                 $end = Carbon::createFromDate($endYear, 12, 31)->endOfDay();
                 $sqlDateFormat = '%Y-%m';
+            } else {
+                $start = Carbon::parse($startDate)->startOfDay();
+                $end = Carbon::parse($endDate)->endOfDay();
+                $sqlDateFormat = '%Y-%m-%d';
             }
 
             // Gunakan base query dari StatisticsRepository
