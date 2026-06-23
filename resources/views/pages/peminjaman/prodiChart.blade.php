@@ -144,11 +144,23 @@
                             </div>
 
                             <div class="col-md-2 ms-auto">
-                                <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm">
-                                    <i class="fas fa-search me-1"></i> Tampilkan
+                                <button type="submit" id="btnTampilkan" class="btn btn-primary w-100 fw-bold shadow-sm">
+                                    <i class="fas fa-search me-1" id="btnTampilkanIcon"></i>
+                                    <span id="btnTampilkanText">Tampilkan</span>
                                 </button>
                             </div>
                         </form>
+
+                        {{-- Loading Indicator --}}
+                        <div id="loadingOverlay" style="display:none;" class="mt-3">
+                            <div class="alert alert-info d-flex align-items-center border-0 shadow-sm">
+                                <div class="spinner-border spinner-border-sm me-3 text-primary" role="status"></div>
+                                <div>
+                                    <strong>Memproses data...</strong>
+                                    <small class="d-block text-muted">Mengambil dan menghitung data dari database Koha. Mohon tunggu sebentar.</small>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -405,6 +417,17 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
+        // --- LOADING ON FORM SUBMIT ---
+        document.querySelector('form')?.addEventListener('submit', function() {
+            document.getElementById('loadingOverlay').style.display = 'block';
+            const btn = document.getElementById('btnTampilkan');
+            const icon = document.getElementById('btnTampilkanIcon');
+            const text = document.getElementById('btnTampilkanText');
+            if (btn) btn.disabled = true;
+            if (icon) { icon.classList.remove('fa-search'); icon.classList.add('fa-spinner', 'fa-spin'); }
+            if (text) text.textContent = 'Memproses...';
+        });
+
         document.addEventListener("DOMContentLoaded", function() {
             // Select2 Init
             $('#selected_prodi').select2({

@@ -26,7 +26,13 @@ class BorrowingStatisticsService
             'selectedFakultas' => $selectedFakultas,
         ]));
 
-        return Cache::remember($cacheKey, 3600, function () use ($filterType, $startDate, $endDate, $startYear, $endYear, $selectedFakultas) {
+        // Data historis (bukan hari ini) bisa di-cache lebih lama
+        $endBoundary = in_array($filterType, ['yearly', 'monthly'])
+            ? Carbon::createFromDate($endYear, 12, 31)
+            : Carbon::parse($endDate);
+        $ttl = $endBoundary->isToday() || $endBoundary->isFuture() ? 1800 : 86400;
+
+        return Cache::remember($cacheKey, $ttl, function () use ($filterType, $startDate, $endDate, $startYear, $endYear, $selectedFakultas) {
             
             if (in_array($filterType, ['yearly', 'monthly'])) {
                 $start = Carbon::createFromDate($startYear, 1, 1)->startOfDay();
@@ -138,7 +144,13 @@ class BorrowingStatisticsService
             'selectedProdi' => $selectedProdi,
         ]));
 
-        return Cache::remember($cacheKey, 3600, function () use ($filterType, $startDate, $endDate, $startYear, $endYear, $selectedProdi) {
+        // Data historis (bukan hari ini) bisa di-cache lebih lama
+        $endBoundary = in_array($filterType, ['yearly', 'monthly'])
+            ? Carbon::createFromDate($endYear, 12, 31)
+            : Carbon::parse($endDate);
+        $ttl = $endBoundary->isToday() || $endBoundary->isFuture() ? 1800 : 86400;
+
+        return Cache::remember($cacheKey, $ttl, function () use ($filterType, $startDate, $endDate, $startYear, $endYear, $selectedProdi) {
             
             if (in_array($filterType, ['yearly', 'monthly'])) {
                 $start = Carbon::createFromDate($startYear, 1, 1)->startOfDay();

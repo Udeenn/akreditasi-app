@@ -980,8 +980,7 @@ public function pertanggal(Request $request)
         $baseQuery = DB::connection('mysql2')->table('issues as i')
             ->join('items as it', 'i.itemnumber', '=', 'it.itemnumber')
             ->join('biblio as b', 'it.biblionumber', '=', 'b.biblionumber')
-            ->join('borrowers as br', 'i.borrowernumber', '=', 'br.borrowernumber')
-            ->whereRaw('i.date_due >= CURDATE()');
+            ->join('borrowers as br', 'i.borrowernumber', '=', 'br.borrowernumber');
 
         // Filter Prodi
         if ($selectedProdiCode && $selectedProdiCode !== 'semua') {
@@ -995,8 +994,11 @@ public function pertanggal(Request $request)
             }
         }
 
-        // Total records (tanpa search)
-        $totalRecords = (clone $baseQuery)->count();
+        // Total records — cache 60 detik agar tidak query ulang tiap pindah halaman
+        $cacheKeyTotal = 'berlangsung_total_' . md5($selectedProdiCode);
+        $totalRecords = \Illuminate\Support\Facades\Cache::remember($cacheKeyTotal, 60, function () use ($baseQuery) {
+            return (clone $baseQuery)->count();
+        });
 
         // Search filter
         if (!empty($searchValue)) {
@@ -1009,8 +1011,10 @@ public function pertanggal(Request $request)
             });
         }
 
-        // Filtered count
-        $filteredRecords = (clone $baseQuery)->count();
+        // Filtered count — skip jika tidak ada search (filtered = total)
+        $filteredRecords = empty($searchValue)
+            ? $totalRecords
+            : (clone $baseQuery)->count();
 
         // Get data with pagination
         $data = $baseQuery->select(
@@ -1068,7 +1072,6 @@ public function pertanggal(Request $request)
                 $join->on('av.category', '=', 'ba.code')
                     ->on('ba.attribute', '=', 'av.authorised_value');
             })
-            ->whereRaw('i.date_due >= CURDATE()')
             ->orderBy('BukuDipinjamSaat', 'desc')
             ->orderBy('BatasWaktuPengembalian', 'desc');
 

@@ -229,7 +229,7 @@
                     [10, 25, 50, 100]
                 ],
                 "pageLength": 10,
-                "dom": '<"d-flex justify-content-between mb-3 px-3 mt-3"lfP>t<"d-flex justify-content-between mt-3 px-3 mb-3"ip>',
+                "dom": '<"d-flex justify-content-between mb-3 px-3 mt-3"lf>t<"d-flex justify-content-between mt-3 px-3 mb-3"ip>',
                 "drawCallback": function(settings) {
                     // Update total count di header
                     var api = this.api();

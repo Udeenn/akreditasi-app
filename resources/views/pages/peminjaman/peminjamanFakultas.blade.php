@@ -137,11 +137,23 @@
                             </div>
 
                             <div class="col-md-1 ms-auto">
-                                <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm">
-                                    <i class="fas fa-search me-1"></i> Cari
+                                <button type="submit" id="btnCari" class="btn btn-primary w-100 fw-bold shadow-sm">
+                                    <i class="fas fa-search me-1" id="btnCariIcon"></i>
+                                    <span id="btnCariText">Cari</span>
                                 </button>
                             </div>
                         </form>
+
+                        {{-- Loading Indicator --}}
+                        <div id="loadingOverlay" style="display:none;" class="mt-3">
+                            <div class="alert alert-info d-flex align-items-center border-0 shadow-sm">
+                                <div class="spinner-border spinner-border-sm me-3 text-primary" role="status"></div>
+                                <div>
+                                    <strong>Memproses data...</strong>
+                                    <small class="d-block text-muted">Mengambil data dari database Koha. Mohon tunggu sebentar.</small>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -339,6 +351,14 @@
 
     <script>
         $(document).ready(function() {
+            // --- LOADING ON FORM SUBMIT ---
+            $('#filterForm').on('submit', function() {
+                $('#loadingOverlay').show();
+                $('#btnCari').prop('disabled', true);
+                $('#btnCariIcon').removeClass('fa-search').addClass('fa-spinner fa-spin');
+                $('#btnCariText').text('Memproses...');
+            });
+
             // --- Format DataTables Child Row ---
             function formatChildRow(dataString) {
                 if (!dataString) return '<div class="text-muted small p-2">Tidak ada detail prodi.</div>';
