@@ -7,6 +7,75 @@
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <style>
+        .modern-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+        }
+        .hover-lift {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .hover-lift:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px -5px rgba(0,0,0,0.1) !important;
+        }
+        .table-custom th {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            color: #6b7280;
+            background-color: #f9fafb;
+            border-bottom: 2px solid #e5e7eb;
+            padding: 1rem;
+        }
+        .table-custom td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .avatar-circle {
+            width: 42px;
+            height: 42px;
+            min-width: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .bg-indigo-soft { background-color: #e0e7ff; color: #4338ca; }
+        .bg-green-soft { background-color: #d1fae5; color: #059669; }
+        .bg-red-soft { background-color: #fee2e2; color: #dc2626; }
+        .bg-yellow-soft { background-color: #fef3c7; color: #d97706; }
+        .bg-blue-soft { background-color: #dbeafe; color: #2563eb; }
+        
+        /* Modern Select2 */
+        .select2-container--bootstrap-5 .select2-selection {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            min-height: 46px;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        .select2-container--bootstrap-5.select2-container--focus .select2-selection {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+        }
+        .btn-modern {
+            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            transition: all 0.2s ease;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            border-radius: 6px !important;
+        }
+    </style>
     {{-- Shared styles loaded from unified-components.css --}}
 @endpush
 
@@ -40,16 +109,13 @@
         {{-- 2. FILTER SECTION --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card border-0 shadow-sm hover-lift">
-                    <div class="card-header border-bottom-0 ">
-                        <h6 class="fw-bold text-primary mb-0"><i class="fas fa-filter me-2"></i> Filter Data</h6>
-                    </div>
-                    <div class="card-body pt-0 pb-4">
+                <div class="card border-0 shadow-sm rounded-4 hover-lift">
+                    <div class="card-body p-4">
+                        <h6 class="fw-bold text-muted mb-3 text-uppercase" style="letter-spacing: 1px;"><i class="fas fa-filter me-2 text-primary"></i> Filter Data</h6>
                         <form id="filterPeminjamanBerlangsungForm" class="row g-3 align-items-end">
                             <div class="col-md-9">
-                                <label for="prodi" class="form-label fw-bold small text-muted text-uppercase">Program
-                                    Studi</label>
-                                <select name="prodi" id="prodi" class="form-select">
+                                <label for="prodi" class="form-label fw-semibold text-secondary">Pilih Program Studi</label>
+                                <select name="prodi" id="prodi" class="form-select shadow-none">
                                     <option value="semua" {{ request('prodi', 'semua') == 'semua' ? 'selected' : '' }}>
                                         (Semua) - Tampilkan Seluruh Data</option>
                                     @foreach ($listProdi as $kode => $nama)
@@ -61,8 +127,7 @@
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <button type="button" id="btnTerapkanFilter" class="btn btn-primary w-100 fw-bold shadow-sm"
-                                    style="padding: 0.6rem;">
+                                <button type="button" id="btnTerapkanFilter" class="btn btn-primary w-100 btn-modern shadow-sm">
                                     <i class="fas fa-search me-2"></i> Terapkan Filter
                                 </button>
                             </div>
@@ -73,36 +138,34 @@
         </div>
 
         {{-- 3. RESULTS SECTION --}}
-        <div class="card border-0 shadow-sm">
-            <div class="card-header px-4 py-3 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card-header bg-white border-bottom px-4 py-3 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
                 <div class="d-flex align-items-center">
-                    <div class="icon-box bg-primary-soft text-primary rounded-circle me-3"
-                        style="width: 40px; height: 40px; display:flex; align-items:center; justify-content:center;">
+                    <div class="avatar-circle bg-indigo-soft me-3">
                         <i class="fas fa-list-ul"></i>
                     </div>
                     <div>
-                        <h6 class="fw-bold mb-0">Daftar Peminjaman</h6>
-                        <small class="text-muted">Total:
-                            <strong id="totalCount">-</strong> Transaksi</small>
+                        <h5 class="fw-bold mb-0 text-dark">Daftar Peminjaman</h5>
+                        <small class="text-muted">Total: <strong id="totalCount" class="text-primary fs-6">-</strong> Transaksi Aktif</small>
                     </div>
                 </div>
 
                 <button type="button" id="exportCsvBtn"
-                    class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
+                    class="btn btn-success btn-modern shadow-sm"><i class="fas fa-file-excel me-2"></i> Export Data
                 </button>
             </div>
 
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" id="myTablePeminjamanBerlangsung"
+                    <table class="table table-custom table-hover align-middle mb-0" id="myTablePeminjamanBerlangsung"
                         style="width:100%">
                         <thead>
                             <tr>
                                 <th class="text-center" width="5%">No</th>
-                                <th width="20%">Peminjam</th>
-                                <th width="30%">Buku</th>
+                                <th width="25%">Peminjam</th>
+                                <th width="30%">Informasi Buku</th>
                                 <th width="20%">Waktu Pinjam</th>
-                                <th width="25%">Status Pengembalian</th>
+                                <th width="20%">Status Pengembalian</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -153,8 +216,22 @@
                     {
                         "data": "Peminjam",
                         "render": function(data) {
-                            return '<div class="d-flex flex-column"><span class="fw-bold">' +
-                                (data || '-') + '</span></div>';
+                            var text = data || '-';
+                            var parts = text.split(' - ');
+                            var nim = parts.length > 1 ? parts[0] : '';
+                            var nama = parts.length > 1 ? parts[1] : text;
+                            var initial = nama !== '-' ? nama.charAt(0).toUpperCase() : '?';
+                            
+                            // Generate pseudo-random color based on name
+                            var colors = ['bg-indigo-soft', 'bg-blue-soft', 'bg-green-soft', 'bg-yellow-soft', 'bg-red-soft'];
+                            var colorClass = colors[initial.charCodeAt(0) % colors.length];
+
+                            return '<div class="d-flex align-items-center">' +
+                                '<div class="avatar-circle ' + colorClass + ' me-3 shadow-sm">' + initial + '</div>' +
+                                '<div>' +
+                                '<span class="d-block fw-bold text-dark">' + nama + '</span>' +
+                                (nim ? '<small class="text-muted"><i class="fas fa-id-card me-1"></i> ' + nim + '</small>' : '') +
+                                '</div></div>';
                         }
                     },
                     {
@@ -162,14 +239,11 @@
                         "render": function(data, type, row) {
                             const title = data || '-';
                             const barcode = row.BarcodeBuku || '';
-                            return '<div class="d-flex align-items-center">' +
-                                '<i class="fas fa-book text-muted me-3 opacity-50"></i>' +
-                                '<div>' +
-                                '<span class="d-block fw-semibold text-truncate" style="max-width: 300px;" title="' +
-                                title + '">' + title + '</span>' +
-                                '<small class="text-muted font-monospace px-2 rounded border">' +
-                                '<i class="fas fa-barcode me-1"></i> ' + barcode +
-                                '</small></div></div>';
+                            return '<div class="d-flex flex-column">' +
+                                '<span class="fw-semibold text-dark text-truncate" style="max-width: 320px;" title="' + title + '">' + title + '</span>' +
+                                '<div class="d-flex align-items-center mt-1">' +
+                                '<span class="badge bg-light text-secondary border px-2 py-1"><i class="fas fa-barcode me-1"></i> ' + barcode + '</span>' +
+                                '</div></div>';
                         }
                     },
                     {
@@ -177,11 +251,9 @@
                         "render": function(data) {
                             if (!data) return '-';
                             const m = moment(data);
-                            return '<div class="text-muted small">' +
-                                '<i class="far fa-calendar-alt me-1 text-primary"></i> ' +
-                                m.format('DD MMM YYYY') +
-                                '<br><i class="far fa-clock me-1 text-primary ms-1"></i> ' +
-                                m.format('HH:mm') + ' WIB</div>';
+                            return '<div class="text-muted">' +
+                                '<span class="d-block fw-medium"><i class="far fa-calendar-alt me-2 text-primary opacity-75"></i>' + m.format('DD MMM YYYY') + '</span>' +
+                                '<small><i class="far fa-clock me-2 text-primary opacity-75"></i>' + m.format('HH:mm') + ' WIB</small></div>';
                         }
                     },
                     {
@@ -195,25 +267,21 @@
 
                             if (isOverdue) {
                                 const diff = now.diff(dueDate, 'days');
-                                return '<div class="d-flex align-items-center">' +
-                                    '<span class="badge bg-danger-soft rounded-pill px-3 py-2 me-2">' +
-                                    '<i class="fas fa-exclamation-circle me-1"></i> TERLAMBAT</span>' +
-                                    '<small class="text-danger fw-bold">' + diff +
-                                    ' hari</small></div>' +
-                                    '<small class="text-muted d-block mt-1">Batas: ' +
-                                    dueDate.format('DD MMM YYYY') + '</small>';
+                                return '<div class="d-flex flex-column align-items-start">' +
+                                    '<span class="badge bg-red-soft rounded-pill px-3 py-2 mb-1 shadow-sm">' +
+                                    '<i class="fas fa-exclamation-triangle me-1"></i> Terlambat ' + diff + ' Hari</span>' +
+                                    '<small class="text-danger fw-bold"><i class="fas fa-flag me-1"></i> Batas: ' + dueDate.format('DD MMM YYYY') + '</small></div>';
                             } else if (isToday) {
-                                return '<span class="badge bg-warning-soft rounded-pill px-3 py-2">' +
-                                    '<i class="fas fa-clock me-1"></i> HARI INI</span>' +
-                                    '<small class="text-muted d-block mt-1">Batas: ' +
-                                    dueDate.format('HH:mm') + ' WIB</small>';
+                                return '<div class="d-flex flex-column align-items-start">' +
+                                    '<span class="badge bg-yellow-soft rounded-pill px-3 py-2 mb-1 shadow-sm">' +
+                                    '<i class="fas fa-clock me-1"></i> Hari Ini</span>' +
+                                    '<small class="text-warning fw-bold text-dark"><i class="fas fa-flag me-1"></i> Batas: ' + dueDate.format('HH:mm') + ' WIB</small></div>';
                             } else {
                                 const diff = dueDate.diff(now, 'days');
-                                return '<div class="d-flex flex-column">' +
-                                    '<span class="badge bg-success-soft rounded-pill px-3 py-2 w-auto align-self-start">' +
+                                return '<div class="d-flex flex-column align-items-start">' +
+                                    '<span class="badge bg-green-soft rounded-pill px-3 py-2 mb-1 shadow-sm">' +
                                     '<i class="fas fa-check-circle me-1"></i> Dipinjam</span>' +
-                                    '<small class="text-muted mt-1">Sisa: ' + diff +
-                                    ' hari</small></div>';
+                                    '<small class="text-success fw-bold"><i class="fas fa-hourglass-half me-1"></i> Sisa ' + diff + ' hari</small></div>';
                             }
                         }
                     }
