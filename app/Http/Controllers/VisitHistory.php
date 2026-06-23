@@ -338,7 +338,7 @@ class VisitHistory extends Controller
         $tahunAwal = $request->input('tahun_awal', 2020);
         $tahunAkhir = $request->input('tahun_akhir', Carbon::now()->year);
 
-        $cacheKey = 'kunjungan_fak_v2_' . md5(json_encode([
+        $cacheKey = 'kunjungan_fak_v3_' . md5(json_encode([
             'ft' => $filterType, 'fk' => $selectedFakultas, 'lok' => $selectedLokasi,
             'dt' => ($filterType == 'yearly') ? "$tahunAwal-$tahunAkhir" : "$tanggalAwal-$tanggalAkhir",
         ]));
