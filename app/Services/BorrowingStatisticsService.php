@@ -51,8 +51,9 @@ class BorrowingStatisticsService
             // Chunked fetch for borrower category and attributes by borrowernumber
             // Using a new method in BorrowerRepository for fetching by borrowernumber instead of cardnumber
             $borrowerInfo = app(\App\Repositories\BorrowerRepository::class)->getBorrowerInfoByBorrowerNumbers($borrowerNumbers);
+            $prodiListMap = \App\Models\M_Auv::getCachedProdiList()->pluck('lib', 'authorised_value')->toArray();
 
-            $processedData = $rawData->map(function ($row) use ($borrowerInfo) {
+            $processedData = $rawData->map(function ($row) use ($borrowerInfo, $prodiListMap) {
                 $info = $borrowerInfo[$row->borrowernumber] ?? null;
                 
                 $catCode = $info->categorycode ?? '';
@@ -62,11 +63,14 @@ class BorrowingStatisticsService
                 $kode = $this->prodiService->identifyProdiCode($cardnumber, $catCode, $prodiCode);
                 $fakultas = \App\Helpers\FacultyHelper::mapCodeToFaculty($kode);
 
+                $namaProdi = $prodiListMap[$kode] ?? $kode;
+                $prodiDisplay = $kode . ' - ' . $namaProdi;
+
                 return [
                     'periode' => $row->periode,
                     'type' => $row->type,
                     'fakultas' => $fakultas,
-                    'prodi_name' => $kode,
+                    'prodi_name' => $prodiDisplay,
                     'borrowernumber' => $row->borrowernumber,
                 ];
             });
@@ -170,6 +174,7 @@ class BorrowingStatisticsService
             
             // Ambil info prodi dan kategori
             $borrowerInfo = app(\App\Repositories\BorrowerRepository::class)->getBorrowerInfoByBorrowerNumbers($borrowerNumbers);
+            $prodiListMap = \App\Models\M_Auv::getCachedProdiList()->pluck('lib', 'authorised_value')->toArray();
 
             // Filter Raw Data Based on Prodi and Mapping
             $processedData = collect();
@@ -189,10 +194,13 @@ class BorrowingStatisticsService
 
                 $tgl = Carbon::parse($row->datetime)->format($sqlDateFormat === '%Y-%m' ? 'Y-m-01' : 'Y-m-d');
 
+                $namaProdi = $prodiListMap[$kode] ?? $kode;
+                $prodiDisplay = $kode . ' - ' . $namaProdi;
+
                 $processedData->push([
                     'periode' => $tgl,
                     'type' => $row->type,
-                    'prodi_name' => $kode,
+                    'prodi_name' => $prodiDisplay,
                     'borrowernumber' => $row->borrowernumber,
                 ]);
             }
