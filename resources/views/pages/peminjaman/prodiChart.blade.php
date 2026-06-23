@@ -275,7 +275,7 @@
                                                 <td class="text-center text-muted fw-bold">
                                                     {{ $index + 1 }}</td>
                                                 <td class="px-4 fw-medium text-body">
-                                                    @if (($filterType ?? 'daily') == 'daily')
+                                                	@if (in_array(($filterType ?? 'daily'), ['daily']))
                                                         @if ($stat->periode)
                                                             <i
                                                                 class="far fa-calendar-alt me-2 text-muted"></i>{{ \Carbon\Carbon::parse($stat->periode)->format('d F Y') }}
@@ -285,7 +285,7 @@
                                                     @else
                                                         @if ($stat->periode)
                                                             <i
-                                                                class="far fa-calendar me-2 text-muted"></i>{{ \Carbon\Carbon::createFromFormat('Y-m', $stat->periode)->format('F Y') }}
+                                                                class="far fa-calendar me-2 text-muted"></i>{{ \Carbon\Carbon::parse($stat->periode)->locale('id')->isoFormat('MMMM Y') }}
                                                         @else
                                                             -
                                                         @endif

@@ -284,7 +284,7 @@
                                                     @if (($filterType ?? 'daily') == 'daily')
                                                         <i class="far fa-calendar-alt me-2 text-muted"></i>{{ \Carbon\Carbon::parse($stat->periode)->locale('id')->isoFormat('dddd, D MMMM Y') }}
                                                     @else
-                                                        <i class="far fa-calendar me-2 text-muted"></i>{{ \Carbon\Carbon::createFromFormat('Y-m', $stat->periode)->locale('id')->isoFormat('MMMM Y') }}
+                                                        <i class="far fa-calendar me-2 text-muted"></i>{{ \Carbon\Carbon::parse($stat->periode)->locale('id')->isoFormat('MMMM Y') }}
                                                     @endif
                                                 </td>
                                                 <td class="text-center">

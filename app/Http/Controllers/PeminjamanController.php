@@ -427,7 +427,14 @@ public function pertanggal(Request $request)
                 );
 
                 $dataExists = count($result['tableData']) > 0;
-                $allStatistics = collect($result['tableData']);
+                $allStatistics = collect($result['tableData'])->map(fn($item) => (object) [
+                    'periode'              => $item['periode'],
+                    'jumlah_issue'         => $item['jumlah_issue'],
+                    'jumlah_renew'         => $item['jumlah_renew'],
+                    'jumlah_pengembalian'  => $item['jumlah_buku_kembali'],
+                    'jumlah_peminjam_unik' => $item['jumlah_peminjam_unik'],
+                    'total_sirkulasi'      => $item['total_sirkulasi'],
+                ]);
 
                 $totalBooks = $result['totalIssues'] + $result['totalRenews'];
                 $totalReturns = $result['totalReturns'];
@@ -439,7 +446,7 @@ public function pertanggal(Request $request)
 
                 // Chart Data Preparation
                 $chartLabels = $allStatistics->pluck('periode')->map(function ($p) use ($filterType) {
-                    return $filterType == 'yearly'
+                    return in_array($filterType, ['yearly', 'monthly'])
                         ? \Carbon\Carbon::createFromFormat('Y-m-01', $p)->format('M Y')
                         : \Carbon\Carbon::parse($p)->format('d M Y');
                 });
@@ -458,20 +465,8 @@ public function pertanggal(Request $request)
                 $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage() ?: 1;
                 $currentItems = $allStatistics->slice(($currentPage - 1) * $perPage, $perPage)->values();
 
-                // Map to match view's expected object structure
-                $mappedItems = $currentItems->map(function ($item) {
-                    return (object) [
-                        'periode' => $item['periode'],
-                        'jumlah_issue' => $item['jumlah_issue'],
-                        'jumlah_renew' => $item['jumlah_renew'],
-                        'jumlah_pengembalian' => $item['jumlah_buku_kembali'],
-                        'jumlah_peminjam_unik' => $item['jumlah_peminjam_unik'],
-                        'total_sirkulasi' => $item['total_sirkulasi']
-                    ];
-                });
-
                 $statistics = new \Illuminate\Pagination\LengthAwarePaginator(
-                    $mappedItems,
+                    $currentItems,
                     $allStatistics->count(),
                     $perPage,
                     $currentPage,
