@@ -32,3 +32,6 @@ docker-compose.override.yml
 .docker/nginx/selfsigned.key
 DEPLOYMENT_GUIDE.md
 LOCAL_SETUP_GUIDE.md
+API_DOCUMENTATION.md
+docker-compose.yml
+auto_backup.bat

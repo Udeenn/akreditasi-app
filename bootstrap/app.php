@@ -13,11 +13,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // ── Alias middleware ──────────────────────────────────────────
         $middleware->alias([
             'admin'           => \App\Http\Middleware\CheckAdmin::class,
             'session.timeout' => \App\Http\Middleware\SessionTimeout::class,
             'log.activity'    => \App\Http\Middleware\LogActivity::class,
+            'api.key'         => \App\Http\Middleware\ApiKeyMiddleware::class,
         ]);
 
         // ── Proxy trust ───────────────────────────────────────────────
