@@ -35,3 +35,5 @@ LOCAL_SETUP_GUIDE.md
 API_DOCUMENTATION.md
 docker-compose.yml
 auto_backup.bat
+DEPLOYMENT_GUIDE.md
+generate_cert.sh
