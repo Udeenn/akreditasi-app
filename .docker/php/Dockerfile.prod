@@ -49,6 +49,7 @@ FROM php:8.4-fpm-alpine
 WORKDIR /var/www/html
 
 # Install ekstensi PHP yang HANYA dibutuhkan saat runtime
+RUN sed -i 's/https/http/' /etc/apk/repositories
 RUN apk add --no-cache \
     libpng \
     libjpeg \
