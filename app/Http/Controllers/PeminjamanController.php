@@ -1358,21 +1358,25 @@ public function pertanggal(Request $request)
         $prodiList = $this->getProdiListWithStaticOptions();
 
         $selectedProdi = $request->input('selected_prodi');
+        $filterType = $request->input('filter_type', 'daily');
+        $startDate = $request->input('start_date', Carbon::now()->subDays(30)->format('Y-m-d'));
+        $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
         $startYear = $request->input('start_year', Carbon::now()->year);
         $endYear = $request->input('end_year', Carbon::now()->year);
-        $startMonth = $request->input('start_month');
-        $endMonth = $request->input('end_month');
 
         $books = collect();
-        $paginator = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10, 1);
+        $perPage = $request->input('per_page', 10);
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage, 1);
         
-        $hasFilter = $request->filled('selected_prodi') && $request->filled('start_year') && $request->filled('end_year');
+        $hasFilter = $request->filled('selected_prodi') && (
+            ($filterType === 'daily' && $request->filled('start_date') && $request->filled('end_date')) ||
+            ($filterType === 'monthly' && $request->filled('start_year') && $request->filled('end_year'))
+        );
 
         if ($hasFilter && $selectedProdi) {
             $data = $this->getBukuTerlarisProdiData($request);
             
             $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage();
-            $perPage = 10;
             $currentItems = $data->slice(($currentPage - 1) * $perPage, $perPage)->all();
             
             $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
@@ -1385,26 +1389,27 @@ public function pertanggal(Request $request)
         }
 
         return view('pages.peminjaman.bukuTerlarisProdi', compact(
-            'prodiList', 'selectedProdi', 'startYear', 'endYear', 'startMonth', 'endMonth', 'paginator', 'hasFilter'
+            'prodiList', 'selectedProdi', 'filterType', 'startDate', 'endDate', 'startYear', 'endYear', 'paginator', 'hasFilter', 'perPage'
         ));
     }
 
     private function getBukuTerlarisProdiData($request)
     {
         $selectedProdi = $request->input('selected_prodi');
-        $startYear = $request->input('start_year', Carbon::now()->year);
-        $endYear = $request->input('end_year', Carbon::now()->year);
-        $startMonth = $request->input('start_month');
-        $endMonth = $request->input('end_month');
+        $filterType = $request->input('filter_type', 'daily');
 
         if (!$selectedProdi) {
             return collect();
         }
 
-        if ($startMonth && $endMonth) {
-            $start = Carbon::createFromFormat('Y-m', $startYear . '-' . str_pad($startMonth, 2, '0', STR_PAD_LEFT))->startOfMonth();
-            $end = Carbon::createFromFormat('Y-m', $endYear . '-' . str_pad($endMonth, 2, '0', STR_PAD_LEFT))->endOfMonth();
+        if ($filterType === 'daily') {
+            $startDate = $request->input('start_date', Carbon::now()->subDays(30)->format('Y-m-d'));
+            $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+            $start = Carbon::parse($startDate)->startOfDay();
+            $end = Carbon::parse($endDate)->endOfDay();
         } else {
+            $startYear = $request->input('start_year', Carbon::now()->year);
+            $endYear = $request->input('end_year', Carbon::now()->year);
             $start = Carbon::createFromDate($startYear, 1, 1)->startOfDay();
             $end = Carbon::createFromDate($endYear, 12, 31)->endOfDay();
         }
@@ -1562,4 +1567,67 @@ public function pertanggal(Request $request)
         return $pdf->download("Buku_Terlaris_Prodi_{$safeProdiName}_" . date('Ymd') . ".pdf");
     }
 
+    public function getPeminjamBukuDetail(Request $request)
+    {
+        $biblionumber = $request->input('biblionumber');
+        $selectedProdi = $request->input('selected_prodi');
+        $filterType = $request->input('filter_type', 'daily');
+        $page = $request->input('page', 1);
+        $perPage = 10;
+
+        if (!$biblionumber) {
+            return response()->json(['success' => false, 'message' => 'Parameter tidak valid.'], 400);
+        }
+
+        try {
+            if ($filterType === 'daily') {
+                $startDate = $request->input('start_date', \Carbon\Carbon::now()->subDays(30)->format('Y-m-d'));
+                $endDate = $request->input('end_date', \Carbon\Carbon::now()->format('Y-m-d'));
+                $start = \Carbon\Carbon::parse($startDate)->startOfDay();
+                $end = \Carbon\Carbon::parse($endDate)->endOfDay();
+            } else {
+                $startYear = $request->input('start_year', \Carbon\Carbon::now()->year);
+                $endYear = $request->input('end_year', \Carbon\Carbon::now()->year);
+                $start = \Carbon\Carbon::createFromDate($startYear, 1, 1)->startOfDay();
+                $end = \Carbon\Carbon::createFromDate($endYear, 12, 31)->endOfDay();
+            }
+
+            $query = \Illuminate\Support\Facades\DB::connection('mysql2')->table('statistics as s')
+                ->select(
+                    'b.cardnumber',
+                    \Illuminate\Support\Facades\DB::raw("CONCAT_WS(' ', b.firstname, b.surname) as nama_peminjam"),
+                    's.datetime as waktu_transaksi',
+                    's.type as transaksi'
+                )
+                ->join('borrowers as b', 'b.borrowernumber', '=', 's.borrowernumber')
+                ->join('items as i', 'i.itemnumber', '=', 's.itemnumber')
+                ->where('i.biblionumber', $biblionumber)
+                ->whereIn('s.type', ['issue', 'return', 'localuse'])
+                ->whereBetween('s.datetime', [$start, $end]);
+
+            if ($selectedProdi) {
+                if ($selectedProdi === 'DOSEN') {
+                    $query->where('b.categorycode', 'like', 'TC%');
+                } elseif ($selectedProdi === 'TENDIK' || $selectedProdi === 'STAFF') {
+                    $query->where(function ($q) {
+                        $q->where('b.categorycode', 'like', 'STAF%')->orWhere('b.categorycode', '=', 'LIBRARIAN');
+                    });
+                }
+            }
+
+            $paginator = $query->orderBy('s.datetime', 'desc')
+                ->paginate($perPage, ['*'], 'page', $page);
+
+            // Format date
+            $paginator->getCollection()->transform(function ($item) {
+                $item->waktu_transaksi = \Carbon\Carbon::parse($item->waktu_transaksi)->format('d M Y H:i');
+                return $item;
+            });
+
+            return response()->json(['success' => true, 'data' => $paginator]);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Server Error: ' . $e->getMessage()], 500);
+        }
+    }
 }

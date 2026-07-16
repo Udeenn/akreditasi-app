@@ -3,19 +3,16 @@
 @section('title', 'Statistik Kunjungan Keseluruhan')
 @section('content')
     <div class="container">
-        <div class="card bg-white shadow-sm mb-4">
-            <div class="card-body">
-                <h4 class="mb-0">Statistik Kunjungan Keseluruhan</h4>
-                <small class="text-muted">Ringkasan data kunjungan berdasarkan periode</small>
+        <x-breadcrumb title="Statistik Kunjungan Keseluruhan" icon="fas fa-users" />
+        <div class="card unified-card border-0 shadow-sm filter-card mb-4">
+            <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
             </div>
-        </div>
-        <hr>
-        <div class="card mb-4">
-            <div class="card-body">
+            <div class="card-body px-4 pb-4 pt-3">
                 <form method="GET" action="{{ route('kunjungan.tanggalTable') }}" class="row g-3 align-items-end"
                     id="filterForm">
                     <div class="col-md-auto">
-                        <label for="filter_type" class="form-label">Tampilkan Data:</label>
+                        <label for="filter_type" class="form-label small text-muted text-uppercase">Tampilkan Data:</label>
                         <select name="filter_type" id="filter_type" class="form-select">
                             <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>Per Hari
                             </option>
@@ -26,13 +23,13 @@
 
                     <div class="col-md-3" id="dailyFilterStart"
                         style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
-                        <label for="tanggal_awal" class="form-label">Tanggal Awal:</label>
+                        <label for="tanggal_awal" class="form-label small text-muted text-uppercase">Tanggal Awal:</label>
                         <input type="date" name="tanggal_awal" id="tanggal_awal" class="form-control"
                             value="{{ $tanggalAwal ?? \Carbon\Carbon::now()->startOfMonth()->format('Y-m-d') }}">
                     </div>
                     <div class="col-md-3" id="dailyFilterEnd"
                         style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
-                        <label for="tanggal_akhir" class="form-label">Tanggal Akhir:</label>
+                        <label for="tanggal_akhir" class="form-label small text-muted text-uppercase">Tanggal Akhir:</label>
                         <input type="date" name="tanggal_akhir" id="tanggal_akhir" class="form-control"
                             value="{{ $tanggalAkhir ?? \Carbon\Carbon::now()->endOfMonth()->format('Y-m-d') }}">
                     </div>
@@ -40,7 +37,7 @@
                     {{-- Dua dropdown untuk rentang tahun --}}
                     <div class="col-md-2" id="yearlyFilterStart"
                         style="{{ ($filterType ?? '') == 'yearly' ? '' : 'display: none;' }}">
-                        <label for="tahun_awal" class="form-label">Tahun Awal:</label>
+                        <label for="tahun_awal" class="form-label small text-muted text-uppercase">Tahun Awal:</label>
                         <select name="tahun_awal" id="tahun_awal" class="form-select">
                             @php
                                 $currentYear = \Carbon\Carbon::now()->year;
@@ -54,7 +51,7 @@
 
                     <div class="col-md-2" id="yearlyFilterEnd"
                         style="{{ ($filterType ?? '') == 'yearly' ? '' : 'display: none;' }}">
-                        <label for="tahun_akhir" class="form-label">Tahun Akhir:</label>
+                        <label for="tahun_akhir" class="form-label small text-muted text-uppercase">Tahun Akhir:</label>
                         <select name="tahun_akhir" id="tahun_akhir" class="form-select">
                             @php
                                 $currentYear = \Carbon\Carbon::now()->year;
@@ -150,7 +147,7 @@
                     </div>
 
                     <div class="table-responsive" id="tabelLaporan">
-                        <table class="table table-bordered table-striped" id="myTable">
+                        <table class="table table-hover align-middle mb-0 unified-table" id="myTable">
                             <thead>
                                 <tr>
                                     <th>No</th>
@@ -217,7 +214,7 @@
                     <hr>
                     <h6>Daftar Nama Pengunjung:</h6>
                     <div class="table-responsive mb-3">
-                        <table class="table table-bordered table-striped" id="tabelDetailPengunjung">
+                        <table class="table table-hover align-middle mb-0 unified-table" id="tabelDetailPengunjung">
                             <thead>
                                 <tr>
                                     <th>No</th>
@@ -239,7 +236,7 @@
                     </nav>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
+                    <button type="button" class="btn btn-success  fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
                     </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                 </div>

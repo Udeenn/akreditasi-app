@@ -5,48 +5,31 @@
 {{-- Shared styles loaded from unified-components.css --}}
 
 @section('content')
-    <div class="container-fluid px-3 px-md-4 py-4">
+    <div class="container-fluid px-3 px-md-4 pt-2 pb-4">
 
-        {{-- 1. HEADER SECTION --}}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 15px;">
-                    <div
-                        class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
-                        <div class="mb-3 mb-md-0">
-                            <h3 class="fw-bold mb-1">
-                                <i class="fas fa-calendar-check me-2"></i>Cek Kunjungan Per Bulan
-                            </h3>
-                            <p class="mb-0 opacity-75">
-                                Lihat riwayat kunjungan anggota perpustakaan secara detail per bulan.
-                            </p>
-                        </div>
-                        <div class="d-none d-md-block opacity-50">
-                            <i class="fas fa-id-card fa-4x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-breadcrumb title="Cek Kunjungan Per Bulan" icon="fas fa-calendar-check">
+            <x-slot name="subtitle">
+                Lihat riwayat kunjungan anggota perpustakaan secara detail per bulan.
+            </x-slot>
+        </x-breadcrumb>
 
         {{-- 2. FORM PENCARIAN --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header border-bottom-0 pt-3 pb-0">
-                        <h6 class="fw-bold text-primary"><i class="fas fa-search me-1"></i> Filter Pencarian</h6>
+                <div class="card unified-card border-0 shadow-sm filter-card mb-4">
+                    <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-search text-primary me-2"></i> Filter Pencarian</h5>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body px-4 pb-4 pt-3">
                         <form method="GET" action="{{ route('kunjungan.cekKehadiran') }}" class="row g-3 align-items-end">
                             <div class="col-md-4">
-                                <label for="cardnumber" class="form-label small text-muted fw-bold">Nomor Kartu
-                                    Anggota</label>
-                                <input type="text" name="cardnumber" id="cardnumber" class="form-control border-0 "
+                                <label for="cardnumber" class="form-label small text-muted text-uppercase">Nomor Kartu Anggota</label>
+                                <input type="text" name="cardnumber" id="cardnumber" class="form-control"
                                     placeholder="Masukkan No. Kartu / NIM" value="{{ request('cardnumber') }}" />
                             </div>
                             <div class="col-md-3">
-                                <label for="tahun" class="form-label small text-muted fw-bold">Tahun</label>
-                                <select name="tahun" id="tahun" class="form-select border-0 ">
+                                <label for="tahun" class="form-label small text-muted text-uppercase">Tahun</label>
+                                <select name="tahun" id="tahun" class="form-select">
                                     <option value="">Semua Tahun</option>
                                     @php
                                         $currentYear = date('Y');
@@ -61,7 +44,7 @@
 
                             {{-- Tombol Aksi --}}
                             <div class="col-md-5 d-flex gap-2 flex-wrap">
-                                <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">
+                                <button type="submit" class="btn btn-primary px-4  shadow-sm">
                                     <i class="fas fa-search me-1"></i> Lihat
                                 </button>
                                 <button type="button" id="downloadPdfButton"
@@ -165,7 +148,7 @@
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0" id="kunjunganTable">
+                                <table class="table table-hover align-middle mb-0 unified-table" id="kunjunganTable">
                                     <thead class="">
                                         <tr>
                                             <th class="py-3 px-4 border-bottom-0 text-center" width="5%">No</th>
@@ -231,10 +214,14 @@
             @if (request('cardnumber'))
                 <div class="row justify-content-center mt-5">
                     <div class="col-md-6">
-                        <div class="text-center p-5 border-0  rounded-4">
-                            <i class="fas fa-user-slash fa-3x text-muted mb-3 opacity-50"></i>
-                            <h5 class="fw-bold text-body">Data Anggota Tidak Ditemukan</h5>
-                            <p class="text-muted">Pastikan nomor kartu anggota yang dimasukkan sudah benar.</p>
+                        <div class="card border-0 shadow-sm text-center p-5 rounded-4">
+                            <div class="card-body">
+                                <div class="bg-secondary bg-opacity-10 rounded-circle d-inline-flex p-4 mb-3">
+                                    <i class="fas fa-user-slash fa-3x text-muted"></i>
+                                </div>
+                                <h5 class="fw-bold text-body">Data Anggota Tidak Ditemukan</h5>
+                                <p class="text-muted mb-0">Pastikan nomor kartu anggota yang dimasukkan sudah benar.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -272,7 +259,7 @@
                 </div>
                 <div class="modal-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
+                        <table class="table table-hover align-middle mb-0 unified-table">
                             <thead class=" sticky-top">
                                 <tr>
                                     <th class="py-3 px-4 border-bottom-0 text-center text-muted small text-uppercase"

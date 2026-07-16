@@ -3,44 +3,28 @@
 
 @section('content')
     <div class="container-fluid px-4">
-        {{-- 1. HEADER SECTION --}}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm overflow-hidden rounded-4">
-                    <div class="card-body p-4 bg-primary bg-gradient  d-flex justify-content-between align-items-center">
-                        <div>
-                            <h3 class="fw-bold mb-1">
-                                <i class="fas fa-chart-pie me-2"></i>Statistik Kunjungan Fakultas
-                            </h3>
-                            <p class="mb-0 opacity-75">
-                                Laporan analisis data pengunjung perpustakaan berdasarkan Fakultas dan Program Studi.
-                            </p>
-                        </div>
-                        <div class="d-none d-md-block opacity-50">
-                            <i class="fas fa-university fa-4x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-breadcrumb title="Statistik Kunjungan Fakultas" icon="fas fa-university">
+            <x-slot name="subtitle">
+                Laporan analisis data pengunjung perpustakaan berdasarkan Fakultas dan Program Studi.
+            </x-slot>
+        </x-breadcrumb>
 
         {{-- 2. FILTER SECTION --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card border-0 shadow-sm rounded-4">
-                    <div class="card-header border-bottom-0 pt-3 pb-0">
-                        <h6 class="fw-bold text-primary"><i class="fas fa-filter me-1"></i> Filter Data</h6>
+                <div class="card unified-card border-0 shadow-sm filter-card mb-4">
+                    <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
                     </div>
-                    <div class="card-body p-4">
+                    <div class="card-body px-4 pb-4 pt-3">
                         <form method="GET" action="{{ route('kunjungan.fakultasTable') }}" id="filterForm">
                             <input type="hidden" name="search" id="hiddenSearchInput" value="{{ request('search') }}">
 
                             <div class="row g-3 align-items-end">
                                 {{-- Filter Tipe --}}
                                 <div class="col-md-2 col-6">
-                                    <label class="form-label small text-muted fw-bold mb-1">Periode</label>
-                                    <select name="filter_type" id="filter_type"
-                                        class="form-select form-select-sm shadow-none border-0">
+                                    <label class="form-label small text-muted text-uppercase mb-1">Periode</label>
+                                    <select name="filter_type" id="filter_type" class="form-select shadow-none">
                                         <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>
                                             Harian</option>
                                         <option value="yearly" {{ ($filterType ?? '') == 'yearly' ? 'selected' : '' }}>
@@ -50,8 +34,8 @@
 
                                 {{-- Filter Lokasi --}}
                                 <div class="col-md-2 col-12">
-                                    <label class="form-label small text-muted fw-bold mb-1">Lokasi</label>
-                                    <select name="lokasi" id="lokasi" class="form-select form-select-sm shadow-none border-0">
+                                    <label class="form-label small text-muted text-uppercase mb-1">Lokasi</label>
+                                    <select name="lokasi" id="lokasi" class="form-select shadow-none">
                                         <option value="">Semua Lokasi </option>
                                         @foreach ($lokasiMapping as $key => $val)
                                             <option value="{{ $key }}"
@@ -64,8 +48,8 @@
 
                                 {{-- Filter Fakultas --}}
                                 <div class="col-md-2 col-12">
-                                    <label class="form-label small text-muted fw-bold mb-1">Fakultas</label>
-                                    <select name="fakultas" id="fakultas" class="form-select form-select-sm shadow-none border-0">
+                                    <label class="form-label small text-muted text-uppercase mb-1">Fakultas</label>
+                                    <select name="fakultas" id="fakultas" class="form-select shadow-none">
                                         <option value="semua" {{ request('fakultas') == 'semua' ? 'selected' : '' }}>
                                             Semua </option>
                                         @foreach ($listFakultas as $namaFakultas)
@@ -80,29 +64,29 @@
                                 {{-- Filter Tanggal (Daily) --}}
                                 <div class="col-md-2 col-6 daily-filter"
                                     style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
-                                    <label class="form-label small text-muted fw-bold mb-1">Dari Tanggal</label>
+                                    <label class="form-label small text-muted text-uppercase mb-1">Dari Tanggal</label>
                                     <input type="date" name="tanggal_awal"
-                                        class="form-control form-control-sm shadow-none border-0" value="{{ $tanggalAwal }}">
+                                        class="form-control shadow-none" value="{{ $tanggalAwal }}">
                                 </div>
                                 <div class="col-md-2 col-6 daily-filter"
                                     style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
-                                    <label class="form-label small text-muted fw-bold mb-1">Sampai Tanggal</label>
+                                    <label class="form-label small text-muted text-uppercase mb-1">Sampai Tanggal</label>
                                     <input type="date" name="tanggal_akhir"
-                                        class="form-control form-control-sm shadow-none border-0" value="{{ $tanggalAkhir }}">
+                                        class="form-control shadow-none" value="{{ $tanggalAkhir }}">
                                 </div>
 
                                 {{-- Filter Tahun (Yearly) --}}
                                 <div class="col-md-2 col-6 yearly-filter"
                                     style="{{ ($filterType ?? '') == 'yearly' ? '' : 'display: none;' }}">
-                                    <label class="form-label small text-muted fw-bold mb-1">Dari Tahun</label>
-                                    <input type="number" name="tahun_awal" class="form-control form-control-sm shadow-none border-0"
+                                    <label class="form-label small text-muted text-uppercase mb-1">Dari Tahun</label>
+                                    <input type="number" name="tahun_awal" class="form-control shadow-none"
                                         value="{{ $tahunAwal }}" placeholder="2020">
                                 </div>
                                 <div class="col-md-2 col-6 yearly-filter"
                                     style="{{ ($filterType ?? '') == 'yearly' ? '' : 'display: none;' }}">
-                                    <label class="form-label small text-muted fw-bold mb-1">Sampai Tahun</label>
+                                    <label class="form-label small text-muted text-uppercase mb-1">Sampai Tahun</label>
                                     <input type="number" name="tahun_akhir"
-                                        class="form-control form-control-sm shadow-none border-0" value="{{ $tahunAkhir }}"
+                                        class="form-control shadow-none" value="{{ $tahunAkhir }}"
                                         placeholder="{{ date('Y') }}">
                                 </div>
 
@@ -207,13 +191,16 @@
         @else
             <div class="row justify-content-center mt-5">
                 <div class="col-md-6">
-                    <div class="text-center p-5 rounded-4 shadow-sm">
-                        <div class="mb-3 text-primary opacity-50">
-                            <i class="fas fa-search fa-4x"></i>
+                    <div class="card border-0 shadow-sm text-center p-5 rounded-4">
+                        <div class="card-body">
+                            <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-4 mb-3">
+                                <i class="fas fa-search-plus fa-3x text-primary"></i>
+                            </div>
+                            <h4 class="fw-bold text-body">Mulai Pencarian</h4>
+                            <p class="text-muted mb-0">Silakan atur filter di atas lalu klik tombol 
+                                <strong>"Cari"</strong> untuk menampilkan statistik.
+                            </p>
                         </div>
-                        <h4 class="fw-bold">Data Belum Ditampilkan</h4>
-                        <p class="">Silakan atur filter di atas lalu klik tombol <strong>"Cari"</strong>
-                            untuk menampilkan statistik.</p>
                     </div>
                 </div>
             </div>

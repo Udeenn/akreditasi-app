@@ -54,103 +54,75 @@
 @endpush
 
 @section('content')
-    <div class="container-fluid px-3 px-md-4 py-4">
+    <div class="container-fluid px-3 px-md-4 pt-2 pb-4">
 
-        {{-- 1. HEADER SECTION --}}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm overflow-hidden rounded-4">
-                    <div
-                        class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
-                        <div class="mb-3 mb-md-0 text-center text-md-start">
-                            <h3 class="fw-bold mb-1">
-                                <i class="fas fa-chart-pie me-2"></i>Statistik Sirkulasi Prodi
-                            </h3>
-                            <p class="mb-0 opacity-75">
-                                Analisis data peminjaman dan pengembalian berdasarkan program studi.
-                            </p>
-                        </div>
-                        <div class="d-none d-md-block opacity-50">
-                            <i class="fas fa-university fa-4x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-breadcrumb title="Statistik Sirkulasi Civitas Akademika" icon="fas fa-university">
+            <x-slot name="subtitle">
+                Analisis data peminjaman dan pengembalian berdasarkan program studi.
+            </x-slot>
+        </x-breadcrumb>
 
         {{-- 2. FILTER SECTION --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card border-0 shadow-sm rounded-4">
-                    <div class="card-header border-bottom-0">
-                        <h6 class="fw-bold text-primary mb-0"><i class="fas fa-filter me-2"></i> Filter Data</h6>
+                <div class="card unified-card border-0 shadow-sm">
+                    <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
                     </div>
-                    <div class="card-body pt-0">
-                        <form method="GET" action="{{ route('peminjaman.prodi') }}"
-                            class="row g-3 align-items-end" id="filterForm">
+                    <div class="card-body px-4 pb-4 pt-3">
+                        <form method="GET" action="{{ route('peminjaman.prodi') }}" class="row g-3 align-items-end" id="filterForm">
                             <div class="col-md-2">
-                                <label for="filter_type" class="form-label small text-muted fw-bold">Mode Tampilan</label>
-                                <select name="filter_type" id="filter_type" class="form-select border-0  fw-bold">
-                                    <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>
-                                        Harian</option>
-                                    <option value="monthly" {{ ($filterType ?? '') == 'monthly' ? 'selected' : '' }}>Bulanan
-                                    </option>
+                                <label for="filter_type" class="form-label small text-muted text-uppercase">Mode Tampilan</label>
+                                <select name="filter_type" id="filter_type" class="form-select">
+                                    <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>Harian</option>
+                                    <option value="monthly" {{ ($filterType ?? '') == 'monthly' ? 'selected' : '' }}>Bulanan</option>
                                 </select>
                             </div>
 
-                            <div class="col-md-4" id="dailyFilter"
-                                style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
-                                <label class="form-label small text-muted fw-bold">Rentang Tanggal</label>
+                            <div class="col-md-3" id="dailyFilter" style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
+                                <label class="form-label small text-muted text-uppercase">Rentang Tanggal</label>
                                 <div class="input-group">
-                                    <input type="date" name="start_date" id="start_date" class="form-control border-0 "
-                                        value="{{ $startDate }}">
-                                    <span class="input-group-text border-0  text-muted">s/d</span>
-                                    <input type="date" name="end_date" id="end_date" class="form-control border-0 "
-                                        value="{{ $endDate }}">
+                                    <input type="date" name="start_date" id="start_date" class="form-control" value="{{ $startDate }}">
+                                    <span class="input-group-text text-muted">s/d</span>
+                                    <input type="date" name="end_date" id="end_date" class="form-control" value="{{ $endDate }}">
                                 </div>
                             </div>
 
-                            <div class="col-md-4" id="monthlyFilter"
-                                style="{{ ($filterType ?? '') == 'monthly' ? '' : 'display: none;' }}">
-                                <label class="form-label small text-muted fw-bold">Rentang Tahun</label>
+                            <div class="col-md-3" id="monthlyFilter" style="{{ ($filterType ?? '') == 'monthly' ? '' : 'display: none;' }}">
+                                <label class="form-label small text-muted text-uppercase">Rentang Tahun</label>
                                 <div class="input-group">
-                                    <select name="start_year" id="start_year" class="form-select border-0 ">
+                                    <select name="start_year" id="start_year" class="form-select">
                                         @for ($y = date('Y'); $y >= date('Y') - 10; $y--)
-                                            <option value="{{ $y }}" {{ $startYear == $y ? 'selected' : '' }}>
-                                                {{ $y }}</option>
+                                            <option value="{{ $y }}" {{ $startYear == $y ? 'selected' : '' }}>{{ $y }}</option>
                                         @endfor
                                     </select>
-                                    <span class="input-group-text border-0  text-muted">s.d.</span>
-                                    <select name="end_year" id="end_year" class="form-select border-0 ">
+                                    <span class="input-group-text text-muted">s.d.</span>
+                                    <select name="end_year" id="end_year" class="form-select">
                                         @for ($y = date('Y'); $y >= date('Y') - 10; $y--)
-                                            <option value="{{ $y }}" {{ $endYear == $y ? 'selected' : '' }}>
-                                                {{ $y }}</option>
+                                            <option value="{{ $y }}" {{ $endYear == $y ? 'selected' : '' }}>{{ $y }}</option>
                                         @endfor
                                     </select>
                                 </div>
                             </div>
 
-                            <div class="col-md-4">
-                                <label for="selected_prodi" class="form-label small text-muted fw-bold">Program
-                                    Studi</label>
-                                <select name="selected_prodi" id="selected_prodi" class="form-select border-0 ">
+                            <div class="col-md-3">
+                                <label for="selected_prodi" class="form-label small text-muted text-uppercase">Program Studi</label>
+                                <select name="selected_prodi" id="selected_prodi" class="form-select">
                                     @foreach ($prodiOptions as $prodi)
-                                        <option value="{{ $prodi->authorised_value }}"
-                                            {{ $selectedProdiCode == $prodi->authorised_value ? 'selected' : '' }}>
+                                        <option value="{{ $prodi->authorised_value }}" {{ $selectedProdiCode == $prodi->authorised_value ? 'selected' : '' }}>
                                             {{ $prodi->authorised_value }} - {{ $prodi->lib }} 
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
 
-                            <div class="col-md-2 ms-auto">
-                                <button type="submit" id="btnTampilkan" class="btn btn-primary w-100 fw-bold shadow-sm">
-                                    <i class="fas fa-search me-1" id="btnTampilkanIcon"></i>
-                                    <span id="btnTampilkanText">Tampilkan</span>
+                            <div class="col-md-1 ms-auto">
+                                <button type="submit" id="btnCari" class="btn btn-primary w-100 shadow-sm">
+                                    <i class="fas fa-search"></i>
                                 </button>
                             </div>
                         </form>
-
+                    </div>
                         {{-- Loading Indicator --}}
                         <div id="loadingOverlay" style="display:none;" class="mt-3">
                             <div class="alert alert-info d-flex align-items-center border-0 shadow-sm">
@@ -259,7 +231,7 @@
                                 <i class="fas fa-table me-2"></i>Rincian Data Sirkulasi
                             </h6>
                             <button type="button" id="exportCsvBtn"
-                                class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
+                                class="btn btn-success  fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
                             </button>
                         </div>
                         <div class="card-body p-4">
@@ -340,10 +312,14 @@
             {{-- EMPTY STATE --}}
             <div class="row justify-content-center mt-5">
                 <div class="col-12 col-md-6">
-                    <div class="text-center p-5 border-0  rounded-4">
-                        <i class="fas fa-search fa-3x text-muted mb-3 opacity-50"></i>
-                        <h5 class="fw-bold text-body">Data Tidak Ditemukan</h5>
-                        <p class="text-muted">Silakan sesuaikan filter Program Studi atau Rentang Waktu di atas.</p>
+                    <div class="card border-0 shadow-sm text-center p-5 rounded-4">
+                        <div class="card-body">
+                            <div class="bg-secondary bg-opacity-10 rounded-circle d-inline-flex p-4 mb-3">
+                                <i class="fas fa-search fa-3x text-muted"></i>
+                            </div>
+                            <h5 class="fw-bold text-body">Data Tidak Ditemukan</h5>
+                            <p class="text-muted mb-0">Silakan sesuaikan filter Program Studi atau Rentang Waktu di atas.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -374,7 +350,7 @@
                         </div>
                         <div id="dataSection" style="display: none;">
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0" id="detailTable">
+                                <table class="table table-hover align-middle mb-0 unified-table" id="detailTable">
                                     <thead class=" sticky-top">
                                         <tr>
                                             <th class="text-center py-3 px-4 border-bottom-0" style="width: 5%;">No</th>
@@ -396,7 +372,7 @@
                     </div>
                     <div class="modal-footer border-0 py-3">
                         <a href="#" id="btnExportDetailCsv"
-                            class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
+                            class="btn btn-success  fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
                         </a>
                         <button type="button" class="btn btn-secondary btn-sm px-4"
                             data-bs-dismiss="modal">Tutup</button>
@@ -404,7 +380,6 @@
                 </div>
             </div>
         </div>
-    </div>
 @endsection
 
 @push('scripts')

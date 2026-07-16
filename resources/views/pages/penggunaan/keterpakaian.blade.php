@@ -3,44 +3,28 @@
 @section('content')
 @section('title', 'Statistik Keterpakaian Koleksi')
 
-<div class="container-fluid px-3 px-md-4 py-4">
+<div class="container-fluid px-3 px-md-4 pt-2 pb-4">
 
-    {{-- 1. HEADER BANNER --}}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card unified-card border-0 shadow-sm page-header-banner">
-                <div
-                    class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
-                    <div class="mb-3 mb-md-0">
-                        <h3 class="fw-bold mb-1">
-                            <i class="fas fa-chart-line me-2"></i>Statistik Keterpakaian Koleksi
-                        </h3>
-                        <p class="mb-0 opacity-75">Jumlah penggunaan koleksi berdasarkan kategori (Referensi, Sirkulasi,
-                            dll)</p>
-                    </div>
-                    <div class="d-none d-md-block opacity-50">
-                        <i class="fas fa-chart-pie fa-4x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <x-breadcrumb title="Statistik Keterpakaian Koleksi" icon="fas fa-chart-line">
+            <x-slot name="subtitle">
+                Jumlah penggunaan koleksi berdasarkan kategori (Referensi, Sirkulasi,
+                            dll)
+            </x-slot>
+        </x-breadcrumb>
 
     {{-- 2. FILTER --}}
     <div class="card unified-card border-0 shadow-sm filter-card mb-4">
-        <div class="card-header border-bottom-0 pt-3 pb-0">
-            <a class="h6 mb-0 text-decoration-none fw-bold text-primary" data-bs-toggle="collapse"
+        <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
+            <a class="h5 mb-0 text-decoration-none fw-bold" data-bs-toggle="collapse"
                 href="#collapseFilter" role="button" aria-expanded="true" aria-controls="collapseFilter">
-                <i class="fas fa-filter me-2"></i>Filter Data
+                <i class="fas fa-filter text-primary me-2"></i>Filter Data
             </a>
         </div>
         <div class="collapse show" id="collapseFilter">
-            <div class="card-body">
-                <form method="GET" action="{{ route('penggunaan.keterpakaian_koleksi') }}"
-                    class="row g-3 align-items-end">
+            <div class="card-body px-4 pb-4 pt-3">
+                <form method="GET" action="{{ route('penggunaan.keterpakaian_koleksi') }}" class="row g-3 align-items-end">
                     <div class="col-md-auto">
-                        <label for="filter_type" class="form-label small text-muted fw-bold text-uppercase">Tampilkan
-                            per:</label>
+                        <label for="filter_type" class="form-label small text-muted text-uppercase">Tampilkan per:</label>
                         <select name="filter_type" id="filter_type" class="form-select">
                             <option value="monthly" {{ $filterType == 'monthly' ? 'selected' : '' }}>Bulan</option>
                             <option value="daily" {{ $filterType == 'daily' ? 'selected' : '' }}>Hari</option>
@@ -146,14 +130,14 @@
                 <div class="card-header py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h6 class="mb-0 fw-bold"><i class="fas fa-table me-1 text-primary"></i> Hasil Analisis</h6>
                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <select id="usage_type" class="form-select form-select-sm" style="width: auto; min-width: 180px;">
+                        <select id="usage_type" class="form-select " style="width: auto; min-width: 180px;">
                             <option value="all" {{ ($usageType ?? 'all') == 'all' ? 'selected' : '' }}>Semua Jenis</option>
                             <option value="issue" {{ ($usageType ?? 'all') == 'issue' ? 'selected' : '' }}>Pinjam</option>
                             <option value="return" {{ ($usageType ?? 'all') == 'return' ? 'selected' : '' }}>Kembali</option>
                             <option value="localuse" {{ ($usageType ?? 'all') == 'localuse' ? 'selected' : '' }}>Baca di Tempat</option>
                         </select>
-                        <button type="button" id="exportPdfBtn" class="btn btn-danger btn-sm"><i class="fas fa-file-pdf me-1"></i>Cetak PDF</button>
-                        <button id="exportCsvBtn" class="btn btn-success btn-sm"><i class="fas fa-file-csv me-1"></i>Export CSV</button>
+                        <button type="button" id="exportPdfBtn" class="btn btn-danger "><i class="fas fa-file-pdf me-1"></i>Cetak PDF</button>
+                        <button id="exportCsvBtn" class="btn btn-success "><i class="fas fa-file-csv me-1"></i>Export CSV</button>
                     </div>
                 </div>
                 <div class="card-body">
@@ -228,7 +212,7 @@
             </div>
             <div class="modal-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" id="detailTable">
+                    <table class="table table-hover align-middle mb-0 unified-table" id="detailTable">
                         <thead class="sticky-top" style="background-color: rgba(0, 0, 0, 0.02);">
                             <tr>
                                 <th class="py-3 px-4 border-bottom-0" style="width: 45%;">Judul Buku</th>

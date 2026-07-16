@@ -80,41 +80,29 @@
 @endpush
 
 @section('content')
-    <div class="container-fluid px-3 px-md-4 py-4">
+    <div class="container-fluid px-3 px-md-4 pt-2 pb-4">
 
-        {{-- 1. HEADER SECTION --}}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm overflow-hidden">
-                    <div
-                        class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
-                        <div class="mb-3 mb-md-0 text-center text-md-start">
-                            <h3 class="fw-bold mb-1"><i class="fas fa-tasks me-2"></i>Peminjaman Berlangsung</h3>
-                            <p class="mb-0 opacity-75 page-header-subtitle">
-                                @if ($selectedProdiCode && $selectedProdiCode !== 'semua')
+        <x-breadcrumb title="Peminjaman Berlangsung" icon="fas fa-tasks">
+            <x-slot name="subtitle">
+                @if ($selectedProdiCode && $selectedProdiCode !== 'semua')
                                     Menampilkan data aktif untuk: <strong>{{ $namaProdiFilter }}</strong>
                                 @else
                                     Daftar seluruh buku yang sedang dipinjam saat ini.
                                 @endif
-                            </p>
-                        </div>
-                        <div class="d-none d-md-block opacity-50">
-                            <i class="fas fa-book-reader fa-4x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+            </x-slot>
+        </x-breadcrumb>
 
         {{-- 2. FILTER SECTION --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card border-0 shadow-sm rounded-4 hover-lift">
-                    <div class="card-body p-4">
-                        <h6 class="fw-bold text-muted mb-3 text-uppercase" style="letter-spacing: 1px;"><i class="fas fa-filter me-2 text-primary"></i> Filter Data</h6>
+                <div class="card unified-card border-0 shadow-sm">
+                    <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
+                    </div>
+                    <div class="card-body px-4 pb-4 pt-3">
                         <form id="filterPeminjamanBerlangsungForm" class="row g-3 align-items-end">
                             <div class="col-md-9">
-                                <label for="prodi" class="form-label fw-semibold text-secondary">Pilih Program Studi</label>
+                                <label for="prodi" class="form-label small text-muted text-uppercase">Pilih Program Studi</label>
                                 <select name="prodi" id="prodi" class="form-select shadow-none">
                                     <option value="semua" {{ request('prodi', 'semua') == 'semua' ? 'selected' : '' }}>
                                         (Semua) - Tampilkan Seluruh Data</option>
@@ -127,7 +115,7 @@
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <button type="button" id="btnTerapkanFilter" class="btn btn-primary w-100 btn-modern shadow-sm">
+                                <button type="button" id="btnTerapkanFilter" class="btn btn-primary w-100 shadow-sm">
                                     <i class="fas fa-search me-2"></i> Terapkan Filter
                                 </button>
                             </div>
@@ -145,7 +133,7 @@
                         <i class="fas fa-list-ul"></i>
                     </div>
                     <div>
-                        <h5 class="fw-bold mb-0 text-dark">Daftar Peminjaman</h5>
+                        <h5 class="fw-bold mb-0">Daftar Peminjaman</h5>
                         <small class="text-muted">Total: <strong id="totalCount" class="text-primary fs-6">-</strong> Transaksi Aktif</small>
                     </div>
                 </div>
@@ -157,7 +145,7 @@
 
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-custom table-hover align-middle mb-0" id="myTablePeminjamanBerlangsung"
+                    <table class="table table-hover align-middle mb-0 unified-table" id="myTablePeminjamanBerlangsung"
                         style="width:100%">
                         <thead>
                             <tr>
@@ -229,7 +217,7 @@
                             return '<div class="d-flex align-items-center">' +
                                 '<div class="avatar-circle ' + colorClass + ' me-3 shadow-sm">' + initial + '</div>' +
                                 '<div>' +
-                                '<span class="d-block fw-bold text-dark">' + nama + '</span>' +
+                                '<span class="d-block fw-bold">' + nama + '</span>' +
                                 (nim ? '<small class="text-muted"><i class="fas fa-id-card me-1"></i> ' + nim + '</small>' : '') +
                                 '</div></div>';
                         }
@@ -240,7 +228,7 @@
                             const title = data || '-';
                             const barcode = row.BarcodeBuku || '';
                             return '<div class="d-flex flex-column">' +
-                                '<span class="fw-semibold text-dark text-truncate" style="max-width: 320px;" title="' + title + '">' + title + '</span>' +
+                                '<span class="fw-semibold text-truncate" style="max-width: 320px;" title="' + title + '">' + title + '</span>' +
                                 '<div class="d-flex align-items-center mt-1">' +
                                 '<span class="badge bg-light text-secondary border px-2 py-1"><i class="fas fa-barcode me-1"></i> ' + barcode + '</span>' +
                                 '</div></div>';
@@ -273,13 +261,13 @@
                                     '<small class="text-danger fw-bold"><i class="fas fa-flag me-1"></i> Batas: ' + dueDate.format('DD MMM YYYY') + '</small></div>';
                             } else if (isToday) {
                                 return '<div class="d-flex flex-column align-items-start">' +
-                                    '<span class="badge bg-yellow-soft rounded-pill px-3 py-2 mb-1 shadow-sm">' +
+                                    '<span class="badge bg-yellow-soft text-warning rounded-pill px-3 py-2 mb-1 shadow-sm">' +
                                     '<i class="fas fa-clock me-1"></i> Hari Ini</span>' +
-                                    '<small class="text-warning fw-bold text-dark"><i class="fas fa-flag me-1"></i> Batas: ' + dueDate.format('HH:mm') + ' WIB</small></div>';
+                                    '<small class="text-warning fw-bold"><i class="fas fa-flag me-1"></i> Batas: ' + dueDate.format('HH:mm') + ' WIB</small></div>';
                             } else {
                                 const diff = dueDate.diff(now, 'days');
                                 return '<div class="d-flex flex-column align-items-start">' +
-                                    '<span class="badge bg-green-soft rounded-pill px-3 py-2 mb-1 shadow-sm">' +
+                                    '<span class="badge bg-green-soft text-success rounded-pill px-3 py-2 mb-1 shadow-sm">' +
                                     '<i class="fas fa-check-circle me-1"></i> Dipinjam</span>' +
                                     '<small class="text-success fw-bold"><i class="fas fa-hourglass-half me-1"></i> Sisa ' + diff + ' hari</small></div>';
                             }

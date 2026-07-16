@@ -2,36 +2,20 @@
 @section('title', 'E-Resource - Scopus Search')
 
 @section('content')
-    <div x-data="scopusSearch()" class="container-fluid px-3 px-md-4 py-4">
-
-        {{-- HEADER BANNER --}}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card unified-card border-0 shadow-sm page-header-banner">
-                    <div
-                        class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
-                        <div class="mb-3 mb-md-0">
-                            <h3 class="fw-bold mb-1">
-                                <i class="fas fa-database me-2"></i>E-Resource (Scopus)
-                            </h3>
-                            <p class="mb-0 opacity-75">
-                                Pencarian dokumen dan publikasi ilmiah terindeks Scopus
-                            </p>
-                        </div>
-                        <div class="d-none d-md-block opacity-50">
-                            <i class="fas fa-book-journal-whills fa-4x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div x-data="scopusSearch()" class="container-fluid px-3 px-md-4 pt-2 pb-4">
+        
+        <x-breadcrumb title="E-Resource (Scopus)" icon="fas fa-database">
+            <x-slot name="subtitle">
+                Pencarian dokumen dan publikasi ilmiah terindeks Scopus
+            </x-slot>
+        </x-breadcrumb>
 
         {{-- SEARCH INTERFACE --}}
         <div class="card unified-card border-0 shadow-sm mb-4">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-bold mb-0 text-primary">Form Pencarian</h5>
-                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" @click="toggleAdvanced()">
+                    <button type="button" class="btn  btn-outline-secondary rounded-pill px-3" @click="toggleAdvanced()">
                         <i class="fas" :class="isAdvanced ? 'fa-search-minus' : 'fa-sliders-h'"></i> 
                         <span x-text="isAdvanced ? 'Pencarian Sederhana' : 'Pencarian Spesifik (Advanced)'"></span>
                     </button>
@@ -54,19 +38,19 @@
                 <form @submit.prevent="searchAdvanced" x-show="isAdvanced" x-transition style="display: none;">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label text-muted small fw-bold">Judul Artikel (Title)</label>
+                            <label class="form-label text-muted small text-uppercase">Judul Artikel (Title)</label>
                             <input type="text" x-model="advTitle" class="form-control" placeholder="Contoh: Artificial Intelligence">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-muted small fw-bold">Penulis (Author)</label>
+                            <label class="form-label text-muted small text-uppercase">Penulis (Author)</label>
                             <input type="text" x-model="advAuthor" class="form-control" placeholder="Contoh: Smith, J.">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label text-muted small fw-bold">Kata Kunci (Keyword)</label>
+                            <label class="form-label text-muted small text-uppercase">Kata Kunci (Keyword)</label>
                             <input type="text" x-model="advKeyword" class="form-control" placeholder="Contoh: deep learning">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label text-muted small fw-bold">Subjek (Subject)</label>
+                            <label class="form-label text-muted small text-uppercase">Subjek (Subject)</label>
                             <select class="form-select" x-model="advSubject">
                                 <option value="">Semua Subjek</option>
                                 <option value="COMP">Computer Science</option>
@@ -78,7 +62,7 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label text-muted small fw-bold">Tahun Terbit (Year)</label>
+                            <label class="form-label text-muted small text-uppercase">Tahun Terbit (Year)</label>
                             <input type="number" x-model="advYear" class="form-control" placeholder="Contoh: 2023" min="1900" max="2099">
                         </div>
                         <div class="col-12 mt-4 text-end">
@@ -105,7 +89,7 @@
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover table-striped mb-0 align-middle">
+                    <table class="table table-hover align-middle mb-0 unified-table">
                         <thead class="table-light">
                             <tr>
                                 <th width="5%" class="text-center">No</th>
@@ -166,7 +150,7 @@
         </div>
         
         {{-- NO RESULTS --}}
-        <div x-show="hasSearched && results.length === 0 && !isLoading && !error" class="card unified-card border-0 shadow-sm bg-light" style="display: none;">
+        <div x-show="hasSearched && results.length === 0 && !isLoading && !error" class="card unified-card border-0 shadow-sm" style="display: none;">
             <div class="card-body text-center py-5">
                 <i class="fas fa-search-minus fa-4x text-muted mb-3 opacity-50"></i>
                 <h5 class="fw-bold text-muted">Tidak ada dokumen ditemukan</h5>

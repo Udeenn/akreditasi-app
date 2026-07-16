@@ -265,7 +265,7 @@
         $printedDate = date('d F Y');
     @endphp
 
-    <table class="header-section">
+    <table class="table table-hover align-middle mb-0 unified-table header-section">
         <tr>
             <td class="logo-left">
                 @if ($logoLeftB64)
@@ -313,7 +313,7 @@
         </div>
     </div>
 
-    <table class="table">
+    <table class="table table-hover align-middle mb-0 unified-table">
         <thead>
             <tr>
                 <th class="num">No.</th>
@@ -354,7 +354,7 @@
         @endif
     </table>
 
-    <table class="signature-section">
+    <table class="table table-hover align-middle mb-0 unified-table signature-section">
         <tr>
             <td></td>
             <td>

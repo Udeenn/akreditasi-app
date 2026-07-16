@@ -60,65 +60,50 @@
 @endpush
 
 @section('content')
-    <div class="container-fluid px-3 px-md-4 py-4">
+    <div class="container-fluid px-3 px-md-4 pt-2 pb-4">
 
-        {{-- 1. HEADER --}}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm overflow-hidden">
-                    <div class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
-                        <div class="mb-3 mb-md-0 text-center text-md-start">
-                            <h3 class="fw-bold mb-1">
-                                <i class="fas fa-university me-2"></i>Statistik Sirkulasi Per Fakultas
-                            </h3>
-                            <p class="mb-0 opacity-75">
-                                Analisis data peminjaman dan pengembalian berdasarkan fakultas.
-                            </p>
-                        </div>
-                        <div class="d-none d-md-block opacity-50">
-                            <i class="fas fa-building fa-4x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-breadcrumb title="Statistik Sirkulasi Per Fakultas" icon="fas fa-building">
+            <x-slot name="subtitle">
+                Analisis data peminjaman dan pengembalian berdasarkan fakultas.
+            </x-slot>
+        </x-breadcrumb>
 
         {{-- 2. FILTER --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header border-bottom-0">
-                        <h6 class="fw-bold text-primary mb-0"><i class="fas fa-filter me-2"></i> Filter Data</h6>
+                <div class="card unified-card border-0 shadow-sm">
+                    <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
                     </div>
-                    <div class="card-body pt-0">
+                    <div class="card-body px-4 pb-4 pt-3">
                         <form method="GET" action="{{ route('peminjaman.peminjaman_fakultas') }}" class="row g-3 align-items-end" id="filterForm">
                             <div class="col-md-2">
-                                <label for="filter_type" class="form-label small text-muted fw-bold">Mode Tampilan</label>
-                                <select name="filter_type" id="filter_type" class="form-select border-0 fw-bold">
+                                <label for="filter_type" class="form-label small text-muted text-uppercase">Mode Tampilan</label>
+                                <select name="filter_type" id="filter_type" class="form-select">
                                     <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>Harian</option>
                                     <option value="monthly" {{ ($filterType ?? '') == 'monthly' ? 'selected' : '' }}>Bulanan</option>
                                 </select>
                             </div>
 
                             <div class="col-md-3" id="dailyFilter" style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
-                                <label class="form-label small text-muted fw-bold">Rentang Tanggal</label>
+                                <label class="form-label small text-muted text-uppercase">Rentang Tanggal</label>
                                 <div class="input-group">
-                                    <input type="date" name="start_date" id="start_date" class="form-control border-0" value="{{ $startDate }}">
-                                    <span class="input-group-text border-0 text-muted">s/d</span>
-                                    <input type="date" name="end_date" id="end_date" class="form-control border-0" value="{{ $endDate }}">
+                                    <input type="date" name="start_date" id="start_date" class="form-control" value="{{ $startDate }}">
+                                    <span class="input-group-text text-muted">s/d</span>
+                                    <input type="date" name="end_date" id="end_date" class="form-control" value="{{ $endDate }}">
                                 </div>
                             </div>
 
                             <div class="col-md-3" id="monthlyFilter" style="{{ ($filterType ?? '') == 'monthly' ? '' : 'display: none;' }}">
-                                <label class="form-label small text-muted fw-bold">Rentang Tahun</label>
+                                <label class="form-label small text-muted text-uppercase">Rentang Tahun</label>
                                 <div class="input-group">
-                                    <select name="start_year" id="start_year" class="form-select border-0">
+                                    <select name="start_year" id="start_year" class="form-select">
                                         @for ($y = date('Y'); $y >= date('Y') - 10; $y--)
                                             <option value="{{ $y }}" {{ $startYear == $y ? 'selected' : '' }}>{{ $y }}</option>
                                         @endfor
                                     </select>
-                                    <span class="input-group-text border-0 text-muted">s.d.</span>
-                                    <select name="end_year" id="end_year" class="form-select border-0">
+                                    <span class="input-group-text text-muted">s.d.</span>
+                                    <select name="end_year" id="end_year" class="form-select">
                                         @for ($y = date('Y'); $y >= date('Y') - 10; $y--)
                                             <option value="{{ $y }}" {{ $endYear == $y ? 'selected' : '' }}>{{ $y }}</option>
                                         @endfor
@@ -127,8 +112,8 @@
                             </div>
 
                             <div class="col-md-3">
-                                <label for="fakultas" class="form-label small text-muted fw-bold">Fakultas</label>
-                                <select name="fakultas" id="fakultas" class="form-select border-0">
+                                <label for="fakultas" class="form-label small text-muted text-uppercase">Fakultas</label>
+                                <select name="fakultas" id="fakultas" class="form-select">
                                     <option value="semua" {{ ($selectedFakultas ?? 'semua') == 'semua' ? 'selected' : '' }}>Semua Fakultas</option>
                                     @foreach ($listFakultas as $fak)
                                         <option value="{{ $fak }}" {{ ($selectedFakultas ?? '') == $fak ? 'selected' : '' }}>{{ $fak }}</option>
@@ -137,9 +122,8 @@
                             </div>
 
                             <div class="col-md-1 ms-auto">
-                                <button type="submit" id="btnCari" class="btn btn-primary w-100 fw-bold shadow-sm">
-                                    <i class="fas fa-search me-1" id="btnCariIcon"></i>
-                                    <span id="btnCariText">Cari</span>
+                                <button type="submit" id="btnCari" class="btn btn-primary w-100 shadow-sm">
+                                    <i class="fas fa-search"></i>
                                 </button>
                             </div>
                         </form>
@@ -245,7 +229,7 @@
                             <h6 class="fw-bold m-0 text-primary">
                                 <i class="fas fa-table me-2"></i>Rincian Data Sirkulasi
                             </h6>
-                            <button type="button" id="exportCsvBtn" class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
+                            <button type="button" id="exportCsvBtn" class="btn btn-success  fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
                             </button>
                         </div>
                         <div class="card-body p-0">
@@ -254,15 +238,15 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <!-- Length Change -->
                                     <div class="d-flex align-items-center">
-                                        <label class="me-2 text-muted fw-bold small">Tampilkan</label>
-                                        <select id="lengthMenu" class="form-select form-select-sm shadow-sm border-secondary-subtle" style="width: 80px; border-radius: 6px;">
+                                        <label class="me-2 text-muted text-uppercase small">Tampilkan</label>
+                                        <select id="lengthMenu" class="form-select shadow-sm border-secondary-subtle" style="width: 80px; border-radius: 6px;">
                                             <option value="10">10</option>
                                             <option value="25">25</option>
                                             <option value="50">50</option>
                                             <option value="100">100</option>
                                             <option value="-1">Semua</option>
                                         </select>
-                                        <label class="ms-2 text-muted fw-bold small">Entri</label>
+                                        <label class="ms-2 text-muted text-uppercase small">Entri</label>
                                     </div>
 
                                     <!-- Search -->
@@ -274,7 +258,7 @@
                             </div>
 
                             <div class="table-responsive">
-                                <table id="peminjamanFakultasTable" class="table table-hover align-middle mb-0" style="min-width: 700px;">
+                                <table id="peminjamanFakultasTable" class="table table-hover align-middle mb-0 unified-table" style="min-width: 700px;">
                                     <thead>
                                         <tr>
                                             <th class="text-center py-3 border-bottom-0" width="3%"></th>
@@ -327,10 +311,14 @@
         @else
             <div class="row justify-content-center mt-5">
                 <div class="col-12 col-md-6">
-                    <div class="text-center p-5 border-0 rounded-4">
-                        <i class="fas fa-search fa-3x text-muted mb-3 opacity-50"></i>
-                        <h5 class="fw-bold text-body">Data Tidak Ditemukan</h5>
-                        <p class="text-muted">Silakan sesuaikan filter Fakultas atau Rentang Waktu di atas, lalu klik Cari.</p>
+                    <div class="card border-0 shadow-sm text-center p-5 rounded-4">
+                        <div class="card-body">
+                            <div class="bg-secondary bg-opacity-10 rounded-circle d-inline-flex p-4 mb-3">
+                                <i class="fas fa-search fa-3x text-muted"></i>
+                            </div>
+                            <h5 class="fw-bold text-body">Data Tidak Ditemukan</h5>
+                            <p class="text-muted mb-0">Silakan sesuaikan filter Fakultas atau Rentang Waktu di atas, lalu klik Cari.</p>
+                        </div>
                     </div>
                 </div>
             </div>

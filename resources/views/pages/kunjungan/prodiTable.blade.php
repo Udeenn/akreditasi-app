@@ -10,43 +10,28 @@
 @endpush
 
 @section('content')
-    <div class="container-fluid px-4 py-4">
+    <div class="container-fluid px-4 pt-2 pb-4">
 
-        {{-- 1. HEADER SECTION --}}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body p-4 bg-primary bg-gradient text-white  d-flex justify-content-between align-items-center">
-                        <div>
-                            <h3 class="fw-bold mb-1">
-                                <i class="fas fa-university me-2"></i>Statistik Kunjungan Prodi
-                            </h3>
-                            <p class="mb-0 opacity-75">
-                                Analisis data kunjungan berdasarkan Program Studi dan Unit Kerja.
-                            </p>
-                        </div>
-                        <div class="d-none d-md-block opacity-50">
-                            <i class="fas fa-chart-bar fa-4x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-breadcrumb title="Statistik Kunjungan Prodi" icon="fas fa-university">
+            <x-slot name="subtitle">
+                Analisis data kunjungan berdasarkan Program Studi dan Unit Kerja.
+            </x-slot>
+        </x-breadcrumb>
 
         {{-- 2. FILTER SECTION --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header border-bottom-0 pt-3 pb-0">
-                        <h6 class="fw-bold text-primary"><i class="fas fa-filter me-1"></i> Filter Data</h6>
+                <div class="card unified-card border-0 shadow-sm filter-card mb-4">
+                    <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body px-4 pb-4 pt-3">
                         <form method="GET" action="{{ route('kunjungan.prodi') }}" class="row g-3 align-items-end" id="filterForm">
                             
                             {{-- Tipe --}}
                             <div class="col-md-2">
-                                <label for="filter_type" class="form-label small text-muted fw-bold">Tipe Laporan</label>
-                                <select name="filter_type" id="filter_type" class="form-select border-0  fw-semibold">
+                                <label for="filter_type" class="form-label small text-muted text-uppercase">Tipe Laporan</label>
+                                <select name="filter_type" id="filter_type" class="form-select">
                                     <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>Harian</option>
                                     <option value="yearly" {{ ($filterType ?? '') == 'yearly' ? 'selected' : '' }}>Bulanan</option>
                                 </select>
@@ -54,27 +39,27 @@
 
                             {{-- Tanggal (Harian) --}}
                             <div class="col-md-4 daily-filter" style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
-                                <label class="form-label small text-muted fw-bold">Rentang Tanggal</label>
+                                <label class="form-label small text-muted text-uppercase">Rentang Tanggal</label>
                                 <div class="input-group">
-                                    <input type="date" name="tanggal_awal" class="form-control border-0 "
+                                    <input type="date" name="tanggal_awal" class="form-control"
                                         value="{{ $tanggalAwal ?? date('Y-m-d') }}">
-                                    <span class="input-group-text border-0  text-muted">s/d</span>
-                                    <input type="date" name="tanggal_akhir" class="form-control border-0 "
+                                    <span class="input-group-text text-muted">s/d</span>
+                                    <input type="date" name="tanggal_akhir" class="form-control"
                                         value="{{ $tanggalAkhir ?? date('Y-m-d') }}">
                                 </div>
                             </div>
 
                             {{-- Tahun (Bulanan) --}}
                             <div class="col-md-4 yearly-filter" style="{{ ($filterType ?? '') == 'yearly' ? '' : 'display: none;' }}">
-                                <label class="form-label small text-muted fw-bold">Rentang Tahun</label>
+                                <label class="form-label small text-muted text-uppercase">Rentang Tahun</label>
                                 <div class="input-group">
-                                    <select name="tahun_awal" class="form-select border-0">
+                                    <select name="tahun_awal" class="form-select">
                                         @for ($y = date('Y'); $y >= 2020; $y--)
                                             <option value="{{ $y }}" {{ ($tahunAwal ?? date('Y')) == $y ? 'selected' : '' }}>{{ $y }}</option>
                                         @endfor
                                     </select>
-                                    <span class="input-group-text border-0 text-muted">s/d</span>
-                                    <select name="tahun_akhir" class="form-select border-0">
+                                    <span class="input-group-text text-muted">s/d</span>
+                                    <select name="tahun_akhir" class="form-select">
                                         @for ($y = date('Y'); $y >= 2020; $y--)
                                             <option value="{{ $y }}" {{ ($tahunAkhir ?? date('Y')) == $y ? 'selected' : '' }}>{{ $y }}</option>
                                         @endfor
@@ -84,7 +69,7 @@
 
                             {{-- Prodi --}}
                             <div class="col-md-4">
-                                <label for="prodi" class="form-label small text-muted fw-bold">Program Studi / Unit</label>
+                                <label for="prodi" class="form-label small text-muted text-uppercase">Program Studi / Unit</label>
                                 <select name="prodi" id="prodi" class="form-select select2">
                                     <option value="">Semua Kategori</option>
                                     @foreach($listProdi as $code => $name)
@@ -169,7 +154,7 @@
                             <h6 class="fw-bold m-0 text-primary">
                                 <i class="fas fa-table me-2"></i>Rincian Data
                             </h6>
-                            <a href="{{ route('kunjungan.get_prodi_export_data', request()->query()) }}" class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
+                            <a href="{{ route('kunjungan.get_prodi_export_data', request()->query()) }}" class="btn btn-success  fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
                             </a>
                         </div>
                         
@@ -182,14 +167,14 @@
                                         @foreach(request()->except(['per_page', 'page']) as $key => $value)
                                             <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                                         @endforeach
-                                        <label class="me-2 text-muted fw-bold small">Tampilkan</label>
-                                        <select name="per_page" class="form-select form-select-sm shadow-sm border-0" style="width: 70px;" onchange="this.form.submit()">
+                                        <label class="me-2 text-muted text-uppercase small">Tampilkan</label>
+                                        <select name="per_page" class="form-select shadow-sm border-0" style="width: 70px;" onchange="this.form.submit()">
                                             <option value="12" {{ $data->perPage() == 12 ? 'selected' : '' }}>12</option>
                                             <option value="25" {{ $data->perPage() == 25 ? 'selected' : '' }}>25</option>
                                             <option value="50" {{ $data->perPage() == 50 ? 'selected' : '' }}>50</option>
                                             <option value="100" {{ $data->perPage() == 100 ? 'selected' : '' }}>100</option>
                                         </select>
-                                        <label class="ms-2 text-muted fw-bold small">Entri</label>
+                                        <label class="ms-2 text-muted text-uppercase small">Entri</label>
                                     </form>
                                     
                                     <div class="text-muted small">
@@ -199,7 +184,7 @@
                             </div>
 
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
+                                <table class="table table-hover align-middle mb-0 unified-table">
                                     <thead class="">
                                         <tr>
                                             <th class="py-3 px-4 border-bottom-0" width="5%">No</th>
@@ -310,7 +295,7 @@
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover mb-0" id="detailTable">
+                        <table class="table table-hover align-middle mb-0 unified-table" id="detailTable">
                             <thead class="">
                                 <tr>
                                     <th class="border-bottom-0 py-3 ps-4 text-body text-nowrap">No</th>
@@ -336,7 +321,7 @@
                         </button>
                     </div>
                     <div>
-                        <button type="button" class="btn btn-sm btn-success me-2" id="modalExportBtn">
+                        <button type="button" class="btn  btn-success me-2" id="modalExportBtn">
                             <i class="fas fa-file-csv me-1"></i> Export CSV
                         </button>
                         <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Tutup</button>
@@ -427,7 +412,7 @@
                                         <td class="fw-medium text-body">${item.cardnumber}</td>
                                         <td class="text-body">${item.nama}</td>
                                         <td class="pe-4 text-center">
-                                            <span class="badge border bg-light text-dark fw-normal px-3">${item.visit_count}</span>
+                                            <span class="badge border text-body fw-normal px-3">${item.visit_count}</span>
                                         </td>
                                     </tr>
                                 `;

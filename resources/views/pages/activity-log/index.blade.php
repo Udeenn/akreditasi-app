@@ -269,17 +269,17 @@
             <form method="GET" action="{{ route('admin.activity-log') }}" class="row g-2 align-items-end" id="filterForm">
                 <div class="col-6 col-md-2">
                     <label class="form-label small fw-semibold mb-1">Dari Tanggal</label>
-                    <input type="date" name="date_from" class="form-control form-control-sm"
+                    <input type="date" name="date_from" class="form-control "
                            value="{{ $dateFrom }}" max="{{ now()->toDateString() }}">
                 </div>
                 <div class="col-6 col-md-2">
                     <label class="form-label small fw-semibold mb-1">Sampai Tanggal</label>
-                    <input type="date" name="date_to" class="form-control form-control-sm"
+                    <input type="date" name="date_to" class="form-control "
                            value="{{ $dateTo }}" max="{{ now()->toDateString() }}">
                 </div>
                 <div class="col-6 col-md-2">
                     <label class="form-label small fw-semibold mb-1">Role</label>
-                    <select name="role" class="form-select form-select-sm">
+                    <select name="role" class="form-select ">
                         <option value="">Semua</option>
                         <option value="librarian" {{ request('role') === 'librarian' ? 'selected' : '' }}>Pustakawan</option>
                         <option value="patron"    {{ request('role') === 'patron'    ? 'selected' : '' }}>Pengguna</option>
@@ -287,17 +287,17 @@
                 </div>
                 <div class="col-6 col-md-2">
                     <label class="form-label small fw-semibold mb-1">Username</label>
-                    <input type="text" name="username" class="form-control form-control-sm"
+                    <input type="text" name="username" class="form-control "
                            placeholder="Cari username..." value="{{ request('username') }}">
                 </div>
                 <div class="col-5 col-md-2">
                     <label class="form-label small fw-semibold mb-1">Route / URL</label>
-                    <input type="text" name="route" class="form-control form-control-sm"
+                    <input type="text" name="route" class="form-control "
                            placeholder="cth: koleksi" value="{{ request('route') }}">
                 </div>
                 <div class="col-3 col-md-1">
                     <label class="form-label small fw-semibold mb-1">Tampil</label>
-                    <select name="per_page" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <select name="per_page" class="form-select " onchange="this.form.submit()">
                         <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
                         <option value="20" {{ request('per_page') == 20 ? 'selected' : '' }}>20</option>
                         <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
@@ -305,7 +305,7 @@
                     </select>
                 </div>
                 <div class="col-4 col-md-1 d-flex gap-1 align-items-end">
-                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1" title="Filter">
+                    <button type="submit" class="btn btn-primary  flex-grow-1" title="Filter">
                         <i class="fas fa-filter"></i>
                     </button>
                     <a href="{{ route('admin.activity-log') }}" class="btn btn-outline-secondary btn-sm" title="Reset">
@@ -332,7 +332,7 @@
                     </small>
                     {{-- Export CSV Button --}}
                     <a href="{{ route('admin.activity-log.export', request()->query()) }}"
-                       class="btn btn-sm btn-outline-success d-flex align-items-center gap-1"
+                       class="btn  btn-outline-success d-flex align-items-center gap-1"
                        title="Download log sebagai CSV (filter aktif ikut tersimpan)">
                         <i class="fas fa-file-csv"></i>
                         <span class="d-none d-md-inline">Export CSV</span>
@@ -350,7 +350,7 @@
                     {{-- Desktop: table --}}
                     <div class="log-table-desktop">
                         <div class="table-responsive">
-                            <table class="table log-table mb-0">
+                            <table class="table table-hover align-middle mb-0 unified-table">
                                 <thead>
                                     <tr>
                                         <th>Waktu</th>

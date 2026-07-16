@@ -80,6 +80,7 @@
 
         body.dark-mode {
             /* [DARK MODE OVERRIDE] */
+            color-scheme: dark;
             --primary-light: rgba(74, 105, 255, 0.15);
             --sidebar-bg: #1e293b;
             --main-bg: #0f172a;

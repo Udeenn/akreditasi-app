@@ -3,38 +3,24 @@
 @section('content')
 @section('title', 'Statistik Buku Terlaris')
 
-<div class="container-fluid px-3 px-md-4 py-4">
+<div class="container-fluid px-3 px-md-4 pt-2 pb-4">
 
-    {{-- 1. HEADER BANNER --}}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card unified-card border-0 shadow-sm page-header-banner">
-                <div
-                    class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
-                    <div class="mb-3 mb-md-0">
-                        <h3 class="fw-bold mb-1">
-                            <i class="fas fa-fire me-2"></i>Statistik Buku Terlaris
-                        </h3>
-                        <p class="mb-0 opacity-75">Menampilkan daftar buku Fiksi dan Non-Fiksi yang paling sering
-                            digunakan berdasarkan filter.</p>
-                    </div>
-                    <div class="d-none d-md-block opacity-50">
-                        <i class="fas fa-fire fa-4x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <x-breadcrumb title="Statistik Buku Terlaris" icon="fas fa-fire">
+            <x-slot name="subtitle">
+                Menampilkan daftar buku Fiksi dan Non-Fiksi yang paling sering
+                            digunakan berdasarkan filter.
+            </x-slot>
+        </x-breadcrumb>
 
     {{-- 2. FILTER --}}
     <div class="card unified-card border-0 shadow-sm filter-card mb-4">
-        <div class="card-header border-bottom-0 pt-3 pb-0">
-            <h6 class="fw-bold text-primary"><i class="fas fa-filter me-1"></i> Filter Data</h6>
+        <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
+            <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
         </div>
-        <div class="card-body">
+        <div class="card-body px-4 pb-4 pt-3">
             <form method="GET" action="{{ route('penggunaan.sering_dibaca') }}" class="row g-3 align-items-end">
                 <div class="col-md-5">
-                    <label for="tahun" class="form-label small text-muted fw-bold text-uppercase">Tahun:</label>
+                    <label for="tahun" class="form-label small text-muted text-uppercase">Tahun:</label>
                     <select name="tahun" id="tahun" class="form-select">
                         @for ($y = date('Y'); $y >= date('Y') - 10; $y--)
                             <option value="{{ $y }}" {{ $tahun == $y ? 'selected' : '' }}>{{ $y }}
@@ -43,7 +29,7 @@
                     </select>
                 </div>
                 <div class="col-md-5">
-                    <label for="bulan" class="form-label small text-muted fw-bold text-uppercase">Bulan:</label>
+                    <label for="bulan" class="form-label small text-muted text-uppercase">Bulan:</label>
                     <select name="bulan" id="bulan" class="form-select">
                         <option value="">Semua Bulan</option>
                         @for ($m = 1; $m <= 12; $m++)
@@ -74,7 +60,7 @@
                         <h6 class="mb-0 fw-bold text-primary"><i class="fas fa-magic me-2"></i>Buku Fiksi Terpopuler
                         </h6>
                         <a href="{{ request()->fullUrlWithQuery(['export' => 'fiksi']) }}"
-                            class="btn btn-outline-success btn-sm">
+                            class="btn btn-outline-success ">
                             <i class="fas fa-file-csv me-1"></i> Export Fiksi
                         </a>
                     </div>
@@ -156,7 +142,7 @@
                         <h6 class="mb-0 fw-bold text-success"><i class="fas fa-brain me-2"></i>Buku Non-Fiksi
                             Terpopuler</h6>
                         <a href="{{ request()->fullUrlWithQuery(['export' => 'nonfiksi']) }}"
-                            class="btn btn-outline-success btn-sm">
+                            class="btn btn-outline-success ">
                             <i class="fas fa-file-csv me-1"></i> Export Non-Fiksi
                         </a>
                     </div>

@@ -1,8 +1,9 @@
+@props(['title' => '', 'icon' => 'fas fa-chart-pie'])
+
 @php
 /**
- * Breadcrumb Auto-Generator
+ * Breadcrumb Component
  * Membaca route name saat ini dan membangun breadcrumb secara otomatis.
- * Tambahkan entri baru di $breadcrumbMap sesuai route baru yang dibuat.
  */
 
 $currentRoute = Route::currentRouteName() ?? '';
@@ -192,20 +193,18 @@ $showBreadcrumb = $crumbs !== null && $currentRoute !== 'dashboard';
         $heroTitle = $lastCrumb[0];
         reset($crumbs);
     }
-    // Icon can be passed via $icon or fallback to chart-pie
-    $heroIcon = $icon ?? 'fas fa-chart-pie';
 @endphp
 
 <div class="page-hero">
     <div class="d-flex align-items-md-center justify-content-between flex-column flex-md-row gap-3">
         <div class="d-flex align-items-center gap-3">
             <div class="stat-icon" style="background: rgba(74,105,255,0.15); color: #4A69FF;">
-                <i class="{{ $heroIcon }}"></i>
+                <i class="{{ $icon }}"></i>
             </div>
             <div>
                 <h4 class="fw-bold mb-0" style="color: var(--text-dark);">{{ $heroTitle }}</h4>
-                @if(isset($subtitle) && !empty($subtitle))
-                    <p class="mb-0 small" style="color: var(--text-light); margin-top: 0.2rem;">{!! $subtitle !!}</p>
+                @if(isset($subtitle) && !empty((string) $subtitle))
+                    <p class="mb-0 small" style="color: var(--text-light); margin-top: 0.2rem;">{{ $subtitle }}</p>
                 @endif
             </div>
         </div>

@@ -10,71 +10,55 @@
 @endpush
 
 @section('content')
-    <div class="container-fluid px-3 px-md-4 py-4">
+    <div class="container-fluid px-3 px-md-4 pt-2 pb-4">
 
-        {{-- 1. HEADER SECTION --}}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 15px;">
-                    <div
-                        class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
-                        <div class="mb-3 mb-md-0">
-                            <h3 class="fw-bold mb-1">
-                                <i class="fas fa-calendar-alt me-2"></i>Statistik Peminjaman
-                            </h3>
-                            <p class="mb-0 opacity-75">
-                                Analisis data sirkulasi peminjaman buku perpustakaan berdasarkan rentang waktu.
-                            </p>
-                        </div>
-                        <div class="d-none d-md-block opacity-50">
-                            <i class="fas fa-book-reader fa-4x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-breadcrumb title="Statistik Peminjaman" icon="fas fa-calendar-alt">
+            <x-slot name="subtitle">
+                Analisis data sirkulasi peminjaman buku perpustakaan berdasarkan rentang waktu.
+            </x-slot>
+        </x-breadcrumb>
 
         {{-- 2. FILTER SECTION --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header border-bottom-0 pt-3 pb-0">
-                        <h6 class="fw-bold text-primary"><i class="fas fa-filter me-1"></i> Filter Data</h6>
+                <div class="card unified-card border-0 shadow-sm">
+                    <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body px-4 pb-4 pt-3">
                         <form method="GET" action="{{ route('peminjaman.keseluruhan') }}" class="row g-3 align-items-end" id="filterForm">
                             <div class="col-md-2">
-                                <label for="filter_type" class="form-label small text-muted fw-bold">Mode Tampilan</label>
-                                <select name="filter_type" id="filter_type" class="form-select border-0 fw-bold">
+                                <label for="filter_type" class="form-label small text-muted text-uppercase">Mode Tampilan</label>
+                                <select name="filter_type" id="filter_type" class="form-select">
                                     <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>Harian</option>
                                     <option value="monthly" {{ ($filterType ?? '') == 'monthly' ? 'selected' : '' }}>Bulanan</option>
                                 </select>
                             </div>
 
                             <div class="col-md-3" id="dailyFilter" style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
-                                <label class="form-label small text-muted fw-bold">Rentang Tanggal</label>
+                                <label class="form-label small text-muted text-uppercase">Rentang Tanggal</label>
                                 <div class="input-group">
-                                    <input type="date" name="start_date" id="start_date" class="form-control border-0" value="{{ $startDate ?? \Carbon\Carbon::now()->subDays(30)->format('Y-m-d') }}">
-                                    <span class="input-group-text border-0 text-muted">s/d</span>
-                                    <input type="date" name="end_date" id="end_date" class="form-control border-0" value="{{ $endDate ?? \Carbon\Carbon::now()->format('Y-m-d') }}">
+                                    <input type="date" name="start_date" id="start_date" class="form-control" value="{{ $startDate ?? \Carbon\Carbon::now()->subDays(30)->format('Y-m-d') }}">
+                                    <span class="input-group-text text-muted">s/d</span>
+                                    <input type="date" name="end_date" id="end_date" class="form-control" value="{{ $endDate ?? \Carbon\Carbon::now()->format('Y-m-d') }}">
                                 </div>
                             </div>
 
                             <div class="col-md-3" id="monthlyFilter" style="{{ ($filterType ?? '') == 'monthly' ? '' : 'display: none;' }}">
-                                <label class="form-label small text-muted fw-bold">Rentang Tahun</label>
+                                <label class="form-label small text-muted text-uppercase">Rentang Tahun</label>
                                 <div class="input-group">
                                     @php
                                         $currentYear = date('Y');
                                         $loopStartYear = $currentYear - 10;
                                         $loopEndYear = $currentYear;
                                     @endphp
-                                    <select name="start_year" id="start_year" class="form-select border-0">
+                                    <select name="start_year" id="start_year" class="form-select">
                                         @for ($year = $loopStartYear; $year <= $loopEndYear; $year++)
                                             <option value="{{ $year }}" {{ ($startYear ?? $currentYear) == $year ? 'selected' : '' }}>{{ $year }}</option>
                                         @endfor
                                     </select>
-                                    <span class="input-group-text border-0 text-muted">s.d.</span>
-                                    <select name="end_year" id="end_year" class="form-select border-0">
+                                    <span class="input-group-text text-muted">s.d.</span>
+                                    <select name="end_year" id="end_year" class="form-select">
                                         @for ($year = $loopStartYear; $year <= $loopEndYear; $year++)
                                             <option value="{{ $year }}" {{ ($endYear ?? $currentYear) == $year ? 'selected' : '' }}>{{ $year }}</option>
                                         @endfor
@@ -83,7 +67,7 @@
                             </div>
 
                             <div class="col-md-1 ms-auto">
-                                <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm">
+                                <button type="submit" class="btn btn-primary w-100 shadow-sm">
                                     <i class="fas fa-search me-1"></i> Cari
                                 </button>
                             </div>
@@ -202,14 +186,14 @@
                                 <i class="fas fa-table me-2"></i>Rincian Data Peminjaman
                             </h6>
                             <div>
-                                <button type="button" id="exportPdfBtn" class="btn btn-danger btn-sm fw-bold shadow-sm px-3 me-2"><i class="fas fa-file-pdf me-2"></i> Cetak PDF</button>
-                                <button type="button" id="exportCsvBtn" class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
+                                <button type="button" id="exportPdfBtn" class="btn btn-danger  fw-bold shadow-sm px-3 me-2"><i class="fas fa-file-pdf me-2"></i> Cetak PDF</button>
+                                <button type="button" id="exportCsvBtn" class="btn btn-success  fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
                                 </button>
                             </div>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0" style="min-width: 600px;">
+                                <table class="table table-hover align-middle mb-0 unified-table" style="min-width: 600px;">
                                     <thead class="">
                                         <tr>
                                             <th class="text-center py-3 px-4 border-bottom-0" width="5%">No</th>
@@ -285,10 +269,14 @@
             {{-- EMPTY STATE --}}
             <div class="row justify-content-center mt-5">
                 <div class="col-12 col-md-6">
-                    <div class="text-center p-5 border-0  rounded-4">
-                        <i class="fas fa-search fa-3x text-muted mb-3 opacity-50"></i>
-                        <h5 class="fw-bold text-body">Data Tidak Ditemukan</h5>
-                        <p class="text-muted">Silakan gunakan filter di atas untuk menampilkan statistik peminjaman.</p>
+                    <div class="card border-0 shadow-sm text-center p-5 rounded-4">
+                        <div class="card-body">
+                            <div class="bg-secondary bg-opacity-10 rounded-circle d-inline-flex p-4 mb-3">
+                                <i class="fas fa-search fa-3x text-muted"></i>
+                            </div>
+                            <h5 class="fw-bold text-body">Data Tidak Ditemukan</h5>
+                            <p class="text-muted mb-0">Silakan gunakan filter di atas untuk menampilkan statistik peminjaman.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -320,7 +308,7 @@
 
                         <div id="dataSection" style="display: none;">
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0" id="detailTable">
+                                <table class="table table-hover align-middle mb-0 unified-table" id="detailTable">
                                     <thead class=" sticky-top">
                                         <tr>
                                             <th class="text-center py-3 px-4 border-bottom-0" style="width: 5%;">No</th>
@@ -345,7 +333,7 @@
                     </div>
                     <div class="modal-footer border-0 py-3">
                         <a href="#" id="btnExportDetailCsv"
-                            class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
+                            class="btn btn-success  fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
                         </a>
                         <button type="button" class="btn btn-secondary btn-sm px-4"
                             data-bs-dismiss="modal">Tutup</button>

@@ -304,6 +304,16 @@ class PenggunaanController extends Controller
             $headerRow[] = $kategori;
         }
         $headerRow[] = 'Total';
+        
+        $titles = [
+            'LAPORAN STATISTIK KETERPAKAIAN KOLEKSI',
+            'Periode: ' . ($filterType == 'daily' ? "Harian ({$start} s.d. {$end})" : "Bulanan ({$start} s.d. {$end})")
+        ];
+        
+        $usageType = $request->input('usage_type', 'all');
+        if ($usageType !== 'all') {
+            $titles[] = 'Jenis Transaksi: ' . ucfirst($usageType);
+        }
 
         return $this->streamCsvExport($dataTabel, $fileName, $headerRow, function ($row) use ($listKategori, $filterType) {
             $dataRow = [];
@@ -320,7 +330,7 @@ class PenggunaanController extends Controller
             $dataRow[] = $totalPerRow;
             
             return $dataRow;
-        });
+        }, $titles);
     }
 
     public function cekBuku(Request $request)

@@ -1,12 +1,12 @@
 <div class="card shadow-sm border-0">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h6 class="mb-0">Rekapitulasi Kunjungan per Bulan</h6>
-        <button id="exportCsvBtn" class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
+        <button id="exportCsvBtn" class="btn btn-success  fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
         </button>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover table-bordered table-vcenter mb-0">
+            <table class="table table-hover align-middle mb-0 unified-table table-vcenter">
                 <thead class="">
                     <tr>
                         <th style='width: 10px;'>No</th>

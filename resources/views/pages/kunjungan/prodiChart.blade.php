@@ -5,48 +5,32 @@
 {{-- Shared styles loaded from unified-components.css --}}
 
 @section('content')
-    <div class="container-fluid px-3 px-md-4 py-4">
+    <div class="container-fluid px-3 px-md-4 pt-2 pb-4">
 
-        {{-- 1. HEADER SECTION --}}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div
-                        class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
-                        <div class="mb-3 mb-md-0">
-                            <h3 class="fw-bold mb-1">
-                                <i class="fas fa-chart-bar me-2"></i>Grafik Kunjungan Program Studi
-                            </h3>
-                            <p class="mb-0 opacity-75">
-                                @if ($selectedProdi && $selectedTahunAwal && $selectedTahunAkhir && $namaProdi)
+        <x-breadcrumb title="Grafik Kunjungan Program Studi" icon="fas fa-chart-bar">
+            <x-slot name="subtitle">
+                @if ($selectedProdi && $selectedTahunAwal && $selectedTahunAkhir && $namaProdi)
                                     Data ditampilkan untuk: <strong>{{ $namaProdi }}</strong> ({{ $selectedTahunAwal }} -
                                     {{ $selectedTahunAkhir }})
                                 @else
                                     Analisis tren kunjungan berdasarkan Program Studi spesifik.
                                 @endif
-                            </p>
-                        </div>
-                        <div class="d-none d-md-block opacity-50">
-                            <i class="fas fa-graduation-cap fa-4x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+            </x-slot>
+        </x-breadcrumb>
 
         {{-- 2. FILTER SECTION --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header border-0 pt-3 pb-0">
-                        <h6 class="fw-bold text-primary"><i class="fas fa-filter me-1"></i> Filter Data</h6>
+                <div class="card unified-card border-0 shadow-sm filter-card mb-4">
+                    <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body px-4 pb-4 pt-3">
                         <form method="GET" action="{{ route('kunjungan.prodiChart') }}" class="row g-3 align-items-end">
 
                             <div class="col-12 col-md-4">
-                                <label for="prodi" class="form-label small text-muted fw-bold">Pilih Prodi</label>
-                                <select name="prodi" id="prodi" class="form-select border-0 bg-light">
+                                <label for="prodi" class="form-label small text-muted text-uppercase">Pilih Prodi</label>
+                                <select name="prodi" id="prodi" class="form-select">
                                     <option value="">-- Pilih Program Studi --</option>
                                     <option value="all" {{ $selectedProdi == 'all' ? 'selected' : '' }}>-- Semua Prodi --
                                     </option>
@@ -60,16 +44,16 @@
                             </div>
 
                             <div class="col-6 col-md-3">
-                                <label for="tahun_awal" class="form-label small text-muted fw-bold">Tahun Awal</label>
+                                <label for="tahun_awal" class="form-label small text-muted text-uppercase">Tahun Awal</label>
                                 <input type="number" name="tahun_awal" id="tahun_awal"
-                                    class="form-control border-0 bg-light" value="{{ $selectedTahunAwal }}"
+                                    class="form-control" value="{{ $selectedTahunAwal }}"
                                     placeholder="{{ date('Y') }}">
                             </div>
 
                             <div class="col-6 col-md-3">
-                                <label for="tahun_akhir" class="form-label small text-muted fw-bold">Tahun Akhir</label>
+                                <label for="tahun_akhir" class="form-label small text-muted text-uppercase">Tahun Akhir</label>
                                 <input type="number" name="tahun_akhir" id="tahun_akhir"
-                                    class="form-control border-0 bg-light" value="{{ $selectedTahunAkhir }}"
+                                    class="form-control" value="{{ $selectedTahunAkhir }}"
                                     placeholder="{{ date('Y') }}">
                             </div>
 
@@ -93,7 +77,7 @@
                         <div class="card-header border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
                             <h5 class="fw-bold mb-0 text-body">Visualisasi Data</h5>
                             {{-- Tombol Save dipindah ke Header agar rapi --}}
-                            <button id="saveChart" class="btn btn-sm btn-success fw-bold shadow-sm">
+                            <button id="saveChart" class="btn  btn-success fw-bold shadow-sm">
                                 <i class="fas fa-download me-1"></i> Simpan Grafik (PDF/IMG)
                             </button>
                         </div>
@@ -122,7 +106,7 @@
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0" id="kunjunganProdiTable">
+                                <table class="table table-hover align-middle mb-0 unified-table" id="kunjunganProdiTable">
                                     <thead class="bg-light">
                                         <tr>
                                             <th class="py-3 px-4 border-bottom-0">Bulan Tahun</th>
@@ -163,13 +147,17 @@
             {{-- EMPTY STATE --}}
             <div class="row justify-content-center mt-5">
                 <div class="col-md-6">
-                    <div class="text-center p-5 border-0 bg-light rounded-4">
-                        <i class="fas fa-folder-open fa-3x text-muted mb-3 opacity-50"></i>
-                        <h5 class="fw-bold text-body">Data Tidak Ditemukan</h5>
-                        <p class="text-muted">
-                            Tidak ada data kunjungan untuk <strong>{{ $namaProdi }}</strong>
-                            antara tahun {{ $selectedTahunAwal }} - {{ $selectedTahunAkhir }}.
-                        </p>
+                    <div class="card border-0 shadow-sm text-center p-5 rounded-4">
+                        <div class="card-body">
+                            <div class="bg-secondary bg-opacity-10 rounded-circle d-inline-flex p-4 mb-3">
+                                <i class="fas fa-folder-open fa-3x text-muted"></i>
+                            </div>
+                            <h5 class="fw-bold text-body">Data Tidak Ditemukan</h5>
+                            <p class="text-muted mb-0">
+                                Tidak ada data kunjungan untuk <strong>{{ $namaProdi }}</strong>
+                                antara tahun {{ $selectedTahunAwal }} - {{ $selectedTahunAkhir }}.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

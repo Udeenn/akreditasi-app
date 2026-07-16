@@ -5,43 +5,29 @@
 {{-- Shared styles loaded from unified-components.css --}}
 
 @section('content')
-    <div class="container-fluid px-3 px-md-4 py-4">
+    <div class="container-fluid px-3 px-md-4 pt-2 pb-4">
 
-        {{-- 1. HEADER SECTION --}}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm overflow-hidden">
-                    <div
-                        class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
-                        <div class="mb-3 mb-md-0 text-center text-md-start">
-                            <h3 class="fw-bold mb-1"><i class="fas fa-history me-2"></i>Cek Histori Peminjaman</h3>
-                            <p class="mb-0 opacity-75">Lacak riwayat peminjaman dan pengembalian buku anggota perpustakaan.
-                            </p>
-                        </div>
-                        <div class="d-none d-md-block opacity-50">
-                            <i class="fas fa-user-clock fa-4x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-breadcrumb title="Cek Histori Peminjaman" icon="fas fa-user-clock">
+            <x-slot name="subtitle">
+                Lacak riwayat peminjaman dan pengembalian buku anggota perpustakaan.
+            </x-slot>
+        </x-breadcrumb>
 
         {{-- 2. SEARCH SECTION --}}
         <div class="row justify-content-center mb-5">
             <div class="col-lg-12">
-                <div class="card border-0 shadow-sm hover-lift">
+                <div class="card unified-card border-0 shadow-sm hover-lift">
                     <div class="card-body p-4">
                         <form action="{{ route('peminjaman.cek_pinjaman') }}" method="GET">
-                            <label for="cardnumber" class="form-label fw-bold text-muted small text-uppercase">Cari
-                                Anggota</label>
-                            <div class="input-group input-group-lg">
-                                <span class="input-group-text border-0 "><i class="fas fa-search text-muted"></i></span>
+                            <label for="cardnumber" class="form-label text-muted small text-uppercase">Cari Anggota</label>
+                            <div class="input-group">
+                                <span class="input-group-text text-muted bg-transparent border-end-0"><i class="fas fa-search"></i></span>
                                 <input type="text" name="cardnumber" id="cardnumber"
-                                    class="form-control border-0  fw-bold" value="{{ $cardnumber ?? '' }}"
+                                    class="form-control border-start-0" value="{{ $cardnumber ?? '' }}"
                                     placeholder="Masukkan Nomor Kartu Peminjam (NIM/ID)..." autofocus>
 
                                 {{-- Filter Tahun --}}
-                                <select name="tahun" class="form-select border-0" style="max-width: 180px; border-left: 1px solid var(--bs-border-color) !important;">
+                                <select name="tahun" class="form-select" style="max-width: 200px;">
                                     <option value="">Semua Tahun</option>
                                     @for ($y = date('Y'); $y >= 2019; $y--)
                                         <option value="{{ $y }}" {{ ($tahun ?? '') == $y ? 'selected' : '' }}>
@@ -130,7 +116,7 @@
                             </h6>
                             @if ($borrowingHistory->isNotEmpty())
                                 <button type="button" id="exportBorrowingHistory"
-                                    class="btn btn-sm btn-success rounded-pill px-3 shadow-sm">
+                                    class="btn  btn-success rounded-pill px-3 shadow-sm">
                                     <i class="fas fa-file-csv me-1"></i> Export
                                 </button>
                             @endif
@@ -143,7 +129,7 @@
                                 </div>
                             @else
                                 <div class="table-responsive">
-                                    <table class="table table-hover align-middle mb-0">
+                                    <table class="table table-hover align-middle mb-0 unified-table">
                                         <thead class="">
                                             <tr>
                                                 <th class="px-4" style="width: 50%;">Buku</th>
@@ -207,7 +193,7 @@
                             </h6>
                             @if ($returnHistory->isNotEmpty())
                                 <button type="button" id="exportReturnHistory"
-                                    class="btn btn-sm btn-danger rounded-pill px-3 shadow-sm">
+                                    class="btn  btn-danger rounded-pill px-3 shadow-sm">
                                     <i class="fas fa-file-csv me-1"></i> Export
                                 </button>
                             @endif
@@ -220,7 +206,7 @@
                                 </div>
                             @else
                                 <div class="table-responsive">
-                                    <table class="table table-hover align-middle mb-0">
+                                    <table class="table table-hover align-middle mb-0 unified-table">
                                         <thead class="">
                                             <tr>
                                                 <th class="px-4" style="width: 50%;">Buku</th>

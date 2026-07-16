@@ -3,45 +3,29 @@
 @section('title', 'Pemustaka Teraktif')
 
 @section('content')
-    <div class="container-fluid px-3 px-md-4 py-4">
+    <div class="container-fluid px-3 px-md-4 pt-2 pb-4">
 
-        {{-- 1. HEADER BANNER --}}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card unified-card border-0 shadow-sm page-header-banner">
-                    <div
-                        class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
-                        <div class="mb-3 mb-md-0">
-                            <h3 class="fw-bold mb-1">
-                                <i class="fas fa-chart-line me-2"></i>Pemustaka Teraktif
-                            </h3>
-                            <p class="mb-0 opacity-75">
-                                Menampilkan daftar pemustaka teraktif di UPT Perpustakaan dan Layanan Digital UMS selama satu tahun
+        <x-breadcrumb title="Pemustaka Teraktif" icon="fas fa-chart-line">
+            <x-slot name="subtitle">
+                Menampilkan daftar pemustaka teraktif di UPT Perpustakaan dan Layanan Digital UMS selama satu tahun
                                 @if ($hasFilter)
                                     — Periode: <strong>{{ $tahun }}</strong>
                                 @endif
-                            </p>
-                        </div>
-                        <div class="d-none d-md-block opacity-50">
-                            <i class="fas fa-trophy fa-4x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+            </x-slot>
+        </x-breadcrumb>
 
         {{-- 2. FILTER PANEL --}}
-        <div class="card unified-card border-0 shadow-sm filter-card mb-4">
-            <div class="card-header border-bottom-0 pt-3 pb-0">
-                <h6 class="fw-bold text-primary"><i class="fas fa-filter me-1"></i> Filter Data</h6>
+        <div class="card unified-card border-0 shadow-sm mb-4">
+            <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
             </div>
-            <div class="card-body p-4">
+            <div class="card-body px-4 pb-4 pt-3">
                 <form method="GET" action="{{ route('reward.pemustaka_teraktif') }}">
                     <div class="row g-3 align-items-end">
 
                         {{-- Periode --}}
-                        <div class="col-md-3 col-lg-3">
-                            <label for="tahun" class="form-label small text-muted fw-bold text-uppercase">
+                        <div class="col-md-3">
+                            <label for="tahun" class="form-label small text-muted text-uppercase">
                                 <i class="fas fa-calendar me-1"></i> Periode
                             </label>
                             <select name="tahun" id="tahun" class="form-select">
@@ -54,41 +38,37 @@
                                 @endfor
                             </select>
                         </div>
-                        <div class="col-md-3 col-lg-3">
-                            <label for="kategori" class="form-label small text-muted fw-bold text-uppercase">
+                        <div class="col-md-3">
+                            <label for="kategori" class="form-label small text-muted text-uppercase">
                                 <i class="fas fa-filter me-1"></i> Kategori
                             </label>
                             <select name="kategori" id="kategori" class="form-select">
                                 <option value="">Semua Kategori</option>
-                                <option value="Mahasiswa" {{ request('kategori') == 'Mahasiswa' ? 'selected' : '' }}>
-                                    Mahasiswa</option>
+                                <option value="Mahasiswa" {{ request('kategori') == 'Mahasiswa' ? 'selected' : '' }}>Mahasiswa</option>
                                 <option value="Dosen" {{ request('kategori') == 'Dosen' ? 'selected' : '' }}>Dosen</option>
-                                <option value="Tendik" {{ request('kategori') == 'Tendik' ? 'selected' : '' }}>Tendik
-                                </option>
+                                <option value="Tendik" {{ request('kategori') == 'Tendik' ? 'selected' : '' }}>Tendik</option>
                             </select>
                         </div>
 
                         {{-- Tombol Cari --}}
-                        <div class="col-md-2 col-lg-2">
+                        <div class="col-md-2">
                             <button type="submit" class="btn btn-primary w-100 shadow-sm">
-                                <i class="fas fa-search"></i> Cari
+                                <i class="fas fa-search me-1"></i> Cari
                             </button>
                         </div>
                         {{-- Export Buttons --}}
-                        <div class="col-md-4 col-lg-4 ms-auto text-md-end">
+                        <div class="col-md-4 ms-auto text-md-end">
                             <div class="d-flex gap-2 justify-content-md-end mt-3 mt-md-0">
                                 <button type="button" id="exportPengunjungButton"
-                                    class="btn btn-outline-success {{ !$hasFilter ? 'disabled' : '' }}"
+                                    class="btn btn-success shadow-sm {{ !$hasFilter ? 'disabled' : '' }}"
                                     title="Export Data Pengunjung">
-                                    <i class="fas fa-file-csv me-1"></i> <span class="d-none d-xl-inline">
-                                        Pengunjung</span>
+                                    <i class="fas fa-file-excel me-1"></i> <span class="d-none d-xl-inline">Pengunjung</span>
                                 </button>
 
                                 <button type="button" id="exportPeminjamButton"
-                                    class="btn btn-outline-warning {{ !$hasFilter ? 'disabled' : '' }}"
+                                    class="btn btn-warning shadow-sm {{ !$hasFilter ? 'disabled' : '' }}"
                                     title="Export Data Peminjam">
-                                    <i class="fas fa-file-csv me-1"></i> <span class="d-none d-xl-inline">
-                                        Peminjam</span>
+                                    <i class="fas fa-file-excel me-1"></i> <span class="d-none d-xl-inline">Peminjam</span>
                                 </button>
                             </div>
                         </div>

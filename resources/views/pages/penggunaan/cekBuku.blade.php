@@ -3,36 +3,20 @@
 @section('title', 'Cek Histori Buku')
 
 @section('content')
-    <div class="container-fluid px-3 px-md-4 py-4">
+    <div class="container-fluid px-3 px-md-4 pt-2 pb-4">
 
-        {{-- 1. HEADER BANNER --}}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card unified-card border-0 shadow-sm page-header-banner">
-                    <div
-                        class="card-body p-4 bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
-                        <div class="mb-3 mb-md-0">
-                            <h3 class="fw-bold mb-1">
-                                <i class="fas fa-barcode me-2"></i>Cek Histori Penggunaan Buku
-                            </h3>
-                            <p class="mb-0 opacity-75">
-                                Lacak riwayat peminjaman, pengembalian, dan penggunaan lokal berdasarkan barcode buku.
-                            </p>
-                        </div>
-                        <div class="d-none d-md-block opacity-50">
-                            <i class="fas fa-history fa-4x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-breadcrumb title="Cek Histori Penggunaan Buku" icon="fas fa-barcode">
+            <x-slot name="subtitle">
+                Lacak riwayat peminjaman, pengembalian, dan penggunaan lokal berdasarkan barcode buku.
+            </x-slot>
+        </x-breadcrumb>
 
         {{-- 2. SEARCH FORM --}}
         <div class="card unified-card border-0 shadow-sm filter-card mb-4">
-            <div class="card-header border-bottom-0 pt-3 pb-0">
-                <h6 class="fw-bold text-primary"><i class="fas fa-search me-1"></i> Cari Barcode</h6>
+            <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-search text-primary me-2"></i> Cari Barcode</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body px-4 pb-4 pt-3">
                 <form action="{{ route('penggunaan.cek_histori_buku_buku') }}" method="GET">
                     <div class="row g-2 align-items-center">
                         <div class="col-lg">
