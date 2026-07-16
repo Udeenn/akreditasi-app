@@ -24,6 +24,7 @@ class PenggunaanController extends Controller
         $endMonth = $request->input('end_month', Carbon::now()->format('Y-m'));
         $startDate = $request->input('start_date', Carbon::now()->subDays(29)->format('Y-m-d'));
         $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+        $usageType = $request->input('usage_type', 'all');
 
         $dataTabel = collect();
         $listKategori = [];
@@ -39,7 +40,8 @@ class PenggunaanController extends Controller
                     DB::raw("CASE WHEN ccode LIKE 'R%' THEN 'Referensi' ELSE ccode END as kategori"),
                     DB::raw('COUNT(*) as jumlah')
                 )
-                ->whereIn('type', ['issue', 'return', 'localuse'])
+                ->when($usageType === 'all', fn($q) => $q->whereIn('type', ['issue', 'return', 'localuse']))
+                ->when($usageType !== 'all', fn($q) => $q->where('type', $usageType))
                 ->whereNotNull('ccode')
                 ->where('ccode', '!=', '');
 
@@ -97,6 +99,7 @@ class PenggunaanController extends Controller
             'kategoriPopuler',
             'maxJumlah',
             'rerataPenggunaan',
+            'usageType',
         ));
     }
 
@@ -109,6 +112,7 @@ class PenggunaanController extends Controller
         $endMonth = $request->input('end_month', \Carbon\Carbon::now()->format('Y-m'));
         $startDate = $request->input('start_date', \Carbon\Carbon::now()->subDays(29)->format('Y-m-d'));
         $endDate = $request->input('end_date', \Carbon\Carbon::now()->format('Y-m-d'));
+        $usageType = $request->input('usage_type', 'all');
         $chartImage = $request->input('chart_image_base64');
 
         $dataTabel = collect();
@@ -124,7 +128,8 @@ class PenggunaanController extends Controller
                     DB::raw("CASE WHEN ccode LIKE 'R%' THEN 'Referensi' ELSE ccode END as kategori"),
                     DB::raw('COUNT(*) as jumlah')
                 )
-                ->whereIn('type', ['issue', 'return', 'localuse'])
+                ->when($usageType === 'all', fn($q) => $q->whereIn('type', ['issue', 'return', 'localuse']))
+                ->when($usageType !== 'all', fn($q) => $q->where('type', $usageType))
                 ->whereNotNull('ccode')
                 ->where('ccode', '!=', '');
 
@@ -200,9 +205,11 @@ class PenggunaanController extends Controller
         $periode = $request->input('periode');
         $kategori = $request->input('kategori');
         $filterType = $request->input('filter_type');
+        $usageType = $request->input('usage_type', 'all');
 
         $query = \App\Models\Koha\Statistic::with(['item.biblio'])
-            ->whereIn('type', ['issue', 'return', 'localuse'])
+            ->when($usageType === 'all', fn($q) => $q->whereIn('type', ['issue', 'return', 'localuse']))
+            ->when($usageType !== 'all', fn($q) => $q->where('type', $usageType))
             ->whereNotNull('ccode')
             ->where('ccode', '!=', '');
 
@@ -254,7 +261,8 @@ class PenggunaanController extends Controller
                 DB::raw("CASE WHEN ccode LIKE 'R%' THEN 'Referensi' ELSE ccode END as kategori"),
                 DB::raw('COUNT(*) as jumlah')
             )
-            ->whereIn('type', ['issue', 'return', 'localuse'])
+            ->when(($request->input('usage_type', 'all')) === 'all', fn($q) => $q->whereIn('type', ['issue', 'return', 'localuse']))
+            ->when(($request->input('usage_type', 'all')) !== 'all', fn($q) => $q->where('type', $request->input('usage_type')))
             ->whereNotNull('ccode')
             ->where('ccode', '!=', '');
         if ($filterType == 'daily') {

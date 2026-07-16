@@ -126,6 +126,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/keseluruhan/export-pdf', [PeminjamanController::class, 'exportPdfKeseluruhan'])->name('export_pdf_keseluruhan')->middleware('throttle:exports');
         Route::get('/prodi', [PeminjamanController::class, 'peminjamanProdiChart'])->name('prodi');
         Route::get('/export-detail-prodi', [PeminjamanController::class, 'exportDetailProdiCsv'])->name('export_detail_prodi')->middleware('throttle:exports');
+        
+        // Buku Terlaris Berdasarkan Prodi
+        Route::get('/buku-terlaris-prodi', [PeminjamanController::class, 'bukuTerlarisProdi'])->name('buku_terlaris_prodi');
+        Route::get('/export-buku-terlaris-prodi', [PeminjamanController::class, 'exportBukuTerlarisProdiCsv'])->name('export_buku_terlaris_prodi')->middleware('throttle:exports');
+        Route::post('/export-buku-terlaris-prodi-pdf', [PeminjamanController::class, 'exportBukuTerlarisProdiPdf'])->name('export_buku_terlaris_prodi_pdf')->middleware('throttle:exports');
+        
         Route::get('/cek-pinjaman', [PeminjamanController::class, 'checkHistory'])->name('cek_pinjaman');
         Route::get('/berlangsung', [PeminjamanController::class, 'peminjamanBerlangsung'])->name('berlangsung');
         Route::get('/berlangsung-data', [PeminjamanController::class, 'getBerlangsungDataTable'])->name('berlangsung_data');

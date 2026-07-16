@@ -137,6 +137,8 @@
                     href="{{ route('peminjaman.cek_pinjaman') }}">Cek Pinjaman</a></li>
             <li><a class="nav-link {{ request()->routeIs('peminjaman.berlangsung') ? 'active' : '' }}"
                     href="{{ route('peminjaman.berlangsung') }}">Sedang Berlangsung</a></li>
+            <li><a class="nav-link {{ request()->routeIs('peminjaman.buku_terlaris_prodi') ? 'active' : '' }}"
+                    href="{{ route('peminjaman.buku_terlaris_prodi') }}">Buku Terlaris per Prodi</a></li>
         </ul>
     </div>
 </li>

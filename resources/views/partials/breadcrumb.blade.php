@@ -110,6 +110,11 @@ $breadcrumbMap = [
         ['Peminjaman', null],
         ['Sedang Berlangsung', null],
     ],
+    'peminjaman.buku_terlaris_prodi' => [
+        ['Analitik', null],
+        ['Peminjaman', null],
+        ['Buku Terlaris per Prodi', null],
+    ],
 
     // ── Statistik Sirkulasi ──────────────────────────────────────────
     'penggunaan.keterpakaian_koleksi' => [

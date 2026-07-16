@@ -1352,4 +1352,214 @@ public function pertanggal(Request $request)
         return $staticValues + $listProdiFromDb;
     }
 
+    public function bukuTerlarisProdi(Request $request)
+    {
+        // 1. Ambil daftar Prodi (gunakan yang sudah ada di helper)
+        $prodiList = $this->getProdiListWithStaticOptions();
+
+        $selectedProdi = $request->input('selected_prodi');
+        $startYear = $request->input('start_year', Carbon::now()->year);
+        $endYear = $request->input('end_year', Carbon::now()->year);
+        $startMonth = $request->input('start_month');
+        $endMonth = $request->input('end_month');
+
+        $books = collect();
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10, 1);
+        
+        $hasFilter = $request->filled('selected_prodi') && $request->filled('start_year') && $request->filled('end_year');
+
+        if ($hasFilter && $selectedProdi) {
+            $data = $this->getBukuTerlarisProdiData($request);
+            
+            $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage();
+            $perPage = 10;
+            $currentItems = $data->slice(($currentPage - 1) * $perPage, $perPage)->all();
+            
+            $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                $currentItems, 
+                $data->count(), 
+                $perPage, 
+                $currentPage, 
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+        }
+
+        return view('pages.peminjaman.bukuTerlarisProdi', compact(
+            'prodiList', 'selectedProdi', 'startYear', 'endYear', 'startMonth', 'endMonth', 'paginator', 'hasFilter'
+        ));
+    }
+
+    private function getBukuTerlarisProdiData($request)
+    {
+        $selectedProdi = $request->input('selected_prodi');
+        $startYear = $request->input('start_year', Carbon::now()->year);
+        $endYear = $request->input('end_year', Carbon::now()->year);
+        $startMonth = $request->input('start_month');
+        $endMonth = $request->input('end_month');
+
+        if (!$selectedProdi) {
+            return collect();
+        }
+
+        if ($startMonth && $endMonth) {
+            $start = Carbon::createFromFormat('Y-m', $startYear . '-' . str_pad($startMonth, 2, '0', STR_PAD_LEFT))->startOfMonth();
+            $end = Carbon::createFromFormat('Y-m', $endYear . '-' . str_pad($endMonth, 2, '0', STR_PAD_LEFT))->endOfMonth();
+        } else {
+            $start = Carbon::createFromDate($startYear, 1, 1)->startOfDay();
+            $end = Carbon::createFromDate($endYear, 12, 31)->endOfDay();
+        }
+
+        // Cache hasil query berat
+        $cacheKey = "buku_terlaris_prodi_v2:{$selectedProdi}:{$start->timestamp}:{$end->timestamp}";
+        
+        return Cache::remember($cacheKey, 1800, function () use ($selectedProdi, $start, $end) {
+            
+            // 1. Ambil agregasi statistik dasar
+            $statsQuery = DB::connection('mysql2')->table('statistics')
+                ->select('itemnumber', DB::raw('COUNT(*) as count_transaksi'))
+                ->whereIn('type', ['issue', 'return', 'localuse'])
+                ->whereBetween('datetime', [$start, $end])
+                ->whereNotNull('itemnumber');
+
+            if ($selectedProdi === 'DOSEN' || $selectedProdi === 'TENDIK') {
+                $statsQuery->join('borrowers as br', 'br.borrowernumber', '=', 'statistics.borrowernumber');
+                if ($selectedProdi === 'DOSEN') {
+                    $statsQuery->where('br.categorycode', 'like', 'TC%');
+                } else {
+                    $statsQuery->where(function ($q) {
+                        $q->where('br.categorycode', 'like', 'STAF%')->orWhere('br.categorycode', '=', 'LIBRARIAN');
+                    });
+                }
+            }
+
+            $aggregatedStats = $statsQuery->groupBy('itemnumber')->get();
+
+            if ($aggregatedStats->isEmpty()) {
+                return collect();
+            }
+
+            // Map stats ke array [itemnumber => count]
+            $itemCounts = [];
+            foreach ($aggregatedStats as $row) {
+                $itemCounts[$row->itemnumber] = $row->count_transaksi;
+            }
+
+            // 2. Ambil informasi biblio dari items & biblioitems secara chunk
+            $allItemNumbers = array_keys($itemCounts);
+            $itemToBiblio = [];
+            $biblioInfo = []; // Menyimpan title, author, cn_class untuk setiap biblionumber
+
+            // Ambil rules untuk filter Prodi
+            $prodiRules = [];
+            if ($selectedProdi !== 'DOSEN' && $selectedProdi !== 'TENDIK') {
+                $prodiRules = \App\Helpers\CnClassHelperr::getCnClassByProdi($selectedProdi);
+            }
+
+            foreach (array_chunk($allItemNumbers, 500) as $chunk) {
+                $items = DB::connection('mysql2')->table('items')
+                    ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
+                    ->join('biblio as b', 'items.biblionumber', '=', 'b.biblionumber')
+                    ->select('items.itemnumber', 'items.biblionumber', 'b.title', 'b.author', 'bi.cn_class')
+                    ->whereIn('items.itemnumber', $chunk);
+
+                if ($selectedProdi !== 'DOSEN' && $selectedProdi !== 'TENDIK' && !empty($prodiRules)) {
+                    // Terapkan rules filter cn_class sesuai Prodi menggunakan Helper
+                    \App\Helpers\QueryHelper::applyCnClassRules($items, $prodiRules);
+                }
+
+                foreach ($items->get() as $item) {
+                    $itemToBiblio[$item->itemnumber] = $item->biblionumber;
+                    if (!isset($biblioInfo[$item->biblionumber])) {
+                        $biblioInfo[$item->biblionumber] = [
+                            'title' => $item->title,
+                            'author' => $item->author,
+                            'cn_class' => $item->cn_class,
+                        ];
+                    }
+                }
+            }
+
+            // 3. Agregasi final berdasarkan biblionumber
+            $biblioCounts = [];
+            foreach ($itemCounts as $itemnum => $count) {
+                $biblio = $itemToBiblio[$itemnum] ?? null;
+                if ($biblio !== null) {
+                    $biblioCounts[$biblio] = ($biblioCounts[$biblio] ?? 0) + $count;
+                }
+            }
+
+            // 4. Ubah ke bentuk object dan urutkan
+            $result = collect();
+            foreach ($biblioCounts as $biblio => $count) {
+                $info = $biblioInfo[$biblio];
+                $result->push((object)[
+                    'biblionumber' => $biblio,
+                    'title' => $info['title'],
+                    'author' => $info['author'],
+                    'cn_class' => $info['cn_class'],
+                    'total_peminjaman' => $count
+                ]);
+            }
+
+            return $result->sortByDesc('total_peminjaman')->values();
+        });
+    }
+
+    public function exportBukuTerlarisProdiCsv(Request $request)
+    {
+        $data = $this->getBukuTerlarisProdiData($request);
+        if ($data->isEmpty()) return abort(400, 'Data tidak ditemukan atau parameter tidak valid');
+
+        $selectedProdi = $request->input('selected_prodi');
+        $prodiList = $this->getProdiListWithStaticOptions();
+        $namaProdi = $prodiList[$selectedProdi] ?? $selectedProdi;
+
+        $safeProdiName = preg_replace('/[^A-Za-z0-9]/', '_', $namaProdi);
+        $filename = "Buku_Terlaris_Prodi_{$safeProdiName}_" . date('Ymd') . ".csv";
+
+        $headers = ['No', 'Judul Buku', 'Pengarang', 'Klasifikasi', 'Total Transaksi (Pinjam, Kembali, Baca)'];
+
+        return $this->streamCsvExport($data, $filename, $headers, function($row, $index) {
+            return [
+                $index,
+                $row->title,
+                $row->author,
+                $row->cn_class,
+                $row->total_peminjaman
+            ];
+        });
+    }
+
+    public function exportBukuTerlarisProdiPdf(Request $request)
+    {
+        $data = $this->getBukuTerlarisProdiData($request);
+        if ($data->isEmpty()) return abort(400, 'Data tidak ditemukan atau parameter tidak valid');
+
+        $selectedProdi = $request->input('selected_prodi');
+        $prodiList = $this->getProdiListWithStaticOptions();
+        $namaProdi = $prodiList[$selectedProdi] ?? $selectedProdi;
+
+        $startYear = $request->input('start_year', Carbon::now()->year);
+        $endYear = $request->input('end_year', Carbon::now()->year);
+        
+        $periodeText = "Tahun $startYear s.d $endYear";
+        if ($request->input('start_month') && $request->input('end_month')) {
+            $periodeText = "Bulan " . $request->input('start_month') . " $startYear s.d Bulan " . $request->input('end_month') . " $endYear";
+        }
+
+        $logoPath = public_path('img/ums.png');
+        $logoBase64 = '';
+        if (file_exists($logoPath)) {
+            $logoData = file_get_contents($logoPath);
+            $logoBase64 = 'data:image/png;base64,' . base64_encode($logoData);
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.peminjaman.pdf.bukuTerlarisProdi', compact(
+            'data', 'namaProdi', 'periodeText', 'logoBase64'
+        ))->setPaper('a4', 'portrait');
+
+        $safeProdiName = preg_replace('/[^A-Za-z0-9]/', '_', $namaProdi);
+        return $pdf->download("Buku_Terlaris_Prodi_{$safeProdiName}_" . date('Ymd') . ".pdf");
+    }
+
 }

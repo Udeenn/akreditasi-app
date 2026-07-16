@@ -71,6 +71,7 @@
                 <form id="pdfExportForm" method="POST" action="{{ route('penggunaan.keterpakaian_koleksi.export_pdf') }}" style="display:none;">
                     @csrf
                     <input type="hidden" name="filter_type" value="{{ $filterType ?? 'monthly' }}">
+                    <input type="hidden" name="usage_type" value="{{ $usageType ?? 'all' }}">
                     <input type="hidden" name="start_month" value="{{ $startMonth ?? '' }}">
                     <input type="hidden" name="end_month" value="{{ $endMonth ?? '' }}">
                     <input type="hidden" name="start_date" value="{{ $startDate ?? '' }}">
@@ -142,11 +143,17 @@
 
             {{-- 5. TABEL --}}
             <div class="card unified-card border-0 shadow-sm">
-                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h6 class="mb-0 fw-bold"><i class="fas fa-table me-1 text-primary"></i> Hasil Analisis</h6>
-                    <div>
-                        <button type="button" id="exportPdfBtn" class="btn btn-danger btn-sm me-2"><i class="fas fa-file-pdf me-2"></i>Cetak PDF</button>
-                        <button id="exportCsvBtn" class="btn btn-success btn-sm"><i class="fas fa-file-csv me-2"></i>Export CSV</button>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <select id="usage_type" class="form-select form-select-sm" style="width: auto; min-width: 180px;">
+                            <option value="all" {{ ($usageType ?? 'all') == 'all' ? 'selected' : '' }}>Semua Jenis</option>
+                            <option value="issue" {{ ($usageType ?? 'all') == 'issue' ? 'selected' : '' }}>Pinjam</option>
+                            <option value="return" {{ ($usageType ?? 'all') == 'return' ? 'selected' : '' }}>Kembali</option>
+                            <option value="localuse" {{ ($usageType ?? 'all') == 'localuse' ? 'selected' : '' }}>Baca di Tempat</option>
+                        </select>
+                        <button type="button" id="exportPdfBtn" class="btn btn-danger btn-sm"><i class="fas fa-file-pdf me-1"></i>Cetak PDF</button>
+                        <button id="exportCsvBtn" class="btn btn-success btn-sm"><i class="fas fa-file-csv me-1"></i>Export CSV</button>
                     </div>
                 </div>
                 <div class="card-body">
@@ -209,7 +216,7 @@
 {{-- Modal untuk Detail Buku --}}
 <div class="modal fade" id="detailBukuModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-content border-0 shadow-lg">
             <div class="modal-header border-0 py-3">
                 <div>
                     <h5 class="modal-title fw-bold text-body" id="detailBukuModalLabel">
@@ -238,7 +245,7 @@
                 <div id="detailBukuPagination" class="d-flex justify-content-center py-3 border-light"></div>
             </div>
             <div class="modal-footer border-0 py-3 d-flex justify-content-end">
-                <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -284,6 +291,16 @@
             handleFilterChange();
         }
 
+        // Auto-filter ketika jenis penggunaan berubah
+        const usageTypeSelect = document.getElementById('usage_type');
+        if (usageTypeSelect) {
+            usageTypeSelect.addEventListener('change', function() {
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('usage_type', this.value);
+                window.location.href = currentUrl.toString();
+            });
+        }
+
         const detailBukuModal = new bootstrap.Modal(document.getElementById('detailBukuModal'));
         const detailBukuTbody = document.getElementById('detailBukuTbody');
         const detailBukuPaginationContainer = document.getElementById('detailBukuPagination');
@@ -298,13 +315,14 @@
                     const periode = target.dataset.periode;
                     const kategori = target.dataset.kategori;
                     const filterType = document.getElementById('filter_type').value;
+                    const usageType = document.getElementById('usage_type').value;
 
                     document.getElementById('modal-kategori').innerText = kategori;
                     document.getElementById('modal-periode').innerText = (filterType === 'daily') ?
                         moment(periode).format('D MMM YYYY') : moment(periode).format('MMM YYYY');
 
                     const url =
-                        `{{ route('statistik.keterpakaian_koleksi.detail') }}?periode=${periode}&kategori=${kategori}&filter_type=${filterType}`;
+                        `{{ route('statistik.keterpakaian_koleksi.detail') }}?periode=${periode}&kategori=${kategori}&filter_type=${filterType}&usage_type=${usageType}`;
                     fetchDetailBuku(url);
                 }
             });
@@ -342,19 +360,19 @@
                 let allRowsHtml = '';
                 result.data.forEach(item => {
                     let badgeTipe = item.tipe_transaksi === 'issue' ?
-                                '<span class="badge bg-primary-soft text-primary rounded-pill px-3 py-2"><i class="fas fa-arrow-up me-1"></i>Pinjam</span>' :
+                                '<span class="badge bg-primary-soft text-primary px-3 py-2"><i class="fas fa-arrow-up me-1"></i>Pinjam</span>' :
                                 (item.tipe_transaksi === 'renew' ?
-                                    '<span class="badge bg-warning-soft text-warning rounded-pill px-3 py-2"><i class="fas fa-sync me-1"></i>Perpanjang</span>' :
+                                    '<span class="badge bg-warning-soft text-warning px-3 py-2"><i class="fas fa-sync me-1"></i>Perpanjang</span>' :
                                     (item.tipe_transaksi === 'return' ? 
-                                        '<span class="badge bg-success-soft text-success rounded-pill px-3 py-2"><i class="fas fa-arrow-down me-1"></i>Kembali</span>' :
-                                        `<span class="badge bg-info-soft text-info rounded-pill px-3 py-2">${item.tipe_transaksi}</span>`
+                                        '<span class="badge bg-success-soft text-success px-3 py-2"><i class="fas fa-arrow-down me-1"></i>Kembali</span>' :
+                                        `<span class="badge bg-info-soft text-info px-3 py-2">${item.tipe_transaksi}</span>`
                                     )
                                 );
 
                     allRowsHtml += `
                 <tr>
                     <td class="px-4 fw-medium text-body"><i class="fas fa-book text-muted me-2"></i>${item.judul_buku}</td>
-                    <td class="text-center"><span class="badge border text-body rounded-pill px-3 py-2">${item.barcode}</span></td>
+                    <td class="text-center"><span class="badge border text-body px-3 py-2">${item.barcode}</span></td>
                     <td class="text-center text-muted small"><i class="far fa-clock me-1"></i>${moment(item.waktu_transaksi).format('DD MMM YYYY, HH:mm')}</td>
                     <td class="text-center">${badgeTipe}</td>
                 </tr>
