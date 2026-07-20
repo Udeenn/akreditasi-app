@@ -410,3 +410,23 @@ body.dark-mode .logo-light {
 body.dark-mode .logo-dark {
     display: block !important;
 }
+/* --- MOBILE RESPONSIVE TABLES (Auto Horizontal Scroll) --- */
+@media (max-width: 767.98px) {
+    table.table, table.unified-table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* DataTables specific mobile fixes */
+    .dataTables_wrapper {
+        width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .dataTables_wrapper > .row {
+        width: 100%;
+        margin: 0;
+    }
+}

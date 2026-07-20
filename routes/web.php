@@ -4,15 +4,7 @@
 use App\Http\Controllers\Auth\CasController;
 
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\IjazahController;
-use App\Http\Controllers\MouController;
-use App\Http\Controllers\PelatihanController;
-use App\Http\Controllers\SertifikasiController;
-use App\Http\Controllers\SkpController;
-use App\Http\Controllers\StaffController;
-use App\Http\Controllers\StatistikController;
 use App\Http\Controllers\StatistikKoleksi;
-use App\Http\Controllers\TranskripController;
 use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\PenggunaanController;
 use App\Http\Controllers\RewardController;
@@ -182,7 +174,4 @@ Route::middleware('auth')->group(function () {
             ->name('admin.activity-log.export')->middleware('throttle:exports');
     });
 
-    Route::get('/tes-error/{code}', function ($code) {
-    abort($code);
-});
 });

@@ -204,15 +204,18 @@ class StatistikKoleksi extends Controller
         $startYear = $request->input('start_year', date('Y') - 10);
         $endYear = $request->input('end_year', date('Y'));
 
-        $data = DB::connection('mysql2')
-            ->table('items')
-            ->selectRaw('YEAR(dateaccessioned) as year, COUNT(itemnumber) as total_items, COUNT(DISTINCT biblionumber) as total_titles')
-            ->whereNotNull('dateaccessioned')
-            ->whereRaw('YEAR(dateaccessioned) >= ?', [$startYear])
-            ->whereRaw('YEAR(dateaccessioned) <= ?', [$endYear])
-            ->groupByRaw('YEAR(dateaccessioned)')
-            ->orderByRaw('YEAR(dateaccessioned) ASC')
-            ->get();
+        $cacheKey = "statistik_koleksi_tren_pertambahan_{$startYear}_{$endYear}";
+        $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startYear, $endYear) {
+            return DB::connection('mysql2')
+                ->table('items')
+                ->selectRaw('YEAR(dateaccessioned) as year, COUNT(itemnumber) as total_items, COUNT(DISTINCT biblionumber) as total_titles')
+                ->whereNotNull('dateaccessioned')
+                ->whereRaw('YEAR(dateaccessioned) >= ?', [$startYear])
+                ->whereRaw('YEAR(dateaccessioned) <= ?', [$endYear])
+                ->groupByRaw('YEAR(dateaccessioned)')
+                ->orderByRaw('YEAR(dateaccessioned) ASC')
+                ->get();
+        });
 
         if ($request->has('export_csv')) {
             $filename = "Tren_Pertambahan_Koleksi_{$startYear}_{$endYear}.csv";

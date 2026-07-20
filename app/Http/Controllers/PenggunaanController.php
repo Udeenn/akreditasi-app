@@ -26,62 +26,9 @@ class PenggunaanController extends Controller
         $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
         $usageType = $request->input('usage_type', 'all');
 
-        $dataTabel = collect();
-        $listKategori = [];
-        $ccodeDescriptions = collect();
-        $totalPenggunaan = 0;
-        $rerataPenggunaan = 0;
-        $kategoriPopuler = ['nama' => 'N/A', 'jumlah' => 0];
-        $maxJumlah = 0;
-
         try {
-            $query = DB::connection('mysql2')->table('statistics')
-                ->select(
-                    DB::raw("CASE WHEN ccode LIKE 'R%' THEN 'Referensi' ELSE ccode END as kategori"),
-                    DB::raw('COUNT(*) as jumlah')
-                )
-                ->when($usageType === 'all', fn($q) => $q->whereIn('type', ['issue', 'return', 'localuse']))
-                ->when($usageType !== 'all', fn($q) => $q->where('type', $usageType))
-                ->whereNotNull('ccode')
-                ->where('ccode', '!=', '');
-
-            if ($filterType == 'daily') {
-                $query->addSelect(DB::raw('DATE(datetime) as periode'))
-                    ->whereBetween('datetime', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
-                    ->groupBy('periode', 'kategori');
-            } else {
-                $query->addSelect(DB::raw("LEFT(datetime, 7) as periode"))
-                    ->whereRaw("LEFT(datetime, 7) BETWEEN ? AND ?", [$startMonth, $endMonth])
-                    ->groupBy('periode', 'kategori');
-            }
-
-            $results = $query->orderBy('periode', 'asc')->get();
-
-            $ccodeDescriptions = DB::connection('mysql2')->table('authorised_values')
-                ->where('category', 'CCODE')
-                ->pluck('lib', 'authorised_value');
-            $ccodeDescriptions['Referensi'] = 'Gabungan semua koleksi referensi (R-...)';
-
-            if (!$results->isEmpty()) {
-                $listKategori = $results->pluck('kategori')->unique()->sort()->values()->all();
-                $dataTabel = $results->groupBy('periode')->map(function ($items, $periode) use ($listKategori) {
-                    $row = ['periode' => $periode];
-                    foreach ($listKategori as $kategori) {
-                        $row[$kategori] = $items->where('kategori', $kategori)->first()->jumlah ?? 0;
-                    }
-                    return $row;
-                })->values();
-
-                $totalPenggunaan = $dataTabel->sum(fn($row) => collect($row)->only($listKategori)->sum());
-
-                $jumlahPeriode = $dataTabel->count();
-                $rerataPenggunaan = ($jumlahPeriode > 0) ? ($totalPenggunaan / $jumlahPeriode) : 0;
-
-                $kategoriSums = $results->groupBy('kategori')->map(fn($items) => $items->sum('jumlah'));
-                $kategoriPopuler['nama'] = $kategoriSums->sortDesc()->keys()->first();
-                $kategoriPopuler['jumlah'] = $kategoriSums->sortDesc()->first();
-                $maxJumlah = $dataTabel->max(fn($row) => collect($row)->only($listKategori)->max());
-            }
+            $data = $this->getKeterpakaianData($filterType, $startMonth, $endMonth, $startDate, $endDate, $usageType);
+            extract($data);
         } catch (\Exception $e) {
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
@@ -115,65 +62,18 @@ class PenggunaanController extends Controller
         $usageType = $request->input('usage_type', 'all');
         $chartImage = $request->input('chart_image_base64');
 
-        $dataTabel = collect();
-        $listKategori = [];
-        $ccodeDescriptions = collect();
-        $totalPenggunaan = 0;
-        $rerataPenggunaan = 0;
-        $kategoriPopuler = ['nama' => 'N/A', 'jumlah' => 0];
-        
         try {
-            $query = DB::connection('mysql2')->table('statistics')
-                ->select(
-                    DB::raw("CASE WHEN ccode LIKE 'R%' THEN 'Referensi' ELSE ccode END as kategori"),
-                    DB::raw('COUNT(*) as jumlah')
-                )
-                ->when($usageType === 'all', fn($q) => $q->whereIn('type', ['issue', 'return', 'localuse']))
-                ->when($usageType !== 'all', fn($q) => $q->where('type', $usageType))
-                ->whereNotNull('ccode')
-                ->where('ccode', '!=', '');
-
+            $data = $this->getKeterpakaianData($filterType, $startMonth, $endMonth, $startDate, $endDate, $usageType);
+            extract($data);
+            
             if ($filterType == 'daily') {
-                $query->addSelect(DB::raw('DATE(datetime) as periode'))
-                    ->whereBetween('datetime', [\Carbon\Carbon::parse($startDate)->startOfDay(), \Carbon\Carbon::parse($endDate)->endOfDay()])
-                    ->groupBy('periode', 'kategori');
                 $filename = "Laporan_Keterpakaian_Koleksi_Harian_{$startDate}_sd_{$endDate}.pdf";
                 $start = \Carbon\Carbon::parse($startDate)->locale('id')->isoFormat('D MMMM YYYY');
                 $end = \Carbon\Carbon::parse($endDate)->locale('id')->isoFormat('D MMMM YYYY');
                 $periodeText = "Periode Harian: {$start} - {$end}";
             } else {
-                $query->addSelect(DB::raw("LEFT(datetime, 7) as periode"))
-                    ->whereRaw("LEFT(datetime, 7) BETWEEN ? AND ?", [$startMonth, $endMonth])
-                    ->groupBy('periode', 'kategori');
                 $filename = "Laporan_Keterpakaian_Koleksi_Bulanan_{$startMonth}_sd_{$endMonth}.pdf";
                 $periodeText = "Periode Bulanan: {$startMonth} - {$endMonth}";
-            }
-
-            $results = $query->orderBy('periode', 'asc')->get();
-
-            $ccodeDescriptions = DB::connection('mysql2')->table('authorised_values')
-                ->where('category', 'CCODE')
-                ->pluck('lib', 'authorised_value');
-            $ccodeDescriptions['Referensi'] = 'Gabungan semua koleksi referensi (R-...)';
-
-            if (!$results->isEmpty()) {
-                $listKategori = $results->pluck('kategori')->unique()->sort()->values()->all();
-                $dataTabel = $results->groupBy('periode')->map(function ($items, $periode) use ($listKategori) {
-                    $row = ['periode' => $periode];
-                    foreach ($listKategori as $kategori) {
-                        $row[$kategori] = $items->where('kategori', $kategori)->first()->jumlah ?? 0;
-                    }
-                    return $row;
-                })->values();
-
-                $totalPenggunaan = $dataTabel->sum(fn($row) => collect($row)->only($listKategori)->sum());
-
-                $jumlahPeriode = $dataTabel->count();
-                $rerataPenggunaan = ($jumlahPeriode > 0) ? ($totalPenggunaan / $jumlahPeriode) : 0;
-
-                $kategoriSums = $results->groupBy('kategori')->map(fn($items) => $items->sum('jumlah'));
-                $kategoriPopuler['nama'] = $kategoriSums->sortDesc()->keys()->first();
-                $kategoriPopuler['jumlah'] = $kategoriSums->sortDesc()->first();
             }
         } catch (\Exception $e) {
             return back()->with('error', 'Terjadi kesalahan saat generate PDF: ' . $e->getMessage());
@@ -255,37 +155,14 @@ class PenggunaanController extends Controller
         $endMonth = $request->input('end_month');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
+        $usageType = $request->input('usage_type', 'all');
 
-        $query = DB::connection('mysql2')->table('statistics')
-            ->select(
-                DB::raw("CASE WHEN ccode LIKE 'R%' THEN 'Referensi' ELSE ccode END as kategori"),
-                DB::raw('COUNT(*) as jumlah')
-            )
-            ->when(($request->input('usage_type', 'all')) === 'all', fn($q) => $q->whereIn('type', ['issue', 'return', 'localuse']))
-            ->when(($request->input('usage_type', 'all')) !== 'all', fn($q) => $q->where('type', $request->input('usage_type')))
-            ->whereNotNull('ccode')
-            ->where('ccode', '!=', '');
-        if ($filterType == 'daily') {
-            $query->addSelect(DB::raw('DATE(datetime) as periode'))
-                ->whereBetween('datetime', [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()])
-                ->groupBy('periode', 'kategori');
-        } else { // monthly
-            $query->addSelect(DB::raw("LEFT(datetime, 7) as periode"))
-                ->whereRaw("LEFT(datetime, 7) BETWEEN ? AND ?", [$startMonth, $endMonth])
-                ->groupBy('periode', 'kategori');
-        }
-
-        $results = $query->orderBy('periode', 'asc')->get();
+        $data = $this->getKeterpakaianData($filterType, $startMonth, $endMonth, $startDate, $endDate, $usageType);
+        extract($data);
 
         // Proses data untuk CSV
-        $listKategori = $results->pluck('kategori')->unique()->sort();
-        $dataTabel = $results->groupBy('periode')->map(function ($items, $periode) use ($listKategori) {
-            $row = ['periode' => $periode];
-            foreach ($listKategori as $kategori) {
-                $row[$kategori] = $items->where('kategori', $kategori)->first()->jumlah ?? 0;
-            }
-            return $row;
-        })->values();
+        $dataTabel = collect($dataTabel);
+        $listKategori = collect($listKategori);
 
 
         $fileName = 'Laporan_Keterpakaian_Koleksi_';
@@ -668,5 +545,69 @@ class PenggunaanController extends Controller
             }
             return $results;
         }, $titles);
+    }
+
+    private function getKeterpakaianData($filterType, $startMonth, $endMonth, $startDate, $endDate, $usageType)
+    {
+        $cacheKey = "keterpakaian_{$filterType}_{$startMonth}_{$endMonth}_{$startDate}_{$endDate}_{$usageType}";
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($filterType, $startMonth, $endMonth, $startDate, $endDate, $usageType) {
+            $dataTabel = collect();
+            $listKategori = [];
+            $ccodeDescriptions = collect();
+            $totalPenggunaan = 0;
+            $rerataPenggunaan = 0;
+            $kategoriPopuler = ['nama' => 'N/A', 'jumlah' => 0];
+            $maxJumlah = 0;
+
+            $query = DB::connection('mysql2')->table('statistics')
+                ->select(
+                    DB::raw("CASE WHEN ccode LIKE 'R%' THEN 'Referensi' ELSE ccode END as kategori"),
+                    DB::raw('COUNT(*) as jumlah')
+                )
+                ->when($usageType === 'all', fn($q) => $q->whereIn('type', ['issue', 'return', 'localuse']))
+                ->when($usageType !== 'all', fn($q) => $q->where('type', $usageType))
+                ->whereNotNull('ccode')
+                ->where('ccode', '!=', '');
+
+            if ($filterType == 'daily') {
+                $query->addSelect(DB::raw('DATE(datetime) as periode'))
+                    ->whereBetween('datetime', [\Carbon\Carbon::parse($startDate)->startOfDay(), \Carbon\Carbon::parse($endDate)->endOfDay()])
+                    ->groupBy('periode', 'kategori');
+            } else {
+                $query->addSelect(DB::raw("LEFT(datetime, 7) as periode"))
+                    ->whereRaw("LEFT(datetime, 7) BETWEEN ? AND ?", [$startMonth, $endMonth])
+                    ->groupBy('periode', 'kategori');
+            }
+
+            $results = $query->orderBy('periode', 'asc')->get();
+
+            $ccodeDescriptions = DB::connection('mysql2')->table('authorised_values')
+                ->where('category', 'CCODE')
+                ->pluck('lib', 'authorised_value');
+            $ccodeDescriptions['Referensi'] = 'Gabungan semua koleksi referensi (R-...)';
+
+            if (!$results->isEmpty()) {
+                $listKategori = $results->pluck('kategori')->unique()->sort()->values()->all();
+                $dataTabel = $results->groupBy('periode')->map(function ($items, $periode) use ($listKategori) {
+                    $row = ['periode' => $periode];
+                    foreach ($listKategori as $kategori) {
+                        $row[$kategori] = $items->where('kategori', $kategori)->first()->jumlah ?? 0;
+                    }
+                    return $row;
+                })->values();
+
+                $totalPenggunaan = $dataTabel->sum(fn($row) => collect($row)->only($listKategori)->sum());
+
+                $jumlahPeriode = $dataTabel->count();
+                $rerataPenggunaan = ($jumlahPeriode > 0) ? ($totalPenggunaan / $jumlahPeriode) : 0;
+
+                $kategoriSums = $results->groupBy('kategori')->map(fn($items) => $items->sum('jumlah'));
+                $kategoriPopuler['nama'] = $kategoriSums->sortDesc()->keys()->first();
+                $kategoriPopuler['jumlah'] = $kategoriSums->sortDesc()->first();
+                $maxJumlah = $dataTabel->max(fn($row) => collect($row)->only($listKategori)->max());
+            }
+
+            return compact('dataTabel', 'listKategori', 'ccodeDescriptions', 'totalPenggunaan', 'rerataPenggunaan', 'kategoriPopuler', 'maxJumlah');
+        });
     }
 }

@@ -189,7 +189,8 @@
                             <h6 class="mb-0">Buku Terlaris Dipinjam di Tahun 2025</h6>
                         </div>
                         <div class="card-body">
-                            <table id="bukuTerlarisTable" class="table table-striped table-bordered"
+                            <div class="table-responsive">
+                                <table id="bukuTerlarisTable" class="table table-striped table-bordered"
                                 style="width:100%">
                                 <thead>
                                     <tr>
@@ -231,7 +232,8 @@
                                         <td>15</td>
                                     </tr>
                                 </tbody>
-                            </table>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -268,6 +270,9 @@
             // Inisialisasi DataTables
             $(document).ready(function() {
                 $('#bukuTerlarisTable').DataTable({
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json'
+                    },
                     dom: 'Bfrtip', // Menentukan posisi elemen kontrol: Buttons, filter, table, info, paginate
                     buttons: [
                         // Aktifkan tombol export dan column visibility
