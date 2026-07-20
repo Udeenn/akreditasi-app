@@ -109,6 +109,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/eresource/search-scopus', [StatistikKoleksi::class, 'searchScopus'])->name('searchScopus');
         Route::get('/detail', [StatistikKoleksi::class, 'getDetailKoleksi'])->name('detail');
         Route::get('/rekap-fakultas', [StatistikKoleksi::class, 'rekapPerFakultas'])->name('rekap_fakultas');
+        Route::get('/tren-pertambahan', [StatistikKoleksi::class, 'trenPertambahan'])->name('tren_pertambahan')->middleware('admin');
     });
 
     // =============================================
@@ -143,6 +144,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/peminjam-detail', [PeminjamanController::class, 'getPeminjamDetail'])->name('peminjamDetail');
         Route::get('/fakultas', [PeminjamanController::class, 'peminjamanFakultasTable'])->name('peminjaman_fakultas');
         Route::get('/export-fakultas', [PeminjamanController::class, 'exportCsvPeminjamanFakultas'])->name('export_fakultas')->middleware('throttle:exports');
+        
     });
 
     // =============================================
@@ -179,4 +181,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/activity-log/export', [\App\Http\Controllers\ActivityLogController::class, 'export'])
             ->name('admin.activity-log.export')->middleware('throttle:exports');
     });
+
+    Route::get('/tes-error/{code}', function ($code) {
+    abort($code);
+});
 });

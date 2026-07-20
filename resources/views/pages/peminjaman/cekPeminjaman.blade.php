@@ -18,24 +18,30 @@
             <div class="col-lg-12">
                 <div class="card unified-card border-0 shadow-sm hover-lift">
                     <div class="card-body p-4">
-                        <form action="{{ route('peminjaman.cek_pinjaman') }}" method="GET">
-                            <label for="cardnumber" class="form-label text-muted small text-uppercase">Cari Anggota</label>
-                            <div class="input-group">
-                                <span class="input-group-text text-muted bg-transparent border-end-0"><i class="fas fa-search"></i></span>
-                                <input type="text" name="cardnumber" id="cardnumber"
-                                    class="form-control border-start-0" value="{{ $cardnumber ?? '' }}"
-                                    placeholder="Masukkan Nomor Kartu Peminjam (NIM/ID)..." autofocus>
-
-                                {{-- Filter Tahun --}}
-                                <select name="tahun" class="form-select" style="max-width: 200px;">
+                        <form action="{{ route('peminjaman.cek_pinjaman') }}" method="GET" class="row g-3 align-items-end">
+                            <div class="col-md-7">
+                                <label for="cardnumber" class="form-label text-muted small text-uppercase">Cari Anggota</label>
+                                <div class="input-group">
+                                    <span class="input-group-text text-muted bg-transparent border-end-0"><i class="fas fa-search"></i></span>
+                                    <input type="text" name="cardnumber" id="cardnumber"
+                                        class="form-control border-start-0" value="{{ $cardnumber ?? '' }}"
+                                        placeholder="Masukkan Nomor Kartu Peminjam (NIM/ID)..." autofocus>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="tahun" class="form-label text-muted small text-uppercase">Filter Tahun</label>
+                                <select name="tahun" id="tahun" class="form-select">
                                     <option value="">Semua Tahun</option>
                                     @for ($y = date('Y'); $y >= 2019; $y--)
                                         <option value="{{ $y }}" {{ ($tahun ?? '') == $y ? 'selected' : '' }}>
                                             {{ $y }}</option>
                                     @endfor
                                 </select>
-
-                                <button type="submit" class="btn btn-primary px-4 fw-bold">Cari Data</button>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100 shadow-sm fw-bold">Cari Data</button>
                             </div>
                         </form>
                     </div>

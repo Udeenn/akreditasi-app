@@ -45,6 +45,10 @@ $breadcrumbMap = [
         ['Koleksi', null],
         ['Referensi', null],
     ],
+    'koleksi.tren_pertambahan' => [
+        ['Koleksi', null],
+        ['Tren Pertambahan', null],
+    ],
     'koleksi.eresource' => [
         ['Koleksi', null],
         ['E-Resource', null],

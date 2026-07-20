@@ -199,6 +199,62 @@ class StatistikKoleksi extends Controller
     public function periodikal(Request $request) { return $this->handleCollectionRequest($request, 'periodikal', 'pages.dapus.periodikal', 'Periodikal'); }
     public function referensi(Request $request) { return $this->handleCollectionRequest($request, 'referensi', 'pages.dapus.referensi', 'Referensi'); }
 
+    public function trenPertambahan(Request $request)
+    {
+        $startYear = $request->input('start_year', date('Y') - 10);
+        $endYear = $request->input('end_year', date('Y'));
+
+        $data = DB::connection('mysql2')
+            ->table('items')
+            ->selectRaw('YEAR(dateaccessioned) as year, COUNT(itemnumber) as total_items, COUNT(DISTINCT biblionumber) as total_titles')
+            ->whereNotNull('dateaccessioned')
+            ->whereRaw('YEAR(dateaccessioned) >= ?', [$startYear])
+            ->whereRaw('YEAR(dateaccessioned) <= ?', [$endYear])
+            ->groupByRaw('YEAR(dateaccessioned)')
+            ->orderByRaw('YEAR(dateaccessioned) ASC')
+            ->get();
+
+        if ($request->has('export_csv')) {
+            $filename = "Tren_Pertambahan_Koleksi_{$startYear}_{$endYear}.csv";
+            $headers = [
+                "Content-type"        => "text/csv",
+                "Content-Disposition" => "attachment; filename=$filename",
+                "Pragma"              => "no-cache",
+                "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+                "Expires"             => "0"
+            ];
+
+            $callback = function() use($data, $startYear, $endYear) {
+                $file = fopen('php://output', 'w');
+                
+                fputcsv($file, ["Data Tren Pertambahan Koleksi ($startYear - $endYear)"]);
+                fputcsv($file, []);
+                
+                fputcsv($file, ['No', 'Tahun Masuk (Accessioned)', 'Judul Baru', 'Eksemplar Baru']);
+                
+                $i = 1;
+                foreach ($data as $row) {
+                    fputcsv($file, [
+                        $i++,
+                        $row->year,
+                        $row->total_titles,
+                        $row->total_items
+                    ]);
+                }
+                
+                fputcsv($file, [
+                    '', 'TOTAL', $data->sum('total_titles'), $data->sum('total_items')
+                ]);
+                
+                fclose($file);
+            };
+
+            return response()->stream($callback, 200, $headers);
+        }
+
+        return view('pages.dapus.trenPertambahan', compact('data', 'startYear', 'endYear'));
+    }
+
     private function getCsvHeaders(string $type): array
     {
         if (in_array($type, ['prosiding', 'jurnal', 'ejurnal'])) return ['No', 'Judul', 'Pengarang', 'Penerbit', 'Tahun Terbit', 'Nomor', 'Issue', 'Eksemplar', 'Lokasi', 'Link'];

@@ -74,10 +74,12 @@
             width: 100%;
             text-align: center;
             margin-bottom: 20px;
+            page-break-inside: avoid;
         }
         .chart-container img {
+            height: 250px;
+            width: auto;
             max-width: 100%;
-            height: auto;
             border: 1px solid #ddd;
             padding: 5px;
         }

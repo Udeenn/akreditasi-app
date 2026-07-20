@@ -73,9 +73,9 @@
                                     Login
                                 </a>
                             @else
-                                <form action="{{ route('cas.logout') }}" method="POST" class="d-inline">
+                                <form action="{{ route('logout') }}" method="POST" class="d-inline">
                                     @csrf
-                                    <button type="submit" class="btn btn-sm btn-danger">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger w-100 fw-bold">
                                         <i class="fas fa-sign-out-alt me-1"></i>
                                         Logout</button>
                                 </form>
@@ -180,6 +180,11 @@
             <a href="{{ route('koleksi.eresource') }}" class="panel-nav-link {{ request()->routeIs('koleksi.eresource') ? 'active' : '' }}">
                 <i class="fas fa-database"></i> E-Resource
             </a>
+            @if(auth()->check() && auth()->user()->role === 'librarian')
+            <a href="{{ route('koleksi.tren_pertambahan') }}" class="panel-nav-link {{ request()->routeIs('koleksi.tren_pertambahan') ? 'active' : '' }}">
+                <i class="fas fa-chart-line"></i> Pertambahan Buku
+            </a>
+            @endif
         </div>
     </div>
 
@@ -217,7 +222,9 @@
             <a href="{{ route('peminjaman.berlangsung') }}" class="panel-nav-link {{ request()->routeIs('peminjaman.berlangsung') ? 'active' : '' }}">
                 <i class="fas fa-clock"></i> Sedang Berlangsung
             </a>
-
+            <a href="{{ route('peminjaman.buku_terlaris_prodi') }}" class="panel-nav-link {{ request()->routeIs('peminjaman.buku_terlaris_prodi') ? 'active' : '' }}">
+                <i class="fas fa-book-open"></i> Terlaris per Prodi
+            </a>
             <div class="panel-section-label">Statistik Sirkulasi</div>
             <a href="{{ route('penggunaan.keterpakaian_koleksi') }}" class="panel-nav-link {{ request()->routeIs('penggunaan.keterpakaian_koleksi') ? 'active' : '' }}">
                 <i class="fas fa-barcode"></i> Keterpakaian Koleksi
@@ -321,7 +328,7 @@
                         <button type="button" id="btnExtendSession" class="btn btn-primary px-4 py-2" style="border-radius: 0.75rem; font-weight: 600;">
                             <i class="fas fa-rotate-right me-2"></i>Lanjutkan Sesi
                         </button>
-                        <form action="{{ route('cas.logout') }}" method="POST" class="d-inline">
+                        <form action="{{ route('logout') }}" method="POST" class="d-inline">
                             @csrf
                             <button type="submit" class="btn btn-outline-danger px-4 py-2" style="border-radius: 0.75rem; font-weight: 600;">
                                 <i class="fas fa-sign-out-alt me-2"></i>Logout Sekarang

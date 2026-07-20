@@ -71,7 +71,7 @@
                     </div>
                     <div class="card-body px-4 pb-4 pt-3">
                         <form method="GET" action="{{ route('peminjaman.prodi') }}" class="row g-3 align-items-end" id="filterForm">
-                            <div class="col-md-2">
+                            <div class="col-md-3">
                                 <label for="filter_type" class="form-label small text-muted text-uppercase">Mode Tampilan</label>
                                 <select name="filter_type" id="filter_type" class="form-select">
                                     <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>Harian</option>
@@ -79,7 +79,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-3" id="dailyFilter" style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
+                            <div class="col-md-4" id="dailyFilter" style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
                                 <label class="form-label small text-muted text-uppercase">Rentang Tanggal</label>
                                 <div class="input-group">
                                     <input type="date" name="start_date" id="start_date" class="form-control" value="{{ $startDate }}">
@@ -88,7 +88,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-3" id="monthlyFilter" style="{{ ($filterType ?? '') == 'monthly' ? '' : 'display: none;' }}">
+                            <div class="col-md-4" id="monthlyFilter" style="{{ ($filterType ?? '') == 'monthly' ? '' : 'display: none;' }}">
                                 <label class="form-label small text-muted text-uppercase">Rentang Tahun</label>
                                 <div class="input-group">
                                     <select name="start_year" id="start_year" class="form-select">
@@ -105,7 +105,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label for="selected_prodi" class="form-label small text-muted text-uppercase">Program Studi</label>
                                 <select name="selected_prodi" id="selected_prodi" class="form-select">
                                     @foreach ($prodiOptions as $prodi)

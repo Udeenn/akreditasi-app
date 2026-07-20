@@ -79,11 +79,20 @@
         </div>
 
         @if (!$hasFilter)
-            <div class="text-center py-5">
-                <div class="mb-3">
-                    <i class="fas fa-chart-bar fs-1 text-muted opacity-25"></i>
+            <div class="row justify-content-center mt-5">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm text-center p-5 rounded-4">
+                        <div class="card-body">
+                            <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-4 mb-3">
+                                <i class="fas fa-search-plus fa-3x text-primary"></i>
+                            </div>
+                            <h4 class="fw-bold text-body">Mulai Pencarian</h4>
+                            <p class="text-muted mb-0">Silakan pilih tahun dan klik tombol 
+                                <strong>"Cari"</strong> untuk menampilkan data pemustaka teraktif.
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                <h5 class="text-muted fw-normal">Silakan pilih tahun dan klik Cari</h5>
             </div>
         @else
             <div class="row g-4">

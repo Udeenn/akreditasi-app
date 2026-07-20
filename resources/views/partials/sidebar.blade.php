@@ -79,8 +79,13 @@
                             href="{{ route('koleksi.prosiding') }}">Prosiding</a></li>
                     <li><a class="nav-link {{ request()->routeIs('koleksi.referensi') ? 'active' : '' }}"
                             href="{{ route('koleksi.referensi') }}">Referensi</a></li>
+                    
                     <li><a class="nav-link {{ request()->routeIs('koleksi.eresource') ? 'active' : '' }}"
                             href="{{ route('koleksi.eresource') }}">E-Resource</a></li>
+                            @if(auth()->check() && auth()->user()->role === 'librarian')
+                    <li><a class="nav-link {{ request()->routeIs('koleksi.tren_pertambahan') ? 'active' : '' }}"
+                            href="{{ route('koleksi.tren_pertambahan') }}">Pertambahan Buku</a></li>
+                    @endif
         {{-- <li><a class="nav-link {{ request()->routeIs('koleksi.periodikal') ? 'active' : '' }}"
                             href="{{ route('koleksi.periodikal') }}">Majalah</a></li> --}}
 
@@ -138,7 +143,7 @@
             <li><a class="nav-link {{ request()->routeIs('peminjaman.berlangsung') ? 'active' : '' }}"
                     href="{{ route('peminjaman.berlangsung') }}">Sedang Berlangsung</a></li>
             <li><a class="nav-link {{ request()->routeIs('peminjaman.buku_terlaris_prodi') ? 'active' : '' }}"
-                    href="{{ route('peminjaman.buku_terlaris_prodi') }}">Buku Terlaris per Prodi</a></li>
+                    href="{{ route('peminjaman.buku_terlaris_prodi') }}">Terlaris per Prodi</a></li>
         </ul>
     </div>
 </li>

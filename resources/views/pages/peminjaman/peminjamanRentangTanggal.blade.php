@@ -27,7 +27,7 @@
                     </div>
                     <div class="card-body px-4 pb-4 pt-3">
                         <form method="GET" action="{{ route('peminjaman.keseluruhan') }}" class="row g-3 align-items-end" id="filterForm">
-                            <div class="col-md-2">
+                            <div class="col-md-4">
                                 <label for="filter_type" class="form-label small text-muted text-uppercase">Mode Tampilan</label>
                                 <select name="filter_type" id="filter_type" class="form-select">
                                     <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>Harian</option>
@@ -35,7 +35,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-3" id="dailyFilter" style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
+                            <div class="col-md-6" id="dailyFilter" style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
                                 <label class="form-label small text-muted text-uppercase">Rentang Tanggal</label>
                                 <div class="input-group">
                                     <input type="date" name="start_date" id="start_date" class="form-control" value="{{ $startDate ?? \Carbon\Carbon::now()->subDays(30)->format('Y-m-d') }}">
@@ -44,7 +44,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-3" id="monthlyFilter" style="{{ ($filterType ?? '') == 'monthly' ? '' : 'display: none;' }}">
+                            <div class="col-md-6" id="monthlyFilter" style="{{ ($filterType ?? '') == 'monthly' ? '' : 'display: none;' }}">
                                 <label class="form-label small text-muted text-uppercase">Rentang Tahun</label>
                                 <div class="input-group">
                                     @php
@@ -66,7 +66,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-1 ms-auto">
+                            <div class="col-md-2">
                                 <button type="submit" class="btn btn-primary w-100 shadow-sm">
                                     <i class="fas fa-search me-1"></i> Cari
                                 </button>
