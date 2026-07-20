@@ -208,14 +208,10 @@
                             var parts = text.split(' - ');
                             var nim = parts.length > 1 ? parts[0] : '';
                             var nama = parts.length > 1 ? parts[1] : text;
-                            var initial = nama !== '-' ? nama.charAt(0).toUpperCase() : '?';
-                            
-                            // Generate pseudo-random color based on name
-                            var colors = ['bg-indigo-soft', 'bg-blue-soft', 'bg-green-soft', 'bg-yellow-soft', 'bg-red-soft'];
-                            var colorClass = colors[initial.charCodeAt(0) % colors.length];
+                            var avatarUrl = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(nama);
 
                             return '<div class="d-flex align-items-center">' +
-                                '<div class="avatar-circle ' + colorClass + ' me-3 shadow-sm">' + initial + '</div>' +
+                                '<img src="' + avatarUrl + '" class="rounded-circle shadow-sm border border-2 border-light me-3" width="40" height="40" alt="Avatar">' +
                                 '<div>' +
                                 '<span class="d-block fw-bold">' + nama + '</span>' +
                                 (nim ? '<small class="text-muted"><i class="fas fa-id-card me-1"></i> ' + nim + '</small>' : '') +
