@@ -76,7 +76,7 @@
                                 <h4 class="card-title mt-2 mb-0">{{ $totalJurnal }}</h4>
                             </div>
                             <div class="text-end mt-3">
-                                <i class="fas fa-book fa-2x text-primary"></i>
+                                <i class="bi bi-journal-text fs-1 text-primary"></i>
                             </div>
                         </div>
                     </div>
@@ -90,7 +90,7 @@
                                 <h4 class="card-title mt-2 mb-0">{{ $totalBuku }}</h4>
                             </div>
                             <div class="text-end mt-3">
-                                <i class="fas fa-book-open fa-2x text-success"></i>
+                                <i class="bi bi-book-fill fs-1 text-success"></i>
                             </div>
                         </div>
                     </div>
@@ -104,7 +104,7 @@
                                 <h4 class="card-title mt-2 mb-0">{{ $totalEksemplar }}</h4>
                             </div>
                             <div class="text-end mt-3">
-                                <i class="fas fa-copy fa-2x text-info"></i>
+                                <i class="bi bi-files fs-1 text-info"></i>
                             </div>
                         </div>
                     </div>
@@ -118,7 +118,7 @@
                                 <h4 class="card-title mt-2 mb-0">{{ $anggotaAktif }}</h4>
                             </div>
                             <div class="text-end mt-3">
-                                <i class="fa-solid fa-person fa-3x" style="color: #FFD43B;"></i>
+                                <i class="bi bi-person-fill fs-1" style="color: #FFD43B;"></i>
                             </div>
                         </div>
                     </div>
@@ -135,7 +135,7 @@
                                 <h4 class="card-title mt-2 mb-0">{{ $totalKunjungan }}</h4>
                             </div>
                             <div class="text-end mt-3">
-                                <i class="fa-solid fa-door-open fa-2x text-primary"></i>
+                                <i class="bi bi-door-open-fill fs-1 text-primary"></i>
                             </div>
                         </div>
                     </div>
@@ -150,7 +150,7 @@
                                         Disini</a></h4>
                             </div>
                             <div class="text-end mt-3">
-                                <i class="fa-solid fa-globe fa-2x" style="color: #8914d7;"></i>
+                                <i class="bi bi-globe fs-1" style="color: #8914d7;"></i>
                             </div>
                         </div>
                     </div>

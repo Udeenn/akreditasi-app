@@ -163,32 +163,7 @@ $showBreadcrumb = $crumbs !== null && $currentRoute !== 'dashboard';
 
 @if($showBreadcrumb)
 <link rel="stylesheet" href="{{ asset('css/breadcrumb.css?v=' . time()) }}">
-<style>
-    /* ── Page header (Audit Trail Style) ── */
-    .page-hero {
-        background: linear-gradient(135deg, rgba(74,105,255,0.08), rgba(129,140,248,0.05));
-        border: 1px solid rgba(74,105,255,0.15);
-        border-radius: 20px;
-        padding: 1.5rem 2rem;
-        margin-bottom: 1.5rem;
-    }
-    body.dark-mode .page-hero {
-        background: linear-gradient(135deg, rgba(74,105,255,0.12), rgba(129,140,248,0.08));
-        border-color: rgba(74,105,255,0.2);
-    }
-    .page-hero h4 { font-size: 1.25rem; }
-    @media (max-width: 767.98px) {
-        .page-hero { padding: 1.25rem 1.5rem; border-radius: 16px; }
-        .page-hero h4 { font-size: 1.15rem; }
-    }
-    .stat-icon {
-        width: 48px; height: 48px;
-        border-radius: 12px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.25rem;
-        flex-shrink: 0;
-    }
-</style>
+
 
 @php
     $heroTitle = $title ?? '';

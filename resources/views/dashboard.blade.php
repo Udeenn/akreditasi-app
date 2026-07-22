@@ -1,9 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Dashboard')
 @section('content')
-
     <div class="container-fluid px-3 px-md-4 py-4">
-
         {{-- 1. HEADER BANNER --}}
         <div class="row mb-4">
             <div class="col-12">
@@ -17,7 +15,7 @@
                             <p class="mb-0 opacity-75">Ringkasan data koleksi dan kunjungan perpustakaan</p>
                         </div>
                         <div class="d-none d-md-block opacity-50">
-                            <i class="fas fa-chart-pie fa-4x"></i>
+                            <i class="bi bi-pie-chart-fill" style="font-size: 4rem;"></i>
                         </div>
                     </div>
                 </div>
@@ -30,7 +28,7 @@
                 <div class="card unified-card border-0 shadow-sm hover-lift h-100">
                     <div class="card-body d-flex align-items-center p-3">
                         <div class="icon-box bg-primary text-white me-3">
-                            <i class="fas fa-book"></i>
+                            <i class="bi bi-journal-text fs-4"></i>
                         </div>
                         <div>
                             <div class="text-muted small fw-bold text-uppercase">Total Jurnal</div>
@@ -43,7 +41,7 @@
                 <div class="card unified-card border-0 shadow-sm hover-lift h-100">
                     <div class="card-body d-flex align-items-center p-3">
                         <div class="icon-box bg-success text-white me-3">
-                            <i class="fas fa-book-open"></i>
+                            <i class="bi bi-book-fill fs-4"></i>
                         </div>
                         <div>
                             <div class="text-muted small fw-bold text-uppercase">Total Judul Buku</div>
@@ -56,7 +54,7 @@
                 <div class="card unified-card border-0 shadow-sm hover-lift h-100">
                     <div class="card-body d-flex align-items-center p-3">
                         <div class="icon-box bg-info text-white me-3">
-                            <i class="fas fa-copy"></i>
+                            <i class="bi bi-files fs-4"></i>
                         </div>
                         <div>
                             <div class="text-muted small fw-bold text-uppercase">Total Eksemplar</div>
@@ -69,7 +67,7 @@
                 <div class="card unified-card border-0 shadow-sm hover-lift h-100">
                     <div class="card-body d-flex align-items-center p-3">
                         <div class="icon-box bg-danger text-white me-3">
-                            <i class="fas fa-tablet-alt"></i>
+                            <i class="bi bi-tablet-fill fs-4"></i>
                         </div>
                         <div>
                             <div class="text-muted small fw-bold text-uppercase">Jumlah Ebook</div>
@@ -91,7 +89,7 @@
                             <h3 class="fw-bold mb-0">{{ number_format($kunjunganHarian) }}</h3>
                         </div>
                         <div class="icon-box bg-primary text-white" style="width: 50px; height: 50px;">
-                            <i class="fas fa-door-open fa-lg"></i>
+                            <i class="bi bi-door-open-fill fs-4"></i>
                         </div>
                     </div>
                 </div>
@@ -104,8 +102,8 @@
             <div class="col-lg-6">
                 <div class="card unified-card border-0 shadow-sm h-100">
                     <div class="card-header border-0 d-flex align-items-center pt-3">
-                        <div class="icon-box me-2" style="width:32px; height:32px; font-size:0.8rem; background: #e8f4fd; color: #0d6efd;">
-                            <i class="fas fa-door-open"></i>
+                        <div class="icon-box me-2" style="width:32px; height:32px; font-size:1rem; background: #e8f4fd; color: #0d6efd;">
+                            <i class="bi bi-door-open-fill"></i>
                         </div>
                         <h6 class="mb-0 fw-bold">Kunjungan Per Fakultas <span
                                 class="text-muted fw-normal">({{ date('Y') }})</span></h6>
@@ -122,7 +120,7 @@
                             </ul>
                         @else
                             <div class="text-center text-muted py-4">
-                                <i class="fas fa-inbox fa-2x mb-2 opacity-50"></i>
+                                <i class="bi bi-inbox fs-1 mb-2 opacity-50"></i>
                                 <p class="mb-0 small">Belum ada data kunjungan</p>
                             </div>
                         @endif
@@ -140,8 +138,8 @@
             <div class="col-lg-6">
                 <div class="card unified-card border-0 shadow-sm h-100">
                     <div class="card-header border-0 d-flex align-items-center pt-3">
-                        <div class="icon-box me-2" style="width:32px; height:32px; font-size:0.8rem; background: #fce4ec; color: #e91e63;">
-                            <i class="fas fa-book-reader"></i>
+                        <div class="icon-box me-2" style="width:32px; height:32px; font-size:1rem; background: #fce4ec; color: #e91e63;">
+                            <i class="bi bi-bookmarks-fill"></i>
                         </div>
                         <h6 class="mb-0 fw-bold">Peminjaman Per Fakultas <span
                                 class="text-muted fw-normal">({{ date('Y') }})</span></h6>
@@ -158,7 +156,7 @@
                             </ul>
                         @else
                             <div class="text-center text-muted py-4">
-                                <i class="fas fa-inbox fa-2x mb-2 opacity-50"></i>
+                                <i class="bi bi-inbox fs-1 mb-2 opacity-50"></i>
                                 <p class="mb-0 small">Belum ada data peminjaman</p>
                             </div>
                         @endif
@@ -244,8 +242,8 @@
             <div class="col-lg-6">
                 <div class="card unified-card border-0 shadow-sm h-100">
                     <div class="card-header border-0 d-flex align-items-center pt-3">
-                        <div class="icon-box me-2" style="width:32px; height:32px; font-size:0.8rem; background: #f3e8ff; color: #8914d7;">
-                            <i class="fas fa-globe"></i>
+                        <div class="icon-box me-2" style="width:32px; height:32px; font-size:1rem; background: #f3e8ff; color: #8914d7;">
+                            <i class="bi bi-globe"></i>
                         </div>
                         <h6 class="mb-0 fw-bold">Kunjungan Website <span
                                 class="text-muted fw-normal">({{ $tahunSekarang }})</span></h6>
@@ -287,7 +285,7 @@
                         </div>
                         <a href="https://statcounter.com/p13060651/summary/monthly-pvn-currentyear/?account_id=7636188&login_id=2&code=43ca6bbd15f284fbea5c47fc6ea5440a&guest_login=1" target="_blank"
                             class="btn btn-outline-primary btn-sm px-3">
-                            <i class="fas fa-external-link-alt me-1"></i> Lihat Detail
+                            <i class="bi bi-box-arrow-up-right me-1"></i> Lihat Detail
                         </a>
                     </div>
                 </div>
@@ -297,8 +295,8 @@
             <div class="col-lg-6">
                 <div class="card unified-card border-0 shadow-sm h-100">
                     <div class="card-header border-0 d-flex align-items-center pt-3">
-                        <div class="icon-box me-2" style="width:32px; height:32px; font-size:0.8rem; background: #d4edda; color: #04833b;">
-                            <i class="fas fa-database"></i>
+                        <div class="icon-box me-2" style="width:32px; height:32px; font-size:1rem; background: #d4edda; color: #04833b;">
+                            <i class="bi bi-database-fill"></i>
                         </div>
                         <h6 class="mb-0 fw-bold">Kunjungan Repository <span
                                 class="text-muted fw-normal">({{ $tahunSekarang }})</span></h6>
@@ -341,7 +339,7 @@
                         </div>
                         <a href="https://statcounter.com/p13060683/summary/monthly-pvn-currentyear/?account_id=7636188&login_id=3&code=7634ebe683db73cdbbd72e2b84881b29&guest_login=1" target="_blank"
                             class="btn btn-outline-primary btn-sm px-3">
-                            <i class="fas fa-external-link-alt me-1"></i> Lihat Detail
+                            <i class="bi bi-box-arrow-up-right me-1"></i> Lihat Detail
                         </a>
                     </div>
                 </div>

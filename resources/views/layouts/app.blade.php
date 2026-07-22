@@ -13,14 +13,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="{{ asset('css/unified-components.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/unified-components.css') }}?v={{ time() + 1 }}">
     {{-- NProgress (top loading bar) --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css">
-<link rel="stylesheet" href="{{ asset('css/app-loader.css') }}">
+<link rel="stylesheet" href="{{ asset('css/app-loader.css') }}?v={{ time() + 1 }}">
 
     @stack('styles')
 
-<link rel="stylesheet" href="{{ asset('css/app-layout.css') }}">
+<link rel="stylesheet" href="{{ asset('css/app-layout.css') }}?v={{ time() + 1 }}">
 </head>
 
 <body class="{{ isset($_COOKIE['theme']) && $_COOKIE['theme'] == 'dark' ? 'dark-mode' : '' }}">
@@ -66,21 +66,20 @@
                             <div id="current-time" class="fw-bold"></div>
                         </div>
 
-                        <div class="d-flex align-items-center">
-                            @guest
-                                <a href="{{ route('cas.login') }}" class="btn btn-sm btn-outline-secondary text-body-emphasis">
-                                    <i class="fas fa-sign-in-alt me-1"></i>
-                                    Login
-                                </a>
-                            @else
-                                <form action="{{ route('logout') }}" method="POST" class="d-inline">
-                                    @csrf
-                                    <button type="submit" class="btn btn-sm btn-outline-danger w-100 fw-bold">
-                                        <i class="fas fa-sign-out-alt me-1"></i>
-                                        Logout</button>
-                                </form>
-                            @endguest
-                        </div>
+                        @guest
+                            <a href="{{ route('cas.login') }}" class="btn btn-sm btn-outline-secondary text-body-emphasis m-0 d-flex align-items-center">
+                                <i class="fas fa-sign-in-alt me-1"></i>
+                                Login
+                            </a>
+                        @else
+                            <form action="{{ route('logout') }}" method="POST" class="m-0 d-flex align-items-center">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-outline-danger fw-bold d-flex align-items-center">
+                                    <i class="fas fa-sign-out-alt me-1"></i>
+                                    Logout
+                                </button>
+                            </form>
+                        @endguest
                     </div>
                 </div>
             </header>
@@ -131,19 +130,19 @@
     @endphp
     <nav class="mobile-bottom-nav" id="mobileBottomNav">
         <a href="{{ route('dashboard') }}" class="bnav-item {{ $currentRoute === 'dashboard' ? 'active' : '' }}">
-            <i class="fas fa-home"></i>
+            <i class="bi bi-house-fill"></i>
             <span>Beranda</span>
         </a>
         <button type="button" class="bnav-item {{ $isKoleksi ? 'active' : '' }}" data-panel="koleksi">
-            <i class="fas fa-book"></i>
+            <i class="bi bi-collection-fill"></i>
             <span>Koleksi</span>
         </button>
         <button type="button" class="bnav-item {{ $isAnalitik ? 'active' : '' }}" data-panel="analitik">
-            <i class="fas fa-chart-bar"></i>
+            <i class="bi bi-bar-chart-fill"></i>
             <span>Analitik</span>
         </button>
         <button type="button" class="bnav-item" data-panel="more">
-            <i class="fas fa-ellipsis-h"></i>
+            <i class="bi bi-grid-fill"></i>
             <span>Lainnya</span>
         </button>
     </nav>
@@ -200,7 +199,7 @@
                 <i class="fas fa-chart-line"></i> Keseluruhan
             </a>
             <a href="{{ route('kunjungan.prodi') }}" class="panel-nav-link {{ request()->routeIs('kunjungan.prodi') ? 'active' : '' }}">
-                <i class="fas fa-users"></i> Civitas Akademika
+                <i class="fas fa-users"></i> Prodi
             </a>
             <a href="{{ route('kunjungan.cekKehadiran') }}" class="panel-nav-link {{ request()->routeIs('kunjungan.cekKehadiran') ? 'active' : '' }}">
                 <i class="fas fa-search"></i> Cek Kunjungan
@@ -214,7 +213,7 @@
                 <i class="fas fa-chart-area"></i> Keseluruhan
             </a>
             <a href="{{ route('peminjaman.prodi') }}" class="panel-nav-link {{ request()->routeIs('peminjaman.prodi') ? 'active' : '' }}">
-                <i class="fas fa-user-graduate"></i> Civitas Akademika
+                <i class="fas fa-user-graduate"></i> Prodi
             </a>
             <a href="{{ route('peminjaman.cek_pinjaman') }}" class="panel-nav-link {{ request()->routeIs('peminjaman.cek_pinjaman') ? 'active' : '' }}">
                 <i class="fas fa-search"></i> Cek Pinjaman
@@ -291,16 +290,14 @@
 
                 <div class="modal-body p-4 p-md-5 text-center">
                     {{-- Animated icon --}}
-                    <div class="mb-4" style="position: relative; display: inline-block;">
-                        <div style="
+                    <div class="mb-4 d-flex justify-content-center">
+                        <div class="d-flex align-items-center justify-content-center" style="
                             width: 90px; height: 90px; border-radius: 50%;
                             background: linear-gradient(135deg, #fef3c7, #fde68a);
-                            display: flex; align-items: center; justify-content: center;
-                            margin: 0 auto;
                             box-shadow: 0 8px 24px rgba(245, 158, 11, 0.3);
                             animation: pulseWarning 2s ease-in-out infinite;
                         ">
-                            <i class="fas fa-clock" style="font-size: 2.5rem; color: #d97706;"></i>
+                            <i class="fas fa-clock" style="font-size: 3rem; color: #d97706; line-height: 1; display: flex;"></i>
                         </div>
                     </div>
 

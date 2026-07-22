@@ -76,6 +76,12 @@
     overflow: hidden !important;
 }
 
+.card:not(.no-hover):hover,
+.unified-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08) !important;
+}
+
 .card-header {
     background-color: #ffffff;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
