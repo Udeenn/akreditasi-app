@@ -1415,26 +1415,28 @@ public function pertanggal(Request $request)
         }
 
         // Cache hasil query berat
-        $cacheKey = "buku_terlaris_prodi_v2:{$selectedProdi}:{$start->timestamp}:{$end->timestamp}";
+        $cacheKey = "buku_terlaris_prodi_v3:{$selectedProdi}:{$start->timestamp}:{$end->timestamp}";
         
         return Cache::remember($cacheKey, 1800, function () use ($selectedProdi, $start, $end) {
             
             // 1. Ambil agregasi statistik dasar
             $statsQuery = DB::connection('mysql2')->table('statistics')
                 ->select('itemnumber', DB::raw('COUNT(*) as count_transaksi'))
-                ->whereIn('type', ['issue', 'return', 'localuse'])
+                ->whereIn('type', ['issue', 'renew', 'localuse'])
                 ->whereBetween('datetime', [$start, $end])
                 ->whereNotNull('itemnumber');
 
-            if ($selectedProdi === 'DOSEN' || $selectedProdi === 'TENDIK') {
-                $statsQuery->join('borrowers as br', 'br.borrowernumber', '=', 'statistics.borrowernumber');
-                if ($selectedProdi === 'DOSEN') {
-                    $statsQuery->where('br.categorycode', 'like', 'TC%');
-                } else {
-                    $statsQuery->where(function ($q) {
-                        $q->where('br.categorycode', 'like', 'STAF%')->orWhere('br.categorycode', '=', 'LIBRARIAN');
-                    });
-                }
+            // Gabungkan filter pelaku peminjaman (borrowers)
+            $statsQuery->join('borrowers as br', 'br.borrowernumber', '=', 'statistics.borrowernumber');
+            if ($selectedProdi === 'DOSEN') {
+                $statsQuery->where('br.categorycode', 'like', 'TC%');
+            } elseif ($selectedProdi === 'TENDIK') {
+                $statsQuery->where(function ($q) {
+                    $q->where('br.categorycode', 'like', 'STAF%')->orWhere('br.categorycode', '=', 'LIBRARIAN');
+                });
+            } else {
+                // Untuk Prodi (misal A310), filter pelakunya harus ber-NIM prodi tersebut
+                $statsQuery->where('br.cardnumber', 'like', $selectedProdi . '%');
             }
 
             $aggregatedStats = $statsQuery->groupBy('itemnumber')->get();
@@ -1602,7 +1604,7 @@ public function pertanggal(Request $request)
                 ->join('borrowers as b', 'b.borrowernumber', '=', 's.borrowernumber')
                 ->join('items as i', 'i.itemnumber', '=', 's.itemnumber')
                 ->where('i.biblionumber', $biblionumber)
-                ->whereIn('s.type', ['issue', 'return', 'localuse'])
+                ->whereIn('s.type', ['issue', 'renew', 'localuse'])
                 ->whereBetween('s.datetime', [$start, $end]);
 
             if ($selectedProdi) {
@@ -1612,6 +1614,8 @@ public function pertanggal(Request $request)
                     $query->where(function ($q) {
                         $q->where('b.categorycode', 'like', 'STAF%')->orWhere('b.categorycode', '=', 'LIBRARIAN');
                     });
+                } else {
+                    $query->where('b.cardnumber', 'like', $selectedProdi . '%');
                 }
             }
 

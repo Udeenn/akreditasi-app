@@ -303,13 +303,27 @@
                         let startNo = (res.data.current_page - 1) * res.data.per_page + 1;
                         
                         res.data.data.forEach(function(item, index) {
+                            let transLabel = item.transaksi;
+                            let badgeClass = 'bg-secondary';
+                            
+                            if (item.transaksi === 'issue') {
+                                transLabel = 'Dipinjam';
+                                badgeClass = 'bg-primary';
+                            } else if (item.transaksi === 'renew') {
+                                transLabel = 'Diperpanjang';
+                                badgeClass = 'bg-success';
+                            } else if (item.transaksi === 'localuse') {
+                                transLabel = 'Baca di Tempat';
+                                badgeClass = 'bg-info';
+                            }
+
                             rows += `
                                 <tr>
                                     <td class="text-center text-muted">${startNo + index}</td>
                                     <td class="fw-bold">${item.cardnumber ?? '-'}</td>
                                     <td>${item.nama_peminjam ?? '-'}</td>
                                     <td class="text-center">${item.waktu_transaksi}</td>
-                                    <td class="text-center"><span class="badge ${item.transaksi === 'issue' ? 'bg-primary' : (item.transaksi === 'return' ? 'bg-success' : 'bg-info')} px-2 py-1">${item.transaksi}</span></td>
+                                    <td class="text-center"><span class="badge ${badgeClass} px-2 py-1">${transLabel}</span></td>
                                 </tr>
                             `;
                         });
