@@ -115,6 +115,11 @@
                 </div>
             </div>
             <div class="card-body px-0 py-0">
+                @if(isset($top10Buku) && $top10Buku->count() > 0)
+                    <div class="px-4 pt-4 pb-2" style="position: relative;">
+                        <div id="chartBukuTerlaris"></div>
+                    </div>
+                @endif
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0 unified-table">
                         <thead>
@@ -215,11 +220,32 @@
                             </table>
                         </div>
                         
-                        <div id="loadingIndicator" class="text-center py-5" style="display:none;">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <p class="text-muted mt-2 mb-0">Memuat data peminjam...</p>
+                        <div id="loadingIndicator" style="display:none;" class="placeholder-glow">
+                            <table class="table table-borderless mb-0">
+                                <tbody>
+                                    @for ($i = 0; $i < 5; $i++)
+                                        <tr>
+                                            <td class="text-center" style="width: 50px;">
+                                                <span class="placeholder col-12 rounded bg-secondary opacity-25" style="height: 15px;"></span>
+                                            </td>
+                                            <td style="width: 150px;">
+                                                <span class="placeholder col-12 rounded bg-secondary opacity-25" style="height: 15px;"></span>
+                                            </td>
+                                            <td>
+                                                <span class="placeholder col-7 rounded bg-secondary opacity-25 mb-1" style="height: 15px;"></span>
+                                                <br>
+                                                <span class="placeholder col-4 rounded bg-secondary opacity-25" style="height: 12px;"></span>
+                                            </td>
+                                            <td class="text-center" style="width: 150px;">
+                                                <span class="placeholder col-9 rounded bg-secondary opacity-25" style="height: 15px;"></span>
+                                            </td>
+                                            <td class="text-center" style="width: 120px;">
+                                                <span class="placeholder col-12 rounded-pill bg-secondary opacity-25" style="height: 25px;"></span>
+                                            </td>
+                                        </tr>
+                                    @endfor
+                                </tbody>
+                            </table>
                         </div>
 
                         <div id="emptyMessage" class="text-center py-5" style="display:none;">
@@ -395,6 +421,61 @@
                 loadDetail($(this).data('page'));
             });
         }
+
+        @if(isset($top10Buku) && $top10Buku->count() > 0)
+            const topBooks = @json($top10Buku->map(function($book) {
+                return [
+                    'title' => \Illuminate\Support\Str::limit($book->title, 40),
+                    'total' => $book->total_peminjaman
+                ];
+            })->values());
+            
+            if(topBooks.length > 0 && typeof ApexCharts !== 'undefined') {
+                const options = {
+                    series: [{
+                        name: 'Total Peminjaman',
+                        data: topBooks.map(b => b.total)
+                    }],
+                    chart: {
+                        type: 'bar',
+                        height: 350,
+                        toolbar: { show: false },
+                        fontFamily: 'inherit'
+                    },
+                    plotOptions: {
+                        bar: {
+                            borderRadius: 4,
+                            horizontal: true,
+                            distributed: true,
+                            dataLabels: { position: 'bottom' }
+                        }
+                    },
+                    colors: ['#0d6efd', '#6610f2', '#6f42c1', '#d63384', '#dc3545', '#fd7e14', '#ffc107', '#198754', '#20c997', '#0dcaf0'],
+                    dataLabels: {
+                        enabled: true,
+                        textAnchor: 'start',
+                        style: { colors: ['#fff'] },
+                        formatter: function (val, opt) {
+                            return opt.w.globals.labels[opt.dataPointIndex] + ": " + val + " Kali"
+                        },
+                        offsetX: 0,
+                    },
+                    xaxis: {
+                        categories: topBooks.map(b => b.title),
+                        labels: { show: false }
+                    },
+                    yaxis: {
+                        labels: { show: false }
+                    },
+                    tooltip: {
+                        y: { title: { formatter: function () { return '' } } }
+                    }
+                };
+
+                const chart = new ApexCharts(document.querySelector("#chartBukuTerlaris"), options);
+                chart.render();
+            }
+        @endif
     });
 </script>
 @endpush

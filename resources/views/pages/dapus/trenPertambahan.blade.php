@@ -56,8 +56,8 @@
                     <h5 class="mb-0 fw-bold"><i class="fas fa-chart-bar text-primary me-2"></i> Grafik Penambahan</h5>
                 </div>
                 <div class="card-body p-4">
-                    <div style="position: relative; height:400px; width:100%">
-                        <canvas id="trenChart"></canvas>
+                    <div style="position: relative; width:100%">
+                        <div id="trenChart"></div>
                     </div>
                 </div>
             </div>
@@ -165,67 +165,73 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         @if(count($data) > 0)
-        const ctx = document.getElementById('trenChart').getContext('2d');
-        
         const labels = {!! json_encode($data->pluck('year')) !!};
         const dataTitles = {!! json_encode($data->pluck('total_titles')) !!};
         const dataItems = {!! json_encode($data->pluck('total_items')) !!};
 
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
+        if (typeof ApexCharts !== 'undefined') {
+            const options = {
+                series: [
                     {
-                        label: 'Judul Baru',
-                        data: dataTitles,
-                        backgroundColor: 'rgba(13, 110, 253, 0.7)',
-                        borderColor: 'rgb(13, 110, 253)',
-                        borderWidth: 1,
-                        borderRadius: 4
+                        name: 'Judul Baru',
+                        data: dataTitles
                     },
                     {
-                        label: 'Eksemplar Baru',
-                        data: dataItems,
-                        backgroundColor: 'rgba(13, 202, 240, 0.7)',
-                        borderColor: 'rgb(13, 202, 240)',
-                        borderWidth: 1,
-                        borderRadius: 4
+                        name: 'Eksemplar Baru',
+                        data: dataItems
                     }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
+                ],
+                chart: {
+                    type: 'bar',
+                    height: 400,
+                    toolbar: { show: false },
+                    fontFamily: 'inherit'
+                },
+                colors: ['#0d6efd', '#0dcaf0'],
+                plotOptions: {
+                    bar: {
+                        borderRadius: 4,
+                        columnWidth: '55%',
                     }
                 },
-                scales: {
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    },
+                dataLabels: {
+                    enabled: false
+                },
+                stroke: {
+                    show: true,
+                    width: 2,
+                    colors: ['transparent']
+                },
+                xaxis: {
+                    categories: labels,
+                },
+                yaxis: {
+                    title: {
+                        text: 'Jumlah Penambahan'
+                    }
+                },
+                fill: {
+                    opacity: 1
+                },
+                tooltip: {
                     y: {
-                        beginAtZero: true,
-                        grid: {
-                            borderDash: [2, 4],
-                            color: 'rgba(0,0,0,0.05)'
+                        formatter: function (val) {
+                            return val
                         }
                     }
+                },
+                legend: {
+                    position: 'top',
+                    horizontalAlign: 'center'
                 }
-            }
-        });
+            };
+
+            const chart = new ApexCharts(document.querySelector("#trenChart"), options);
+            chart.render();
+        }
         @endif
     });
 </script>

@@ -1373,8 +1373,11 @@ public function pertanggal(Request $request)
             ($filterType === 'monthly' && $request->filled('start_year') && $request->filled('end_year'))
         );
 
+        $top10Buku = collect();
+
         if ($hasFilter && $selectedProdi) {
             $data = $this->getBukuTerlarisProdiData($request);
+            $top10Buku = $data->take(10);
             
             $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage();
             $currentItems = $data->slice(($currentPage - 1) * $perPage, $perPage)->all();
@@ -1389,7 +1392,7 @@ public function pertanggal(Request $request)
         }
 
         return view('pages.peminjaman.bukuTerlarisProdi', compact(
-            'prodiList', 'selectedProdi', 'filterType', 'startDate', 'endDate', 'startYear', 'endYear', 'paginator', 'hasFilter', 'perPage'
+            'prodiList', 'selectedProdi', 'filterType', 'startDate', 'endDate', 'startYear', 'endYear', 'paginator', 'hasFilter', 'perPage', 'top10Buku'
         ));
     }
 

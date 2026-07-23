@@ -798,3 +798,28 @@
         .sidebar .collapse {
             transition: none !important;
         }
+
+        /* ApexCharts Dark Mode Overrides */
+        body.dark-mode .apexcharts-xaxis-label,
+        body.dark-mode .apexcharts-yaxis-label,
+        body.dark-mode .apexcharts-xaxis-title-text,
+        body.dark-mode .apexcharts-yaxis-title-text {
+            fill: var(--text-dark) !important;
+        }
+        body.dark-mode .apexcharts-legend-text {
+            color: var(--text-dark) !important;
+        }
+        body.dark-mode .apexcharts-tooltip {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #e2e8f0 !important;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5) !important;
+        }
+        body.dark-mode .apexcharts-tooltip-title {
+            background: #0f172a !important;
+            border-bottom-color: #334155 !important;
+            color: #e2e8f0 !important;
+        }
+        body.dark-mode .apexcharts-gridline {
+            stroke: #334155 !important;
+        }
