@@ -1500,9 +1500,22 @@ class VisitHistory extends Controller
 
         $dompdf = new Dompdf($options);
 
+        $barcodeBase64 = null;
+        try {
+            // Generate barcode image via bwipjs public API
+            $barcodeUrl = 'https://bwipjs-api.metafloor.com/?bcid=code128&text=' . urlencode($fullBorrowerDetails->cardnumber ?? '');
+            $barcodeData = @file_get_contents($barcodeUrl);
+            if ($barcodeData) {
+                $barcodeBase64 = 'data:image/png;base64,' . base64_encode($barcodeData);
+            }
+        } catch (\Exception $e) {
+            // Silently fallback if API fails
+        }
+
         $html = view('pages.kunjungan.laporan_kehadiran_pdf', [
             'fullBorrowerDetails' => $fullBorrowerDetails,
             'dataKunjungan'       => $dataKunjungan,
+            'barcodeBase64'       => $barcodeBase64,
         ])->render();
 
         $dompdf->loadHtml($html);

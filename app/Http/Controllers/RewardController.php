@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Cache;
 
 
 class RewardController extends Controller
@@ -42,105 +43,113 @@ class RewardController extends Controller
             // ==========================================
             // 1. PENGUNJUNG TERAKTIF (OPTIMIZED SQL)
             // ==========================================
-            $sqlVisitor = "
-            SELECT cardnumber, SUM(total) as total_kunjungan
-            FROM (
-                SELECT cardnumber, COUNT(*) as total
-                FROM visitorhistory
-                WHERE visittime BETWEEN ? AND ?
+            $cacheKeyPengunjung = "pengunjung_teraktif_{$start->timestamp}_{$end->timestamp}_" . ($kategoriFilter ?: 'all');
+            
+            $pengunjungTeraktif = Cache::remember($cacheKeyPengunjung, 3600, function () use ($start, $end, $getKategori, $kategoriFilter) {
+                $sqlVisitor = "
+                SELECT cardnumber, SUM(total) as total_kunjungan
+                FROM (
+                    SELECT cardnumber, COUNT(*) as total
+                    FROM visitorhistory
+                    WHERE visittime BETWEEN ? AND ?
+                    GROUP BY cardnumber
+                    UNION ALL
+                    SELECT cardnumber, COUNT(*) as total
+                    FROM visitorcorner
+                    WHERE visittime BETWEEN ? AND ?
+                    GROUP BY cardnumber
+                ) as gabungan
                 GROUP BY cardnumber
-                UNION ALL
-                SELECT cardnumber, COUNT(*) as total
-                FROM visitorcorner
-                WHERE visittime BETWEEN ? AND ?
-                GROUP BY cardnumber
-            ) as gabungan
-            GROUP BY cardnumber
-            ORDER BY total_kunjungan DESC
-            LIMIT 25000
-        ";
+                ORDER BY total_kunjungan DESC
+                LIMIT 25000
+                ";
 
-            $rawVisits = DB::connection('mysql')->select($sqlVisitor, [$start, $end, $start, $end]);
+                $rawVisits = DB::connection('mysql')->select($sqlVisitor, [$start, $end, $start, $end]);
 
-            $cardNumbers = collect($rawVisits)->pluck('cardnumber')->map(fn($c) => trim(strtolower($c)))->all();
+                $cardNumbers = collect($rawVisits)->pluck('cardnumber')->map(fn($c) => trim(strtolower($c)))->all();
 
-            $borrowers = DB::connection('mysql2')->table('borrowers')
-                ->select('cardnumber', 'surname', 'firstname', 'categorycode')
-                ->whereIn('cardnumber', $cardNumbers)
-                ->get()
-                ->mapWithKeys(function ($item) {
-                    return [trim(strtolower($item->cardnumber)) => $item];
-                });
+                $borrowers = DB::connection('mysql2')->table('borrowers')
+                    ->select('cardnumber', 'surname', 'firstname', 'categorycode')
+                    ->whereIn('cardnumber', $cardNumbers)
+                    ->get()
+                    ->mapWithKeys(function ($item) {
+                        return [trim(strtolower($item->cardnumber)) => $item];
+                    });
 
-            $pengunjungData = collect();
-            foreach ($rawVisits as $visit) {
-                $key = trim(strtolower($visit->cardnumber));
-                $user = $borrowers->get($key);
+                $pengunjungData = collect();
+                foreach ($rawVisits as $visit) {
+                    $key = trim(strtolower($visit->cardnumber));
+                    $user = $borrowers->get($key);
 
-                if (!$user) continue;
+                    if (!$user) continue;
 
-                $kategori = $getKategori($user->categorycode);
+                    $kategori = $getKategori($user->categorycode);
 
-                if ($kategoriFilter && $kategori !== $kategoriFilter) continue;
+                    if ($kategoriFilter && $kategori !== $kategoriFilter) continue;
 
-                if ($kategori) {
-                    $pengunjungData->push((object)[
-                        'kategori'   => $kategori,
-                        'cardnumber' => $user->cardnumber,
-                        'nama'       => $user->firstname . ' ' . $user->surname,
-                        'jumlah'     => $visit->total_kunjungan
-                    ]);
+                    if ($kategori) {
+                        $pengunjungData->push((object)[
+                            'kategori'   => $kategori,
+                            'cardnumber' => $user->cardnumber,
+                            'nama'       => $user->firstname . ' ' . $user->surname,
+                            'jumlah'     => $visit->total_kunjungan
+                        ]);
+                    }
                 }
-            }
 
-            // Ambil Top 10 per Kategori
-            $pengunjungTeraktif = $pengunjungData->groupBy('kategori')->map(function ($items) {
-                return $items->sortByDesc('jumlah')->take(10)->values();
-            })->flatten()->sortBy([['kategori', 'asc'], ['jumlah', 'desc']]);
+                // Ambil Top 10 per Kategori
+                return $pengunjungData->groupBy('kategori')->map(function ($items) {
+                    return $items->sortByDesc('jumlah')->take(10)->values();
+                })->flatten()->sortBy([['kategori', 'asc'], ['jumlah', 'desc']]);
+            });
 
 
             // ==========================================
             // 2. PEMINJAM TERAKTIF (OPTIMIZED SQL)
             // ==========================================
-            $rawLoans = DB::connection('mysql2')->table('statistics')
-                ->select('borrowernumber', DB::raw('count(*) as total'))
-                ->where('type', 'issue')
-                ->whereBetween('datetime', [$start, $end])
-                ->groupBy('borrowernumber')
-                ->orderBy('total', 'desc')
-                ->limit(2000)
-                ->get();
+            $cacheKeyPeminjam = "peminjam_teraktif_{$start->timestamp}_{$end->timestamp}_" . ($kategoriFilter ?: 'all');
 
-            $borrowerIds = $rawLoans->pluck('borrowernumber')->filter()->all();
+            $peminjamTeraktif = Cache::remember($cacheKeyPeminjam, 3600, function () use ($start, $end, $getKategori, $kategoriFilter) {
+                $rawLoans = DB::connection('mysql2')->table('statistics')
+                    ->select('borrowernumber', DB::raw('count(*) as total'))
+                    ->where('type', 'issue')
+                    ->whereBetween('datetime', [$start, $end])
+                    ->groupBy('borrowernumber')
+                    ->orderBy('total', 'desc')
+                    ->limit(2000)
+                    ->get();
 
-            $borrowersLoan = DB::connection('mysql2')->table('borrowers')
-                ->select('borrowernumber', 'cardnumber', 'surname', 'firstname', 'categorycode')
-                ->whereIn('borrowernumber', $borrowerIds)
-                ->get()
-                ->keyBy('borrowernumber');
+                $borrowerIds = $rawLoans->pluck('borrowernumber')->filter()->all();
 
-            $peminjamData = collect();
-            foreach ($rawLoans as $stat) {
-                $user = $borrowersLoan->get($stat->borrowernumber);
-                if (!$user) continue;
+                $borrowersLoan = DB::connection('mysql2')->table('borrowers')
+                    ->select('borrowernumber', 'cardnumber', 'surname', 'firstname', 'categorycode')
+                    ->whereIn('borrowernumber', $borrowerIds)
+                    ->get()
+                    ->keyBy('borrowernumber');
 
-                $kategori = $getKategori($user->categorycode);
+                $peminjamData = collect();
+                foreach ($rawLoans as $stat) {
+                    $user = $borrowersLoan->get($stat->borrowernumber);
+                    if (!$user) continue;
 
-                if ($kategoriFilter && $kategori !== $kategoriFilter) continue;
+                    $kategori = $getKategori($user->categorycode);
 
-                if ($kategori) {
-                    $peminjamData->push((object)[
-                        'kategori'   => $kategori,
-                        'cardnumber' => $user->cardnumber,
-                        'nama'       => $user->firstname . ' ' . $user->surname,
-                        'jumlah'     => $stat->total
-                    ]);
+                    if ($kategoriFilter && $kategori !== $kategoriFilter) continue;
+
+                    if ($kategori) {
+                        $peminjamData->push((object)[
+                            'kategori'   => $kategori,
+                            'cardnumber' => $user->cardnumber,
+                            'nama'       => $user->firstname . ' ' . $user->surname,
+                            'jumlah'     => $stat->total
+                        ]);
+                    }
                 }
-            }
 
-            $peminjamTeraktif = $peminjamData->groupBy('kategori')->map(function ($items) {
-                return $items->sortByDesc('jumlah')->take(10)->values();
-            })->flatten()->sortBy([['kategori', 'asc'], ['jumlah', 'desc']]);
+                return $peminjamData->groupBy('kategori')->map(function ($items) {
+                    return $items->sortByDesc('jumlah')->take(10)->values();
+                })->flatten()->sortBy([['kategori', 'asc'], ['jumlah', 'desc']]);
+            });
         }
 
         return view('pages.reward.pemustaka_teraktif', compact('pengunjungTeraktif', 'peminjamTeraktif', 'tahun', 'hasFilter'));

@@ -48,14 +48,24 @@
             border-bottom: 1px solid rgba(0,0,0,0.03);
         }
 
-        body.dark-mode .child-table-wrapper {
-            background-color: #1b1b29;
-            border-color: #2b2b40;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        body.dark-mode .table-child {
+            background-color: var(--sidebar-bg) !important;
+            color: #e2e8f0;
         }
-        body.dark-mode .table-child { background-color: #1e1e2d; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.2); }
-        body.dark-mode .table-child th { background-color: rgba(13, 110, 253, 0.15) !important; color: #4e73df !important; }
-        body.dark-mode .table-child td { border-bottom-color: #2b2b40; color: #a1a5b7; }
+        body.dark-mode .table-child th {
+            background-color: rgba(13, 110, 253, 0.15) !important;
+            color: #6ea8fe !important;
+        }
+        body.dark-mode .table-child td {
+            border-bottom-color: rgba(255,255,255,0.05);
+        }
+        body.dark-mode .child-table-wrapper {
+            border-color: rgba(255,255,255,0.08);
+            background-color: var(--sidebar-bg) !important;
+        }
+        body.dark-mode .child-table-wrapper h6 {
+            color: #6ea8fe !important;
+        }
     </style>
 @endpush
 
@@ -214,7 +224,7 @@
                         </div>
                         <div class="card-body px-4 pb-4">
                             <div style="height: 350px; position: relative;">
-                                <canvas id="peminjamanFakultasChart"></canvas>
+                                <div id="peminjamanFakultasChart" style="min-height: 350px; width: 100%;"></div>
                             </div>
                         </div>
                     </div>
@@ -313,8 +323,8 @@
                 <div class="col-12 col-md-6">
                     <div class="card border-0 shadow-sm text-center p-5 rounded-4">
                         <div class="card-body">
-                            <div class="bg-secondary bg-opacity-10 rounded-circle d-inline-flex p-4 mb-3">
-                                <i class="fas fa-search fa-3x text-muted"></i>
+                            <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-4 mb-3">
+                                <i class="fas fa-search fa-3x text-primary"></i>
                             </div>
                             <h5 class="fw-bold text-body">Data Tidak Ditemukan</h5>
                             <p class="text-muted mb-0">Silakan sesuaikan filter Fakultas atau Rentang Waktu di atas, lalu klik Cari.</p>
@@ -332,8 +342,8 @@
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
 
-    <!-- Chart.js & Moment.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2"></script>
+    <!-- ApexCharts & Moment.js -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/locale/id.js"></script>
 
@@ -459,61 +469,75 @@
             const chartData = @json($chartData ?? []);
 
             if (chartData.length > 0) {
-                const ctx = document.getElementById('peminjamanFakultasChart').getContext('2d');
+                const labels = chartData.map(item => item.label);
+                const dataIssue = chartData.map(item => item.issue);
+                const dataRenew = chartData.map(item => item.renew);
+                const dataPengembalian = chartData.map(item => item.pengembalian);
+                const dataSirkulasi = chartData.map(item => item.sirkulasi);
 
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: chartData.map(item => item.label),
-                        datasets: [
-                            {
-                                label: 'Peminjaman',
-                                data: chartData.map(item => item.issue),
-                                backgroundColor: 'rgba(78, 115, 223, 0.1)',
-                                borderColor: '#4e73df',
-                                borderWidth: 2, tension: 0.4, fill: true, pointRadius: 3
-                            },
-                            {
-                                label: 'Perpanjangan',
-                                data: chartData.map(item => item.renew),
-                                backgroundColor: 'rgba(54, 185, 204, 0.1)',
-                                borderColor: '#36b9cc',
-                                borderWidth: 2, tension: 0.4, fill: true, pointRadius: 3
-                            },
-                            {
-                                label: 'Pengembalian',
-                                data: chartData.map(item => item.pengembalian),
-                                backgroundColor: 'rgba(246, 194, 62, 0.1)',
-                                borderColor: '#f6c23e',
-                                borderWidth: 2, tension: 0.4, fill: true, pointRadius: 3
-                            },
-                            {
-                                label: 'Total Sirkulasi',
-                                data: chartData.map(item => item.sirkulasi),
-                                backgroundColor: 'rgba(28, 200, 138, 0.1)',
-                                borderColor: '#1cc88a',
-                                borderWidth: 2, tension: 0.4, fill: true, pointRadius: 3
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        scales: {
-                            x: { grid: { display: false }, ticks: { color: "#858796", font: { size: 11 } } },
-                            y: { beginAtZero: true, grid: { color: "#f0f2f5" }, ticks: { color: "#858796", font: { size: 11 } } }
-                        },
-                        plugins: {
-                            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, padding: 20 } },
-                            tooltip: {
-                                backgroundColor: "rgba(255,255,255,0.95)",
-                                bodyColor: "#858796", titleColor: '#6e707e',
-                                borderColor: '#dddfeb', borderWidth: 1, padding: 12, displayColors: true,
-                            }
+                var options = {
+                    series: [
+                        { name: 'Peminjaman', data: dataIssue },
+                        { name: 'Perpanjangan', data: dataRenew },
+                        { name: 'Pengembalian', data: dataPengembalian },
+                        { name: 'Total Sirkulasi', data: dataSirkulasi }
+                    ],
+                    chart: {
+                        height: 350,
+                        type: 'area',
+                        fontFamily: 'Inter, Helvetica, Arial, sans-serif',
+                        toolbar: { show: false },
+                        zoom: { enabled: false },
+                        selection: { enabled: false },
+                        animations: {
+                            enabled: true,
+                            easing: 'easeinout',
+                            speed: 800
                         }
+                    },
+                    colors: ['#4e73df', '#36b9cc', '#f6c23e', '#1cc88a'],
+                    dataLabels: { enabled: false },
+                    stroke: {
+                        curve: 'smooth',
+                        width: 3
+                    },
+                    fill: {
+                        type: 'gradient',
+                        gradient: {
+                            shadeIntensity: 1,
+                            opacityFrom: 0.4,
+                            opacityTo: 0.05,
+                            stops: [0, 90, 100]
+                        }
+                    },
+                    xaxis: {
+                        categories: labels,
+                        labels: { style: { colors: '#858796', fontSize: '11px' } },
+                        axisBorder: { show: false },
+                        axisTicks: { show: false }
+                    },
+                    yaxis: {
+                        labels: { 
+                            style: { colors: '#858796', fontSize: '11px' },
+                            formatter: function (val) { return Math.round(val); }
+                        }
+                    },
+                    grid: {
+                        borderColor: '#f0f2f5',
+                        strokeDashArray: 4,
+                        yaxis: { lines: { show: true } }
+                    },
+                    legend: {
+                        position: 'top',
+                        fontWeight: 'bold'
+                    },
+                    tooltip: {
+                        theme: 'dark'
                     }
-                });
+                };
+
+                window.peminjamanFakultasChartInstance = new ApexCharts(document.querySelector("#peminjamanFakultasChart"), options);
+                window.peminjamanFakultasChartInstance.render();
             }
 
             // --- CSV EXPORT ---

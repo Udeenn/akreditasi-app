@@ -213,9 +213,9 @@
                             </h5>
                         </div>
                         <div class="card-body px-4 pb-4">
-                            <div style="height: 350px; position: relative;">
-                                <canvas id="peminjamanProdiChart"></canvas>
-                            </div>
+                              <div style="height: 350px; position: relative;">
+                                  <div id="peminjamanProdiChart" style="min-height: 350px; width: 100%;"></div>
+                              </div>
                         </div>
                     </div>
                 </div>
@@ -314,8 +314,8 @@
                 <div class="col-12 col-md-6">
                     <div class="card border-0 shadow-sm text-center p-5 rounded-4">
                         <div class="card-body">
-                            <div class="bg-secondary bg-opacity-10 rounded-circle d-inline-flex p-4 mb-3">
-                                <i class="fas fa-search fa-3x text-muted"></i>
+                            <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-4 mb-3">
+                                <i class="fas fa-search fa-3x text-primary"></i>
                             </div>
                             <h5 class="fw-bold text-body">Data Tidak Ditemukan</h5>
                             <p class="text-muted mb-0">Silakan sesuaikan filter Program Studi atau Rentang Waktu di atas.</p>
@@ -386,7 +386,7 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/locale/id.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -467,96 +467,72 @@
             const fullStatistics = @json($allStatistics ?? []);
             const filterType = "{{ $filterType ?? 'daily' }}";
 
-            if (fullStatistics.length > 0) {
-                const chartLabels = fullStatistics.map(item => moment(item.periode).format(filterType === 'daily' ?
-                    'D MMM YYYY' : 'MMM YYYY'));
-                const ctx = document.getElementById('peminjamanProdiChart').getContext('2d');
+              if (fullStatistics.length > 0) {
+                  const chartLabels = fullStatistics.map(item => moment(item.periode).format(filterType === 'daily' ?
+                      'D MMM YYYY' : 'MMM YYYY'));
+                  const dataValues = fullStatistics.map(item => item.total_sirkulasi);
 
-                let gradientBlue = ctx.createLinearGradient(0, 0, 0, 400);
-                gradientBlue.addColorStop(0, 'rgba(13, 110, 253, 0.5)');
-                gradientBlue.addColorStop(1, 'rgba(13, 110, 253, 0.05)');
+                  var options = {
+                      series: [{
+                          name: 'Total Sirkulasi',
+                          data: dataValues
+                      }],
+                      chart: {
+                          height: 350,
+                          type: 'area',
+                          fontFamily: 'Inter, Helvetica, Arial, sans-serif',
+                          toolbar: { show: false },
+                          zoom: { enabled: false },
+                          selection: { enabled: false },
+                          animations: {
+                              enabled: true,
+                              easing: 'easeinout',
+                              speed: 800
+                          }
+                      },
+                      colors: ['#0d6efd'],
+                      dataLabels: { enabled: false },
+                      stroke: {
+                          curve: 'smooth',
+                          width: 3
+                      },
+                      fill: {
+                          type: 'gradient',
+                          gradient: {
+                              shadeIntensity: 1,
+                              opacityFrom: 0.4,
+                              opacityTo: 0.05,
+                              stops: [0, 90, 100]
+                          }
+                      },
+                      xaxis: {
+                          categories: chartLabels,
+                          labels: { style: { colors: '#858796', fontSize: '11px' } },
+                          axisBorder: { show: false },
+                          axisTicks: { show: false }
+                      },
+                      yaxis: {
+                          labels: { 
+                              style: { colors: '#858796', fontSize: '11px' },
+                              formatter: function (val) { return Math.round(val); }
+                          }
+                      },
+                      grid: {
+                          borderColor: '#f0f2f5',
+                          strokeDashArray: 4,
+                          yaxis: { lines: { show: true } }
+                      },
+                      legend: {
+                          show: false
+                      },
+                      tooltip: {
+                          theme: 'dark'
+                      }
+                  };
 
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: chartLabels,
-                        datasets: [{
-                                label: 'Total Sirkulasi',
-                                data: fullStatistics.map(item => item.total_sirkulasi),
-                                borderColor: '#0d6efd',
-                                backgroundColor: gradientBlue,
-                                pointBackgroundColor: '#0d6efd',
-                                pointBorderColor: '#fff',
-                                tension: 0.4,
-                                fill: true,
-                                borderWidth: 2
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
-                        scales: {
-                            x: {
-                                grid: {
-                                    display: false,
-                                    drawBorder: false
-                                },
-                                ticks: {
-                                    maxTicksLimit: 10,
-                                    color: "#858796",
-                                    font: {
-                                        size: 11
-                                    }
-                                }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: "#e9ecef",
-                                    borderDash: [2],
-                                    drawBorder: false
-                                },
-                                ticks: {
-                                    padding: 10,
-                                    color: "#858796",
-                                    font: {
-                                        size: 11
-                                    }
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            tooltip: {
-                                backgroundColor: "rgba(33, 37, 41, 0.95)",
-                                bodyColor: "#ffffff",
-                                titleColor: '#ffffff',
-                                titleFont: {
-                                    size: 13,
-                                    weight: 'bold'
-                                },
-                                borderColor: '#6c757d',
-                                borderWidth: 0,
-                                padding: 12,
-                                displayColors: true,
-                                callbacks: {
-                                    title: function(context) {
-                                        const item = fullStatistics[context[0].dataIndex];
-                                        return (filterType === 'daily') ? moment(item.periode).format('D MMMM YYYY') : moment(item.periode, 'YYYY-MM').format('MMMM YYYY');
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
+                  window.peminjamanProdiChartInstance = new ApexCharts(document.querySelector("#peminjamanProdiChart"), options);
+                  window.peminjamanProdiChartInstance.render();
+              }
 
             // ... (Bagian JavaScript Modal dan Export sama persis dengan sebelumnya) ...
             // Modal Detail Logic

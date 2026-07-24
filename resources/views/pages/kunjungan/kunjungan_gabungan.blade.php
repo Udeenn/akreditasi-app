@@ -189,7 +189,7 @@
                             </div>
                             <div class="card-body px-4 pb-4">
                                 <div style="height: 350px; width: 100%;">
-                                    <canvas id="kunjunganChart"></canvas>
+                                    <div id="kunjunganChart" style="min-height: 350px; width: 100%;"></div>
                                 </div>
                             </div>
                         </div>
@@ -350,9 +350,9 @@
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     
-    <!-- Chart.js & Moment.js -->
+    <!-- Moment.js & ApexCharts -->
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
     <script>
         $(document).ready(function() {
@@ -371,28 +371,23 @@
                     "info": true,
                     "autoWidth": false,
                     "responsive": true,
-                // DOM Layout: Table (rt), Info (i) & Pagination (p) at bottom
-                // Removed 'l' and 'f' because we use custom controls
-                // Added px-4 py-3 for padding so it doesn't touch the edges
                 "dom": 'rt<"d-flex justify-content-between align-items-center px-4 py-3"ip>', 
                 "columnDefs": [{
                     "searchable": false,
                     "orderable": false,
-                    "targets": 0 // Kolom No
+                    "targets": 0
                 }, {
                     "searchable": false,
                     "orderable": false,
-                    "targets": 3 // Kolom Visualisasi
+                    "targets": 3
                 }],
                 "order": [], 
             });
 
-            // Custom Search Input Binding
             $('#searchInput').on('keyup', function() {
                 table.search(this.value).draw();
             });
 
-            // Custom Length Change Binding
             $('#lengthMenu').on('change', function() {
                 table.page.len(this.value).draw();
             });
@@ -437,87 +432,94 @@
                 });
             }
 
-            // --- CHART LOGIC ---
-            const chartData = @json($chartData ?? []);
-            const filterType = '{{ $filterType }}';
-            if (Object.keys(chartData).length > 0) {
-                const ctx = document.getElementById('kunjunganChart');
-                if(ctx) {
-                    const ctx2d = ctx.getContext('2d');
-                    const labels = Object.keys(chartData).map(periode => {
-                        let format = filterType === 'yearly' ? 'MMMM YYYY' : 'D MMM YYYY';
-                        return moment(periode).format(format);
-                    });
-                    const data = Object.values(chartData);
+              // --- CHART LOGIC ---
+              const chartData = @json($chartData ?? []);
+              const filterType = '{{ $filterType }}';
+              if (Object.keys(chartData).length > 0) {
+                  const labels = Object.keys(chartData).map(periode => {
+                      let format = filterType === 'yearly' ? 'MMMM YYYY' : 'D MMM YYYY';
+                      return moment(periode).format(format);
+                  });
+                  const data = Object.values(chartData);
 
-                    window.kunjunganChartInstance = new Chart(ctx2d, {
-                        type: 'line',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Total Kunjungan',
-                                data: data,
-                                borderColor: '#0d6efd',
-                                backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                                borderWidth: 3,
-                                pointBackgroundColor: '#ffffff',
-                                pointBorderColor: '#0d6efd',
-                                pointHoverBackgroundColor: '#0d6efd',
-                                pointHoverBorderColor: '#ffffff',
-                                pointRadius: 4,
-                                pointHoverRadius: 6,
-                                tension: 0.4,
-                                fill: true
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    backgroundColor: 'rgba(33, 37, 41, 0.95)',
-                                    padding: 12,
-                                    titleFont: { size: 13 },
-                                    bodyFont: { size: 13 },
-                                    displayColors: false,
-                                    callbacks: {
-                                        label: function(context) {
-                                            return context.parsed.y + ' Kunjungan';
-                                        }
-                                    }
-                                }
-                            },
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    grid: { color: '#f0f2f5', drawBorder: false },
-                                    ticks: { font: { size: 11 }, color: '#6c757d' }
-                                },
-                                x: {
-                                    grid: { display: false },
-                                    ticks: { font: { size: 11 }, color: '#6c757d' }
-                                }
-                            }
-                        }
-                    });
-                }
-            }
-            // --- EXPORT PDF LOGIC ---
-            const exportPdfBtn = document.getElementById('exportPdfBtn');
-            const pdfExportForm = document.getElementById('pdfExportForm');
-            const chartImageInput = document.getElementById('chart_image_base64');
-            
-            if (exportPdfBtn) {
-                exportPdfBtn.addEventListener('click', function() {
-                    if (typeof window.kunjunganChartInstance !== 'undefined' && window.kunjunganChartInstance) {
-                        const base64Image = window.kunjunganChartInstance.toBase64Image();
-                        chartImageInput.value = base64Image;
-                    }
-                    pdfExportForm.submit();
-                });
-            }
+                  var options = {
+                      series: [{
+                          name: 'Total Kunjungan',
+                          data: data
+                      }],
+                      chart: {
+                          height: 350,
+                          type: 'area',
+                          fontFamily: 'Inter, Helvetica, Arial, sans-serif',
+                          toolbar: { show: false },
+                          zoom: { enabled: false },
+                          selection: { enabled: false },
+                          animations: {
+                              enabled: true,
+                              easing: 'easeinout',
+                              speed: 800
+                          }
+                      },
+                      colors: ['#0d6efd'],
+                      dataLabels: { enabled: false },
+                      stroke: {
+                          curve: 'smooth',
+                          width: 3
+                      },
+                      fill: {
+                          type: 'gradient',
+                          gradient: {
+                              shadeIntensity: 1,
+                              opacityFrom: 0.4,
+                              opacityTo: 0.05,
+                              stops: [0, 90, 100]
+                          }
+                      },
+                      xaxis: {
+                          categories: labels,
+                          tooltip: { enabled: false },
+                          labels: { style: { colors: '#6c757d', fontSize: '11px' } },
+                          axisBorder: { show: false },
+                          axisTicks: { show: false }
+                      },
+                      yaxis: {
+                          labels: { 
+                              style: { colors: '#6c757d', fontSize: '11px' },
+                              formatter: function (val) { return Math.round(val); }
+                          }
+                      },
+                      grid: {
+                          borderColor: '#f0f2f5',
+                          strokeDashArray: 4,
+                          yaxis: { lines: { show: true } }
+                      },
+                      tooltip: {
+                          theme: 'dark',
+                          y: {
+                              formatter: function (val) {
+                                  return val + " Kunjungan";
+                              }
+                          }
+                      }
+                  };
+
+                  window.kunjunganChartInstance = new ApexCharts(document.querySelector("#kunjunganChart"), options);
+                  window.kunjunganChartInstance.render();
+              }
+              // --- EXPORT PDF LOGIC ---
+              const exportPdfBtn = document.getElementById('exportPdfBtn');
+              const pdfExportForm = document.getElementById('pdfExportForm');
+              const chartImageInput = document.getElementById('chart_image_base64');
+              
+              if (exportPdfBtn) {
+                  exportPdfBtn.addEventListener('click', async function() {
+                      if (typeof window.kunjunganChartInstance !== 'undefined' && window.kunjunganChartInstance) {
+                          const uri = await window.kunjunganChartInstance.dataURI();
+                          chartImageInput.value = uri.imgURI;
+                      }
+                      pdfExportForm.submit();
+                  });
+              }
         });
     </script>
 @endpush
-

@@ -1418,7 +1418,7 @@ public function pertanggal(Request $request)
         }
 
         // Cache hasil query berat
-        $cacheKey = "buku_terlaris_prodi_v3:{$selectedProdi}:{$start->timestamp}:{$end->timestamp}";
+        $cacheKey = "buku_terlaris_prodi_v4:{$selectedProdi}:{$start->timestamp}:{$end->timestamp}";
         
         return Cache::remember($cacheKey, 1800, function () use ($selectedProdi, $start, $end) {
             
@@ -1431,6 +1431,11 @@ public function pertanggal(Request $request)
 
             // Gabungkan filter pelaku peminjaman (borrowers)
             $statsQuery->join('borrowers as br', 'br.borrowernumber', '=', 'statistics.borrowernumber');
+
+            // Exclude dummy/statistical users
+            $statsQuery->whereRaw("COALESCE(br.firstname, '') NOT LIKE '%Statistical%'")
+                       ->whereRaw("COALESCE(br.surname, '') NOT LIKE '%Statistical%'");
+
             if ($selectedProdi === 'DOSEN') {
                 $statsQuery->where('br.categorycode', 'like', 'TC%');
             } elseif ($selectedProdi === 'TENDIK') {
@@ -1608,7 +1613,9 @@ public function pertanggal(Request $request)
                 ->join('items as i', 'i.itemnumber', '=', 's.itemnumber')
                 ->where('i.biblionumber', $biblionumber)
                 ->whereIn('s.type', ['issue', 'renew', 'localuse'])
-                ->whereBetween('s.datetime', [$start, $end]);
+                ->whereBetween('s.datetime', [$start, $end])
+                ->whereRaw("COALESCE(b.firstname, '') NOT LIKE '%Statistical%'")
+                ->whereRaw("COALESCE(b.surname, '') NOT LIKE '%Statistical%'");
 
             if ($selectedProdi) {
                 if ($selectedProdi === 'DOSEN') {

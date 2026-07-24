@@ -157,6 +157,11 @@
             margin-top: 40px;
         }
 
+        .header-section td,
+        .signature-section td {
+            border: none !important;
+        }
+
         .signature-section td {
             width: 50%;
             text-align: center;
@@ -354,15 +359,24 @@
         @endif
     </table>
 
-    <table class="table table-hover align-middle mb-0 unified-table signature-section">
+    <table class="align-middle mb-0 unified-table signature-section">
         <tr>
             <td></td>
             <td>
                 <div class="signature-date">{{ $location }}, {{ $printedDate }}</div>
-                <div class="signature-label">Petugas</div>
-                <div style="height: 80px;"></div>
-                <div class="signature-name">
-                    ......................................
+                <div class="signature-label">Anggota</div>
+                <div style="height: 80px; padding-top: 15px;">
+                    @if(isset($barcodeBase64) && $barcodeBase64)
+                        <img src="{{ $barcodeBase64 }}" alt="Barcode" style="max-height: 50px;">
+                    @else
+                        <div style="height: 50px;"></div>
+                    @endif
+                </div>
+                <div class="signature-name" style="text-decoration: underline; font-weight: bold;">
+                    {{ trim(($fullBorrowerDetails->firstname ?? '') . ' ' . ($fullBorrowerDetails->surname ?? '')) ?: '......................................' }}
+                </div>
+                <div style="font-size: 11px;">
+                    {{ $fullBorrowerDetails->cardnumber ?? '' }}
                 </div>
             </td>
         </tr>

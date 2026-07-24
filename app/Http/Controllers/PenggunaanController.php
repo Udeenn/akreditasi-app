@@ -108,7 +108,16 @@ class PenggunaanController extends Controller
         $usageType = $request->input('usage_type', 'all');
 
         $query = \App\Models\Koha\Statistic::with(['item.biblio'])
-            ->when($usageType === 'all', fn($q) => $q->whereIn('type', ['issue', 'return', 'localuse']))
+            ->select('statistics.*') // Ensure we select the columns for distinct to work safely
+            ->distinct() // Prevent duplicate transactions in the same second from showing up twice
+            ->where(function($q) {
+                $q->where('type', '!=', 'return')
+                  ->orWhere(function($sub) {
+                      $sub->where('type', 'return')
+                          ->whereNotNull('borrowernumber');
+                  });
+            })
+            ->when($usageType === 'all', fn($q) => $q->whereIn('type', ['issue', 'return', 'localuse', 'renew']))
             ->when($usageType !== 'all', fn($q) => $q->where('type', $usageType))
             ->whereNotNull('ccode')
             ->where('ccode', '!=', '');
@@ -230,7 +239,14 @@ class PenggunaanController extends Controller
                     ];
 
                     // 2. Query Statistik via Eloquent
-                    $statsQuery = \App\Models\Koha\Statistic::where('itemnumber', $item->itemnumber);
+                    $statsQuery = \App\Models\Koha\Statistic::where('itemnumber', $item->itemnumber)
+                        ->where(function($q) {
+                            $q->where('type', '!=', 'return')
+                              ->orWhere(function($sub) {
+                                  $sub->where('type', 'return')
+                                      ->whereNotNull('borrowernumber');
+                              });
+                        });
 
                     if ($tahun) {
                          $statsQuery->whereBetween('datetime', ["{$tahun}-01-01 00:00:00", "{$tahun}-12-31 23:59:59"]);
@@ -255,7 +271,7 @@ class PenggunaanController extends Controller
                     if ($typeFilter !== 'all') {
                         $historyQuery->where('type', 'like', $typeFilter);
                     } else {
-                        $historyQuery->whereIn('type', ['issue', 'return', 'localuse']);
+                        $historyQuery->whereIn('type', ['issue', 'return', 'localuse', 'renew']);
                     }
 
                     $history = $historyQuery->paginate(10)->appends($request->query());
@@ -325,7 +341,14 @@ class PenggunaanController extends Controller
                     ->select('i.biblionumber', DB::raw('COUNT(s.itemnumber) as jumlah_penggunaan'))
                     ->join('items as i', 's.itemnumber', '=', 'i.itemnumber')
                     ->join('biblioitems as bi', 'i.biblionumber', '=', 'bi.biblionumber')
-                    ->whereIn('s.type', ['issue', 'return', 'localuse'])
+                    ->whereIn('s.type', ['issue', 'return', 'localuse', 'renew'])
+                    ->where(function($q) {
+                        $q->where('s.type', '!=', 'return')
+                          ->orWhere(function($sub) {
+                              $sub->where('s.type', 'return')
+                                  ->whereNotNull('s.borrowernumber');
+                          });
+                    })
                     ->whereBetween('s.datetime', [$start_date, $end_date]);
 
                 // Query Fiksi (Cache per page)
@@ -438,7 +461,14 @@ class PenggunaanController extends Controller
 
                 $dailyStats = DB::connection('mysql2')->table('statistics')
                     ->select('itemnumber', DB::raw('COUNT(*) as cnt'))
-                    ->whereIn('type', ['issue', 'return', 'localuse'])
+                    ->whereIn('type', ['issue', 'return', 'localuse', 'renew'])
+                    ->where(function($q) {
+                        $q->where('type', '!=', 'return')
+                          ->orWhere(function($sub) {
+                              $sub->where('type', 'return')
+                                  ->whereNotNull('borrowernumber');
+                          });
+                    })
                     ->whereBetween('datetime', [$dayStart, $dayEnd])
                     ->whereNotNull('itemnumber')
                     ->groupBy('itemnumber')
@@ -562,9 +592,16 @@ class PenggunaanController extends Controller
             $query = DB::connection('mysql2')->table('statistics')
                 ->select(
                     DB::raw("CASE WHEN ccode LIKE 'R%' THEN 'Referensi' ELSE ccode END as kategori"),
-                    DB::raw('COUNT(*) as jumlah')
+                    DB::raw('COUNT(DISTINCT CONCAT(itemnumber, datetime, type)) as jumlah')
                 )
-                ->when($usageType === 'all', fn($q) => $q->whereIn('type', ['issue', 'return', 'localuse']))
+                ->where(function($q) {
+                    $q->where('type', '!=', 'return')
+                      ->orWhere(function($sub) {
+                          $sub->where('type', 'return')
+                              ->whereNotNull('borrowernumber');
+                      });
+                })
+                ->when($usageType === 'all', fn($q) => $q->whereIn('type', ['issue', 'return', 'localuse', 'renew']))
                 ->when($usageType !== 'all', fn($q) => $q->where('type', $usageType))
                 ->whereNotNull('ccode')
                 ->where('ccode', '!=', '');

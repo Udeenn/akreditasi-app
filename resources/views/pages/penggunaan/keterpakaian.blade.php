@@ -122,7 +122,9 @@
                     <h6 class="mb-0 fw-bold"><i class="fas fa-chart-area me-1 text-primary"></i> Grafik Keterpakaian
                         Koleksi</h6>
                 </div>
-                <div class="card-body"><canvas id="koleksiChart"></canvas></div>
+                <div class="card-body">
+                    <div id="koleksiChart" style="min-height: 400px; width: 100%;"></div>
+                </div>
             </div>
 
             {{-- 5. TABEL --}}
@@ -133,6 +135,7 @@
                         <select id="usage_type" class="form-select " style="width: auto; min-width: 180px;">
                             <option value="all" {{ ($usageType ?? 'all') == 'all' ? 'selected' : '' }}>Semua Jenis</option>
                             <option value="issue" {{ ($usageType ?? 'all') == 'issue' ? 'selected' : '' }}>Pinjam</option>
+                            <option value="renew" {{ ($usageType ?? 'all') == 'renew' ? 'selected' : '' }}>Perpanjangan</option>
                             <option value="return" {{ ($usageType ?? 'all') == 'return' ? 'selected' : '' }}>Kembali</option>
                             <option value="localuse" {{ ($usageType ?? 'all') == 'localuse' ? 'selected' : '' }}>Baca di Tempat</option>
                         </select>
@@ -237,7 +240,7 @@
 
 
 <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const exportCsvButton = document.getElementById('exportCsvBtn');
@@ -391,83 +394,84 @@
         const filterType = "{{ $filterType }}";
 
         if (dataTabel.length > 0 && listKategori.length > 0) {
-            const ctx = document.getElementById('koleksiChart').getContext('2d');
             const labels = dataTabel.map(row => {
                 const format = (filterType === 'daily') ? 'D MMM YYYY' : 'MMM YYYY';
                 return moment(row.periode).format(format);
             });
 
             const colorPalette = [
-                'rgba(54, 162, 235, 0.8)',
-                'rgba(255, 99, 132, 0.8)',
-                'rgba(75, 192, 192, 0.8)',
-                'rgba(255, 206, 86, 0.8)',
-                'rgba(153, 102, 255, 0.8)',
-                'rgba(255, 159, 64, 0.8)',
-                'rgba(201, 203, 207, 0.8)',
-                'rgba(231, 84, 128, 0.8)',
-                'rgba(0, 204, 153, 0.8)',
-                'rgba(102, 178, 255, 0.8)',
+                '#36a2eb', '#ff6384', '#4bc0c0', '#ffce56', '#9966ff',
+                '#ff9f40', '#c9cbcf', '#e75480', '#00cc99', '#66b2ff'
             ];
 
-            const datasets = listKategori.map((kategori, index) => {
+            const seriesData = listKategori.map((kategori, index) => {
                 const data = dataTabel.map(row => row[kategori] || 0);
-                const color = colorPalette[index % colorPalette.length];
-
                 return {
-                    label: kategori,
-                    data: data,
-                    borderColor: color,
-                    backgroundColor: color.replace('0.8', '0.2'),
-                    tension: 0.3,
-                    fill: true,
+                    name: kategori,
+                    data: data
                 };
             });
 
-            window.keterpakaianChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Grafik Tren Penggunaan Koleksi',
-                            font: {
-                                size: 16
-                            }
-                        },
-                        legend: {
-                            position: 'top'
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Periode'
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Jumlah Penggunaan'
-                            },
-                            ticks: {
-                                precision: 0
-                            }
-                        }
-                    }
-                }
+            // FIX: Ensure the colors array exactly matches the number of series!
+            // If series length > colors length, ApexCharts falls into an infinite loop on some versions.
+            const dynamicColors = listKategori.map((kategori, index) => {
+                return colorPalette[index % colorPalette.length];
             });
+
+            var options = {
+                series: seriesData,
+                chart: {
+                    height: 400,
+                    type: 'area',
+                    fontFamily: 'Inter, Helvetica, Arial, sans-serif',
+                    toolbar: { show: false }, // Hide to prevent duplicate export options and freezing
+                    zoom: { enabled: false }, // Prevent chart from intercepting page scroll
+                    selection: { enabled: false }, // Prevent chart from intercepting drag events
+                    animations: {
+                        enabled: true, // Re-enable animations since the freeze was a color array bug
+                        easing: 'easeinout',
+                        speed: 800
+                    }
+                },
+                colors: dynamicColors,
+                dataLabels: { enabled: false },
+                stroke: {
+                    curve: 'smooth',
+                    width: 2 // Thinner line for better performance
+                },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.4,
+                        opacityTo: 0.1, // slightly higher to avoid rendering bugs
+                        stops: [0, 90, 100]
+                    }
+                },
+                xaxis: {
+                    categories: labels,
+                    title: { text: 'Periode', style: { fontWeight: 500 } },
+                    tooltip: { enabled: false }
+                },
+                yaxis: {
+                    title: { text: 'Jumlah Penggunaan', style: { fontWeight: 500 } },
+                    labels: {
+                        formatter: function (val) { return Math.round(val); }
+                    }
+                },
+                tooltip: {
+                    theme: 'dark',
+                    shared: true,
+                    intersect: false
+                },
+                legend: {
+                    position: 'top',
+                    horizontalAlign: 'center'
+                }
+            };
+
+            window.keterpakaianChartInstance = new ApexCharts(document.querySelector("#koleksiChart"), options);
+            window.keterpakaianChartInstance.render();
         }
 
         // --- EXPORT PDF LOGIC ---
@@ -476,10 +480,10 @@
         const chartImageInput = document.getElementById('chart_image_base64');
         
         if (exportPdfBtn) {
-            exportPdfBtn.addEventListener('click', function() {
+            exportPdfBtn.addEventListener('click', async function() {
                 if (typeof window.keterpakaianChartInstance !== 'undefined' && window.keterpakaianChartInstance) {
-                    const base64Image = window.keterpakaianChartInstance.toBase64Image();
-                    chartImageInput.value = base64Image;
+                    const uri = await window.keterpakaianChartInstance.dataURI();
+                    chartImageInput.value = uri.imgURI;
                 }
                 pdfExportForm.submit();
             });

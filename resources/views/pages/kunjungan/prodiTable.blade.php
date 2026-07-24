@@ -139,7 +139,7 @@
                         </div>
                         <div class="card-body px-4 pb-4">
                             <div style="height: 350px;">
-                                <canvas id="kunjunganChart"></canvas>
+                                <div id="kunjunganChart" style="min-height: 350px; width: 100%;"></div>
                             </div>
                         </div>
                     </div>
@@ -333,9 +333,8 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment-with-locales.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
@@ -465,86 +464,81 @@
             });
         }
 
-        // ChartJS Logic
-        @if(isset($hasFilter) && $hasFilter && isset($chartData))
-            const ctx = document.getElementById('kunjunganChart');
-            if(ctx) {
-                // 1. Ambil Data & Sortir Explicit di JS (Safety)
-                const rawData = @json($chartData);
-                rawData.sort((a, b) => new Date(a.raw_date) - new Date(b.raw_date));
+          // ApexCharts Logic
+          @if(isset($hasFilter) && $hasFilter && isset($chartData))
+              const chartElement = document.getElementById('kunjunganChart');
+              if(chartElement) {
+                  // 1. Ambil Data & Sortir Explicit di JS (Safety)
+                  const rawData = @json($chartData);
+                  rawData.sort((a, b) => new Date(a.raw_date) - new Date(b.raw_date));
+  
+                  const isDaily = "{{ $filterType }}" === 'daily';
 
-                // 2. Format Data untuk Time Scale ({x: date, y: value})
-                const chartDataset = rawData.map(item => ({
-                    x: item.raw_date,
-                    y: item.total_kunjungan,
-                    label_formatted: item.label // Simpan label asli untuk tooltip
-                }));
-                
-                const isDaily = "{{ $filterType }}" === 'daily';
+                  const categories = rawData.map(item => item.label);
+                  const dataValues = rawData.map(item => item.total_kunjungan);
+  
+                  var options = {
+                      series: [{
+                          name: 'Jumlah Kunjungan',
+                          data: dataValues
+                      }],
+                      chart: {
+                          height: 350,
+                          type: 'area',
+                          fontFamily: 'Inter, Helvetica, Arial, sans-serif',
+                          toolbar: { show: false },
+                          zoom: { enabled: false },
+                          selection: { enabled: false },
+                          animations: {
+                              enabled: true,
+                              easing: 'easeinout',
+                              speed: 800
+                          }
+                      },
+                      colors: ['#0d6efd'],
+                      dataLabels: { enabled: false },
+                      stroke: {
+                          curve: 'smooth',
+                          width: 3
+                      },
+                      fill: {
+                          type: 'gradient',
+                          gradient: {
+                              shadeIntensity: 1,
+                              opacityFrom: 0.4,
+                              opacityTo: 0.05,
+                              stops: [0, 90, 100]
+                          }
+                      },
+                      xaxis: {
+                          categories: categories,
+                          labels: { style: { colors: '#6c757d', fontSize: '11px' } },
+                          axisBorder: { show: false },
+                          axisTicks: { show: false }
+                      },
+                      yaxis: {
+                          labels: { 
+                              style: { colors: '#6c757d', fontSize: '11px' },
+                              formatter: function (val) { return Math.round(val); }
+                          }
+                      },
+                      grid: {
+                          borderColor: '#f0f2f5',
+                          strokeDashArray: 4,
+                          yaxis: { lines: { show: true } }
+                      },
+                      legend: {
+                          show: false
+                      },
+                      tooltip: {
+                          theme: 'dark'
+                      }
+                  };
 
-                // Gradient Fill
-                const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
-                gradient.addColorStop(0, 'rgba(13, 110, 253, 0.2)');
-                gradient.addColorStop(1, 'rgba(13, 110, 253, 0)');
-
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        // Hapus Labels Array (Biarkan Time Scale generate dari x)
-                        datasets: [{
-                            label: 'Jumlah Kunjungan',
-                            data: chartDataset,
-                            borderColor: '#0d6efd',
-                            backgroundColor: gradient,
-                            borderWidth: 2,
-                            pointBackgroundColor: '#ffffff',
-                            pointBorderColor: '#0d6efd',
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            fill: true,
-                            tension: 0.3
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                backgroundColor: 'rgba(33, 37, 41, 0.9)',
-                                padding: 12,
-                                titleFont: { size: 13 },
-                                bodyFont: { size: 13 },
-                                cornerRadius: 8,
-                                displayColors: false
-                            }
-                        },
-                        scales: {
-                            x: {
-                                type: 'time',
-                                time: {
-                                    unit: isDaily ? 'day' : 'month',
-                                    tooltipFormat: isDaily ? 'dddd, DD MMM YYYY' : 'MMM YYYY',
-                                    displayFormats: {
-                                        day: 'DD MMM',
-                                        month: 'MMM YYYY'
-                                    }
-                                },
-                                grid: { display: false },
-                                ticks: { font: { size: 11 }, color: '#6c757d' }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                border: { display: false },
-                                grid: { color: '#f0f2f5' },
-                                ticks: { font: { size: 11 }, color: '#6c757d' }
-                            }
-                        }
-                    }
-                });
-            }
-        @endif
+                  window.kunjunganChartInstance = new ApexCharts(document.querySelector("#kunjunganChart"), options);
+                  window.kunjunganChartInstance.render();
+              }
+          @endif
     });
 </script>
 @endpush
-

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Statistik Peminjaman (Rentang Waktu)')
+@section('title', 'Statistik Peminjaman Keseluruhan')
 
 @push('styles')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -169,9 +169,9 @@
                                 Tren Peminjaman</h5>
                         </div>
                         <div class="card-body px-4 pb-4">
-                            <div style="height: 350px; position: relative;">
-                                <canvas id="peminjamanChart"></canvas>
-                            </div>
+                              <div style="height: 350px; position: relative;">
+                                  <div id="peminjamanChart" style="min-height: 350px; width: 100%;"></div>
+                              </div>
                         </div>
                     </div>
                 </div>
@@ -271,8 +271,8 @@
                 <div class="col-12 col-md-6">
                     <div class="card border-0 shadow-sm text-center p-5 rounded-4">
                         <div class="card-body">
-                            <div class="bg-secondary bg-opacity-10 rounded-circle d-inline-flex p-4 mb-3">
-                                <i class="fas fa-search fa-3x text-muted"></i>
+                            <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-4 mb-3">
+                                <i class="fas fa-search fa-3x text-primary"></i>
                             </div>
                             <h5 class="fw-bold text-body">Data Tidak Ditemukan</h5>
                             <p class="text-muted mb-0">Silakan gunakan filter di atas untuk menampilkan statistik peminjaman.</p>
@@ -344,7 +344,7 @@
     </div>
 
     {{-- SCRIPT ASLI (TIDAK DIUBAH) --}}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/locale/id.js"></script>
     <script>
@@ -376,139 +376,70 @@
 
                 const chartDataBooks = fullStatistics.map(item => item.jumlah_peminjaman_buku);
                 const chartDataReturns = fullStatistics.map(item => item.jumlah_pengembalian);
-                const chartDataBorrowers = fullStatistics.map(item => item
-                    .jumlah_peminjam_unik); // DATA PEMINJAM DITAMBAHKAN
+                const chartDataBorrowers = fullStatistics.map(item => item.jumlah_peminjam_unik);
 
-                const ctx = document.getElementById('peminjamanChart').getContext('2d');
-
-                // 2. Setup Gradient Warna
-                // Biru (Peminjaman)
-                let gradientBlue = ctx.createLinearGradient(0, 0, 0, 400);
-                gradientBlue.addColorStop(0, 'rgba(13, 110, 253, 0.5)');
-                gradientBlue.addColorStop(1, 'rgba(13, 110, 253, 0.05)');
-
-                // Kuning (Pengembalian)
-                let gradientYellow = ctx.createLinearGradient(0, 0, 0, 400);
-                gradientYellow.addColorStop(0, 'rgba(255, 193, 7, 0.5)');
-                gradientYellow.addColorStop(1, 'rgba(255, 193, 7, 0.05)');
-
-                // Cyan/Info (Peminjam Unik)
-                let gradientInfo = ctx.createLinearGradient(0, 0, 0, 400);
-                gradientInfo.addColorStop(0, 'rgba(13, 202, 240, 0.5)');
-                gradientInfo.addColorStop(1, 'rgba(13, 202, 240, 0.05)');
-
-                window.peminjamanChartInstance = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: chartLabels,
-                        datasets: [{
-                                label: 'Buku Terpinjam',
-                                data: chartDataBooks,
-                                borderColor: '#0d6efd', // Primary Blue
-                                backgroundColor: gradientBlue,
-                                pointBackgroundColor: '#0d6efd',
-                                pointBorderColor: '#fff',
-                                tension: 0.4,
-                                fill: true,
-                                borderWidth: 2
-                            },
-                            {
-                                label: 'Total Pengembalian',
-                                data: chartDataReturns,
-                                borderColor: '#ffc107', // Warning Yellow
-                                backgroundColor: gradientYellow,
-                                pointBackgroundColor: '#ffc107',
-                                pointBorderColor: '#fff',
-                                tension: 0.4,
-                                fill: true,
-                                borderWidth: 2
-                            },
-                            {
-                                label: 'Total Peminjam', // DATASET BARU
-                                data: chartDataBorrowers,
-                                borderColor: '#0dcaf0', // Info Cyan
-                                backgroundColor: gradientInfo,
-                                pointBackgroundColor: '#0dcaf0',
-                                pointBorderColor: '#fff',
-                                tension: 0.4,
-                                fill: true,
-                                borderWidth: 2,
-                                hidden: false // Set true jika ingin defaultnya sembunyi
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
-                        scales: {
-                            x: {
-                                grid: {
-                                    display: false,
-                                    drawBorder: false
-                                },
-                                ticks: {
-                                    maxTicksLimit: 10,
-                                    color: "#858796",
-                                    font: {
-                                        size: 11
-                                    }
-                                }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: "#e9ecef",
-                                    borderDash: [2],
-                                    drawBorder: false
-                                },
-                                ticks: {
-                                    padding: 10,
-                                    color: "#858796",
-                                    font: {
-                                        size: 11
-                                    }
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                                labels: {
-                                    usePointStyle: true,
-                                    boxWidth: 8,
-                                    padding: 20,
-                                    font: {
-                                        weight: 'bold'
-                                    }
-                                }
-                            },
-                            tooltip: {
-                                backgroundColor: "rgba(33, 37, 41, 0.95)",
-                                bodyColor: "#ffffff",
-                                titleColor: '#ffffff',
-                                titleFont: {
-                                    size: 13,
-                                    weight: 'bold'
-                                },
-                                borderColor: '#6c757d',
-                                borderWidth: 0,
-                                padding: 12,
-                                displayColors: true, // Tampilkan kotak warna di tooltip
-                                callbacks: {
-                                    title: function(context) {
-                                        const item = fullStatistics[context[0].dataIndex];
-                                        return moment(item.periode).format(filterType === 'daily' ?
-                                            'dddd, D MMMM YYYY' : 'MMMM YYYY');
-                                    }
-                                }
-                            }
+                var options = {
+                    series: [
+                        { name: 'Buku Terpinjam', data: chartDataBooks },
+                        { name: 'Total Pengembalian', data: chartDataReturns },
+                        { name: 'Total Peminjam', data: chartDataBorrowers }
+                    ],
+                    chart: {
+                        height: 350,
+                        type: 'area',
+                        fontFamily: 'Inter, Helvetica, Arial, sans-serif',
+                        toolbar: { show: false },
+                        zoom: { enabled: false },
+                        selection: { enabled: false },
+                        animations: {
+                            enabled: true,
+                            easing: 'easeinout',
+                            speed: 800
                         }
+                    },
+                    colors: ['#0d6efd', '#ffc107', '#0dcaf0'],
+                    dataLabels: { enabled: false },
+                    stroke: {
+                        curve: 'smooth',
+                        width: 3
+                    },
+                    fill: {
+                        type: 'gradient',
+                        gradient: {
+                            shadeIntensity: 1,
+                            opacityFrom: 0.4,
+                            opacityTo: 0.05,
+                            stops: [0, 90, 100]
+                        }
+                    },
+                    xaxis: {
+                        categories: chartLabels,
+                        labels: { style: { colors: '#6c757d', fontSize: '11px' } },
+                        axisBorder: { show: false },
+                        axisTicks: { show: false }
+                    },
+                    yaxis: {
+                        labels: { 
+                            style: { colors: '#6c757d', fontSize: '11px' },
+                            formatter: function (val) { return Math.round(val); }
+                        }
+                    },
+                    grid: {
+                        borderColor: '#f0f2f5',
+                        strokeDashArray: 4,
+                        yaxis: { lines: { show: true } }
+                    },
+                    legend: {
+                        position: 'top',
+                        fontWeight: 'bold'
+                    },
+                    tooltip: {
+                        theme: 'dark'
                     }
-                });
+                };
+
+                window.peminjamanChartInstance = new ApexCharts(document.querySelector("#peminjamanChart"), options);
+                window.peminjamanChartInstance.render();
             }
 
             const detailModalElement = document.getElementById('detailPeminjamanModal');
@@ -709,13 +640,11 @@
             const chartImageInput = document.getElementById('chart_image_base64');
             
             if (exportPdfBtn) {
-                exportPdfBtn.addEventListener('click', function() {
+                exportPdfBtn.addEventListener('click', async function() {
                     // Capture Chart as Base64 Image if chartInstance exists
                     if (typeof window.peminjamanChartInstance !== 'undefined' && window.peminjamanChartInstance) {
-                        // setTimeout is used to ensure any animation is finished before capturing, 
-                        // but since it's user-triggered, it should already be fully rendered.
-                        const base64Image = window.peminjamanChartInstance.toBase64Image();
-                        chartImageInput.value = base64Image;
+                        const uri = await window.peminjamanChartInstance.dataURI();
+                        chartImageInput.value = uri.imgURI;
                     }
                     
                     // Submit the hidden form

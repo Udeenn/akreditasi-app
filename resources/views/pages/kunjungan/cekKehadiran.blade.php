@@ -47,10 +47,12 @@
                                 <button type="submit" class="btn btn-primary px-4  shadow-sm">
                                     <i class="fas fa-search me-1"></i> Lihat
                                 </button>
-                                <button type="button" id="downloadPdfButton"
-                                    class="btn btn-danger px-3 shadow-sm {{ !request('cardnumber') ? 'disabled' : '' }}">
-                                    <i class="fas fa-file-pdf me-1"></i> PDF
-                                </button>
+                                @if(Auth::user() && Auth::user()->isLibrarian())
+                                    <button type="button" id="downloadPdfButton"
+                                        class="btn btn-danger px-3 shadow-sm {{ !request('cardnumber') ? 'disabled' : '' }}">
+                                        <i class="fas fa-file-pdf me-1"></i> PDF
+                                    </button>
+                                @endif
                                 <button type="button" id="downloadExportDataButton"
                                     class="btn btn-success px-3 shadow-sm {{ !request('cardnumber') ? 'disabled' : '' }}">
                                     <i class="fas fa-file-csv me-1"></i> CSV
@@ -87,9 +89,9 @@
                             <h5 class="fw-bold mb-0 text-body">Grafik Kunjungan</h5>
                         </div>
                         <div class="card-body px-4 pb-4">
-                            <div style="height: 300px; width: 100%;">
-                                <canvas id="chartKunjungan"></canvas>
-                            </div>
+                              <div style="height: 300px; width: 100%;">
+                                  <div id="chartKunjungan" style="min-height: 300px; width: 100%;"></div>
+                              </div>
                         </div>
                     </div>
                 </div>
@@ -283,7 +285,7 @@
     </div>
 
     {{-- SCRIPT JAVASCRIPT --}}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             // --- Export Buttons Logic ---
@@ -384,82 +386,80 @@
 
             // --- Chart Logic ---
             @if (isset($fullBorrowerDetails) && $fullBorrowerDetails && $dataKunjungan->isNotEmpty())
-                const chartCanvas = document.getElementById('chartKunjungan');
-                const chart = chartCanvas.getContext('2d');
+                const labels = {!! json_encode(
+                    $dataKunjungan->pluck('tahun_bulan')->map(function ($v) {
+                        try {
+                            return $v ? \Carbon\Carbon::createFromFormat('Ym', (string) $v)->format('M Y') : '-';
+                        } catch (\Exception $e) {
+                            return (string) $v;
+                        }
+                    })
+                ) !!};
+                const dataValues = {!! json_encode($dataKunjungan->pluck('jumlah_kunjungan')) !!};
 
-                new Chart(chart, {
-                    type: 'line',
-                    data: {
-                        labels: {!! json_encode(
-                            $dataKunjungan->pluck('tahun_bulan')->map(function ($v) {
-                                try {
-                                    return $v ? \Carbon\Carbon::createFromFormat('Ym', (string) $v)->format('M Y') : '-';
-                                } catch (\Exception $e) {
-                                    return (string) $v;
-                                }
-                            }),
-                        ) !!},
-                        datasets: [{
-                            label: 'Jumlah Kunjungan',
-                            data: {!! json_encode($dataKunjungan->pluck('jumlah_kunjungan')) !!},
-                            backgroundColor: 'rgba(13, 110, 253, 0.1)', // Soft Primary
-                            borderColor: '#0d6efd', // Primary
-                            borderWidth: 2,
-                            pointBackgroundColor: '#ffffff',
-                            pointBorderColor: '#0d6efd',
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            tension: 0.4,
-                            fill: true
-                        }]
+                var options = {
+                    series: [{
+                        name: 'Jumlah Kunjungan',
+                        data: dataValues
+                    }],
+                    chart: {
+                        height: 300,
+                        type: 'area',
+                        fontFamily: 'Inter, Helvetica, Arial, sans-serif',
+                        toolbar: { show: false },
+                        zoom: { enabled: false },
+                        selection: { enabled: false },
+                        animations: {
+                            enabled: true,
+                            easing: 'easeinout',
+                            speed: 800
+                        }
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(33, 37, 41, 0.95)',
-                                padding: 10,
-                                displayColors: false,
-                                callbacks: {
-                                    label: function(context) {
-                                        return context.parsed.y + ' Kunjungan';
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: '#f0f2f5',
-                                    drawBorder: false
-                                },
-                                ticks: {
-                                    precision: 0,
-                                    color: '#6c757d',
-                                    font: {
-                                        size: 11
-                                    }
-                                }
-                            },
-                            x: {
-                                grid: {
-                                    display: false
-                                },
-                                ticks: {
-                                    color: '#6c757d',
-                                    font: {
-                                        size: 11
-                                    }
-                                }
+                    colors: ['#0d6efd'],
+                    dataLabels: { enabled: false },
+                    stroke: {
+                        curve: 'smooth',
+                        width: 3
+                    },
+                    fill: {
+                        type: 'gradient',
+                        gradient: {
+                            shadeIntensity: 1,
+                            opacityFrom: 0.4,
+                            opacityTo: 0.05,
+                            stops: [0, 90, 100]
+                        }
+                    },
+                    xaxis: {
+                        categories: labels,
+                        tooltip: { enabled: false },
+                        labels: { style: { colors: '#6c757d', fontSize: '11px' } },
+                        axisBorder: { show: false },
+                        axisTicks: { show: false }
+                    },
+                    yaxis: {
+                        labels: { 
+                            style: { colors: '#6c757d', fontSize: '11px' },
+                            formatter: function (val) { return Math.round(val); }
+                        }
+                    },
+                    grid: {
+                        borderColor: '#f0f2f5',
+                        strokeDashArray: 4,
+                        yaxis: { lines: { show: true } }
+                    },
+                    tooltip: {
+                        theme: 'dark',
+                        y: {
+                            formatter: function (val) {
+                                return val + " Kunjungan";
                             }
                         }
                     }
-                });
+                };
+
+                window.chartKunjunganInstance = new ApexCharts(document.querySelector("#chartKunjungan"), options);
+                window.chartKunjunganInstance.render();
 
                 // --- Modal Lokasi Logic ---
                 async function fetchLokasiData(cardnumber, tahunBulan, page = 1) {

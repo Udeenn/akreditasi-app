@@ -83,7 +83,7 @@
                         </div>
                         <div class="card-body px-4 pb-4">
                             <div style="position: relative; height: 400px; width: 100%;">
-                                <canvas id="chartKunjungan"></canvas>
+                                <div id="chartKunjungan" style="min-height: 400px; width: 100%;"></div>
                             </div>
                         </div>
                     </div>
@@ -181,94 +181,75 @@
         @endif
     </div>
 
-    {{-- SCRIPT ASLI (TIDAK DIUBAH SAMA SEKALI AGAR FUNGSIONALITAS AMAN) --}}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             @if ($selectedProdi && $selectedTahunAwal && $selectedTahunAkhir && $data->isNotEmpty())
-                const chartCanvas = document.getElementById('chartKunjungan');
-                const chart = chartCanvas.getContext('2d');
+                const labels = {!! json_encode(
+                    $data->pluck('tahun_bulan')->map(fn($v) => \Carbon\Carbon::createFromFormat('Ym', $v)->format('M Y'))
+                ) !!};
+                const dataValues = {!! json_encode($data->pluck('jumlah_kunjungan')) !!};
 
-                const dataChart = new Chart(chart, {
-                    type: 'bar',
-                    data: {
-                        labels: {!! json_encode(
-                            $data->pluck('tahun_bulan')->map(fn($v) => \Carbon\Carbon::createFromFormat('Ym', $v)->format('M Y')),
-                        ) !!},
-                        datasets: [{
-                            label: 'Jumlah Kunjungan {{ $namaProdi }}',
-                            data: {!! json_encode($data->pluck('jumlah_kunjungan')) !!},
-                            backgroundColor: 'rgba(13, 110, 253, 0.6)', // Warna Biru Bootstrap
-                            borderColor: '#0d6efd',
-                            borderWidth: 1,
-                            borderRadius: 4, // Rounded bars agar modern
-                            barPercentage: 0.6,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false, // Penting agar chart mengikuti container
-                        plugins: {
-                            legend: {
-                                display: true,
-                                position: 'top'
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(33, 37, 41, 0.9)',
-                                padding: 10,
-                                titleFont: {
-                                    size: 13
-                                },
-                                bodyFont: {
-                                    size: 13
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: '#f0f2f5',
-                                    drawBorder: false
-                                },
-                                ticks: {
-                                    font: {
-                                        size: 11
-                                    },
-                                    color: '#6c757d'
-                                }
-                            },
-                            x: {
-                                grid: {
-                                    display: false
-                                },
-                                ticks: {
-                                    font: {
-                                        size: 11
-                                    },
-                                    color: '#6c757d'
-                                }
-                            }
+                var options = {
+                    series: [{
+                        name: 'Jumlah Kunjungan {{ $namaProdi }}',
+                        data: dataValues
+                    }],
+                    chart: {
+                        height: 400,
+                        type: 'bar',
+                        fontFamily: 'Inter, Helvetica, Arial, sans-serif',
+                        toolbar: { show: false },
+                        zoom: { enabled: false },
+                        selection: { enabled: false },
+                        animations: {
+                            enabled: true,
+                            easing: 'easeinout',
+                            speed: 800
                         }
+                    },
+                    colors: ['rgba(13, 110, 253, 0.8)'],
+                    plotOptions: {
+                        bar: {
+                            borderRadius: 6,
+                            columnWidth: '55%',
+                        }
+                    },
+                    dataLabels: { enabled: false },
+                    xaxis: {
+                        categories: labels,
+                        labels: { style: { colors: '#6c757d', fontSize: '11px' } },
+                        axisBorder: { show: false },
+                        axisTicks: { show: false }
+                    },
+                    yaxis: {
+                        labels: { 
+                            style: { colors: '#6c757d', fontSize: '11px' },
+                            formatter: function (val) { return Math.round(val); }
+                        }
+                    },
+                    grid: {
+                        borderColor: '#f0f2f5',
+                        strokeDashArray: 4,
+                        yaxis: { lines: { show: true } }
+                    },
+                    tooltip: {
+                        theme: 'dark'
                     }
-                });
+                };
 
-                // Save Chart (PDF/PNG) logic - TETAP BERFUNGSI
-                document.getElementById("saveChart").addEventListener("click", function() {
-                    const newCanvas = document.createElement("canvas");
-                    newCanvas.width = chartCanvas.width;
-                    newCanvas.height = chartCanvas.height;
+                window.chartKunjunganInstance = new ApexCharts(document.querySelector("#chartKunjungan"), options);
+                window.chartKunjunganInstance.render();
 
-                    const context = newCanvas.getContext("2d");
-                    context.fillStyle = "#ffffff";
-                    context.fillRect(0, 0, newCanvas.width, newCanvas.height);
-                    context.drawImage(chartCanvas, 0, 0);
-                    const imageURL = newCanvas.toDataURL("image/png");
-
-                    const downloadLink = document.createElement("a");
-                    downloadLink.href = imageURL;
-                    downloadLink.download = "chart_kunjungan_{{ Str::slug($namaProdi) }}.png";
-                    downloadLink.click();
+                // Save Chart (PDF/PNG) logic
+                document.getElementById("saveChart").addEventListener("click", async function() {
+                    if (window.chartKunjunganInstance) {
+                        const uri = await window.chartKunjunganInstance.dataURI();
+                        const downloadLink = document.createElement("a");
+                        downloadLink.href = uri.imgURI;
+                        downloadLink.download = "chart_kunjungan_{{ Str::slug($namaProdi) }}.png";
+                        downloadLink.click();
+                    }
                 });
             @endif
         });

@@ -82,9 +82,9 @@
                 <div class="card-header">
                     <h5 class="mb-0">Grafik Kunjungan</h5>
                 </div>
-                <div class="card-body">
-                    <canvas id="kunjunganChart" style="max-height: 400px; height: 400px;"></canvas>
-                </div>
+                  <div class="card-body">
+                      <div id="kunjunganChart" style="min-height: 400px; width: 100%;"></div>
+                  </div>
             </div>
 
             {{-- Table Section --}}
@@ -246,9 +246,8 @@
 @endsection
 
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0/dist/chartjs-adapter-moment.min.js"></script>
     <script>
         // Gunakan variabel hasFilter dari PHP untuk JavaScript
         const hasFilter = @json($hasFilter);
@@ -384,72 +383,59 @@
             }
 
             if (hasFilter) {
-                // --- Skrip untuk Chart.js ---
-                const ctx = document.getElementById('kunjunganChart').getContext('2d');
-                const labels = chartData.map(item => item.tanggal_kunjungan);
+                // --- Skrip untuk ApexCharts ---
+                const labels = chartData.map(item => moment(item.tanggal_kunjungan).format(filterType === 'daily' ? 'DD MMM YYYY' : 'MMM YYYY'));
                 const dataValues = chartData.map(item => item.jumlah_kunjungan_harian);
-                let chartUnit = (filterType === 'daily') ? 'day' : 'month';
-                let tooltipFormat = (filterType === 'daily') ? 'DD MMMM YYYY' : 'MMMM YYYY';
-                let displayFormat = (filterType === 'daily') ? 'DD MMM' : 'MMM YYYY';
 
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Jumlah Kunjungan',
-                            data: dataValues,
-                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            x: {
-                                type: 'time',
-                                time: {
-                                    unit: chartUnit,
-                                    tooltipFormat: tooltipFormat,
-                                    displayFormats: {
-                                        day: 'DD MMM',
-                                        month: 'MMM YYYY'
-                                    }
-                                },
-                                title: {
-                                    display: true,
-                                    text: (filterType === 'daily') ? 'Tanggal' : 'Bulan'
-                                }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: 'Jumlah Kunjungan'
-                                },
-                                ticks: {
-                                    precision: 0
-                                }
-                            }
-                        },
-                        plugins: {
-                            tooltip: {
-                                callbacks: {
-                                    title: function(context) {
-                                        const date = moment(context[0].label);
-                                        if (filterType === 'daily') {
-                                            return date.format('dddd, DD MMMM YYYY');
-                                        } else {
-                                            return date.format('MMMM YYYY');
-                                        }
-                                    }
-                                }
-                            }
+                var options = {
+                    series: [{
+                        name: 'Jumlah Kunjungan',
+                        data: dataValues
+                    }],
+                    chart: {
+                        height: 400,
+                        type: 'bar',
+                        fontFamily: 'Inter, Helvetica, Arial, sans-serif',
+                        toolbar: { show: false },
+                        zoom: { enabled: false },
+                        animations: {
+                            enabled: true,
+                            easing: 'easeinout',
+                            speed: 800
                         }
+                    },
+                    plotOptions: {
+                        bar: {
+                            borderRadius: 4,
+                            columnWidth: '50%',
+                        }
+                    },
+                    colors: ['#0d6efd'],
+                    dataLabels: { enabled: false },
+                    xaxis: {
+                        categories: labels,
+                        labels: { style: { colors: '#6c757d', fontSize: '11px' } },
+                        axisBorder: { show: false },
+                        axisTicks: { show: false }
+                    },
+                    yaxis: {
+                        labels: { 
+                            style: { colors: '#6c757d', fontSize: '11px' },
+                            formatter: function (val) { return Math.round(val); }
+                        }
+                    },
+                    grid: {
+                        borderColor: '#f0f2f5',
+                        strokeDashArray: 4,
+                        yaxis: { lines: { show: true } }
+                    },
+                    tooltip: {
+                        theme: 'dark'
                     }
-                });
+                };
+
+                window.kunjunganChartInstance = new ApexCharts(document.querySelector("#kunjunganChart"), options);
+                window.kunjunganChartInstance.render();
             }
 
 

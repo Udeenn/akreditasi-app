@@ -124,9 +124,9 @@
                             </h5>
                         </div>
                         <div class="card-body px-4 pb-4">
-                            <div style="height: 350px; position: relative;">
-                                <canvas id="kunjunganChart"></canvas>
-                            </div>
+                              <div style="height: 350px; position: relative;">
+                                  <div id="kunjunganChart" style="min-height: 350px; width: 100%;"></div>
+                              </div>
                         </div>
                     </div>
                 </div>
@@ -327,7 +327,7 @@
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
     <script>
         $(document).ready(function() {
@@ -445,85 +445,73 @@
 
             // --- 4. CHART ---
             @if (isset($chartData) && count($chartData) > 0)
-                const ctx = document.getElementById('kunjunganChart');
-                if (ctx) {
-                    const chartData = @json($chartData);
-                    const labels = chartData.map(item => item.label);
-                    const dataValues = chartData.map(item => item.total_kunjungan);
+                const chartData = @json($chartData);
+                const labels = chartData.map(item => item.label);
+                const dataValues = chartData.map(item => item.total_kunjungan);
 
-                    var gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
-                    gradient.addColorStop(0, 'rgba(13, 110, 253, 0.5)');
-                    gradient.addColorStop(1, 'rgba(13, 110, 253, 0.0)');
-
-                    new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Total Kunjungan',
-                                data: dataValues,
-                                borderColor: '#0d6efd',
-                                backgroundColor: gradient,
-                                borderWidth: 3,
-                                pointBackgroundColor: '#fff',
-                                pointBorderColor: '#0d6efd',
-                                pointHoverBackgroundColor: '#0d6efd',
-                                pointHoverBorderColor: '#fff',
-                                pointRadius: 4,
-                                pointHoverRadius: 6,
-                                fill: true,
-                                tension: 0.4
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            interaction: {
-                                intersect: false,
-                                mode: 'index'
-                            },
-                            plugins: {
-                                legend: {
-                                    display: false
-                                },
-                                tooltip: {
-                                    backgroundColor: 'rgba(30, 41, 59, 0.95)', // Tooltip dark
-                                    padding: 10,
-                                    displayColors: false,
-                                    callbacks: {
-                                        label: function(context) {
-                                            return ' Jumlah: ' + context.parsed.y;
-                                        }
-                                    }
-                                }
-                            },
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    grid: {
-                                        color: 'rgba(0,0,0,0.05)',
-                                        drawBorder: false
-                                    },
-                                    ticks: {
-                                        font: {
-                                            size: 11
-                                        }
-                                    }
-                                },
-                                x: {
-                                    grid: {
-                                        display: false
-                                    },
-                                    ticks: {
-                                        font: {
-                                            size: 11
-                                        }
-                                    }
-                                }
+                var options = {
+                    series: [{
+                        name: 'Total Kunjungan',
+                        data: dataValues
+                    }],
+                    chart: {
+                        height: 350,
+                        type: 'area',
+                        fontFamily: 'Inter, Helvetica, Arial, sans-serif',
+                        toolbar: { show: false },
+                        zoom: { enabled: false },
+                        selection: { enabled: false },
+                        animations: {
+                            enabled: true,
+                            easing: 'easeinout',
+                            speed: 800
+                        }
+                    },
+                    colors: ['#0d6efd'],
+                    dataLabels: { enabled: false },
+                    stroke: {
+                        curve: 'smooth',
+                        width: 3
+                    },
+                    fill: {
+                        type: 'gradient',
+                        gradient: {
+                            shadeIntensity: 1,
+                            opacityFrom: 0.4,
+                            opacityTo: 0.05,
+                            stops: [0, 90, 100]
+                        }
+                    },
+                    xaxis: {
+                        categories: labels,
+                        tooltip: { enabled: false },
+                        labels: { style: { colors: '#6c757d', fontSize: '11px' } },
+                        axisBorder: { show: false },
+                        axisTicks: { show: false }
+                    },
+                    yaxis: {
+                        labels: { 
+                            style: { colors: '#6c757d', fontSize: '11px' },
+                            formatter: function (val) { return Math.round(val); }
+                        }
+                    },
+                    grid: {
+                        borderColor: '#f0f2f5',
+                        strokeDashArray: 4,
+                        yaxis: { lines: { show: true } }
+                    },
+                    tooltip: {
+                        theme: 'dark',
+                        y: {
+                            formatter: function (val) {
+                                return val + " Kunjungan";
                             }
                         }
-                    });
-                }
+                    }
+                };
+
+                var chart = new ApexCharts(document.querySelector("#kunjunganChart"), options);
+                chart.render();
             @endif
         });
     </script>

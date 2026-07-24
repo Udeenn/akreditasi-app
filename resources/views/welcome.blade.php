@@ -165,7 +165,7 @@
                             <h6 class="mb-0">Grafik Data Kunjungan Tahun 2025</h6>
                         </div>
                         <div class="card-body">
-                            <canvas id="grafikKunjungan"></canvas>
+                            <div id="grafikKunjungan" style="min-height: 250px; width: 100%;"></div>
                         </div>
                     </div>
                 </div>
@@ -175,7 +175,7 @@
                             <h6 class="mb-0">Grafik Data Sirkulasi Tahun 2025</h6>
                         </div>
                         <div class="card-body">
-                            <canvas id="grafikSirkulasi"></canvas>
+                            <div id="grafikSirkulasi" style="min-height: 250px; width: 100%;"></div>
                         </div>
                     </div>
                 </div>
@@ -244,7 +244,7 @@
                             <h6 class="mb-0">Kunjungan Harian Fakultas</h6>
                         </div>
                         <div class="card-body d-flex justify-content-center align-items-center">
-                            <canvas id="grafikFakultas" style="max-height: 400px;"></canvas>
+                            <div id="grafikFakultas" style="min-height: 350px; width: 100%;"></div>
                         </div>
                     </div>
                 </div>
@@ -256,7 +256,7 @@
             integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous">
         </script>
         <script src="https://kit.fontawesome.com/f96c87efe8.js" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
         <script type="text/javascript" src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
         <script type="text/javascript" src="https://cdn.datatables.net/buttons/3.0.2/js/dataTables.buttons.min.js"></script>
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -282,176 +282,103 @@
                 });
             });
 
-            // Data untuk Grafik Pie Kunjungan Fakultas
-            const dataFakultas = {
+            // Konfigurasi Grafik Pie Kunjungan Fakultas (ApexCharts)
+            var optionsFakultas = {
+                series: [35, 15, 12, 10, 8, 5, 10, 5],
+                chart: {
+                    type: 'pie',
+                    height: 350,
+                    fontFamily: 'Inter, Helvetica, Arial, sans-serif',
+                },
                 labels: ['FKIP', 'EKONOMI', 'HUKUM', 'TEKNIK', 'GEOGRAFI', 'PSI KOLOGI', 'FAI', 'OTHER'],
-                datasets: [{
-                    label: 'Jumlah Kunjungan',
-                    data: [100, 20, 15, 10, 5, 5, 5, 2], // Contoh data
-                    backgroundColor: [
-                        '#FF6384', // Merah muda (contoh)
-                        '#36A2EB', // Biru
-                        '#FFCD56', // Kuning
-                        '#4BC0C0', // Biru kehijauan
-                        '#9966FF', // Ungu
-                        '#FF9900', // Oranye gelap
-                        '#C9CBCE', // Abu-abu
-                        '#E7E9ED' // Abu-abu terang
-                    ],
-                    hoverOffset: 4
-                }]
-            };
-
-            // Konfigurasi untuk Grafik Pie Kunjungan Fakultas
-            const configFakultas = {
-                type: 'pie', // Jenis grafik: pie
-                data: dataFakultas,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false, // Penting untuk kontrol ukuran
-                    plugins: {
-                        legend: {
-                            position: 'right', // Posisi legend di kanan
-                            labels: {
-                                usePointStyle: true, // Gunakan gaya titik untuk item legend
-                            }
-                        },
-                        title: {
-                            display: false,
-                        }
-                        // Anda juga bisa menambahkan plugin ChartDataLabels untuk persentase di potongan pie
-                        // requires: 'chartjs-plugin-datalabels'
-                    }
+                colors: ['#FF6384', '#36A2EB', '#FFCD56', '#4BC0C0', '#9966FF', '#FF9900', '#C9CBCE', '#E7E9ED'],
+                legend: {
+                    position: 'right'
+                },
+                dataLabels: {
+                    enabled: false
                 }
             };
+            var chartFakultas = new ApexCharts(document.querySelector("#grafikFakultas"), optionsFakultas);
+            chartFakultas.render();
 
-            // Inisialisasi Grafik Pie
-            const ctxFakultas = document.getElementById('grafikFakultas').getContext('2d');
-            new Chart(ctxFakultas, configFakultas);
-
-            // Data untuk Grafik Kunjungan
-            const dataKunjungan = {
-                labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
-                    'November', 'December'
-                ],
-                datasets: [{
-                    label: 'Jumlah Kunjungan',
-                    data: [6500, 11500, 11900, 0, 0, 0, 0, 0, 0, 0, 0, 0], // Contoh data sesuai gambar
-                    backgroundColor: 'rgba(0, 123, 255, 0.7)', // Biru
-                    borderColor: 'rgba(0, 123, 255, 1)',
-                    borderWidth: 1,
-                    borderRadius: 5, // Membuat sudut batang sedikit membulat
-                }]
-            };
-
-            // Konfigurasi untuk Grafik Kunjungan
-            const configKunjungan = {
-                type: 'bar', // Jenis grafik: bar (batang)
-                data: dataKunjungan,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false, // Penting untuk kontrol ukuran di parent div
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: false,
-                                text: 'Jumlah'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: false,
-                                text: 'Bulan'
-                            },
-                            grid: {
-                                display: false // Menghilangkan garis vertikal
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false // Menghilangkan legend (karena hanya satu dataset)
-                        },
-                        title: {
-                            display: false
-                        }
+            // Konfigurasi Grafik Kunjungan (ApexCharts)
+            var optionsKunjungan = {
+                series: [{
+                    name: 'Jumlah Kunjungan',
+                    data: [6500, 11500, 11900, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                }],
+                chart: {
+                    type: 'bar',
+                    height: 250,
+                    fontFamily: 'Inter, Helvetica, Arial, sans-serif',
+                    toolbar: { show: false }
+                },
+                plotOptions: {
+                    bar: {
+                        borderRadius: 4,
+                        columnWidth: '50%',
                     }
+                },
+                colors: ['#0d6efd'],
+                xaxis: {
+                    categories: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+                    labels: { style: { colors: '#6c757d', fontSize: '11px' } }
+                },
+                yaxis: {
+                    labels: { style: { colors: '#6c757d', fontSize: '11px' } }
+                },
+                grid: {
+                    borderColor: '#f0f2f5',
+                    strokeDashArray: 4
                 }
             };
+            var chartKunjungan = new ApexCharts(document.querySelector("#grafikKunjungan"), optionsKunjungan);
+            chartKunjungan.render();
 
-            // Inisialisasi Grafik Kunjungan
-            const ctxKunjungan = document.getElementById('grafikKunjungan').getContext('2d');
-            new Chart(ctxKunjungan, configKunjungan);
-
-
-            // Data untuk Grafik Sirkulasi
-            const dataSirkulasi = {
-                labels: ['January', 'February', 'March'],
-                datasets: [{
-                        label: 'Peminjaman Buku',
-                        data: [350, 850, 500],
-                        backgroundColor: 'rgba(0, 123, 255, 0.7)', // Biru
-                        borderColor: 'rgba(0, 123, 255, 1)',
-                        borderWidth: 1,
-                        borderRadius: 5,
-                    },
-                    {
-                        label: 'Perpanjangan Buku',
-                        data: [150, 200, 250],
-                        backgroundColor: 'rgba(40, 167, 69, 0.7)', // Hijau (success)
-                        borderColor: 'rgba(40, 167, 69, 1)',
-                        borderWidth: 1,
-                        borderRadius: 5,
-                    },
-                    {
-                        label: 'Pengembalian Buku',
-                        data: [980, 1050, 1200],
-                        backgroundColor: 'rgba(255, 193, 7, 0.7)', // Kuning (warning)
-                        borderColor: 'rgba(255, 193, 7, 1)',
-                        borderWidth: 1,
-                        borderRadius: 5,
+            // Konfigurasi Grafik Sirkulasi (ApexCharts)
+            var optionsSirkulasi = {
+                series: [{
+                    name: 'Peminjaman Buku',
+                    data: [350, 850, 500]
+                }, {
+                    name: 'Perpanjangan Buku',
+                    data: [150, 200, 250]
+                }, {
+                    name: 'Pengembalian Buku',
+                    data: [980, 1050, 1200]
+                }],
+                chart: {
+                    type: 'bar',
+                    height: 250,
+                    fontFamily: 'Inter, Helvetica, Arial, sans-serif',
+                    toolbar: { show: false },
+                    stacked: false,
+                },
+                plotOptions: {
+                    bar: {
+                        borderRadius: 4,
+                        columnWidth: '50%',
                     }
-                ]
-            };
-
-            // Konfigurasi untuk Grafik Sirkulasi
-            const configSirkulasi = {
-                type: 'bar',
-                data: dataSirkulasi,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            stacked: false, // Batang tidak ditumpuk
-                            grid: {
-                                display: false
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            stacked: false // Batang tidak ditumpuk
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: true, // Tampilkan legend
-                            position: 'bottom', // Legend di bawah
-                            labels: {
-                                usePointStyle: true, // Gunakan gaya titik untuk item legend
-                            }
-                        },
-                        title: {
-                            display: false
-                        }
-                    }
+                },
+                colors: ['#0d6efd', '#28a745', '#ffc107'],
+                xaxis: {
+                    categories: ['January', 'February', 'March'],
+                    labels: { style: { colors: '#6c757d', fontSize: '11px' } }
+                },
+                yaxis: {
+                    labels: { style: { colors: '#6c757d', fontSize: '11px' } }
+                },
+                grid: {
+                    borderColor: '#f0f2f5',
+                    strokeDashArray: 4
+                },
+                legend: {
+                    position: 'bottom'
                 }
             };
-
-            // Inisialisasi Grafik Sirkulasi
-            const ctxSirkulasi = document.getElementById('grafikSirkulasi').getContext('2d');
-            new Chart(ctxSirkulasi, configSirkulasi);
+            var chartSirkulasi = new ApexCharts(document.querySelector("#grafikSirkulasi"), optionsSirkulasi);
+            chartSirkulasi.render();
         </script>
         {{-- SCRIPT --}}
 </body>
