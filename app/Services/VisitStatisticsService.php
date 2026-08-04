@@ -103,7 +103,7 @@ class VisitStatisticsService
         $allProdiListObj = \App\Models\M_Auv::getCachedProdiList();
         $prodiNameMap = $this->prodiService->getFullProdiList();
 
-        $cacheKey = 'kunj_prodi_v3_' . md5(json_encode([
+        $cacheKey = 'kunj_prodi_v4_' . md5(json_encode([
             'ft' => $filterType, 'kp' => $kodeProdiFilter,
             'dt' => ($filterType == 'yearly') ? "$startYear-$endYear" : "$startDate-$endDate",
         ]));
@@ -121,35 +121,46 @@ class VisitStatisticsService
                 $dateFormatPHP = 'Y-m-d';
             }
 
-            // Gunakan RawQuery dari Repo untuk fetch data mentah, kita grouping manual di collection
-            $rawQuery = $this->visitRepository->getRawVisitsQuery($start, $end);
-            $rawVisits = collect($rawQuery->get()); // We execute here
-
-            $cardNumbers = $rawVisits->pluck('cardnumber');
-            $borrowerInfo = $this->borrowerService->getBorrowerInfoByCardnumbers($cardNumbers);
-
             // Pengelompokan Data per Tanggal dan Prodi
             $periodeData = [];
-            foreach ($rawVisits as $row) {
-                $cn   = strtoupper(trim($row->cardnumber));
-                $info = $borrowerInfo[$cn] ?? null;
-                $cat  = $info->categorycode ?? '';
-                $prodi = $info->prodi_code ?? '';
 
-                $kode = $this->prodiService->identifyProdiCode($cn, $cat, $prodi);
+            $processVisits = function ($visits) use (&$periodeData, $dateFormatPHP, $kodeProdiFilter) {
+                $cardNumbers = collect($visits)->pluck('cardnumber');
+                $borrowerInfo = $this->borrowerService->getBorrowerInfoByCardnumbers($cardNumbers);
 
-                // Filter by Prodi jika ada
-                if ($kodeProdiFilter && $kode !== $kodeProdiFilter) {
-                    continue;
+                foreach ($visits as $row) {
+                    $cn   = strtoupper(trim($row->cardnumber));
+                    $info = $borrowerInfo[$cn] ?? null;
+                    $cat  = $info->categorycode ?? '';
+                    $prodi = $info->prodi_code ?? '';
+
+                    $kode = $this->prodiService->identifyProdiCode($cn, $cat, $prodi);
+
+                    // Filter by Prodi jika ada
+                    if ($kodeProdiFilter && $kode !== $kodeProdiFilter) {
+                        continue;
+                    }
+
+                    $tgl = \Illuminate\Support\Carbon::parse($row->visittime)->format($dateFormatPHP);
+
+                    if (!isset($periodeData[$tgl])) $periodeData[$tgl] = [];
+                    if (!isset($periodeData[$tgl][$kode])) $periodeData[$tgl][$kode] = 0;
+                    
+                    $periodeData[$tgl][$kode]++;
                 }
+            };
 
-                $tgl = Carbon::parse($row->visittime)->format($dateFormatPHP);
+            \Illuminate\Support\Facades\DB::connection('mysql')->table('visitorhistory')
+                ->select('visittime', 'cardnumber')
+                ->whereBetween('visittime', [$start, $end])
+                ->orderBy('id')
+                ->chunk(5000, $processVisits);
 
-                if (!isset($periodeData[$tgl])) $periodeData[$tgl] = [];
-                if (!isset($periodeData[$tgl][$kode])) $periodeData[$tgl][$kode] = 0;
-                
-                $periodeData[$tgl][$kode]++;
-            }
+            \Illuminate\Support\Facades\DB::connection('mysql')->table('visitorcorner')
+                ->select('visittime', 'cardnumber')
+                ->whereBetween('visittime', [$start, $end])
+                ->orderBy('id')
+                ->chunk(5000, $processVisits);
 
             ksort($periodeData);
             

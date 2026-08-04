@@ -19,7 +19,7 @@ class BorrowingStatisticsService
      */
     public function getPeminjamanFakultas(string $filterType, string $startDate, string $endDate, int $startYear, int $endYear, string $selectedFakultas): array
     {
-        $cacheKey = 'peminjaman_fakultas_v3_' . md5(json_encode([
+        $cacheKey = 'peminjaman_fakultas_v4_' . md5(json_encode([
             'filterType' => $filterType,
             'start' => (in_array($filterType, ['yearly', 'monthly'])) ? "$startYear-01-01" : $startDate,
             'end' => (in_array($filterType, ['yearly', 'monthly'])) ? "$endYear-12-31" : $endDate,
@@ -46,69 +46,94 @@ class BorrowingStatisticsService
 
             $rawData = $this->statisticsRepository->getBorrowingStatisticsByDateRange($start, $end, $sqlDateFormat);
 
-            $borrowerNumbers = $rawData->pluck('borrowernumber')->unique()->values();
-            
-            // Chunked fetch for borrower category and attributes by borrowernumber
-            // Using a new method in BorrowerRepository for fetching by borrowernumber instead of cardnumber
-            $borrowerInfo = app(\App\Repositories\BorrowerRepository::class)->getBorrowerInfoByBorrowerNumbers($borrowerNumbers);
             $prodiListMap = \App\Models\M_Auv::getCachedProdiList()->pluck('lib', 'authorised_value')->toArray();
+            $aggregatedData = [];
+            $allBorrowers = [];
 
-            $processedData = $rawData->map(function ($row) use ($borrowerInfo, $prodiListMap) {
-                $info = $borrowerInfo[$row->borrowernumber] ?? null;
-                
-                $catCode = $info->categorycode ?? '';
-                $cardnumber = $info->cardnumber ?? '';
-                $prodiCode = $info->prodi_code ?? '';
-                
-                $kode = $this->prodiService->identifyProdiCode($cardnumber, $catCode, $prodiCode);
-                $fakultas = \App\Helpers\FacultyHelper::mapCodeToFaculty($kode);
+            foreach ($rawData->chunk(5000) as $chunk) {
+                $borrowerNumbers = collect($chunk)->pluck('borrowernumber')->unique()->values();
+                $borrowerInfo = app(\App\Repositories\BorrowerRepository::class)->getBorrowerInfoByBorrowerNumbers($borrowerNumbers);
 
-                $namaProdi = $prodiListMap[$kode] ?? $kode;
-                $prodiDisplay = $kode . ' - ' . $namaProdi;
+                foreach ($chunk as $row) {
+                    $info = $borrowerInfo[$row->borrowernumber] ?? null;
+                    $catCode = $info->categorycode ?? '';
+                    $cardnumber = $info->cardnumber ?? '';
+                    $prodiCode = $info->prodi_code ?? '';
+                    
+                    $kode = $this->prodiService->identifyProdiCode($cardnumber, $catCode, $prodiCode);
+                    $fakultas = \App\Helpers\FacultyHelper::mapCodeToFaculty($kode);
 
-                return [
-                    'periode' => $row->periode,
-                    'type' => $row->type,
-                    'fakultas' => $fakultas,
-                    'prodi_name' => $prodiDisplay,
-                    'borrowernumber' => $row->borrowernumber,
-                ];
-            });
+                    if ($selectedFakultas && $selectedFakultas !== 'semua' && $fakultas !== $selectedFakultas) {
+                        continue;
+                    }
 
-            if ($selectedFakultas && $selectedFakultas !== 'semua') {
-                $processedData = $processedData->filter(fn($item) => $item['fakultas'] === $selectedFakultas);
+                    $namaProdi = $prodiListMap[$kode] ?? $kode;
+                    $prodiDisplay = $kode . ' - ' . $namaProdi;
+                    $periode = $row->periode;
+
+                    if (!isset($aggregatedData[$periode])) $aggregatedData[$periode] = [];
+                    if (!isset($aggregatedData[$periode][$prodiDisplay])) {
+                        $aggregatedData[$periode][$prodiDisplay] = ['issue' => 0, 'renew' => 0, 'return' => 0, 'borrowers' => []];
+                    }
+
+                    $aggregatedData[$periode][$prodiDisplay][$row->type]++;
+                    if (in_array($row->type, ['issue', 'renew'])) {
+                        $aggregatedData[$periode][$prodiDisplay]['borrowers'][$row->borrowernumber] = true;
+                        $allBorrowers[$row->borrowernumber] = true;
+                    }
+                }
             }
 
-            $totalIssues = $processedData->where('type', 'issue')->count();
-            $totalRenews = $processedData->where('type', 'renew')->count();
-            $totalReturns = $processedData->where('type', 'return')->count();
-            $totalCirculation = $totalIssues + $totalRenews + $totalReturns;
-            $totalBorrowers = $processedData->whereIn('type', ['issue', 'renew'])->pluck('borrowernumber')->unique()->count();
+            $totalIssues = 0; $totalRenews = 0; $totalReturns = 0;
+            $tableData = [];
 
-            $tableGrouped = $processedData->groupBy('periode');
-            $tableData = $tableGrouped->map(function ($group, $periode) {
-                $prodiGrouped = $group->groupBy('prodi_name');
-                $prodiDetails = $prodiGrouped->map(function ($pGroup, $pName) {
-                    return [
-                        'prodi' => $pName,
-                        'jumlah_issue' => $pGroup->where('type', 'issue')->count(),
-                        'jumlah_renew' => $pGroup->where('type', 'renew')->count(),
-                        'jumlah_buku_kembali' => $pGroup->where('type', 'return')->count(),
-                        'total_sirkulasi' => $pGroup->count(),
-                        'jumlah_peminjam_unik' => $pGroup->whereIn('type', ['issue', 'renew'])->pluck('borrowernumber')->unique()->count(),
+            foreach ($aggregatedData as $periode => $prodis) {
+                $prodiDetails = [];
+                $periodeIssues = 0; $periodeRenews = 0; $periodeReturns = 0; $periodeBorrowers = [];
+
+                foreach ($prodis as $prodiName => $counts) {
+                    $issue = $counts['issue'] ?? 0;
+                    $renew = $counts['renew'] ?? 0;
+                    $return = $counts['return'] ?? 0;
+                    $sirkulasi = $issue + $renew + $return;
+                    $uniqBorrowersCount = count($counts['borrowers']);
+
+                    $prodiDetails[] = [
+                        'prodi' => $prodiName,
+                        'jumlah_issue' => $issue,
+                        'jumlah_renew' => $renew,
+                        'jumlah_buku_kembali' => $return,
+                        'total_sirkulasi' => $sirkulasi,
+                        'jumlah_peminjam_unik' => $uniqBorrowersCount,
                     ];
-                })->values()->sortByDesc('total_sirkulasi')->values();
 
-                return [
+                    $periodeIssues += $issue;
+                    $periodeRenews += $renew;
+                    $periodeReturns += $return;
+                    foreach ($counts['borrowers'] as $b => $t) $periodeBorrowers[$b] = true;
+                    
+                    $totalIssues += $issue;
+                    $totalRenews += $renew;
+                    $totalReturns += $return;
+                }
+
+                usort($prodiDetails, fn($a, $b) => $b['total_sirkulasi'] <=> $a['total_sirkulasi']);
+
+                $tableData[] = [
                     'periode' => $periode,
-                    'jumlah_issue' => $group->where('type', 'issue')->count(),
-                    'jumlah_renew' => $group->where('type', 'renew')->count(),
-                    'jumlah_buku_kembali' => $group->where('type', 'return')->count(),
-                    'total_sirkulasi' => $group->count(),
-                    'jumlah_peminjam_unik' => $group->whereIn('type', ['issue', 'renew'])->pluck('borrowernumber')->unique()->count(),
-                    'prodi_details' => $prodiDetails,
+                    'jumlah_issue' => $periodeIssues,
+                    'jumlah_renew' => $periodeRenews,
+                    'jumlah_buku_kembali' => $periodeReturns,
+                    'total_sirkulasi' => $periodeIssues + $periodeRenews + $periodeReturns,
+                    'jumlah_peminjam_unik' => count($periodeBorrowers),
+                    'prodi_details' => collect($prodiDetails),
                 ];
-            })->sortBy('periode')->values();
+            }
+
+            usort($tableData, fn($a, $b) => $a['periode'] <=> $b['periode']);
+            $tableData = collect($tableData);
+            $totalCirculation = $totalIssues + $totalRenews + $totalReturns;
+            $totalBorrowers = count($allBorrowers);
 
             // Build chartData for the chart
             $chartData = $tableData->map(function ($row) use ($filterType) {
@@ -141,7 +166,7 @@ class BorrowingStatisticsService
      */
     public function getPeminjamanProdi(string $filterType, string $startDate, string $endDate, int $startYear, int $endYear, ?string $selectedProdi): array
     {
-        $cacheKey = 'peminjaman_prodi_v3_' . md5(json_encode([
+        $cacheKey = 'peminjaman_prodi_v4_' . md5(json_encode([
             'filterType' => $filterType,
             'start' => (in_array($filterType, ['yearly', 'monthly'])) ? "$startYear-01-01" : $startDate,
             'end' => (in_array($filterType, ['yearly', 'monthly'])) ? "$endYear-12-31" : $endDate,
@@ -166,75 +191,96 @@ class BorrowingStatisticsService
                 $sqlDateFormat = '%Y-%m-%d';
             }
 
-            // Gunakan base query dari StatisticsRepository
+            // Gunakan base query dari StatisticsRepository via cursor() untuk iterasi hemat memori
             $rawQuery = $this->statisticsRepository->getRawBorrowingStatisticsQuery($start, $end);
-            $rawData = collect($rawQuery->get()); // Eksekusi
-
-            $borrowerNumbers = $rawData->pluck('borrowernumber')->unique()->values();
             
-            // Ambil info prodi dan kategori
-            $borrowerInfo = app(\App\Repositories\BorrowerRepository::class)->getBorrowerInfoByBorrowerNumbers($borrowerNumbers);
             $prodiListMap = \App\Models\M_Auv::getCachedProdiList()->pluck('lib', 'authorised_value')->toArray();
+            $aggregatedData = [];
+            $allBorrowers = [];
 
-            // Filter Raw Data Based on Prodi and Mapping
-            $processedData = collect();
+            foreach ($rawQuery->cursor()->chunk(5000) as $chunk) {
+                $borrowerNumbers = collect($chunk)->pluck('borrowernumber')->unique()->values();
+                $borrowerInfo = app(\App\Repositories\BorrowerRepository::class)->getBorrowerInfoByBorrowerNumbers($borrowerNumbers);
+                
+                foreach ($chunk as $row) {
+                    $info = $borrowerInfo[$row->borrowernumber] ?? null;
+                    $catCode = $info->categorycode ?? '';
+                    $cardnumber = $info->cardnumber ?? '';
+                    $prodiCode = $info->prodi_code ?? '';
+                    
+                    $kode = $this->prodiService->identifyProdiCode($cardnumber, $catCode, $prodiCode);
+                    
+                    if ($selectedProdi && $selectedProdi !== 'semua' && $kode !== $selectedProdi) {
+                        continue;
+                    }
 
-            foreach ($rawData as $row) {
-                $info = $borrowerInfo[$row->borrowernumber] ?? null;
-                $catCode = $info->categorycode ?? '';
-                $cardnumber = $info->cardnumber ?? '';
-                $prodiCode = $info->prodi_code ?? '';
-                
-                $kode = $this->prodiService->identifyProdiCode($cardnumber, $catCode, $prodiCode);
-                
-                // Jika user memilih prodi tertentu, lewati yang tidak sesuai
-                if ($selectedProdi && $selectedProdi !== 'semua' && $kode !== $selectedProdi) {
-                    continue;
+                    $tgl = Carbon::parse($row->datetime)->format($sqlDateFormat === '%Y-%m' ? 'Y-m-01' : 'Y-m-d');
+                    $namaProdi = $prodiListMap[$kode] ?? $kode;
+                    $prodiDisplay = $kode . ' - ' . $namaProdi;
+
+                    if (!isset($aggregatedData[$tgl])) $aggregatedData[$tgl] = [];
+                    if (!isset($aggregatedData[$tgl][$prodiDisplay])) {
+                        $aggregatedData[$tgl][$prodiDisplay] = ['issue' => 0, 'renew' => 0, 'return' => 0, 'borrowers' => []];
+                    }
+
+                    $aggregatedData[$tgl][$prodiDisplay][$row->type]++;
+                    if (in_array($row->type, ['issue', 'renew'])) {
+                        $aggregatedData[$tgl][$prodiDisplay]['borrowers'][$row->borrowernumber] = true;
+                        $allBorrowers[$row->borrowernumber] = true;
+                    }
                 }
-
-                $tgl = Carbon::parse($row->datetime)->format($sqlDateFormat === '%Y-%m' ? 'Y-m-01' : 'Y-m-d');
-
-                $namaProdi = $prodiListMap[$kode] ?? $kode;
-                $prodiDisplay = $kode . ' - ' . $namaProdi;
-
-                $processedData->push([
-                    'periode' => $tgl,
-                    'type' => $row->type,
-                    'prodi_name' => $prodiDisplay,
-                    'borrowernumber' => $row->borrowernumber,
-                ]);
             }
 
-            $totalIssues = $processedData->where('type', 'issue')->count();
-            $totalRenews = $processedData->where('type', 'renew')->count();
-            $totalReturns = $processedData->where('type', 'return')->count();
-            $totalCirculation = $totalIssues + $totalRenews + $totalReturns;
-            $totalBorrowers = $processedData->whereIn('type', ['issue', 'renew'])->pluck('borrowernumber')->unique()->count();
+            $totalIssues = 0; $totalRenews = 0; $totalReturns = 0;
+            $tableData = [];
 
-            $tableGrouped = $processedData->groupBy('periode');
-            $tableData = $tableGrouped->map(function ($group, $periode) {
-                $prodiGrouped = $group->groupBy('prodi_name');
-                $prodiDetails = $prodiGrouped->map(function ($pGroup, $pName) {
-                    return [
-                        'prodi' => $pName,
-                        'jumlah_issue' => $pGroup->where('type', 'issue')->count(),
-                        'jumlah_renew' => $pGroup->where('type', 'renew')->count(),
-                        'jumlah_buku_kembali' => $pGroup->where('type', 'return')->count(),
-                        'total_sirkulasi' => $pGroup->count(),
-                        'jumlah_peminjam_unik' => $pGroup->whereIn('type', ['issue', 'renew'])->pluck('borrowernumber')->unique()->count(),
+            foreach ($aggregatedData as $periode => $prodis) {
+                $prodiDetails = [];
+                $periodeIssues = 0; $periodeRenews = 0; $periodeReturns = 0; $periodeBorrowers = [];
+
+                foreach ($prodis as $prodiName => $counts) {
+                    $issue = $counts['issue'] ?? 0;
+                    $renew = $counts['renew'] ?? 0;
+                    $return = $counts['return'] ?? 0;
+                    $sirkulasi = $issue + $renew + $return;
+                    $uniqBorrowersCount = count($counts['borrowers']);
+
+                    $prodiDetails[] = [
+                        'prodi' => $prodiName,
+                        'jumlah_issue' => $issue,
+                        'jumlah_renew' => $renew,
+                        'jumlah_buku_kembali' => $return,
+                        'total_sirkulasi' => $sirkulasi,
+                        'jumlah_peminjam_unik' => $uniqBorrowersCount,
                     ];
-                })->values()->sortByDesc('total_sirkulasi')->values();
 
-                return [
+                    $periodeIssues += $issue;
+                    $periodeRenews += $renew;
+                    $periodeReturns += $return;
+                    foreach ($counts['borrowers'] as $b => $t) $periodeBorrowers[$b] = true;
+                    
+                    $totalIssues += $issue;
+                    $totalRenews += $renew;
+                    $totalReturns += $return;
+                }
+
+                usort($prodiDetails, fn($a, $b) => $b['total_sirkulasi'] <=> $a['total_sirkulasi']);
+
+                $tableData[] = [
                     'periode' => $periode,
-                    'jumlah_issue' => $group->where('type', 'issue')->count(),
-                    'jumlah_renew' => $group->where('type', 'renew')->count(),
-                    'jumlah_buku_kembali' => $group->where('type', 'return')->count(),
-                    'total_sirkulasi' => $group->count(),
-                    'jumlah_peminjam_unik' => $group->whereIn('type', ['issue', 'renew'])->pluck('borrowernumber')->unique()->count(),
-                    'prodi_details' => $prodiDetails,
+                    'jumlah_issue' => $periodeIssues,
+                    'jumlah_renew' => $periodeRenews,
+                    'jumlah_buku_kembali' => $periodeReturns,
+                    'total_sirkulasi' => $periodeIssues + $periodeRenews + $periodeReturns,
+                    'jumlah_peminjam_unik' => count($periodeBorrowers),
+                    'prodi_details' => collect($prodiDetails),
                 ];
-            })->sortBy('periode')->values();
+            }
+
+            usort($tableData, fn($a, $b) => $a['periode'] <=> $b['periode']);
+            $tableData = collect($tableData);
+            $totalCirculation = $totalIssues + $totalRenews + $totalReturns;
+            $totalBorrowers = count($allBorrowers);
 
             return [
                 'totalIssues' => $totalIssues,

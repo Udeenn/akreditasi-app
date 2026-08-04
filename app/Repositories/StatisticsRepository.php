@@ -10,7 +10,7 @@ class StatisticsRepository
     /**
      * Mengambil raw data peminjaman dari tabel statistics (Koha).
      */
-    public function getBorrowingStatisticsByDateRange(Carbon $start, Carbon $end, string $sqlDateFormat): \Illuminate\Support\Collection
+    public function getBorrowingStatisticsByDateRange(Carbon $start, Carbon $end, string $sqlDateFormat): \Illuminate\Support\LazyCollection
     {
         return DB::connection('mysql2')->table('statistics as s')
             ->whereIn('s.type', ['issue', 'renew', 'return'])
@@ -20,7 +20,7 @@ class StatisticsRepository
                 's.type',
                 's.borrowernumber'
             )
-            ->get();
+            ->cursor();
     }
 
     /**

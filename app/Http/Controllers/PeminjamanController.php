@@ -360,7 +360,7 @@ public function pertanggal(Request $request)
             )
             ->orderBy('b.cardnumber', 'asc') // Samakan dengan getDetailPeminjaman
             ->orderBy('s.datetime', 'asc')   // Lalu urutkan waktu transaksi
-            ->get();
+            ->cursor();
 
         // 4. Buat Streamed Response untuk CSV
         $filename = "Laporan_Detail_Peminjaman_Keseluruhan_{$filenameDate}.csv";
@@ -700,7 +700,7 @@ public function pertanggal(Request $request)
         )
         ->orderBy('b.cardnumber', 'asc')
         ->orderBy('s.datetime', 'asc')
-        ->get();
+        ->cursor();
 
     // --- 3. STREAM CSV ---
 
