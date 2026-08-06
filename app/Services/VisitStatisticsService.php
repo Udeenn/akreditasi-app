@@ -137,8 +137,15 @@ class VisitStatisticsService
                     $kode = $this->prodiService->identifyProdiCode($cn, $cat, $prodi);
 
                     // Filter by Prodi jika ada
-                    if ($kodeProdiFilter && $kode !== $kodeProdiFilter) {
-                        continue;
+                    if ($kodeProdiFilter) {
+                        if ($kodeProdiFilter === 'ALL_MAHASISWA') {
+                            $nonStudents = ['DOSEN', 'TENDIK', 'KSP', 'KSPMBKM', 'KSPBIPA', 'XA', 'LB', 'XC'];
+                            if (in_array($kode, $nonStudents)) {
+                                continue;
+                            }
+                        } elseif ($kode !== $kodeProdiFilter) {
+                            continue;
+                        }
                     }
 
                     $tgl = \Illuminate\Support\Carbon::parse($row->visittime)->format($dateFormatPHP);

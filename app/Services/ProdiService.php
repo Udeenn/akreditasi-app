@@ -24,6 +24,7 @@ class ProdiService
      * Nama-nama manual yang tidak ada di database prodi.
      */
     protected array $manualNames = [
+        'ALL_MAHASISWA' => 'Seluruh Mahasiswa',
         'DOSEN'   => 'Dosen & Pengajar',
         'TENDIK'  => 'Tenaga Kependidikan',
         'KSP'     => 'Kartu Sekali Kunjung',
@@ -112,7 +113,7 @@ class ProdiService
      */
     public function getFullProdiList(): array
     {
-        return Cache::remember('prodi_full_list', 3600, function () {
+        return Cache::remember('prodi_full_list_v2', 3600, function () {
             $allProdiListObj = M_Auv::where('category', 'PRODI')->get();
             $facultyMap = $this->getProdiToFacultyMap($allProdiListObj);
             $prodiNameMap = $allProdiListObj->pluck('lib', 'authorised_value')->toArray();

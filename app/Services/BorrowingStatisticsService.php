@@ -210,8 +210,15 @@ class BorrowingStatisticsService
                     
                     $kode = $this->prodiService->identifyProdiCode($cardnumber, $catCode, $prodiCode);
                     
-                    if ($selectedProdi && $selectedProdi !== 'semua' && $kode !== $selectedProdi) {
-                        continue;
+                    if ($selectedProdi && $selectedProdi !== 'semua') {
+                        if ($selectedProdi === 'ALL_MAHASISWA') {
+                            $nonStudents = ['DOSEN', 'TENDIK', 'KSP', 'KSPMBKM', 'KSPBIPA', 'XA', 'LB', 'XC'];
+                            if (in_array($kode, $nonStudents)) {
+                                continue;
+                            }
+                        } elseif ($kode !== $selectedProdi) {
+                            continue;
+                        }
                     }
 
                     $tgl = Carbon::parse($row->datetime)->format($sqlDateFormat === '%Y-%m' ? 'Y-m-01' : 'Y-m-d');
