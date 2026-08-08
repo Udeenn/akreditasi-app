@@ -25,10 +25,6 @@
 
 <body class="{{ isset($_COOKIE['theme']) && $_COOKIE['theme'] == 'dark' ? 'dark-mode' : '' }}">
 
-    {{-- ====================================================== --}}
-    {{-- GLOBAL PAGE LOADER OVERLAY --}}
-    {{-- Dipicu oleh link/form dengan atribut data-heavy="true" --}}
-    {{-- ====================================================== --}}
     <div id="page-loader" role="status" aria-label="Memuat halaman...">
         <div class="loader-ring"></div>
         <span class="loader-text">Memuat data&hellip;</span>

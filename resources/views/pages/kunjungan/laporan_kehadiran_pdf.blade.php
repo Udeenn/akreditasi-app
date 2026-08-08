@@ -359,24 +359,42 @@
         @endif
     </table>
 
-    <table class="align-middle mb-0 unified-table signature-section">
+    <table class="align-middle mb-0 unified-table signature-section" style="width: 100%; margin-top: 30px;">
         <tr>
-            <td></td>
-            <td>
-                <div class="signature-date">{{ $location }}, {{ $printedDate }}</div>
-                <div class="signature-label">Anggota</div>
-                <div style="height: 80px; padding-top: 15px;">
+            <td style="width: 50%; text-align: left; vertical-align: top;">
+                @if(isset($librarian) && $librarian)
+                    <div class="signature-date">Mengetahui,</div>
+                    <div class="signature-label">Petugas Perpustakaan</div>
+                    <div style="height: 65px; padding-top: 10px;">
+                        @if(isset($librarianBarcodeBase64) && $librarianBarcodeBase64)
+                            <img src="{{ $librarianBarcodeBase64 }}" alt="Barcode Petugas" style="max-height: 45px;">
+                        @else
+                            <div style="height: 45px;"></div>
+                        @endif
+                    </div>
+                    <div class="signature-name" style="text-decoration: underline; font-weight: bold;">
+                        {{ $librarian->name ?? $librarian->username ?? 'Petugas Perpustakaan' }}
+                    </div>
+                    <div style="font-size: 11px;">
+                        NIP/ID: {{ $librarian->username ?? '-' }}
+                    </div>
+                @endif
+            </td>
+            <td style="width: 50%; text-align: right; vertical-align: top;">
+                <div class="signature-date">{{ $location ?? 'Surakarta' }}, {{ $printedDate ?? date('d F Y') }}</div>
+                <div class="signature-label">Pemustaka / Anggota</div>
+                <div style="height: 65px; padding-top: 10px;">
                     @if(isset($barcodeBase64) && $barcodeBase64)
-                        <img src="{{ $barcodeBase64 }}" alt="Barcode" style="max-height: 50px;">
+                        <img src="{{ $barcodeBase64 }}" alt="Barcode" style="max-height: 45px;">
                     @else
-                        <div style="height: 50px;"></div>
+                        <div style="height: 45px;"></div>
                     @endif
                 </div>
                 <div class="signature-name" style="text-decoration: underline; font-weight: bold;">
                     {{ trim(($fullBorrowerDetails->firstname ?? '') . ' ' . ($fullBorrowerDetails->surname ?? '')) ?: '......................................' }}
                 </div>
                 <div style="font-size: 11px;">
-                    {{ $fullBorrowerDetails->cardnumber ?? '' }}
+                    NIM/NIP: {{ $fullBorrowerDetails->cardnumber ?? '' }}
                 </div>
             </td>
         </tr>

@@ -121,8 +121,16 @@ class CollectionRepository
             $base .= ", items.enumchron AS Nomor, COUNT(DISTINCT items.itemnumber) AS Issue";
         }
 
-        if (in_array($type, ['periodikal', 'referensi'])) {
-            $base .= ", MAX(it.description) as Jenis_Koleksi, MAX(av.lib) as Koleksi";
+        if (in_array($type, ['jurnal', 'ejurnal', 'periodikal', 'referensi'])) {
+            $base .= ", COALESCE(NULLIF(MAX(av.lib), ''), NULLIF(MAX(items.ccode), ''), '-') as Jenis_Koleksi, COALESCE(NULLIF(MAX(it.description), ''), NULLIF(MAX(items.itype), ''), '-') as Jenis_Item_Tipe, MAX(av.lib) as Koleksi";
+        }
+
+        if (in_array($type, ['ejurnal'])) {
+            $base .= ", MAX(IF(
+                EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"u\"]') <> '',
+                EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"u\"]'),
+                EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"856\"]/subfield[@code=\"a\"]')
+            )) AS Link_Ejurnal";
         }
         
         if (in_array($type, ['ebook'])) {

@@ -155,6 +155,10 @@ $breadcrumbMap = [
         ['Admin', null],
         ['Audit Trail', null],
     ],
+    'cnclass.index' => [
+        ['Admin', null],
+        ['Pengaturan CN Class', null],
+    ],
 ];
 
 $crumbs = $breadcrumbMap[$currentRoute] ?? null;

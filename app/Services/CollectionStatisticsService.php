@@ -96,7 +96,7 @@ class CollectionStatisticsService
     public function getCollectionData(string $type, string $prodi, string $tahunTerakhir): array
     {
         $config = $this->getCollectionTypeConfig($type);
-        $cacheKey = "stats_collection_generic_{$type}_{$prodi}_{$tahunTerakhir}";
+        $cacheKey = "stats_collection_generic_v3_{$type}_{$prodi}_{$tahunTerakhir}";
 
         return Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir, $config, $type) {
             // 1. Total Query
@@ -148,6 +148,7 @@ class CollectionStatisticsService
                 $row->Kota_Terbit = html_entity_decode($row->Kota_Terbit ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
                 $row->Penerbit = html_entity_decode($row->Penerbit ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
                 $row->Pengarang = html_entity_decode($row->Pengarang ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $row->Tahun_Terbit = $row->TahunTerbit ?? '-';
                 
                 return $row;
             });

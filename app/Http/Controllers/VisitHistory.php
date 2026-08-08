@@ -1501,21 +1501,43 @@ class VisitHistory extends Controller
         $dompdf = new Dompdf($options);
 
         $barcodeBase64 = null;
+        $librarianBarcodeBase64 = null;
+        $currentUser = auth()->check() ? auth()->user() : null;
+
         try {
             // Generate barcode image via bwipjs public API
-            $barcodeUrl = 'https://bwipjs-api.metafloor.com/?bcid=code128&text=' . urlencode($fullBorrowerDetails->cardnumber ?? '');
-            $barcodeData = @file_get_contents($barcodeUrl);
-            if ($barcodeData) {
-                $barcodeBase64 = 'data:image/png;base64,' . base64_encode($barcodeData);
+            if (!empty($fullBorrowerDetails->cardnumber)) {
+                $barcodeUrl = 'https://bwipjs-api.metafloor.com/?bcid=code128&text=' . urlencode($fullBorrowerDetails->cardnumber);
+                $barcodeData = @file_get_contents($barcodeUrl);
+                if ($barcodeData) {
+                    $barcodeBase64 = 'data:image/png;base64,' . base64_encode($barcodeData);
+                }
+            }
+
+            if ($currentUser && !empty($currentUser->username)) {
+                $librarianBarcodeUrl = 'https://bwipjs-api.metafloor.com/?bcid=code128&text=' . urlencode($currentUser->username);
+                $librarianBarcodeData = @file_get_contents($librarianBarcodeUrl);
+                if ($librarianBarcodeData) {
+                    $librarianBarcodeBase64 = 'data:image/png;base64,' . base64_encode($librarianBarcodeData);
+                }
             }
         } catch (\Exception $e) {
             // Silently fallback if API fails
         }
 
+        $location = 'Surakarta';
+        $printedDate = \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM YYYY');
+        $periodeText = $tahun ? "Tahun {$tahun}" : "Semua Periode";
+
         $html = view('pages.kunjungan.laporan_kehadiran_pdf', [
-            'fullBorrowerDetails' => $fullBorrowerDetails,
-            'dataKunjungan'       => $dataKunjungan,
-            'barcodeBase64'       => $barcodeBase64,
+            'fullBorrowerDetails'    => $fullBorrowerDetails,
+            'dataKunjungan'          => $dataKunjungan,
+            'barcodeBase64'          => $barcodeBase64,
+            'librarianBarcodeBase64' => $librarianBarcodeBase64,
+            'location'               => $location,
+            'printedDate'            => $printedDate,
+            'periodeText'            => $periodeText,
+            'librarian'              => $currentUser,
         ])->render();
 
         $dompdf->loadHtml($html);
@@ -1725,9 +1747,24 @@ class VisitHistory extends Controller
             $logoBase64 = 'data:image/png;base64,' . base64_encode($logoData);
         }
 
+        $librarianBarcodeBase64 = null;
+        $currentUser = auth()->check() ? auth()->user() : null;
+        if ($currentUser && !empty($currentUser->username)) {
+            try {
+                $librarianBarcodeUrl = 'https://bwipjs-api.metafloor.com/?bcid=code128&text=' . urlencode($currentUser->username);
+                $librarianBarcodeData = @file_get_contents($librarianBarcodeUrl);
+                if ($librarianBarcodeData) {
+                    $librarianBarcodeBase64 = 'data:image/png;base64,' . base64_encode($librarianBarcodeData);
+                }
+            } catch (\Exception $e) {
+                // Silently fallback if API fails
+            }
+        }
+
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.kunjungan.pdf.kunjunganGabungan', compact(
             'dataToExport', 'filterType', 'periodeText', 'displayLokasi',
-            'totalKunjungan', 'rerataKunjungan', 'chartImage', 'logoBase64'
+            'totalKunjungan', 'rerataKunjungan', 'chartImage', 'logoBase64',
+            'currentUser', 'librarianBarcodeBase64'
         ))->setPaper('a4', 'landscape');
 
         return $pdf->download($filename);

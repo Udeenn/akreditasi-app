@@ -194,8 +194,16 @@
         <div class="signature-area">
             <p>Surakarta, {{ \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM YYYY') }}</p>
             <p>Mengetahui,</p>
-            <div class="signature-space"></div>
-            <p><strong>Kepala Perpustakaan</strong></p>
+            @if(isset($librarianBarcodeBase64) && $librarianBarcodeBase64)
+                <div style="margin: 8px 0;">
+                    <img src="{{ $librarianBarcodeBase64 }}" alt="Barcode Verifikasi" style="max-height: 45px;">
+                </div>
+                <p style="margin: 0;"><strong>{{ $currentUser->name ?? 'Kepala Perpustakaan' }}</strong></p>
+                <small style="font-size: 9px; color: #666;">NIP/ID: {{ $currentUser->username ?? '-' }}</small>
+            @else
+                <div class="signature-space"></div>
+                <p><strong>Kepala Perpustakaan</strong></p>
+            @endif
         </div>
     </div>
 

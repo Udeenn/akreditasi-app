@@ -159,13 +159,16 @@ Route::middleware('auth')->group(function () {
     });
 
     // =============================================
-    // Utilities (Librarian only)
+    // Utilities & Admin (Librarian only)
     // =============================================
     Route::middleware('admin')->group(function () {
         Route::get('/clear-cache', function () {
             Artisan::call('cache:clear');
             return redirect()->back()->with('success', 'Cache cleared!');
         })->name('clear-cache');
+
+        // Pengaturan CN Class
+        Route::resource('pengaturan/cnclass', \App\Http\Controllers\CnClassController::class);
 
         // Audit Trail — Activity Log
         Route::get('/admin/activity-log', [\App\Http\Controllers\ActivityLogController::class, 'index'])

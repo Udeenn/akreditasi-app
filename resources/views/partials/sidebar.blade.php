@@ -207,6 +207,13 @@
         <span class="nav-text">Audit Trail</span>
     </a>
 </li>
+<li class="nav-item">
+    <a class="nav-link {{ request()->routeIs('cnclass.*') ? 'active' : '' }}"
+        href="{{ route('cnclass.index') }}">
+        <i class="bi bi-tags-fill nav-icon"></i>
+        <span class="nav-text">Pengaturan CN Class</span>
+    </a>
+</li>
 @endif
 @endauth
 </ul>

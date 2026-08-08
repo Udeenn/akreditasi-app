@@ -74,6 +74,40 @@ final class CnClassHelperr
     {
         if (!empty(self::$CACHE)) return self::$CACHE;
 
+        // Try to fetch from Cache & DB first
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('cnclass_rulesets')) {
+                return \Illuminate\Support\Facades\Cache::rememberForever('cnclass_all_prodi_data', function () {
+                    $rulesets = [];
+                    $alias = [];
+                    
+                    $dbRulesets = \App\Models\CnclassRuleset::with('mappings')->get();
+                    
+                    if ($dbRulesets->isEmpty()) {
+                        return self::getHardcodedProdiData();
+                    }
+
+                    foreach ($dbRulesets as $rs) {
+                        $rulesets[$rs->name] = $rs->rules ?? [];
+                        foreach ($rs->mappings as $mapping) {
+                            $alias[$mapping->prodi_code] = $rs->name;
+                        }
+                    }
+
+                    return [$rulesets, $alias];
+                });
+            }
+        } catch (\Exception $e) {
+            // Fallback gracefully
+        }
+
+        return self::getHardcodedProdiData();
+    }
+
+    private static function getHardcodedProdiData(): array
+    {
+        if (!empty(self::$CACHE)) return self::$CACHE;
+
         // 1) DEFINISI RULESET BERSAMA
         $rulesets = [
 
