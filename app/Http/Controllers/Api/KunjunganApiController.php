@@ -26,7 +26,13 @@ class KunjunganApiController extends Controller
         security: [["ApiKeyAuth" => []]],
         tags: ["Kunjungan"]
     )]
-    #[OA\Parameter(name: "fakultas", in: "query", description: "Filter by Fakultas (default: semua)", required: false, schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "filter_type", in: "query", description: "Tipe filter tanggal: daily, monthly, atau yearly (default: daily)", required: false, schema: new OA\Schema(type: "string", default: "daily"))]
+    #[OA\Parameter(name: "tanggal_awal", in: "query", description: "Tanggal awal (YYYY-MM-DD) untuk filter daily", required: false, schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "tanggal_akhir", in: "query", description: "Tanggal akhir (YYYY-MM-DD) untuk filter daily", required: false, schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "tahun_awal", in: "query", description: "Tahun awal (YYYY) untuk filter yearly/monthly", required: false, schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "tahun_akhir", in: "query", description: "Tahun akhir (YYYY) untuk filter yearly/monthly", required: false, schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "fakultas", in: "query", description: "Filter berdasarkan nama Fakultas (default: semua)", required: false, schema: new OA\Schema(type: "string", default: "semua"))]
+    #[OA\Parameter(name: "lokasi", in: "query", description: "Filter lokasi gedung / branchcode", required: false, schema: new OA\Schema(type: "string"))]
     #[OA\Response(response: 200, description: "Successful operation")]
     #[OA\Response(response: 401, description: "Unauthorized")]
     public function fakultas(Request $request): JsonResponse
@@ -75,7 +81,12 @@ class KunjunganApiController extends Controller
         security: [["ApiKeyAuth" => []]],
         tags: ["Kunjungan"]
     )]
-    #[OA\Parameter(name: "lokasi", in: "query", description: "Filter by branchcode", required: false, schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "filter_type", in: "query", description: "Tipe filter tanggal: daily, monthly, atau yearly (default: daily)", required: false, schema: new OA\Schema(type: "string", default: "daily"))]
+    #[OA\Parameter(name: "tanggal_awal", in: "query", description: "Tanggal awal (YYYY-MM-DD) untuk filter daily", required: false, schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "tanggal_akhir", in: "query", description: "Tanggal akhir (YYYY-MM-DD) untuk filter daily", required: false, schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "tahun_awal", in: "query", description: "Tahun awal (YYYY) untuk filter yearly/monthly", required: false, schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "tahun_akhir", in: "query", description: "Tahun akhir (YYYY) untuk filter yearly/monthly", required: false, schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "lokasi", in: "query", description: "Filter lokasi gedung / branchcode", required: false, schema: new OA\Schema(type: "string"))]
     #[OA\Response(response: 200, description: "Successful operation")]
     #[OA\Response(response: 401, description: "Unauthorized")]
     public function prodi(Request $request): JsonResponse
@@ -121,7 +132,12 @@ class KunjunganApiController extends Controller
         security: [["ApiKeyAuth" => []]],
         tags: ["Kunjungan"]
     )]
-    #[OA\Parameter(name: "lokasi", in: "query", description: "Filter by branchcode", required: false, schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "filter_type", in: "query", description: "Tipe filter tanggal: daily, monthly, atau yearly (default: daily)", required: false, schema: new OA\Schema(type: "string", default: "daily"))]
+    #[OA\Parameter(name: "tanggal_awal", in: "query", description: "Tanggal awal (YYYY-MM-DD) untuk filter daily", required: false, schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "tanggal_akhir", in: "query", description: "Tanggal akhir (YYYY-MM-DD) untuk filter daily", required: false, schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "tahun_awal", in: "query", description: "Tahun awal (YYYY) untuk filter yearly/monthly", required: false, schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "tahun_akhir", in: "query", description: "Tahun akhir (YYYY) untuk filter yearly/monthly", required: false, schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "lokasi", in: "query", description: "Filter lokasi gedung / branchcode", required: false, schema: new OA\Schema(type: "string"))]
     #[OA\Response(response: 200, description: "Successful operation")]
     #[OA\Response(response: 401, description: "Unauthorized")]
     public function harian(Request $request): JsonResponse
@@ -156,7 +172,7 @@ class KunjunganApiController extends Controller
             Log::error('API Kunjungan Harian Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to fetch daily data'
+                'message' => 'Failed to fetch harian data'
             ], 500);
         }
     }

@@ -27,9 +27,11 @@ class PeminjamanApiController extends Controller
         security: [["ApiKeyAuth" => []]],
         tags: ["Peminjaman"]
     )]
-    #[OA\Parameter(name: "filter_type", in: "query", description: "daily or monthly", required: false, schema: new OA\Schema(type: "string", default: "daily"))]
-    #[OA\Parameter(name: "start_date", in: "query", required: false, schema: new OA\Schema(type: "string"))]
-    #[OA\Parameter(name: "end_date", in: "query", required: false, schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "filter_type", in: "query", description: "Tipe filter: daily atau monthly (default: daily)", required: false, schema: new OA\Schema(type: "string", default: "daily"))]
+    #[OA\Parameter(name: "start_date", in: "query", description: "Tanggal awal (YYYY-MM-DD) untuk filter daily", required: false, schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "end_date", in: "query", description: "Tanggal akhir (YYYY-MM-DD) untuk filter daily", required: false, schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "start_year", in: "query", description: "Tahun awal (YYYY) untuk filter monthly", required: false, schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "end_year", in: "query", description: "Tahun akhir (YYYY) untuk filter monthly", required: false, schema: new OA\Schema(type: "integer"))]
     #[OA\Response(response: 200, description: "Successful operation")]
     #[OA\Response(response: 401, description: "Unauthorized")]
     public function keseluruhan(Request $request): JsonResponse

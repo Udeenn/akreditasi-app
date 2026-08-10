@@ -31,8 +31,10 @@ class KoleksiApiController extends Controller
         security: [["ApiKeyAuth" => []]],
         tags: ["Koleksi"]
     )]
-    #[OA\Parameter(name: "type", in: "query", description: "Type of collection (textbook, ebook, jurnal, ejurnal, prosiding, referensi)", required: false, schema: new OA\Schema(type: "string", default: "textbook"))]
-    #[OA\Parameter(name: "tahun", in: "query", description: "Year filter (e.g., 3 for last 3 years, or 'all')", required: false, schema: new OA\Schema(type: "string", default: "all"))]
+    #[OA\Parameter(name: "type", in: "query", description: "Tipe koleksi: textbook, ebook, jurnal, ejurnal, prosiding, referensi (default: textbook)", required: false, schema: new OA\Schema(type: "string", default: "textbook"))]
+    #[OA\Parameter(name: "prodi", in: "query", description: "Filter Kode Prodi (misal: A510, D100, atau 'all')", required: false, schema: new OA\Schema(type: "string", default: "all"))]
+    #[OA\Parameter(name: "tahun", in: "query", description: "Filter rentang tahun penerbitan (misal 3 untuk 3 tahun terakhir, 5, atau 'all')", required: false, schema: new OA\Schema(type: "string", default: "all"))]
+    #[OA\Parameter(name: "fakultas", in: "query", description: "Filter Nama Fakultas (misal: FT - Fakultas Teknik atau 'semua')", required: false, schema: new OA\Schema(type: "string", default: "semua"))]
     #[OA\Response(response: 200, description: "Successful operation")]
     #[OA\Response(response: 401, description: "Unauthorized")]
     public function statistik(Request $request): JsonResponse
