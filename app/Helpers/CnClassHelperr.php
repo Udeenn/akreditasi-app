@@ -76,32 +76,34 @@ final class CnClassHelperr
 
         // Try to fetch from Cache & DB first
         try {
-            if (\Illuminate\Support\Facades\Schema::hasTable('cnclass_rulesets')) {
-                return \Illuminate\Support\Facades\Cache::rememberForever('cnclass_all_prodi_data', function () {
-                    $rulesets = [];
-                    $alias = [];
-                    
-                    $dbRulesets = \App\Models\CnclassRuleset::with('mappings')->get();
-                    
-                    if ($dbRulesets->isEmpty()) {
-                        return self::getHardcodedProdiData();
-                    }
+            $data = \Illuminate\Support\Facades\Cache::rememberForever('cnclass_all_prodi_data', function () {
+                $rulesets = [];
+                $alias = [];
+                
+                $dbRulesets = \App\Models\CnclassRuleset::with('mappings')->get();
+                
+                if ($dbRulesets->isEmpty()) {
+                    return self::getHardcodedProdiData();
+                }
 
-                    foreach ($dbRulesets as $rs) {
-                        $rulesets[$rs->name] = $rs->rules ?? [];
-                        foreach ($rs->mappings as $mapping) {
-                            $alias[$mapping->prodi_code] = $rs->name;
-                        }
+                foreach ($dbRulesets as $rs) {
+                    $rulesets[$rs->name] = $rs->rules ?? [];
+                    foreach ($rs->mappings as $mapping) {
+                        $alias[$mapping->prodi_code] = $rs->name;
                     }
+                }
 
-                    return [$rulesets, $alias];
-                });
+                return [$rulesets, $alias];
+            });
+
+            if (!empty($data) && count($data) === 2) {
+                return self::$CACHE = $data;
             }
-        } catch (\Exception $e) {
-            // Fallback gracefully
+        } catch (\Throwable $e) {
+            // Fallback gracefully to hardcode
         }
 
-        return self::getHardcodedProdiData();
+        return self::$CACHE = self::getHardcodedProdiData();
     }
 
     private static function getHardcodedProdiData(): array

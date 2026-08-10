@@ -202,6 +202,47 @@
     color: #0dcaf0;
 }
 
+/* --- CUSTOM BADGE UTILITIES (CN Class & Faculty Mapping) --- */
+.cn-badge-primary {
+    background: rgba(74,105,255,0.08) !important;
+    color: #4a69ff !important;
+    border-color: rgba(74,105,255,0.2) !important;
+}
+.cn-badge-secondary {
+    background: rgba(100,116,139,0.1) !important;
+    color: #475569 !important;
+    border-color: rgba(100,116,139,0.2) !important;
+}
+.cn-badge-teal {
+    background: rgba(20,184,166,0.1) !important;
+    color: #0d9488 !important;
+    border-color: rgba(20,184,166,0.2) !important;
+}
+.cn-ruleset-badge {
+    background: rgba(74,105,255,0.12) !important;
+    color: #4a69ff !important;
+}
+
+body.dark-mode .cn-badge-primary {
+    background: rgba(74,105,255,0.25) !important;
+    color: #a5b4fc !important;
+    border-color: rgba(74,105,255,0.35) !important;
+}
+body.dark-mode .cn-badge-secondary {
+    background: rgba(100,116,139,0.25) !important;
+    color: #cbd5e1 !important;
+    border-color: rgba(100,116,139,0.35) !important;
+}
+body.dark-mode .cn-badge-teal {
+    background: rgba(20,184,166,0.2) !important;
+    color: #5eead4 !important;
+    border-color: rgba(20,184,166,0.3) !important;
+}
+body.dark-mode .cn-ruleset-badge {
+    background: rgba(74,105,255,0.3) !important;
+    color: #a5b4fc !important;
+}
+
 
 /* --- DATATABLES LIGHT MODE OVERRIDES --- */
 .dataTables_wrapper .dataTables_length select,

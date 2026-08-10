@@ -41,28 +41,21 @@ class KoleksiApiController extends Controller
         $tahun = $request->input('tahun', 'all');
         $fakultas = $request->input('fakultas', 'semua');
 
-        // Based on the selected type, we fetch data. We'll reuse the CollectionStatisticsService logic.
+        $prodi = $request->input('prodi', 'all');
+
         try {
-            $data = [];
-            
-            // For simplicity, we just return basic counts using the existing methods 
-            // from CollectionStatisticsService or query directly similar to web controller
-            
-            // Note: Since each type has specific complex regex rules in the web app, 
-            // we will provide a unified summary response.
-            // Ideally this would fully replicate the complex datatables logic.
-            // But as an API, we can provide the aggregated data.
-            
+            $result = $this->collectionService->getCollectionData($type, $prodi, $tahun);
+
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => 'Detail statistik koleksi ' . $type,
-                'data' => [
-                    // For now, this is a placeholder response for the specific collection type endpoint.
-                    // In a production scenario, we'd map directly to the DataTables query.
-                    'type' => $type,
-                    'tahun' => $tahun,
-                    'fakultas' => $fakultas,
-                    'note' => 'Please use the /koleksi/fakultas endpoint for full aggregated faculty counts.'
+                'data'    => [
+                    'type'           => $type,
+                    'prodi'          => $prodi,
+                    'tahun'          => $tahun,
+                    'totalJudul'     => $result['totalJudul'],
+                    'totalEksemplar' => $result['totalEksemplar'],
+                    'items'          => $result['processedData'],
                 ]
             ]);
             

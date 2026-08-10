@@ -170,6 +170,9 @@ Route::middleware('auth')->group(function () {
         // Pengaturan CN Class
         Route::resource('pengaturan/cnclass', \App\Http\Controllers\CnClassController::class);
 
+        // Pengaturan Fakultas & Prodi Mapping
+        Route::resource('pengaturan/fakultas', \App\Http\Controllers\FacultyController::class);
+
         // Audit Trail — Activity Log
         Route::get('/admin/activity-log', [\App\Http\Controllers\ActivityLogController::class, 'index'])
             ->name('admin.activity-log');

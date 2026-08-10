@@ -29,9 +29,8 @@ class AppServiceProvider extends ServiceProvider
         });
         Schema::defaultStringLength(191);
 
-        if($this->app->environment('production')) {
+        if (request()->header('x-forwarded-proto') === 'https' || request()->isSecure() || $this->app->environment('production')) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
-            \Illuminate\Support\Facades\URL::forceRootUrl(config('app.url'));
         }
 
         // --- Rate Limiters ---

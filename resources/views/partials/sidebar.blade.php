@@ -214,6 +214,13 @@
         <span class="nav-text">Pengaturan CN Class</span>
     </a>
 </li>
+<li class="nav-item">
+    <a class="nav-link {{ request()->routeIs('fakultas.*') ? 'active' : '' }}"
+        href="{{ route('fakultas.index') }}">
+        <i class="bi bi-building-gear nav-icon"></i>
+        <span class="nav-text">Pengaturan Fakultas</span>
+    </a>
+</li>
 @endif
 @endauth
 </ul>

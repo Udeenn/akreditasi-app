@@ -159,6 +159,10 @@ $breadcrumbMap = [
         ['Admin', null],
         ['Pengaturan CN Class', null],
     ],
+    'fakultas.index' => [
+        ['Admin', null],
+        ['Pengaturan Fakultas', null],
+    ],
 ];
 
 $crumbs = $breadcrumbMap[$currentRoute] ?? null;
