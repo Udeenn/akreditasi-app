@@ -6,16 +6,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Dashboard') - Library Data</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    {{-- Open Graph / WhatsApp / Facebook Share Meta Tags --}}
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="@yield('title', 'Dashboard') - Akreditasi Perpustakaan UMS">
+    <meta property="og:description" content="Sistem Pelaporan, Statistik Data Kunjungan, Peminjaman, dan Koleksi Akreditasi Perpustakaan Universitas Muhammadiyah Surakarta.">
+    <meta property="og:image" content="{{ asset('img/og_preview.png') }}">
+    <meta property="og:image:secure_url" content="{{ asset('img/og_preview.png') }}">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="Akreditasi Perpustakaan UMS">
+
+    {{-- Twitter Card Meta Tags --}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="{{ url()->current() }}">
+    <meta name="twitter:title" content="@yield('title', 'Dashboard') - Akreditasi Perpustakaan UMS">
+    <meta name="twitter:description" content="Sistem Pelaporan, Statistik Data Kunjungan, Peminjaman, dan Koleksi Akreditasi Perpustakaan Universitas Muhammadiyah Surakarta.">
+    <meta name="twitter:image" content="{{ asset('img/og_preview.png') }}">
+
     <link rel="icon" href="{{ asset('img/logo4.png') }}?v={{ time() }}" type="image/png">
     <link rel="shortcut icon" href="{{ asset('img/logo4.png') }}?v={{ time() }}" type="image/png">
     {{-- CSS LINKS --}}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="{{ asset('css/unified-components.css') }}?v={{ time() + 1 }}">
     {{-- NProgress (top loading bar) --}}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 <link rel="stylesheet" href="{{ asset('css/app-loader.css') }}?v={{ time() + 1 }}">
 
     @stack('styles')
@@ -342,12 +362,12 @@
     </div>
 
     {{-- JS LINKS --}}
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     {{-- NProgress: harus dimuat sebelum inline script yang memakainya --}}
-    <script src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     {{-- ApexCharts --}}
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     @stack('scripts')
     @include('layouts.app-scripts')
 </body>

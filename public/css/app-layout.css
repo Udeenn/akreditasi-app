@@ -424,7 +424,7 @@
             position: fixed;
             bottom: 2rem;
             right: 2rem;
-            z-index: 1051;
+            z-index: 999999 !important;
         }
 
         .theme-fab #theme-toggle {

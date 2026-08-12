@@ -258,6 +258,104 @@ class StatistikKoleksi extends Controller
         return view('pages.dapus.trenPertambahan', compact('data', 'startYear', 'endYear'));
     }
 
+    public function detailPertambahan(Request $request)
+    {
+        $year = (int)$request->input('year', date('Y'));
+        $search = trim($request->input('search', ''));
+        $export = $request->has('export_csv');
+
+        $query = DB::connection('mysql2')
+            ->table('items')
+            ->join('biblio as b', 'b.biblionumber', '=', 'items.biblionumber')
+            ->leftJoin('biblioitems as bi', 'bi.biblionumber', '=', 'items.biblionumber')
+            ->select(
+                'b.biblionumber',
+                'b.title',
+                'b.author',
+                'bi.publishercode',
+                'bi.publicationyear',
+                'items.itemcallnumber',
+                DB::raw('COUNT(items.itemnumber) as total_eksemplar'),
+                DB::raw('MIN(DATE(items.dateaccessioned)) as tgl_masuk')
+            )
+            ->whereNotNull('items.dateaccessioned')
+            ->whereRaw('YEAR(items.dateaccessioned) = ?', [$year])
+            ->where('items.itemlost', 0)
+            ->where('items.withdrawn', 0);
+
+        if ($search !== '') {
+            $query->where(function($q) use ($search) {
+                $q->where('b.title', 'LIKE', "%{$search}%")
+                  ->orWhere('b.author', 'LIKE', "%{$search}%")
+                  ->orWhere('bi.publishercode', 'LIKE', "%{$search}%")
+                  ->orWhere('items.itemcallnumber', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $query->groupBy(
+            'b.biblionumber',
+            'b.title',
+            'b.author',
+            'bi.publishercode',
+            'bi.publicationyear',
+            'items.itemcallnumber'
+        )
+        ->orderByRaw('CASE WHEN b.author IS NOT NULL AND TRIM(b.author) != "" THEN 0 ELSE 1 END ASC')
+        ->orderBy('total_eksemplar', 'DESC')
+        ->orderBy('b.title', 'ASC');
+
+        if ($export) {
+            $data = $query->get();
+            $filename = "Detail_Pertambahan_Buku_Tahun_{$year}.csv";
+            $headers = [
+                "Content-type"        => "text/csv",
+                "Content-Disposition" => "attachment; filename=$filename",
+                "Pragma"              => "no-cache",
+                "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+                "Expires"             => "0"
+            ];
+
+            $callback = function() use($data, $year) {
+                $file = fopen('php://output', 'w');
+                fputcsv($file, ["Detail Pertambahan Buku - Tahun Accession: $year"]);
+                fputcsv($file, []);
+                fputcsv($file, ['No', 'Judul Buku', 'Pengarang', 'Penerbit', 'Tahun Terbit', 'Call Number', 'Jumlah Eksemplar', 'Tanggal Masuk']);
+                
+                $i = 1;
+                foreach ($data as $row) {
+                    fputcsv($file, [
+                        $i++,
+                        $row->title,
+                        $row->author,
+                        $row->publishercode,
+                        $row->publicationyear,
+                        $row->itemcallnumber,
+                        $row->total_eksemplar,
+                        $row->tgl_masuk
+                    ]);
+                }
+                fputcsv($file, ['', '', '', '', '', 'TOTAL EKSEMPLAR', $data->sum('total_eksemplar'), '']);
+                fclose($file);
+            };
+
+            return response()->stream($callback, 200, $headers);
+        }
+
+        $details = $query->paginate(25)->appends($request->all());
+
+        if ($request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'year' => $year,
+                'html' => view('pages.dapus.partials.detail_pertambahan_table', compact('details', 'year', 'search'))->render(),
+                'total_titles' => $details->total(),
+                'total_items' => $details->sum('total_eksemplar')
+            ]);
+        }
+
+        return view('pages.dapus.detailPertambahan', compact('details', 'year', 'search'));
+    }
+
     private function getCsvHeaders(string $type): array
     {
         if (in_array($type, ['prosiding', 'jurnal', 'ejurnal'])) return ['No', 'Judul', 'Pengarang', 'Penerbit', 'Tahun Terbit', 'Nomor', 'Issue', 'Eksemplar', 'Lokasi', 'Link'];

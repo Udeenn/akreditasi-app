@@ -102,6 +102,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/detail', [StatistikKoleksi::class, 'getDetailKoleksi'])->name('detail');
         Route::get('/rekap-fakultas', [StatistikKoleksi::class, 'rekapPerFakultas'])->name('rekap_fakultas');
         Route::get('/tren-pertambahan', [StatistikKoleksi::class, 'trenPertambahan'])->name('tren_pertambahan')->middleware('admin');
+        Route::get('/tren-pertambahan-detail', [StatistikKoleksi::class, 'detailPertambahan'])->name('tren_pertambahan_detail')->middleware('admin');
     });
 
     // =============================================
