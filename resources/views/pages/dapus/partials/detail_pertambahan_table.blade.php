@@ -21,7 +21,7 @@
                     @if(!empty(trim($row->author)))
                         <span class="fw-medium text-body-title"><i class="fas fa-user-edit text-primary me-1"></i> {{ $row->author }}</span>
                     @elseif(!empty(trim($row->publishercode)))
-                        <span class="text-muted small fst-italic"><i class="fas fa-building text-secondary me-1"></i> {{ $row->publishercode }} <span class="badge bg-secondary bg-opacity-10 text-secondary border-0">Penerbit</span></span>
+                        <span class="text-muted small fst-italic"><i class="fas fa-building text-secondary me-1"></i> Tanpa Pengarang</span>
                     @else
                         <span class="text-muted small fst-italic"><i class="fas fa-minus-circle text-muted me-1"></i> Terbitan Berkala / Anonim</span>
                     @endif

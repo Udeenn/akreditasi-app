@@ -103,6 +103,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/rekap-fakultas', [StatistikKoleksi::class, 'rekapPerFakultas'])->name('rekap_fakultas');
         Route::get('/tren-pertambahan', [StatistikKoleksi::class, 'trenPertambahan'])->name('tren_pertambahan')->middleware('admin');
         Route::get('/tren-pertambahan-detail', [StatistikKoleksi::class, 'detailPertambahan'])->name('tren_pertambahan_detail')->middleware('admin');
+        Route::post('/tren-pertambahan/export-pdf', [StatistikKoleksi::class, 'exportPdfTrenPertambahan'])->name('tren_pertambahan_export_pdf')->middleware(['admin', 'throttle:exports']);
     });
 
     // =============================================

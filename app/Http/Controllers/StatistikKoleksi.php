@@ -201,8 +201,24 @@ class StatistikKoleksi extends Controller
 
     public function trenPertambahan(Request $request)
     {
-        $startYear = $request->input('start_year', date('Y') - 10);
-        $endYear = $request->input('end_year', date('Y'));
+        $startYear = (int) $request->input('start_year', date('Y') - 10);
+        $endYear   = (int) $request->input('end_year', date('Y'));
+
+        // Swap otomatis jika start_year lebih besar dari end_year
+        $yearSwapped = false;
+        if ($startYear > $endYear) {
+            [$startYear, $endYear] = [$endYear, $startYear];
+            $yearSwapped = true;
+        }
+
+        // Fix 5: Ambil tahun tertua dari DB untuk filter dropdown
+        $minYear = (int) \Illuminate\Support\Facades\Cache::remember('tren_pertambahan_min_year', 86400, function () {
+            return DB::connection('mysql2')
+                ->table('items')
+                ->whereNotNull('dateaccessioned')
+                ->selectRaw('MIN(YEAR(dateaccessioned)) as min_year')
+                ->value('min_year') ?? 2000;
+        });
 
         $cacheKey = "statistik_koleksi_tren_pertambahan_{$startYear}_{$endYear}";
         $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startYear, $endYear) {
@@ -255,13 +271,46 @@ class StatistikKoleksi extends Controller
             return response()->stream($callback, 200, $headers);
         }
 
-        return view('pages.dapus.trenPertambahan', compact('data', 'startYear', 'endYear'));
+        return view('pages.dapus.trenPertambahan', compact('data', 'startYear', 'endYear', 'yearSwapped', 'minYear'));
+    }
+
+    public function exportPdfTrenPertambahan(Request $request)
+    {
+        $startYear = (int) $request->input('start_year', date('Y') - 10);
+        $endYear   = (int) $request->input('end_year', date('Y'));
+        if ($startYear > $endYear) [$startYear, $endYear] = [$endYear, $startYear];
+
+        $cacheKey = "statistik_koleksi_tren_pertambahan_{$startYear}_{$endYear}";
+        $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startYear, $endYear) {
+            return DB::connection('mysql2')
+                ->table('items')
+                ->selectRaw('YEAR(dateaccessioned) as year, COUNT(itemnumber) as total_items, COUNT(DISTINCT biblionumber) as total_titles')
+                ->whereNotNull('dateaccessioned')
+                ->whereRaw('YEAR(dateaccessioned) >= ?', [$startYear])
+                ->whereRaw('YEAR(dateaccessioned) <= ?', [$endYear])
+                ->groupByRaw('YEAR(dateaccessioned)')
+                ->orderByRaw('YEAR(dateaccessioned) ASC')
+                ->get();
+        });
+
+        $logoPath = public_path('img/ums.png');
+        $logoBase64 = '';
+        if (file_exists($logoPath)) {
+            $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.dapus.pdf.tren_pertambahan', compact(
+            'data', 'startYear', 'endYear', 'logoBase64'
+        ))->setPaper('a4', 'portrait');
+
+        return $pdf->download("Tren_Pertambahan_Koleksi_{$startYear}_{$endYear}.pdf");
     }
 
     public function detailPertambahan(Request $request)
     {
-        $year = (int)$request->input('year', date('Y'));
+        $year   = (int)$request->input('year', date('Y'));
         $search = trim($request->input('search', ''));
+        $itype  = trim($request->input('itype', ''));
         $export = $request->has('export_csv');
 
         $query = DB::connection('mysql2')
@@ -270,11 +319,18 @@ class StatistikKoleksi extends Controller
             ->leftJoin('biblioitems as bi', 'bi.biblionumber', '=', 'items.biblionumber')
             ->select(
                 'b.biblionumber',
-                'b.title',
+                // Judul lengkap: 245$a dari biblio + 245$b via scalar subquery (tidak butuh privilege ANY_VALUE)
+                DB::raw("CONCAT_WS(' ', TRIM(b.title), NULLIF(TRIM(
+                    (SELECT EXTRACTVALUE(bm2.metadata, '//datafield[@tag=\"245\"]/subfield[@code=\"b\"]')
+                     FROM biblio_metadata bm2
+                     WHERE bm2.biblionumber = b.biblionumber
+                     LIMIT 1)
+                ), '')) AS title"),
                 'b.author',
                 'bi.publishercode',
                 'bi.publicationyear',
-                'items.itemcallnumber',
+                // MIN agar tidak masuk GROUP BY — tiap biblionumber hanya 1 baris
+                DB::raw('MIN(items.itemcallnumber) as itemcallnumber'),
                 DB::raw('COUNT(items.itemnumber) as total_eksemplar'),
                 DB::raw('MIN(DATE(items.dateaccessioned)) as tgl_masuk')
             )
@@ -282,6 +338,11 @@ class StatistikKoleksi extends Controller
             ->whereRaw('YEAR(items.dateaccessioned) = ?', [$year])
             ->where('items.itemlost', 0)
             ->where('items.withdrawn', 0);
+
+        // Filter jenis koleksi (itype)
+        if ($itype !== '') {
+            $query->where('items.itype', $itype);
+        }
 
         if ($search !== '') {
             $query->where(function($q) use ($search) {
@@ -294,18 +355,25 @@ class StatistikKoleksi extends Controller
 
         $query->groupBy(
             'b.biblionumber',
-            'b.title',
+            'b.title',   // pakai b.title (bukan alias) untuk GROUP BY
             'b.author',
             'bi.publishercode',
-            'bi.publicationyear',
-            'items.itemcallnumber'
+            'bi.publicationyear'
+            // itemcallnumber TIDAK di GROUP BY — sudah MIN() di SELECT
         )
         ->orderByRaw('CASE WHEN b.author IS NOT NULL AND TRIM(b.author) != "" THEN 0 ELSE 1 END ASC')
         ->orderBy('total_eksemplar', 'DESC')
         ->orderBy('b.title', 'ASC');
 
+        // Cache hanya saat tidak ada filter search atau itype (filter dinamis = no cache)
+        $useCache = ($search === '' && $itype === '');
+        $cacheKeyDetail = "detail_pertambahan_{$year}";
+
         if ($export) {
-            $data = $query->get();
+            // Manfaatkan cache bila tersedia (search & itype kosong)
+            $data = $useCache
+                ? \Illuminate\Support\Facades\Cache::remember($cacheKeyDetail, 3600, fn() => $query->get())
+                : $query->get();
             $filename = "Detail_Pertambahan_Buku_Tahun_{$year}.csv";
             $headers = [
                 "Content-type"        => "text/csv",
@@ -320,7 +388,6 @@ class StatistikKoleksi extends Controller
                 fputcsv($file, ["Detail Pertambahan Buku - Tahun Accession: $year"]);
                 fputcsv($file, []);
                 fputcsv($file, ['No', 'Judul Buku', 'Pengarang', 'Penerbit', 'Tahun Terbit', 'Call Number', 'Jumlah Eksemplar', 'Tanggal Masuk']);
-                
                 $i = 1;
                 foreach ($data as $row) {
                     fputcsv($file, [
@@ -341,7 +408,25 @@ class StatistikKoleksi extends Controller
             return response()->stream($callback, 200, $headers);
         }
 
-        $details = $query->paginate(25)->appends($request->all());
+        // Cache full result saat search & itype kosong, lalu paginate dari Collection di memori
+        if ($useCache) {
+            $allData = \Illuminate\Support\Facades\Cache::remember($cacheKeyDetail, 3600, fn() => $query->get());
+            $details = (new \Illuminate\Pagination\LengthAwarePaginator(
+                $allData->forPage(request()->input('page', 1), 25),
+                $allData->count(),
+                25,
+                request()->input('page', 1),
+                ['path' => request()->url(), 'query' => request()->query()]
+            ));
+            $totalEksemplarAll = (int) $allData->sum('total_eksemplar');
+        } else {
+            $details = $query->paginate(25)->appends($request->all());
+            // Wrap query sebagai subquery untuk sum aggregate alias
+            $totalEksemplarAll = (int) DB::connection('mysql2')
+                ->table(DB::raw('(' . (clone $query)->toSql() . ') as sub'))
+                ->mergeBindings(clone $query)
+                ->sum('total_eksemplar');
+        }
 
         if ($request->ajax()) {
             return response()->json([
@@ -349,11 +434,11 @@ class StatistikKoleksi extends Controller
                 'year' => $year,
                 'html' => view('pages.dapus.partials.detail_pertambahan_table', compact('details', 'year', 'search'))->render(),
                 'total_titles' => $details->total(),
-                'total_items' => $details->sum('total_eksemplar')
+                'total_items' => $totalEksemplarAll
             ]);
         }
 
-        return view('pages.dapus.detailPertambahan', compact('details', 'year', 'search'));
+        return view('pages.dapus.detailPertambahan', compact('details', 'year', 'search', 'itype'));
     }
 
     private function getCsvHeaders(string $type): array
