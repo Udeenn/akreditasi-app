@@ -237,12 +237,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     if (countdownSeconds <= 0) {
                         clearInterval(countdownTimer);
-                        const logoutForm = modalEl ? modalEl.querySelector('form') : null;
-                        if (logoutForm) {
-                            logoutForm.submit();
-                        } else {
-                            window.location.href = window.AppConfig.casLoginUrl;
-                        }
+                        // Session sudah habis — langsung redirect ke login
+                        // (tidak submit form karena CSRF token juga sudah expired)
+                        window.location.href = window.AppConfig.casLoginUrl;
                     }
                 }, 1000);
             }
@@ -285,6 +282,37 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Abaikan error jaringan
                     });
                     resetIdleTimer();
+                });
+            }
+
+            // Tombol Logout di modal: ambil CSRF token baru dulu, baru submit
+            const btnLogoutNow = document.getElementById('btnLogoutNow');
+            if (btnLogoutNow) {
+                btnLogoutNow.addEventListener('click', function () {
+                    btnLogoutNow.disabled = true;
+                    btnLogoutNow.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Memproses...';
+
+                    // Coba ambil CSRF token baru
+                    fetch('/sanctum/csrf-cookie', { credentials: 'same-origin' })
+                        .then(function() {
+                            // Token diperbarui di cookie — ambil dari meta tag yang diupdate
+                            var form = document.getElementById('logoutFormModal');
+                            if (form) {
+                                // Update token input jika ada
+                                var tokenInput = form.querySelector('input[name="_token"]');
+                                var metaToken = document.querySelector('meta[name="csrf-token"]');
+                                if (tokenInput && metaToken) {
+                                    tokenInput.value = metaToken.getAttribute('content');
+                                }
+                                form.submit();
+                            } else {
+                                window.location.href = window.AppConfig.casLoginUrl;
+                            }
+                        })
+                        .catch(function() {
+                            // Fetch gagal (offline / session habis total) — redirect ke login
+                            window.location.href = window.AppConfig.casLoginUrl;
+                        });
                 });
             }
 

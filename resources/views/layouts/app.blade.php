@@ -341,11 +341,13 @@
                         <button type="button" id="btnExtendSession" class="btn btn-primary px-4 py-2" style="border-radius: 0.75rem; font-weight: 600;">
                             <i class="fas fa-rotate-right me-2"></i>Lanjutkan Sesi
                         </button>
-                        <form action="{{ route('logout') }}" method="POST" class="d-inline">
+                        {{-- Tombol logout: pakai JS agar bisa handle CSRF token yang sudah expired --}}
+                        <button type="button" id="btnLogoutNow" class="btn btn-outline-danger px-4 py-2" style="border-radius: 0.75rem; font-weight: 600;">
+                            <i class="fas fa-sign-out-alt me-2"></i>Logout Sekarang
+                        </button>
+                        {{-- Hidden form untuk submit logout setelah token diperbarui --}}
+                        <form id="logoutFormModal" action="{{ route('logout') }}" method="POST" class="d-none">
                             @csrf
-                            <button type="submit" class="btn btn-outline-danger px-4 py-2" style="border-radius: 0.75rem; font-weight: 600;">
-                                <i class="fas fa-sign-out-alt me-2"></i>Logout Sekarang
-                            </button>
                         </form>
                     </div>
                 </div>
