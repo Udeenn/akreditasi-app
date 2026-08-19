@@ -311,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function () {
             modal.querySelector('#editModalRules').value = btn.dataset.rules;
             modal.querySelector('#editModalMappings').value = btn.dataset.mappings;
             modal.querySelector('#editModalForm').action = btn.dataset.action;
-            var bsModal = bootstrap.Modal.getOrCreate(modal);
+            var bsModal = bootstrap.Modal.getOrCreateInstance(modal);
             bsModal.show();
         });
     });
