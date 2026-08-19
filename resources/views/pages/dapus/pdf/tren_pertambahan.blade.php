@@ -1,118 +1,177 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Tren Pertambahan Koleksi {{ $startYear }} - {{ $endYear }}</title>
+    <title>Laporan Pengadaan Koleksi {{ $startYear }}-{{ $endYear }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'DejaVu Sans', sans-serif; font-size: 10px; color: #333; background: #fff; }
+        body {
+            font-family: "DejaVu Sans", sans-serif;
+            font-size: 9.5px;
+            color: #111;
+            background: #fff;
+            padding: 20px 28px;
+        }
 
-        .header { display: flex; align-items: center; border-bottom: 2px solid #0d6efd; padding-bottom: 12px; margin-bottom: 16px; }
-        .header-logo { width: 60px; height: 60px; margin-right: 14px; }
-        .header-logo img { width: 100%; height: 100%; object-fit: contain; }
-        .header-text h1 { font-size: 14px; font-weight: bold; color: #0d6efd; }
-        .header-text p { font-size: 9px; color: #666; margin-top: 2px; }
+        /* HEADER */
+        .header-table { width: 100%; border-collapse: collapse; border-bottom: 2px solid #111; padding-bottom: 10px; margin-bottom: 10px; }
+        .logo-cell { width: 60px; vertical-align: middle; }
+        .logo-cell img { width: 52px; object-fit: contain; }
+        .title-cell { vertical-align: middle; padding-left: 12px; }
+        .doc-title { font-size: 13px; font-weight: bold; color: #111; }
+        .doc-sub { font-size: 8.5px; color: #555; margin-top: 2px; }
+        .meta-cell { vertical-align: middle; text-align: right; font-size: 8px; color: #555; line-height: 1.7; }
 
-        .meta-box { background: #f0f4ff; border-left: 4px solid #0d6efd; padding: 8px 12px; margin-bottom: 14px; border-radius: 2px; }
-        .meta-box p { font-size: 9px; color: #444; margin: 1px 0; }
-        .meta-box strong { color: #0d6efd; }
+        /* DIVIDER */
+        hr { border: none; border-top: 1px solid #ddd; margin: 10px 0; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-        thead tr { background: #0d6efd; color: #fff; }
-        thead th { padding: 7px 10px; text-align: center; font-size: 9px; font-weight: bold; letter-spacing: 0.3px; }
-        tbody tr:nth-child(even) { background: #f8f9ff; }
-        tbody tr:nth-child(odd) { background: #fff; }
-        tbody td { padding: 6px 10px; border-bottom: 1px solid #e8ecf0; font-size: 9px; }
-        tbody td.center { text-align: center; }
-        tbody td.right { text-align: right; }
+        /* SUMMARY ROW */
+        .summary-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+        .summary-table td { font-size: 8.5px; color: #555; padding: 4px 0; }
+        .summary-table td b { color: #111; font-size: 9.5px; }
 
-        tfoot tr { background: #e8ecf0; font-weight: bold; }
-        tfoot td { padding: 7px 10px; font-size: 9px; border-top: 2px solid #0d6efd; }
-        tfoot td.center { text-align: center; }
+        /* TABLE */
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table thead th {
+            background: #111;
+            color: #fff;
+            font-size: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 7px 10px;
+            text-align: center;
+        }
+        .data-table tbody tr:nth-child(even) { background: #f7f7f7; }
+        .data-table tbody tr:nth-child(odd)  { background: #fff; }
+        .data-table tbody td {
+            padding: 6px 10px;
+            font-size: 9px;
+            border-bottom: 1px solid #e5e5e5;
+            text-align: center;
+            color: #222;
+        }
+        .data-table tbody td.no { color: #999; font-size: 8px; }
+        .data-table tbody td.year { font-weight: bold; color: #111; }
 
-        .trend-up   { color: #198754; font-weight: bold; }
-        .trend-down { color: #dc3545; font-weight: bold; }
-        .trend-na   { color: #888; }
+        .trend-up   { color: #1a6e3c; font-weight: bold; }
+        .trend-down { color: #9b1c1c; font-weight: bold; }
+        .trend-na   { color: #999; font-style: italic; }
 
-        .footer { margin-top: 18px; text-align: right; font-size: 8px; color: #999; border-top: 1px solid #dee2e6; padding-top: 6px; }
+        .data-table tfoot td {
+            background: #f0f0f0;
+            font-weight: bold;
+            font-size: 9px;
+            padding: 7px 10px;
+            text-align: center;
+            border-top: 2px solid #111;
+            color: #111;
+        }
+        .data-table tfoot td.label { text-align: right; }
+
+        /* FOOTER */
+        .doc-footer {
+            margin-top: 20px;
+            padding-top: 8px;
+            border-top: 1px solid #ddd;
+            font-size: 7.5px;
+            color: #888;
+        }
+        .doc-footer table { width: 100%; border-collapse: collapse; }
+        .doc-footer .fl { vertical-align: middle; }
+        .doc-footer .fr { text-align: right; vertical-align: middle; }
     </style>
 </head>
 <body>
 
-    {{-- Header --}}
-    <div class="header">
-        @if($logoBase64)
-        <div class="header-logo">
-            <img src="{{ $logoBase64 }}" alt="Logo">
-        </div>
-        @endif
-        <div class="header-text">
-            <h1>Laporan Tren Pertambahan Koleksi</h1>
-            <p>Perpustakaan Universitas Muhammadiyah Surakarta</p>
-            <p>Rentang Tahun: {{ $startYear }} &ndash; {{ $endYear }}</p>
-        </div>
-    </div>
+{{-- HEADER --}}
+<table class="header-table">
+    <tr>
+        <td class="logo-cell">
+            @if($logoBase64)
+                <img src="{{ $logoBase64 }}" alt="Logo">
+            @endif
+        </td>
+        <td class="title-cell">
+            <div class="doc-title">Laporan Pengadaan Koleksi</div>
+            <div class="doc-sub">Perpustakaan Universitas Muhammadiyah Surakarta</div>
+        </td>
+        <td class="meta-cell">
+            Periode: <b>{{ $startYear }} &ndash; {{ $endYear }}</b><br>
+            Dicetak: {{ now()->locale('id')->isoFormat('D MMMM YYYY') }}<br>
+            Pukul: {{ now()->format('H:i') }} WIB
+        </td>
+    </tr>
+</table>
 
-    {{-- Meta info --}}
-    <div class="meta-box">
-        <p>Total Judul Baru: <strong>{{ number_format($data->sum('total_titles'), 0, ',', '.') }}</strong></p>
-        <p>Total Eksemplar Baru: <strong>{{ number_format($data->sum('total_items'), 0, ',', '.') }}</strong></p>
-        <p>Dicetak: <strong>{{ now()->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }} WIB</strong></p>
-    </div>
+{{-- SUMMARY --}}
+<table class="summary-table">
+    <tr>
+        <td>Total Judul Baru: <b>{{ number_format($data->sum('total_titles'), 0, ',', '.') }}</b></td>
+        <td>Total Eksemplar Baru: <b>{{ number_format($data->sum('total_items'), 0, ',', '.') }}</b></td>
+        <td style="text-align:right; color:#999;">{{ $endYear - $startYear + 1 }} tahun data</td>
+    </tr>
+</table>
 
-    {{-- Tabel --}}
+{{-- TABLE --}}
+<table class="data-table">
+    <thead>
+        <tr>
+            <th style="width:6%;">No</th>
+            <th style="width:20%;">Tahun Masuk</th>
+            <th style="width:24%;">Judul Baru</th>
+            <th style="width:24%;">Eksemplar Baru</th>
+            <th style="width:26%;">Tren Pengadaan</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach($data as $index => $row)
+        @php
+            $prevRow = $index > 0 ? $data[$index - 1] : null;
+            $growthTitles = null;
+            if ($prevRow && $prevRow->total_titles > 0) {
+                $growthTitles = round((($row->total_titles - $prevRow->total_titles) / $prevRow->total_titles) * 100, 1);
+            }
+        @endphp
+        <tr>
+            <td class="no">{{ $index + 1 }}</td>
+            <td class="year">{{ $row->year }}</td>
+            <td>{{ number_format($row->total_titles, 0, ',', '.') }}</td>
+            <td>{{ number_format($row->total_items, 0, ',', '.') }}</td>
+            <td>
+                @if($growthTitles === null)
+                    <span class="trend-na">— tahun pertama</span>
+                @elseif($growthTitles > 0)
+                    <span class="trend-up">&#9650; +{{ $growthTitles }}%</span>
+                @elseif($growthTitles < 0)
+                    <span class="trend-down">&#9660; {{ $growthTitles }}%</span>
+                @else
+                    <span style="color:#555;">0%</span>
+                @endif
+            </td>
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="2" class="label">Total</td>
+            <td>{{ number_format($data->sum('total_titles'), 0, ',', '.') }}</td>
+            <td>{{ number_format($data->sum('total_items'), 0, ',', '.') }}</td>
+            <td></td>
+        </tr>
+    </tfoot>
+</table>
+
+{{-- FOOTER --}}
+<div class="doc-footer">
     <table>
-        <thead>
-            <tr>
-                <th width="6%">No</th>
-                <th width="22%">Tahun Masuk</th>
-                <th width="22%">Judul Baru</th>
-                <th width="22%">Eksemplar Baru</th>
-                <th width="28%">Tren Pengadaan (%)</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($data as $index => $row)
-            @php
-                $prevRow = $index > 0 ? $data[$index - 1] : null;
-                $growthTitles = null;
-                if ($prevRow && $prevRow->total_titles > 0) {
-                    $growthTitles = round((($row->total_titles - $prevRow->total_titles) / $prevRow->total_titles) * 100, 1);
-                }
-            @endphp
-            <tr>
-                <td class="center">{{ $index + 1 }}</td>
-                <td class="center"><strong>{{ $row->year }}</strong></td>
-                <td class="center">{{ number_format($row->total_titles, 0, ',', '.') }}</td>
-                <td class="center">{{ number_format($row->total_items, 0, ',', '.') }}</td>
-                <td class="center">
-                    @if($growthTitles === null)
-                        <span class="trend-na">— (tahun pertama)</span>
-                    @elseif($growthTitles > 0)
-                        <span class="trend-up">&#9650; +{{ $growthTitles }}%</span>
-                    @elseif($growthTitles < 0)
-                        <span class="trend-down">&#9660; {{ $growthTitles }}%</span>
-                    @else
-                        <span class="trend-na">0%</span>
-                    @endif
-                </td>
-            </tr>
-            @endforeach
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="2" class="right">TOTAL</td>
-                <td class="center">{{ number_format($data->sum('total_titles'), 0, ',', '.') }}</td>
-                <td class="center">{{ number_format($data->sum('total_items'), 0, ',', '.') }}</td>
-                <td></td>
-            </tr>
-        </tfoot>
+        <tr>
+            <td class="fl">Digenerate otomatis oleh Sistem Informasi Akreditasi Perpustakaan UMS.</td>
+            <td class="fr">data-lib.ums.ac.id</td>
+        </tr>
     </table>
-
-    <div class="footer">
-        Dokumen ini digenerate secara otomatis oleh Sistem Akreditasi Perpustakaan UMS.
-    </div>
+</div>
 
 </body>
 </html>

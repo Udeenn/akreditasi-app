@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Detail Pertambahan Buku Tahun ' . $year)
+@section('title', 'Detail Pengadaan Koleksi Tahun ' . $year)
 
 @section('content')
 <div class="container-fluid px-4 py-4">
 
-    <x-breadcrumb title="Detail Pertambahan Buku Tahun {{ $year }}" icon="fas fa-book">
+    <x-breadcrumb title="Detail Pengadaan Koleksi Tahun {{ $year }}" icon="fas fa-book">
         <x-slot name="subtitle">
             Daftar judul buku dan eksemplar yang ditambahkan pada tahun accession {{ $year }}.
         </x-slot>

@@ -43,7 +43,7 @@
             <tr>
                 <td colspan="6" class="text-center py-4 text-muted">
                     <i class="fas fa-inbox fs-3 mb-2 d-block text-secondary"></i>
-                    Tidak ada data detail pertambahan buku ditemukan.
+                    Tidak ada data detail pengadaan koleksi ditemukan.
                 </td>
             </tr>
             @endforelse

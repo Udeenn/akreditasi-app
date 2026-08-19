@@ -35,6 +35,7 @@ class StatistikKoleksi extends Controller
         $prodiToFacultyMap = $this->prodiService->getProdiToFacultyMap($listprodi);
         $prodiCodeToNameMap = collect($this->prodiService->getFullProdiList());
         $faculties = array_unique(array_values($prodiToFacultyMap));
+        $faculties = array_filter($faculties, fn($f) => !in_array($f, ['Dosen', 'Tendik', 'Lainnya']));
         sort($faculties);
         $selectedFaculty = $request->input('fakultas');
 
@@ -246,7 +247,7 @@ class StatistikKoleksi extends Controller
             $callback = function() use($data, $startYear, $endYear) {
                 $file = fopen('php://output', 'w');
                 
-                fputcsv($file, ["Data Tren Pertambahan Koleksi ($startYear - $endYear)"]);
+                fputcsv($file, ["Data Pengadaan Koleksi ($startYear - $endYear)"]);
                 fputcsv($file, []);
                 
                 fputcsv($file, ['No', 'Tahun Masuk (Accessioned)', 'Judul Baru', 'Eksemplar Baru']);
@@ -396,7 +397,7 @@ class StatistikKoleksi extends Controller
 
             $callback = function() use($data, $year) {
                 $file = fopen('php://output', 'w');
-                fputcsv($file, ["Detail Pertambahan Buku - Tahun Accession: $year"]);
+                fputcsv($file, ["Detail Pengadaan Koleksi - Tahun Pengadaan: $year"]);
                 fputcsv($file, []);
                 fputcsv($file, ['No', 'Judul Buku', 'Pengarang', 'Penerbit', 'Tahun Terbit', 'Call Number', 'Jumlah Eksemplar', 'Tanggal Masuk']);
                 $i = 1;

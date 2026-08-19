@@ -84,7 +84,7 @@
                             href="{{ route('koleksi.eresource') }}">E-Resource</a></li>
                             @if(auth()->check() && auth()->user()->role === 'librarian')
                     <li><a class="nav-link {{ request()->routeIs('koleksi.tren_pertambahan') ? 'active' : '' }}"
-                            href="{{ route('koleksi.tren_pertambahan') }}">Pertambahan Buku</a></li>
+                            href="{{ route('koleksi.tren_pertambahan') }}">Pengadaan Koleksi</a></li>
                     @endif
         {{-- <li><a class="nav-link {{ request()->routeIs('koleksi.periodikal') ? 'active' : '' }}"
                             href="{{ route('koleksi.periodikal') }}">Majalah</a></li> --}}
@@ -210,14 +210,14 @@
 <li class="nav-item">
     <a class="nav-link {{ request()->routeIs('cnclass.*') ? 'active' : '' }}"
         href="{{ route('cnclass.index') }}">
-        <i class="bi bi-tags-fill nav-icon"></i>
-        <span class="nav-text">Pengaturan CN Class</span>
+        <i class="bi bi-grid-3x3-gap nav-icon"></i>
+        <span class="nav-text">Pengaturan Kelas Koleksi</span>
     </a>
 </li>
 <li class="nav-item">
     <a class="nav-link {{ request()->routeIs('fakultas.*') ? 'active' : '' }}"
         href="{{ route('fakultas.index') }}">
-        <i class="bi bi-building-gear nav-icon"></i>
+        <i class="bi bi-gear-fill nav-icon"></i>
         <span class="nav-text">Pengaturan Fakultas</span>
     </a>
 </li>

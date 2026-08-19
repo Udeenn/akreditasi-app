@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Tren Pertambahan Koleksi')
+@section('title', 'Pengadaan Koleksi')
 
 @section('content')
 <div class="container-fluid px-4 py-4">
 
-    <x-breadcrumb title="Tren Pertambahan Koleksi" icon="fas fa-chart-line">
+    <x-breadcrumb title="Pengadaan Koleksi" icon="fas fa-chart-line">
         <x-slot name="subtitle">
             Analisis data historis penambahan koleksi (Judul & Eksemplar) dari tahun ke tahun.
         </x-slot>
@@ -141,7 +141,7 @@
                                     <th class="text-center" width="20%">Tahun Masuk (Accessioned)</th>
                                     <th class="text-center" width="20%">Judul Baru</th>
                                     <th class="text-center" width="20%">Eksemplar Baru</th>
-                                    <th class="text-center" width="15%">Tren Judul</th>
+                                    <th class="text-center" width="15%">Tren Pengadaan</th>
                                     <th class="text-center" width="18%">Rincian Buku</th>
                                 </tr>
                             </thead>
@@ -205,7 +205,7 @@
                     <div class="mt-3 px-1 d-flex flex-wrap gap-3 align-items-start">
                         <div class="text-muted small">
                             <i class="fas fa-info-circle text-primary me-1"></i>
-                            <strong>Tren Judul</strong> menunjukkan <strong>persentase kenaikan atau penurunan</strong> jumlah judul baru
+                            <strong>Tren Pengadaan</strong> menunjukkan <strong>persentase kenaikan atau penurunan</strong> jumlah judul baru
                             dibanding tahun sebelumnya dalam rentang yang dipilih.
                             Rumus: <code class="text-primary">((Judul Tahun Ini &minus; Judul Tahun Lalu) &divide; Judul Tahun Lalu) &times; 100%</code>
                         </div>
@@ -234,7 +234,7 @@
 
 </div>
 
-{{-- Modal Detail Pertambahan Buku --}}
+{{-- Modal Detail Pengadaan Koleksi --}}
 <div class="modal fade" id="modalDetailPertambahan" tabindex="-1" aria-labelledby="modalDetailPertambahanLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow">

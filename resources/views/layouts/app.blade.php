@@ -197,7 +197,7 @@
             </a>
             @if(auth()->check() && auth()->user()->role === 'librarian')
             <a href="{{ route('koleksi.tren_pertambahan') }}" class="panel-nav-link {{ request()->routeIs('koleksi.tren_pertambahan') ? 'active' : '' }}">
-                <i class="fas fa-chart-line"></i> Pertambahan Buku
+                <i class="fas fa-chart-line"></i> Pengadaan Koleksi
             </a>
             @endif
         </div>
