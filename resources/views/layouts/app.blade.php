@@ -28,14 +28,14 @@
 
     <link rel="icon" href="{{ asset('img/logo4.png') }}?v={{ time() }}" type="image/png">
     <link rel="shortcut icon" href="{{ asset('img/logo4.png') }}?v={{ time() }}" type="image/png">
-    {{-- CSS LINKS --}}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    {{-- CSS LINKS — served locally to avoid CDN blocks (ad blockers & tracking prevention) --}}
+    <link href="{{ asset('vendor/bootstrap/5.3.3/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('vendor/fontawesome/6.5.1/css/all.min.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="{{ asset('vendor/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/unified-components.css') }}?v={{ time() + 1 }}">
     {{-- NProgress (top loading bar) --}}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="{{ asset('vendor/nprogress/0.2.0/nprogress.min.css') }}">
 <link rel="stylesheet" href="{{ asset('css/app-loader.css') }}?v={{ time() + 1 }}">
 
     @stack('styles')
@@ -363,13 +363,13 @@
         </button>
     </div>
 
-    {{-- JS LINKS --}}
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    {{-- JS LINKS — served locally to avoid CDN blocks --}}
+    <script src="{{ asset('vendor/jquery/3.7.1/jquery.min.js') }}"></script>
+    <script src="{{ asset('vendor/bootstrap/5.3.3/js/bootstrap.bundle.min.js') }}"></script>
     {{-- NProgress: harus dimuat sebelum inline script yang memakainya --}}
-    <script src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="{{ asset('vendor/nprogress/0.2.0/nprogress.min.js') }}"></script>
     {{-- ApexCharts --}}
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="{{ asset('vendor/apexcharts/apexcharts.min.js') }}"></script>
     @stack('scripts')
     @include('layouts.app-scripts')
 </body>

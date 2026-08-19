@@ -171,9 +171,23 @@
                             </td>
                             <td class="text-center pe-4">
                                 <div class="d-flex justify-content-center gap-1">
+                                    @php
+                                        $flattened = [];
+                                        if(is_array($ruleset->rules)){
+                                            foreach($ruleset->rules as $rule) {
+                                                $flattened[] = is_array($rule) ? implode('..', $rule) : $rule;
+                                            }
+                                        }
+                                        $rulesStr = implode(', ', $flattened);
+                                        $mappingsStr = implode(', ', $ruleset->mappings->pluck('prodi_code')->toArray());
+                                    @endphp
                                     <button type="button"
-                                        class="btn btn-outline-primary btn-sm rounded-3"
-                                        data-bs-toggle="modal" data-bs-target="#editModal{{ $ruleset->id }}">
+                                        class="btn btn-outline-primary btn-sm rounded-3 btn-edit-ruleset"
+                                        data-id="{{ $ruleset->id }}"
+                                        data-name="{{ $ruleset->name }}"
+                                        data-rules="{{ $rulesStr }}"
+                                        data-mappings="{{ $mappingsStr }}"
+                                        data-action="{{ route('cnclass.update', $ruleset->id) }}">
                                         <i class="fas fa-edit me-1"></i>
                                     </button>
                                     <form action="{{ route('cnclass.destroy', $ruleset->id) }}" method="POST" class="d-inline"
@@ -187,54 +201,6 @@
                                 </div>
                             </td>
                         </tr>
-
-                        {{-- Edit Modal --}}
-                        <div class="modal fade" id="editModal{{ $ruleset->id }}" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content rounded-4 shadow">
-                                    <div class="modal-header border-0 pb-0">
-                                        <h6 class="modal-title fw-bold">Edit Ruleset: <span class="text-primary">{{ $ruleset->name }}</span></h6>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <form action="{{ route('cnclass.update', $ruleset->id) }}" method="POST">
-                                        @csrf
-                                        @method('PUT')
-                                        <div class="modal-body">
-                                            <div class="mb-3">
-                                                <label class="form-label small fw-semibold text-muted">Nama Ruleset</label>
-                                                <input type="text" name="name" class="form-control rounded-3" value="{{ $ruleset->name }}" required>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label small fw-semibold text-muted">Aturan CN Class</label>
-                                                @php
-                                                    $flattened = [];
-                                                    if(is_array($ruleset->rules)){
-                                                        foreach($ruleset->rules as $rule) {
-                                                            $flattened[] = is_array($rule) ? implode('..', $rule) : $rule;
-                                                        }
-                                                    }
-                                                    $rulesStr = implode(', ', $flattened);
-                                                @endphp
-                                                <textarea name="rules" class="form-control rounded-3" rows="4" style="font-family: monospace; font-size: 0.8rem;">{{ $rulesStr }}</textarea>
-                                                <div class="form-text small">Pisahkan dengan koma. Format: <code>001.4</code> (tunggal), <code>005*</code> (awalan), <code>100..102</code> (rentang)</div>
-                                            </div>
-                                            <div class="mb-1">
-                                                <label class="form-label small fw-semibold text-muted">Mapping Prodi <span class="fw-normal text-muted">(Alias)</span></label>
-                                                @php
-                                                    $mappingsStr = implode(', ', $ruleset->mappings->pluck('prodi_code')->toArray());
-                                                @endphp
-                                                <input type="text" name="mappings" class="form-control rounded-3" value="{{ $mappingsStr }}">
-                                                <div class="form-text small">Kode prodi dipisahkan koma. Contoh: <code>D100, S100</code></div>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer border-0 pt-0">
-                                            <button type="button" class="btn btn-light rounded-pill px-4 btn-sm" data-bs-dismiss="modal">Batal</button>
-                                            <button type="submit" class="btn btn-primary rounded-pill px-4 btn-sm shadow-sm">Simpan Perubahan</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
                         @empty
                         <tr>
                             <td colspan="5" class="text-center py-5 text-muted">
@@ -246,6 +212,42 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+</div>
+
+{{-- Shared Edit Modal (satu modal, diisi via JS — menghindari modal di dalam tr yang menyebabkan flickering) --}}
+<div class="modal fade" id="editModalShared" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold">Edit Ruleset: <span class="text-primary" id="editModalRulesetName"></span></h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editModalForm" action="" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Nama Ruleset</label>
+                        <input type="text" name="name" id="editModalName" class="form-control rounded-3" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Aturan CN Class</label>
+                        <textarea name="rules" id="editModalRules" class="form-control rounded-3" rows="4" style="font-family: monospace; font-size: 0.8rem;"></textarea>
+                        <div class="form-text small">Pisahkan dengan koma. Format: <code>001.4</code> (tunggal), <code>005*</code> (awalan), <code>100..102</code> (rentang)</div>
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label small fw-semibold text-muted">Mapping Prodi <span class="fw-normal text-muted">(Alias)</span></label>
+                        <input type="text" name="mappings" id="editModalMappings" class="form-control rounded-3">
+                        <div class="form-text small">Kode prodi dipisahkan koma. Contoh: <code>D100, S100</code></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4 btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 btn-sm shadow-sm">Simpan Perubahan</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -298,5 +300,21 @@ function toggleRules(id, btn) {
         btn.innerHTML = `<i class="fas fa-chevron-down me-1" style="font-size:0.6rem;"></i> Tampilkan semua (${total} aturan)`;
     }
 }
+
+// Shared edit modal — isi data dari data-* attribute tombol, hindari modal di dalam tr
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.btn-edit-ruleset').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var modal = document.getElementById('editModalShared');
+            modal.querySelector('#editModalRulesetName').textContent = btn.dataset.name;
+            modal.querySelector('#editModalName').value = btn.dataset.name;
+            modal.querySelector('#editModalRules').value = btn.dataset.rules;
+            modal.querySelector('#editModalMappings').value = btn.dataset.mappings;
+            modal.querySelector('#editModalForm').action = btn.dataset.action;
+            var bsModal = bootstrap.Modal.getOrCreate(modal);
+            bsModal.show();
+        });
+    });
+});
 </script>
 @endpush
