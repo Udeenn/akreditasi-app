@@ -339,9 +339,22 @@ class StatistikKoleksi extends Controller
             ->where('items.itemlost', 0)
             ->where('items.withdrawn', 0);
 
-        // Filter jenis koleksi (itype)
+        // Filter jenis koleksi — mapping nama group ke itype DB sesuai sistem
         if ($itype !== '') {
-            $query->where('items.itype', $itype);
+            $itypeGroups = [
+                'textbook'  => ['itypes' => ['BKS', 'BKSA', 'BKSCA', 'BKSC'], 'ccode_not_r' => true,  'ccode_r' => false],
+                'jurnal'    => ['itypes' => ['JR', 'JRA', 'JRT', 'EJ'],         'ccode_not_r' => false, 'ccode_r' => false],
+                'ebook'     => ['itypes' => ['EB'],                              'ccode_not_r' => false, 'ccode_r' => false],
+                'prosiding' => ['itypes' => ['PR', 'EPR'],                       'ccode_not_r' => false, 'ccode_r' => false],
+                'referensi' => ['itypes' => ['BKS', 'BKSA', 'BKSCA', 'BKSC'],  'ccode_not_r' => false, 'ccode_r' => true],
+            ];
+
+            if (isset($itypeGroups[$itype])) {
+                $group = $itypeGroups[$itype];
+                $query->whereIn('items.itype', $group['itypes']);
+                if ($group['ccode_r'])     $query->whereRaw('LEFT(items.ccode, 1) = ?', ['R']);
+                if ($group['ccode_not_r']) $query->whereRaw('LEFT(items.ccode, 1) <> "R"');
+            }
         }
 
         if ($search !== '') {
@@ -355,11 +368,10 @@ class StatistikKoleksi extends Controller
 
         $query->groupBy(
             'b.biblionumber',
-            'b.title',   // pakai b.title (bukan alias) untuk GROUP BY
+            'b.title',   
             'b.author',
             'bi.publishercode',
             'bi.publicationyear'
-            // itemcallnumber TIDAK di GROUP BY — sudah MIN() di SELECT
         )
         ->orderByRaw('CASE WHEN b.author IS NOT NULL AND TRIM(b.author) != "" THEN 0 ELSE 1 END ASC')
         ->orderBy('total_eksemplar', 'DESC')
@@ -370,7 +382,6 @@ class StatistikKoleksi extends Controller
         $cacheKeyDetail = "detail_pertambahan_{$year}";
 
         if ($export) {
-            // Manfaatkan cache bila tersedia (search & itype kosong)
             $data = $useCache
                 ? \Illuminate\Support\Facades\Cache::remember($cacheKeyDetail, 3600, fn() => $query->get())
                 : $query->get();
