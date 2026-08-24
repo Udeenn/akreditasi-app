@@ -657,29 +657,11 @@ public function pertanggal(Request $request)
         ->join('borrowers as b', 'b.borrowernumber', '=', 's.borrowernumber')
         ->join('items as i', 'i.itemnumber', '=', 's.itemnumber')
         ->join('biblio as bi', 'bi.biblionumber', '=', 'i.biblionumber')
+        ->leftJoin('borrower_attributes as ba', function ($join) {
+            $join->on('ba.borrowernumber', '=', 'b.borrowernumber')
+                 ->where('ba.code', '=', 'PRODI');
+        })
         ->whereIn('s.type', ['issue', 'renew', 'return']);
-
-    // Filter Prodi
-    switch (strtoupper($prodiCode)) {
-        case 'DOSEN':
-            $query->where('b.categorycode', 'like', 'TC%');
-            break;
-        case 'STAFF':
-            $query->where(function ($q) {
-                $q->where('b.categorycode', 'like', 'STAF%')
-                    ->orWhere('b.categorycode', '=', 'LIBRARIAN');
-            });
-            break;
-        default:
-            $query->whereExists(function ($q) use ($prodiCode) {
-                $q->select(DB::raw(1))
-                    ->from('borrower_attributes as ba')
-                    ->whereColumn('ba.borrowernumber', 'b.borrowernumber')
-                    ->where('ba.code', '=', 'PRODI')
-                    ->where('ba.attribute', '=', $prodiCode);
-            });
-            break;
-    }
 
     // Filter Tanggal
     if ($filterType === 'daily') {
@@ -688,12 +670,14 @@ public function pertanggal(Request $request)
         $query->where(DB::raw('DATE_FORMAT(s.datetime, "%Y-%m")'), $periode);
     }
 
-    // Ambil Data
-    $data = $query
+    // Ambil Data Mentah (LazyCollection)
+    $rawData = $query
         ->select(
             'b.cardnumber as nim',
             'b.firstname',
             'b.surname',
+            'b.categorycode',
+            'ba.attribute as prodi_code',
             'bi.title as judul_buku',
             's.datetime as waktu_transaksi',
             's.type as tipe_transaksi'
@@ -701,6 +685,22 @@ public function pertanggal(Request $request)
         ->orderBy('b.cardnumber', 'asc')
         ->orderBy('s.datetime', 'asc')
         ->cursor();
+
+    // Filter di level PHP menggunakan ProdiService (konsisten dengan Chart/Table)
+    $prodiService = app(\App\Services\ProdiService::class);
+    $targetProdi = strtoupper(trim($prodiCode));
+    $isAllMahasiswa = ($targetProdi === 'ALL_MAHASISWA');
+    $nonStudents = ['DOSEN', 'TENDIK', 'KSP', 'KSPMBKM', 'KSPBIPA', 'XA', 'LB', 'XC'];
+
+    $data = $rawData->filter(function ($row) use ($prodiService, $targetProdi, $isAllMahasiswa, $nonStudents) {
+        $kode = strtoupper(trim($prodiService->identifyProdiCode($row->nim, $row->categorycode ?? '', $row->prodi_code ?? '')));
+        
+        if ($isAllMahasiswa) {
+            return !in_array($kode, $nonStudents);
+        }
+        
+        return $kode === $targetProdi;
+    });
 
     // --- 3. STREAM CSV ---
 

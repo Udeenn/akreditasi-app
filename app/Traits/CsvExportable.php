@@ -52,6 +52,7 @@ trait CsvExportable
                         // Single row
                         fputcsv($file, $rowData, $delimiter);
                     }
+                    $index++;
                 }
             }
 
