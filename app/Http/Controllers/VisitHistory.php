@@ -228,13 +228,16 @@ class VisitHistory extends Controller
         $borrowers = collect();
         if ($cardNumbers->isNotEmpty()) {
              // Chunk if too many 
-             $borrowers = DB::connection('mysql2')->table('borrowers')
-                ->select('cardnumber', 'categorycode')
-                ->whereIn('cardnumber', $cardNumbers)
-                ->get()
-                ->mapWithKeys(function ($item) {
-                     return [strtoupper(trim($item->cardnumber)) => $item->categorycode];
-                });
+             foreach (array_chunk($cardNumbers->all(), 1000) as $chunk) {
+                 $chunkBorrowers = DB::connection('mysql2')->table('borrowers')
+                    ->select('cardnumber', 'categorycode')
+                    ->whereIn('cardnumber', $chunk)
+                    ->get()
+                    ->mapWithKeys(function ($item) {
+                         return [strtoupper(trim($item->cardnumber)) => $item->categorycode];
+                    });
+                 $borrowers = $borrowers->merge($chunkBorrowers);
+             }
         }
 
         // Processing di PHP (Sekarang loop nya hanya per unique visitor/day, bukan per visit log)
@@ -786,13 +789,16 @@ class VisitHistory extends Controller
 
             $borrowers = collect();
             if (!empty($cardNumbers)) {
-                $borrowers = DB::connection('mysql2')->table('borrowers')
-                    ->select('cardnumber', 'surname', 'firstname', 'categorycode')
-                    ->whereIn('cardnumber', $cardNumbers)
-                    ->get()
-                    ->mapWithKeys(function ($item) {
-                        return [strtoupper(trim($item->cardnumber)) => $item];
-                    });
+                foreach (array_chunk($cardNumbers, 1000) as $chunk) {
+                    $chunkBorrowers = DB::connection('mysql2')->table('borrowers')
+                        ->select('cardnumber', 'surname', 'firstname', 'categorycode')
+                        ->whereIn('cardnumber', $chunk)
+                        ->get()
+                        ->mapWithKeys(function ($item) {
+                            return [strtoupper(trim($item->cardnumber)) => $item];
+                        });
+                    $borrowers = $borrowers->merge($chunkBorrowers);
+                }
             }
 
             // C. Identification & Filtering
@@ -945,11 +951,15 @@ class VisitHistory extends Controller
 
         $uniqueCards = $mergedData->pluck('cardnumber')->unique()->values()->all();
 
-        $borrowers = DB::connection('mysql2')->table('borrowers')
-            ->select('cardnumber', 'categorycode')
-            ->whereIn('cardnumber', $uniqueCards)
-            ->pluck('categorycode', 'cardnumber')
-            ->toArray();
+        $borrowers = [];
+        foreach (array_chunk($uniqueCards, 1000) as $chunk) {
+            $chunkData = DB::connection('mysql2')->table('borrowers')
+                ->select('cardnumber', 'categorycode')
+                ->whereIn('cardnumber', $chunk)
+                ->pluck('categorycode', 'cardnumber')
+                ->toArray();
+            $borrowers = array_replace($borrowers, $chunkData);
+        }
 
         $finalReport = [];
 
