@@ -646,7 +646,8 @@ public function pertanggal(Request $request)
         if ($filterType === 'daily') {
             $periodeText = \Carbon\Carbon::parse($periode)->isoFormat('D MMMM Y');
         } else {
-            $periodeText = \Carbon\Carbon::createFromFormat('Y-m', $periode)->isoFormat('MMMM Y');
+            // Walaupun dikirim '2023-01-01', parse() tetap bisa baca lalu kita format ke bulan
+            $periodeText = \Carbon\Carbon::parse($periode)->isoFormat('MMMM Y');
         }
     } catch (\Exception $e) {
         // Fallback jika format error
@@ -667,7 +668,8 @@ public function pertanggal(Request $request)
     if ($filterType === 'daily') {
         $query->whereDate('s.datetime', $periode);
     } else {
-        $query->where(DB::raw('DATE_FORMAT(s.datetime, "%Y-%m")'), $periode);
+        $periodeYm = substr($periode, 0, 7);
+        $query->where(DB::raw('DATE_FORMAT(s.datetime, "%Y-%m")'), $periodeYm);
     }
 
     // Ambil Data Mentah (LazyCollection)
