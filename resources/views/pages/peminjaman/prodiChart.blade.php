@@ -230,9 +230,14 @@
                             <h6 class="fw-bold m-0 text-primary">
                                 <i class="fas fa-table me-2"></i>Rincian Data Sirkulasi
                             </h6>
-                            <button type="button" id="exportCsvBtn"
-                                class="btn btn-success  fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
-                            </button>
+                            <div class="btn-group shadow-sm">
+                                <button type="button" id="exportCsvBtn"
+                                    class="btn btn-success fw-bold px-3"><i class="fas fa-file-csv me-2"></i> Export Rekap
+                                </button>
+                                <a href="{{ route('peminjaman.export_all_detail_prodi', request()->all()) }}" class="btn btn-outline-success fw-bold px-3">
+                                    <i class="fas fa-list me-2"></i> Export Semua Detail
+                                </a>
+                            </div>
                         </div>
                         <div class="card-body p-4">
                             <!-- Custom Search Input -->

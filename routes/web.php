@@ -121,6 +121,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/keseluruhan/export-pdf', [PeminjamanController::class, 'exportPdfKeseluruhan'])->name('export_pdf_keseluruhan')->middleware('throttle:exports');
         Route::get('/prodi', [PeminjamanController::class, 'peminjamanProdiChart'])->name('prodi');
         Route::get('/export-detail-prodi', [PeminjamanController::class, 'exportDetailProdiCsv'])->name('export_detail_prodi')->middleware('throttle:exports');
+        Route::get('/export-all-detail-prodi', [PeminjamanController::class, 'exportAllDetailProdiCsv'])->name('export_all_detail_prodi')->middleware('throttle:exports');
         
         // Buku Terlaris Berdasarkan Prodi
         Route::get('/buku-terlaris-prodi', [PeminjamanController::class, 'bukuTerlarisProdi'])->name('buku_terlaris_prodi');

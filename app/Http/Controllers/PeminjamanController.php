@@ -735,6 +735,132 @@ public function pertanggal(Request $request)
     }, $titles);
 }
 
+    public function exportAllDetailProdiCsv(Request $request)
+    {
+        $filterType = $request->input('filter_type', 'daily');
+        $startYear = $request->input('start_year', \Carbon\Carbon::now()->year);
+        $endYear = $request->input('end_year', \Carbon\Carbon::now()->year);
+        $startDate = $request->input('start_date', \Carbon\Carbon::now()->subDays(30)->format('Y-m-d'));
+        $endDate = $request->input('end_date', \Carbon\Carbon::now()->format('Y-m-d'));
+        $selectedProdiCode = $request->input('selected_prodi', 'semua');
+
+        // Setup Date Range
+        if ($filterType == 'daily') {
+            $start = \Carbon\Carbon::parse($startDate)->startOfDay();
+            $end   = \Carbon\Carbon::parse($endDate)->endOfDay();
+            $periodeDisplay = "Periode " . $start->isoFormat('D MMMM Y') . " s.d. " . $end->isoFormat('D MMMM Y');
+        } else {
+            if ($startYear > $endYear) {
+                [$startYear, $endYear] = [$endYear, $startYear];
+            }
+            $start = \Carbon\Carbon::createFromDate($startYear, 1, 1)->startOfDay();
+            $end   = \Carbon\Carbon::createFromDate($endYear, 12, 31)->endOfDay();
+            $periodeDisplay = "Tahun " . $startYear . ($startYear != $endYear ? " s/d " . $endYear : "");
+        }
+
+        // --- 1. AMBIL NAMA PRODI ---
+        $prodiName = 'Semua Program Studi';
+        if ($selectedProdiCode !== 'semua' && $selectedProdiCode !== 'ALL_MAHASISWA') {
+            if (strtoupper($selectedProdiCode) === 'DOSEN') {
+                $prodiName = 'Dosen';
+            } elseif (strtoupper($selectedProdiCode) === 'STAFF') {
+                $prodiName = 'Tenaga Kependidikan';
+            } else {
+                $prodiDb = \App\Models\M_Auv::on('mysql2')->where('category', 'PRODI')->where('authorised_value', $selectedProdiCode)->first();
+                if ($prodiDb) {
+                    $prodiName = trim($prodiDb->lib);
+                } else {
+                    $prodiName = $selectedProdiCode;
+                }
+            }
+        } elseif (strtoupper($selectedProdiCode) === 'ALL_MAHASISWA') {
+            $prodiName = 'Semua Mahasiswa';
+        }
+
+        // --- 2. SETUP QUERY UTAMA ---
+        $query = DB::connection('mysql2')->table('statistics as s')
+            ->join('borrowers as b', 'b.borrowernumber', '=', 's.borrowernumber')
+            ->join('items as i', 'i.itemnumber', '=', 's.itemnumber')
+            ->join('biblio as bi', 'bi.biblionumber', '=', 'i.biblionumber')
+            ->leftJoin('borrower_attributes as ba', function ($join) {
+                $join->on('ba.borrowernumber', '=', 'b.borrowernumber')
+                     ->where('ba.code', '=', 'PRODI');
+            })
+            ->whereIn('s.type', ['issue', 'renew', 'return'])
+            ->whereBetween('s.datetime', [$start, $end]);
+
+        // Ambil Data Mentah (LazyCollection)
+        $rawData = $query
+            ->select(
+                'b.cardnumber as nim',
+                'b.firstname',
+                'b.surname',
+                'b.categorycode',
+                'ba.attribute as prodi_code',
+                'bi.title as judul_buku',
+                's.datetime as waktu_transaksi',
+                's.type as tipe_transaksi'
+            )
+            ->orderBy('b.cardnumber', 'asc')
+            ->orderBy('s.datetime', 'asc')
+            ->cursor();
+
+        // Filter di level PHP menggunakan ProdiService
+        $prodiService = app(\App\Services\ProdiService::class);
+        $targetProdi = strtoupper(trim($selectedProdiCode));
+        $isAllMahasiswa = ($targetProdi === 'ALL_MAHASISWA');
+        $isSemua = ($targetProdi === 'SEMUA');
+        $nonStudents = ['DOSEN', 'TENDIK', 'KSP', 'KSPMBKM', 'KSPBIPA', 'XA', 'LB', 'XC'];
+
+        $prodiListMap = \App\Models\M_Auv::getCachedProdiList()->pluck('lib', 'authorised_value')->toArray();
+
+        $data = $rawData->filter(function ($row) use ($prodiService, $targetProdi, $isAllMahasiswa, $isSemua, $nonStudents) {
+            if ($isSemua) return true;
+
+            $kode = strtoupper(trim($prodiService->identifyProdiCode($row->nim, $row->categorycode ?? '', $row->prodi_code ?? '')));
+            
+            if ($isAllMahasiswa) {
+                return !in_array($kode, $nonStudents);
+            }
+            
+            return $kode === $targetProdi;
+        });
+
+        // --- 3. STREAM CSV ---
+        $safeProdiName = preg_replace('/[^A-Za-z0-9]/', '_', $prodiName);
+        $filename = "Laporan_Semua_Detail_Sirkulasi_{$safeProdiName}.csv";
+        $csvHeaders = ['No', 'NIM', 'Nama Peminjam', 'Prodi', 'Judul Buku', 'Waktu Transaksi', 'Tipe Transaksi'];
+        $titles = [
+            "Laporan Keseluruhan Detail Sirkulasi - " . $prodiName,
+            $periodeDisplay
+        ];
+
+        return $this->streamCsvExport($data, $filename, $csvHeaders, function($row, $index) use ($prodiService, $prodiListMap) {
+            $tipe = match ($row->tipe_transaksi) {
+                'issue' => 'Pinjam',
+                'renew' => 'Perpanjang',
+                'return' => 'Kembali',
+                default => $row->tipe_transaksi,
+            };
+
+            $kodeProdi = strtoupper(trim($prodiService->identifyProdiCode($row->nim, $row->categorycode ?? '', $row->prodi_code ?? '')));
+            $namaProdiStr = $prodiListMap[$kodeProdi] ?? $kodeProdi;
+            
+            if ($kodeProdi === 'DOSEN') $namaProdiStr = 'Dosen';
+            if ($kodeProdi === 'STAFF') $namaProdiStr = 'Tenaga Kependidikan';
+
+            return [
+                $index,
+                '="' . $row->nim . '"', // Format Text NIM
+                trim($row->firstname . ' ' . $row->surname),
+                $namaProdiStr,
+                $row->judul_buku,
+                $row->waktu_transaksi,
+                $tipe
+            ];
+        }, $titles);
+    }
+
     public function checkHistory(Request $request)
     {
         $cardnumber = $request->input('cardnumber');
