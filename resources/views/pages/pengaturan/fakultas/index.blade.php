@@ -118,9 +118,15 @@
                             </td>
                             <td class="text-center pe-4">
                                 <div class="d-flex justify-content-center gap-1">
+                                    @php
+                                        $mappingsStr = implode(', ', $faculty->mappings->pluck('prodi_code')->toArray());
+                                    @endphp
                                     <button type="button"
-                                        class="btn btn-outline-primary btn-sm rounded-3"
-                                        data-bs-toggle="modal" data-bs-target="#editModal{{ $faculty->id }}">
+                                        class="btn btn-outline-primary btn-sm rounded-3 btn-edit-fakultas"
+                                        data-id="{{ $faculty->id }}"
+                                        data-name="{{ $faculty->name }}"
+                                        data-mappings="{{ $mappingsStr }}"
+                                        data-action="{{ route('fakultas.update', $faculty->id) }}">
                                         <i class="fas fa-edit me-1"></i>
                                     </button>
                                     <form action="{{ route('fakultas.destroy', $faculty->id) }}" method="POST" class="d-inline"
@@ -134,40 +140,6 @@
                                 </div>
                             </td>
                         </tr>
-
-                        {{-- Edit Modal --}}
-                        <div class="modal fade" id="editModal{{ $faculty->id }}" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content rounded-4 shadow">
-                                    <div class="modal-header border-0 pb-0">
-                                        <h6 class="modal-title fw-bold">Edit Fakultas: <span class="text-primary">{{ $faculty->name }}</span></h6>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <form action="{{ route('fakultas.update', $faculty->id) }}" method="POST">
-                                        @csrf
-                                        @method('PUT')
-                                        <div class="modal-body">
-                                            <div class="mb-3">
-                                                <label class="form-label small fw-semibold text-muted">Nama Fakultas</label>
-                                                <input type="text" name="name" class="form-control rounded-3" value="{{ $faculty->name }}" required>
-                                            </div>
-                                            <div class="mb-1">
-                                                <label class="form-label small fw-semibold text-muted">Mapping Kode Prodi / Awalan</label>
-                                                @php
-                                                    $mappingsStr = implode(', ', $faculty->mappings->pluck('prodi_code')->toArray());
-                                                @endphp
-                                                <textarea name="mappings" class="form-control rounded-3" rows="3" style="font-family: monospace; font-size: 0.8rem;">{{ $mappingsStr }}</textarea>
-                                                <div class="form-text small">Pisahkan dengan koma. Gunakan <code>*</code> untuk awalan. Contoh: <code>D100, D200, D*</code></div>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer border-0 pt-0">
-                                            <button type="button" class="btn btn-light rounded-pill px-4 btn-sm" data-bs-dismiss="modal">Batal</button>
-                                            <button type="submit" class="btn btn-primary rounded-pill px-4 btn-sm shadow-sm">Simpan Perubahan</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
                         @empty
                         <tr>
                             <td colspan="4" class="text-center py-5 text-muted">
@@ -212,4 +184,53 @@
         </div>
     </div>
 </div>
+
+{{-- Shared Edit Modal --}}
+<div class="modal fade" id="editModalShared" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold">Edit Fakultas: <span class="text-primary" id="editModalFacultyName"></span></h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editModalForm" action="" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Nama Fakultas</label>
+                        <input type="text" name="name" id="editModalName" class="form-control rounded-3" required>
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label small fw-semibold text-muted">Mapping Kode Prodi / Awalan</label>
+                        <textarea name="mappings" id="editModalMappings" class="form-control rounded-3" rows="3" style="font-family: monospace; font-size: 0.8rem;"></textarea>
+                        <div class="form-text small">Pisahkan dengan koma. Gunakan <code>*</code> untuk awalan. Contoh: <code>D100, D200, D*</code></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4 btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 btn-sm shadow-sm">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.btn-edit-fakultas').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var modal = document.getElementById('editModalShared');
+            modal.querySelector('#editModalFacultyName').textContent = btn.dataset.name;
+            modal.querySelector('#editModalName').value = btn.dataset.name;
+            modal.querySelector('#editModalMappings').value = btn.dataset.mappings;
+            modal.querySelector('#editModalForm').action = btn.dataset.action;
+            var bsModal = bootstrap.Modal.getOrCreateInstance(modal);
+            bsModal.show();
+        });
+    });
+});
+</script>
+@endpush
