@@ -117,10 +117,16 @@
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between py-3 px-4">
             <h6 class="fw-bold mb-0"><i class="fas fa-tags me-2 text-primary"></i>Daftar Ruleset CN Class</h6>
-            <button type="button" class="btn btn-primary btn-sm rounded-3 px-3 fw-semibold shadow-sm"
-                data-bs-toggle="modal" data-bs-target="#createModal">
-                <i class="fas fa-plus me-1"></i> Tambah Ruleset
-            </button>
+            <div>
+                <button type="button" class="btn btn-outline-info btn-sm rounded-3 px-3 fw-semibold shadow-sm me-2"
+                    data-bs-toggle="modal" data-bs-target="#guideModal">
+                    <i class="fas fa-info-circle me-1"></i> Panduan Pengisian
+                </button>
+                <button type="button" class="btn btn-primary btn-sm rounded-3 px-3 fw-semibold shadow-sm"
+                    data-bs-toggle="modal" data-bs-target="#createModal">
+                    <i class="fas fa-plus me-1"></i> Tambah Ruleset
+                </button>
+            </div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -252,6 +258,40 @@
     </div>
 </div>
 
+{{-- Guide Modal --}}
+<div class="modal fade" id="guideModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold text-info"><i class="fas fa-info-circle me-2"></i>Panduan Pengisian Aturan CN Class</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <div class="alert alert-light border shadow-sm rounded-3 text-sm">
+                    <p class="mb-2 fw-semibold">Cara mengisi kolom Aturan CN Class:</p>
+                    <ul class="mb-0 ps-3">
+                        <li class="mb-2">
+                            <strong>Nomor Tunggal:</strong> Ketik nomor spesifik secara penuh. <br>
+                            <span class="text-muted">Contoh: <code>100</code> atau <code>330.1</code></span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Awalan (Wildcard <code>*</code>):</strong> Gunakan tanda bintang <code>*</code> untuk mencakup semua nomor yang diawali angka tersebut. <br>
+                            <span class="text-muted">Contoh: <code>005*</code> (akan mencakup 005, 005.1, 005.4, dst)</span>
+                        </li>
+                        <li class="mb-1">
+                            <strong>Rentang (Tanda <code>-</code> atau <code>..</code>):</strong> Gunakan tanda hubung atau titik dua untuk menentukan jarak antara dua nomor (dari sampai dengan). <br>
+                            <span class="text-muted">Contoh: <code>100-102</code> atau <code>100..102</code></span>
+                        </li>
+                    </ul>
+                </div>
+                <p class="text-muted small mt-3 mb-0"><strong>Catatan:</strong> Jika Anda memiliki beberapa aturan sekaligus untuk satu Prodi, pisahkan masing-masing aturan dengan tanda koma (<code>,</code>).<br>Contoh: <code>005*, 100-102, 330.1</code></p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary rounded-pill px-4 btn-sm" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
 {{-- Create Modal --}}
 <div class="modal fade" id="createModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
