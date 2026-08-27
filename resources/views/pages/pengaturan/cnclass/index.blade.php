@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Pengaturan CN Class')
+@section('title', 'Pengaturan Kelas Koleksi')
 
 @push('styles')
 <style>
@@ -90,7 +90,7 @@
 @section('content')
 <div class="container-fluid px-3 px-md-4 pt-2 pb-4">
 
-    <x-breadcrumb title="Pengaturan CN Class" icon="fas fa-tags">
+    <x-breadcrumb title="Pengaturan Kelas Koleksi" icon="fas fa-tags">
         <x-slot name="subtitle">
             Kelola aturan klasifikasi (Call Number) koleksi berdasarkan Program Studi.
         </x-slot>
@@ -116,7 +116,7 @@
 
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between py-3 px-4">
-            <h6 class="fw-bold mb-0"><i class="fas fa-tags me-2 text-primary"></i>Daftar Ruleset CN Class</h6>
+            <h6 class="fw-bold mb-0"><i class="fas fa-tags me-2 text-primary"></i>Daftar Ruleset Kelas Koleksi</h6>
             <div>
                 <button type="button" class="btn btn-outline-info btn-sm rounded-3 px-3 fw-semibold shadow-sm me-2"
                     data-bs-toggle="modal" data-bs-target="#guideModal">
@@ -135,7 +135,7 @@
                         <tr>
                             <th class="ps-4 py-3" style="width: 40px;">No</th>
                             <th class="py-3" style="width: 130px;">Nama Ruleset</th>
-                            <th class="py-3">Aturan CN Class</th>
+                            <th class="py-3">Aturan Kelas Koleksi</th>
                             <th class="py-3" style="width: 180px;">Mapping Prodi</th>
                             <th class="py-3 text-center pe-4" style="width: 130px;">Aksi</th>
                         </tr>
@@ -239,7 +239,7 @@
                         <input type="text" name="name" id="editModalName" class="form-control rounded-3" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Aturan CN Class</label>
+                        <label class="form-label small fw-semibold text-muted">Aturan Kelas Koleksi</label>
                         <textarea name="rules" id="editModalRules" class="form-control rounded-3" rows="4" style="font-family: monospace; font-size: 0.8rem;"></textarea>
                         <div class="form-text small">Pisahkan dengan koma. Format: <code>001.4</code> (tunggal), <code>005*</code> (awalan), <code>100..102</code> (rentang)</div>
                     </div>
@@ -263,12 +263,12 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 shadow">
             <div class="modal-header border-0 pb-0">
-                <h6 class="modal-title fw-bold text-info"><i class="fas fa-info-circle me-2"></i>Panduan Pengisian Aturan CN Class</h6>
+                <h6 class="modal-title fw-bold text-info"><i class="fas fa-info-circle me-2"></i>Panduan Pengisian Aturan Kelas Koleksi</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body pt-3">
                 <div class="alert alert-light border shadow-sm rounded-3 text-sm">
-                    <p class="mb-2 fw-semibold">Cara mengisi kolom Aturan CN Class:</p>
+                    <p class="mb-2 fw-semibold">Cara mengisi kolom Aturan Kelas Koleksi:</p>
                     <ul class="mb-0 ps-3">
                         <li class="mb-2">
                             <strong>Nomor Tunggal:</strong> Ketik nomor spesifik secara penuh. <br>
@@ -297,7 +297,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 shadow">
             <div class="modal-header border-0 pb-0">
-                <h6 class="modal-title fw-bold">Tambah Ruleset CN Class</h6>
+                <h6 class="modal-title fw-bold">Tambah Ruleset Kelas Koleksi</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="{{ route('cnclass.store') }}" method="POST">
@@ -308,7 +308,7 @@
                         <input type="text" name="name" class="form-control rounded-3" placeholder="Contoh: FT-SPL atau D100" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted">Aturan CN Class</label>
+                        <label class="form-label small fw-semibold text-muted">Aturan Kelas Koleksi</label>
                         <textarea name="rules" class="form-control rounded-3" rows="4" style="font-family: monospace; font-size: 0.8rem;" placeholder="Contoh: 005*, 100, 330.1"></textarea>
                         <div class="form-text small">Format: <code>001.4</code> (tunggal), <code>005*</code> (awalan), <code>100..102</code> (rentang). Pisahkan dengan koma.</div>
                     </div>

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 class QueryHelper
 {
     /**
-     * Menerapkan aturan filter CN Class yang kompleks ke instance Query Builder.
+     * Menerapkan aturan filter Kelas Koleksi yang kompleks ke instance Query Builder.
      * Fungsi ini menangani aturan nilai persis (IN), rentang (BETWEEN), dan awalan (LIKE).
      *
      * @param EloquentBuilder|QueryBuilder $queryBuilder Instance query yang akan dimodifikasi.

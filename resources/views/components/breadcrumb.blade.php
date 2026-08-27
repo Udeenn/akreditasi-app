@@ -157,7 +157,7 @@ $breadcrumbMap = [
     ],
     'cnclass.index' => [
         ['Admin', null],
-        ['Pengaturan CN Class', null],
+        ['Pengaturan Kelas Koleksi', null],
     ],
     'fakultas.index' => [
         ['Admin', null],

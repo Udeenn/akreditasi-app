@@ -202,44 +202,50 @@
     color: #0dcaf0;
 }
 
-/* --- CUSTOM BADGE UTILITIES (CN Class & Faculty Mapping) --- */
+/* --- CUSTOM BADGE UTILITIES (Kelas Koleksi & Faculty Mapping) --- */
 .cn-badge-primary {
-    background: rgba(74,105,255,0.08) !important;
+    background: rgba(74, 105, 255, 0.08) !important;
     color: #4a69ff !important;
-    border-color: rgba(74,105,255,0.2) !important;
+    border-color: rgba(74, 105, 255, 0.2) !important;
 }
+
 .cn-badge-secondary {
-    background: rgba(100,116,139,0.1) !important;
+    background: rgba(100, 116, 139, 0.1) !important;
     color: #475569 !important;
-    border-color: rgba(100,116,139,0.2) !important;
+    border-color: rgba(100, 116, 139, 0.2) !important;
 }
+
 .cn-badge-teal {
-    background: rgba(20,184,166,0.1) !important;
+    background: rgba(20, 184, 166, 0.1) !important;
     color: #0d9488 !important;
-    border-color: rgba(20,184,166,0.2) !important;
+    border-color: rgba(20, 184, 166, 0.2) !important;
 }
+
 .cn-ruleset-badge {
-    background: rgba(74,105,255,0.12) !important;
+    background: rgba(74, 105, 255, 0.12) !important;
     color: #4a69ff !important;
 }
 
 body.dark-mode .cn-badge-primary {
-    background: rgba(74,105,255,0.25) !important;
+    background: rgba(74, 105, 255, 0.25) !important;
     color: #a5b4fc !important;
-    border-color: rgba(74,105,255,0.35) !important;
+    border-color: rgba(74, 105, 255, 0.35) !important;
 }
+
 body.dark-mode .cn-badge-secondary {
-    background: rgba(100,116,139,0.25) !important;
+    background: rgba(100, 116, 139, 0.25) !important;
     color: #cbd5e1 !important;
-    border-color: rgba(100,116,139,0.35) !important;
+    border-color: rgba(100, 116, 139, 0.35) !important;
 }
+
 body.dark-mode .cn-badge-teal {
-    background: rgba(20,184,166,0.2) !important;
+    background: rgba(20, 184, 166, 0.2) !important;
     color: #5eead4 !important;
-    border-color: rgba(20,184,166,0.3) !important;
+    border-color: rgba(20, 184, 166, 0.3) !important;
 }
+
 body.dark-mode .cn-ruleset-badge {
-    background: rgba(74,105,255,0.3) !important;
+    background: rgba(74, 105, 255, 0.3) !important;
     color: #a5b4fc !important;
 }
 
@@ -247,7 +253,7 @@ body.dark-mode .cn-ruleset-badge {
 /* --- DATATABLES LIGHT MODE OVERRIDES --- */
 .dataTables_wrapper .dataTables_length select,
 .dataTables_wrapper .dataTables_filter input {
-    border: 1px solid rgba(0,0,0,0.15);
+    border: 1px solid rgba(0, 0, 0, 0.15);
     border-radius: 8px;
     padding: 6px 12px;
     transition: all 0.2s ease;
@@ -465,22 +471,25 @@ body.dark-mode .logo-light {
 body.dark-mode .logo-dark {
     display: block !important;
 }
+
 /* --- MOBILE RESPONSIVE TABLES (Auto Horizontal Scroll) --- */
 @media (max-width: 767.98px) {
-    table.table, table.unified-table {
+
+    table.table,
+    table.unified-table {
         display: block;
         width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
-    
+
     /* DataTables specific mobile fixes */
     .dataTables_wrapper {
         width: 100%;
         overflow-x: hidden;
     }
-    
-    .dataTables_wrapper > .row {
+
+    .dataTables_wrapper>.row {
         width: 100%;
         margin: 0;
     }

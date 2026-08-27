@@ -170,7 +170,7 @@ Route::middleware('auth')->group(function () {
             return redirect()->back()->with('success', 'Cache cleared!');
         })->name('clear-cache');
 
-        // Pengaturan CN Class
+        // Pengaturan Kelas Koleksi
         Route::resource('pengaturan/cnclass', \App\Http\Controllers\CnClassController::class);
 
         // Pengaturan Fakultas & Prodi Mapping
