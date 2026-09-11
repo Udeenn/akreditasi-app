@@ -49,6 +49,16 @@
                                 <option value="Tendik" {{ request('kategori') == 'Tendik' ? 'selected' : '' }}>Tendik</option>
                             </select>
                         </div>
+                        <div class="col-md-2">
+                            <label for="limit" class="form-label small text-muted text-uppercase">
+                                <i class="fas fa-list-ol me-1"></i> Tampilkan
+                            </label>
+                            <select name="limit" id="limit" class="form-select">
+                                @foreach ([10, 20, 50, 100] as $opt)
+                                    <option value="{{ $opt }}" {{ (int) request('limit', 10) === $opt ? 'selected' : '' }}>Top {{ $opt }}</option>
+                                @endforeach
+                            </select>
+                        </div>
 
                         {{-- Tombol Cari --}}
                         <div class="col-md-2">
@@ -258,7 +268,8 @@
             function getExportUrl(routeName) {
                 const tahun = document.getElementById('tahun').value;
                 const kategori = document.getElementById('kategori').value;
-                return `${routeName}?tahun=${tahun}&kategori=${kategori}`;
+                const limit = document.getElementById('limit').value;
+                return `${routeName}?tahun=${tahun}&kategori=${kategori}&limit=${limit}`;
             }
 
             if (exportPengunjungButton) {

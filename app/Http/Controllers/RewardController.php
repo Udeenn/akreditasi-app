@@ -22,6 +22,7 @@ class RewardController extends Controller
         // Ambil input tahun & kategori
         $tahun = $request->input('tahun', Carbon::now()->year);
         $kategoriFilter = $request->input('kategori');
+        $limit = max(1, min(500, (int) $request->input('limit', 10)));
         $hasFilter = $request->has('tahun');
 
         $pengunjungTeraktif = collect();
@@ -43,9 +44,9 @@ class RewardController extends Controller
             // ==========================================
             // 1. PENGUNJUNG TERAKTIF (OPTIMIZED SQL)
             // ==========================================
-            $cacheKeyPengunjung = "pengunjung_teraktif_{$start->timestamp}_{$end->timestamp}_" . ($kategoriFilter ?: 'all');
+            $cacheKeyPengunjung = "pengunjung_teraktif_{$start->timestamp}_{$end->timestamp}_" . ($kategoriFilter ?: 'all') . "_limit{$limit}";
             
-            $pengunjungTeraktif = Cache::remember($cacheKeyPengunjung, 3600, function () use ($start, $end, $getKategori, $kategoriFilter) {
+            $pengunjungTeraktif = Cache::remember($cacheKeyPengunjung, 3600, function () use ($start, $end, $getKategori, $kategoriFilter, $limit) {
                 $sqlVisitor = "
                 SELECT cardnumber, SUM(total) as total_kunjungan
                 FROM (
@@ -97,9 +98,9 @@ class RewardController extends Controller
                     }
                 }
 
-                // Ambil Top 10 per Kategori
-                return $pengunjungData->groupBy('kategori')->map(function ($items) {
-                    return $items->sortByDesc('jumlah')->take(10)->values();
+                // Ambil Top N per Kategori
+                return $pengunjungData->groupBy('kategori')->map(function ($items) use ($limit) {
+                    return $items->sortByDesc('jumlah')->take($limit)->values();
                 })->flatten()->sortBy([['kategori', 'asc'], ['jumlah', 'desc']]);
             });
 
@@ -107,9 +108,9 @@ class RewardController extends Controller
             // ==========================================
             // 2. PEMINJAM TERAKTIF (OPTIMIZED SQL)
             // ==========================================
-            $cacheKeyPeminjam = "peminjam_teraktif_{$start->timestamp}_{$end->timestamp}_" . ($kategoriFilter ?: 'all');
+            $cacheKeyPeminjam = "peminjam_teraktif_{$start->timestamp}_{$end->timestamp}_" . ($kategoriFilter ?: 'all') . "_limit{$limit}";
 
-            $peminjamTeraktif = Cache::remember($cacheKeyPeminjam, 3600, function () use ($start, $end, $getKategori, $kategoriFilter) {
+            $peminjamTeraktif = Cache::remember($cacheKeyPeminjam, 3600, function () use ($start, $end, $getKategori, $kategoriFilter, $limit) {
                 $rawLoans = DB::connection('mysql2')->table('statistics')
                     ->select('borrowernumber', DB::raw('count(*) as total'))
                     ->where('type', 'issue')
@@ -146,13 +147,13 @@ class RewardController extends Controller
                     }
                 }
 
-                return $peminjamData->groupBy('kategori')->map(function ($items) {
-                    return $items->sortByDesc('jumlah')->take(10)->values();
+                return $peminjamData->groupBy('kategori')->map(function ($items) use ($limit) {
+                    return $items->sortByDesc('jumlah')->take($limit)->values();
                 })->flatten()->sortBy([['kategori', 'asc'], ['jumlah', 'desc']]);
             });
         }
 
-        return view('pages.reward.pemustaka_teraktif', compact('pengunjungTeraktif', 'peminjamTeraktif', 'tahun', 'hasFilter'));
+        return view('pages.reward.pemustaka_teraktif', compact('pengunjungTeraktif', 'peminjamTeraktif', 'tahun', 'hasFilter', 'limit'));
     }
 
 
@@ -236,8 +237,8 @@ class RewardController extends Controller
                 ]);
             }
 
-            $sortedData = $finalData->groupBy('kategori')->map(function ($items) {
-                return $items->sortByDesc('jumlah')->take(10)->values();
+            $sortedData = $finalData->groupBy('kategori')->map(function ($items) use ($limit) {
+                return $items->sortByDesc('jumlah')->take($limit)->values();
             })->flatten(1)->sortBy([['kategori', 'asc'], ['jumlah', 'desc']]);
 
             $rank = 1;
@@ -271,6 +272,7 @@ class RewardController extends Controller
     {
         $tahun = $request->input('tahun', Carbon::now()->year);
         $kategoriFilter = $request->input('kategori');
+        $limit = max(1, min(500, (int) $request->input('limit', 10)));
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end   = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -336,8 +338,8 @@ class RewardController extends Controller
                 ]);
             }
 
-            $sortedData = $finalData->groupBy('kategori')->map(function ($items) {
-                return $items->sortByDesc('jumlah')->take(10)->values();
+            $sortedData = $finalData->groupBy('kategori')->map(function ($items) use ($limit) {
+                return $items->sortByDesc('jumlah')->take($limit)->values();
             })->flatten(1)->sortBy([['kategori', 'asc'], ['jumlah', 'desc']]);
 
             $rank = 1;
