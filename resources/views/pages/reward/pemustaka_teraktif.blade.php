@@ -47,6 +47,7 @@
                                 <option value="Mahasiswa" {{ request('kategori') == 'Mahasiswa' ? 'selected' : '' }}>Mahasiswa</option>
                                 <option value="Dosen" {{ request('kategori') == 'Dosen' ? 'selected' : '' }}>Dosen</option>
                                 <option value="Tendik" {{ request('kategori') == 'Tendik' ? 'selected' : '' }}>Tendik</option>
+                                <option value="Pustakawan" {{ request('kategori') == 'Pustakawan' ? 'selected' : '' }}>Pustakawan</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -133,6 +134,7 @@
                             'Mahasiswa' => 'bg-info bg-opacity-10 text-info',
                             'Dosen' => 'bg-success bg-opacity-10 text-success',
                             'Tendik' => 'bg-warning bg-opacity-10 text-warning',
+                            'Pustakawan' => 'bg-purple bg-opacity-10 text-purple',
                             default => ' text-secondary',
                         };
 

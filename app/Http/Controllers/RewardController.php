@@ -35,9 +35,10 @@ class RewardController extends Controller
             // --- HELPER: Closure untuk penentuan kategori (Agar Kodingan Rapi) ---
             $getKategori = function ($cat) {
                 if (!$cat) return null;
+                if ($cat === 'LIBRARIAN') return 'Pustakawan'; // dicek duluan sebelum guard 'LIB'
                 if (str_starts_with($cat, 'STD') && !str_starts_with($cat, 'LIB')) return 'Mahasiswa';
                 if (str_starts_with($cat, 'TC') && !str_starts_with($cat, 'LIB')) return 'Dosen';
-                if ((str_starts_with($cat, 'STAF') || $cat === 'LIBRARIAN') && !str_starts_with($cat, 'LIB')) return 'Tendik';
+                if (str_starts_with($cat, 'STAF') && !str_starts_with($cat, 'LIB')) return 'Tendik';
                 return null;
             };
 
@@ -182,9 +183,10 @@ class RewardController extends Controller
 
         $getKategori = function ($cat) {
             if (!$cat) return null;
+            if ($cat === 'LIBRARIAN') return 'Pustakawan';
             if (str_starts_with($cat, 'STD') && !str_starts_with($cat, 'LIB')) return 'Mahasiswa';
             if (str_starts_with($cat, 'TC') && !str_starts_with($cat, 'LIB')) return 'Dosen';
-            if ((str_starts_with($cat, 'STAF') || $cat === 'LIBRARIAN') && !str_starts_with($cat, 'LIB')) return 'Tendik';
+            if (str_starts_with($cat, 'STAF') && !str_starts_with($cat, 'LIB')) return 'Tendik';
             return null;
         };
 
@@ -291,9 +293,10 @@ class RewardController extends Controller
 
         $getKategori = function ($cat) {
             if (!$cat) return null;
+            if ($cat === 'LIBRARIAN') return 'Pustakawan';
             if (str_starts_with($cat, 'STD') && !str_starts_with($cat, 'LIB')) return 'Mahasiswa';
             if (str_starts_with($cat, 'TC') && !str_starts_with($cat, 'LIB')) return 'Dosen';
-            if ((str_starts_with($cat, 'STAF') || $cat === 'LIBRARIAN') && !str_starts_with($cat, 'LIB')) return 'Tendik';
+            if (str_starts_with($cat, 'STAF') && !str_starts_with($cat, 'LIB')) return 'Tendik';
             return null;
         };
 
