@@ -24,7 +24,7 @@
                     <div class="row g-3 align-items-end">
 
                         {{-- Periode --}}
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label for="tahun" class="form-label small text-muted text-uppercase">
                                 <i class="fas fa-calendar me-1"></i> Periode
                             </label>
@@ -38,7 +38,9 @@
                                 @endfor
                             </select>
                         </div>
-                        <div class="col-md-3">
+
+                        {{-- Kategori --}}
+                        <div class="col-md-2">
                             <label for="kategori" class="form-label small text-muted text-uppercase">
                                 <i class="fas fa-filter me-1"></i> Kategori
                             </label>
@@ -50,6 +52,8 @@
                                 <option value="Pustakawan" {{ request('kategori') == 'Pustakawan' ? 'selected' : '' }}>Pustakawan</option>
                             </select>
                         </div>
+
+                        {{-- Tampilkan --}}
                         <div class="col-md-2">
                             <label for="limit" class="form-label small text-muted text-uppercase">
                                 <i class="fas fa-list-ol me-1"></i> Tampilkan
@@ -61,31 +65,27 @@
                             </select>
                         </div>
 
-                        {{-- Tombol Cari --}}
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary w-100 shadow-sm">
+                        {{-- Tombol Cari + Export dalam satu grup --}}
+                        <div class="col-md-6 d-flex align-items-end gap-2 flex-wrap">
+                            <button type="submit" class="btn btn-primary shadow-sm px-4">
                                 <i class="fas fa-search me-1"></i> Cari
                             </button>
-                        </div>
-                        {{-- Export Buttons --}}
-                        <div class="col-md-4 ms-auto text-md-end">
-                            <div class="d-flex gap-2 justify-content-md-end mt-3 mt-md-0">
-                                <button type="button" id="exportPengunjungButton"
-                                    class="btn btn-success shadow-sm {{ !$hasFilter ? 'disabled' : '' }}"
-                                    title="Export Data Pengunjung">
-                                    <i class="fas fa-file-excel me-1"></i> <span class="d-none d-xl-inline">Pengunjung</span>
-                                </button>
-
-                                <button type="button" id="exportPeminjamButton"
-                                    class="btn btn-warning shadow-sm {{ !$hasFilter ? 'disabled' : '' }}"
-                                    title="Export Data Peminjam">
-                                    <i class="fas fa-file-excel me-1"></i> <span class="d-none d-xl-inline">Peminjam</span>
-                                </button>
-                            </div>
+                            <div class="vr mx-1 d-none d-md-block" style="height: 38px;"></div>
+                            <button type="button" id="exportPengunjungButton"
+                                class="btn btn-success shadow-sm {{ !$hasFilter ? 'disabled' : '' }}"
+                                title="Export Data Pengunjung">
+                                <i class="fas fa-file-excel me-1"></i> Pengunjung
+                            </button>
+                            <button type="button" id="exportPeminjamButton"
+                                class="btn btn-warning shadow-sm {{ !$hasFilter ? 'disabled' : '' }}"
+                                title="Export Data Peminjam">
+                                <i class="fas fa-file-excel me-1"></i> Peminjam
+                            </button>
                         </div>
 
                     </div>
                 </form>
+
             </div>
         </div>
 
