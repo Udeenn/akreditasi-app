@@ -146,6 +146,9 @@ class ProdiService
                 $list[$code] = $name;
             }
 
+            // Pastikan entri anomali Koha dibersihkan
+            unset($list['ALL'], $list['FAKULTAS AGAMA ISLAM']);
+
             return $list;
         });
     }

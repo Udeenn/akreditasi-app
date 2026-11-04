@@ -18,7 +18,11 @@ services:
     volumes:
       - ./.env:/var/www/html/.env:ro
       - ./storage:/var/www/html/storage
-    # Production: TIDAK mount seluruh source code, pakai image build
+      - ./app:/var/www/html/app
+      - ./resources:/var/www/html/resources
+      - ./routes:/var/www/html/routes
+      - ./config:/var/www/html/config
+      - ./database:/var/www/html/database
     extra_hosts:
       - "host-gateway:host-gateway"  # Izinkan container akses ke network host
     networks:

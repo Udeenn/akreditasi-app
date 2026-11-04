@@ -73,9 +73,11 @@
                                 <select name="prodi" id="prodi" class="form-select select2">
                                     <option value="">Semua Kategori</option>
                                     @foreach($listProdi as $code => $name)
-                                        <option value="{{ $code }}" {{ request('prodi') == $code ? 'selected' : '' }}>
-                                            {{ $code }} - {{ $name }}
-                                        </option>
+                                        @if($code !== 'ALL' && $code !== 'FAKULTAS AGAMA ISLAM')
+                                            <option value="{{ $code }}" {{ request('prodi') == $code ? 'selected' : '' }}>
+                                                {{ $code }} - {{ $name }}
+                                            </option>
+                                        @endif
                                     @endforeach
                                 </select>
                             </div>
