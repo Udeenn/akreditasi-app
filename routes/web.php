@@ -43,6 +43,16 @@ if (app()->environment('local')) {
     Route::post('/dev-login', [CasController::class, 'devLogin'])->name('dev.login');
 }
 
+// Preview Halaman Error (403, 404, 500)
+Route::get('/preview-error/{code}', function ($code) {
+    if (!in_array($code, ['403', '404', '500'])) {
+        abort(404);
+    }
+    return response()->view("errors.{$code}", [
+        'exception' => new \Exception("Ini adalah contoh pesan keterangan error untuk pengetesan UI.")
+    ], (int) $code);
+})->name('preview.error');
+
 
 
 // =============================================
