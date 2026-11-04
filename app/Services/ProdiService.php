@@ -113,8 +113,8 @@ class ProdiService
      */
     public function getFullProdiList(): array
     {
-        return Cache::remember('prodi_full_list_v2', 3600, function () {
-            $allProdiListObj = M_Auv::where('category', 'PRODI')->get();
+        return Cache::remember('prodi_full_list_v3', 3600, function () {
+            $allProdiListObj = M_Auv::getCachedProdiList();
             $facultyMap = $this->getProdiToFacultyMap($allProdiListObj);
             $prodiNameMap = $allProdiListObj->pluck('lib', 'authorised_value')->toArray();
 
