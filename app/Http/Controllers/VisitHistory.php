@@ -60,6 +60,8 @@ class VisitHistory extends Controller
 
             $tableData = collect($result['tableData'])->map(fn($item) => (object) $item);
             $chartData = $result['chartData'];
+            $rankingFakultas = $result['rankingFakultas'] ?? [];
+            $rankingProdi = $result['rankingProdi'] ?? [];
             $totalKeseluruhanKunjungan = $result['total'];
 
             $displayPeriod = $this->dateFilterService->getDisplayPeriod($filterType, $tanggalAwal, $tanggalAkhir, $tahunAwal, $tahunAkhir);
@@ -72,7 +74,7 @@ class VisitHistory extends Controller
 
             return view('pages.kunjungan.fakultasTable', compact(
                 'listFakultas', 'tanggalAwal', 'tanggalAkhir', 'tahunAwal', 'tahunAkhir',
-                'chartData', 'totalKeseluruhanKunjungan', 'hasFilter', 'filterType',
+                'chartData', 'rankingFakultas', 'rankingProdi', 'totalKeseluruhanKunjungan', 'hasFilter', 'filterType',
                 'displayPeriod', 'lokasiMapping', 'tableData'
             ));
 
@@ -657,6 +659,7 @@ class VisitHistory extends Controller
             'chartData'      => $chartData,
             'totalKeseluruhanKunjungan' => $totalKeseluruhanKunjungan,
             'rerataKunjungan' => $rerataKunjungan,
+            'rankingProdi'   => $result['rankingProdi'] ?? [],
             'topProdi'       => [],
             'hasFilter'      => $hasFilter
         ]);

@@ -19,7 +19,7 @@ class BorrowingStatisticsService
      */
     public function getPeminjamanFakultas(string $filterType, string $startDate, string $endDate, int $startYear, int $endYear, string $selectedFakultas): array
     {
-        $cacheKey = 'peminjaman_fakultas_v4_' . md5(json_encode([
+        $cacheKey = 'peminjaman_fakultas_v5_' . md5(json_encode([
             'filterType' => $filterType,
             'start' => (in_array($filterType, ['yearly', 'monthly'])) ? "$startYear-01-01" : $startDate,
             'end' => (in_array($filterType, ['yearly', 'monthly'])) ? "$endYear-12-31" : $endDate,
@@ -49,6 +49,8 @@ class BorrowingStatisticsService
             $prodiListMap = \App\Models\M_Auv::getCachedProdiList()->pluck('lib', 'authorised_value')->toArray();
             $aggregatedData = [];
             $allBorrowers = [];
+            $facultyTotals = [];
+            $prodiTotals = [];
 
             foreach ($rawData->chunk(5000) as $chunk) {
                 $borrowerNumbers = collect($chunk)->pluck('borrowernumber')->unique()->values();
@@ -67,8 +69,12 @@ class BorrowingStatisticsService
                         continue;
                     }
 
+                    if (!in_array($fakultas, ['Dosen', 'Tenaga Kependidikan', 'Alumni', 'Anggota Luar Biasa', 'Kartu Sekali Kunjung', 'Lainnya'])) {
+                        $facultyTotals[$fakultas] = ($facultyTotals[$fakultas] ?? 0) + 1;
+                    }
                     $namaProdi = $prodiListMap[$kode] ?? $kode;
                     $prodiDisplay = $kode . ' - ' . $namaProdi;
+                    $prodiTotals[$prodiDisplay] = ($prodiTotals[$prodiDisplay] ?? 0) + 1;
                     $periode = $row->periode;
 
                     if (!isset($aggregatedData[$periode])) $aggregatedData[$periode] = [];
@@ -149,6 +155,18 @@ class BorrowingStatisticsService
                 ];
             })->values()->toArray();
 
+            arsort($facultyTotals);
+            $rankingFakultas = [];
+            foreach ($facultyTotals as $name => $total) {
+                $rankingFakultas[] = ['name' => $name, 'total' => $total];
+            }
+
+            arsort($prodiTotals);
+            $rankingProdi = [];
+            foreach ($prodiTotals as $name => $total) {
+                $rankingProdi[] = ['name' => $name, 'total' => $total];
+            }
+
             return [
                 'totalIssues'     => $totalIssues,
                 'totalRenews'     => $totalRenews,
@@ -157,6 +175,8 @@ class BorrowingStatisticsService
                 'totalBorrowers'  => $totalBorrowers,
                 'tableData'       => $tableData->toArray(),
                 'chartData'       => $chartData,
+                'rankingFakultas' => $rankingFakultas,
+                'rankingProdi'    => $rankingProdi,
             ];
         });
     }
@@ -166,7 +186,7 @@ class BorrowingStatisticsService
      */
     public function getPeminjamanProdi(string $filterType, string $startDate, string $endDate, int $startYear, int $endYear, ?string $selectedProdi): array
     {
-        $cacheKey = 'peminjaman_prodi_v4_' . md5(json_encode([
+        $cacheKey = 'peminjaman_prodi_v5_' . md5(json_encode([
             'filterType' => $filterType,
             'start' => (in_array($filterType, ['yearly', 'monthly'])) ? "$startYear-01-01" : $startDate,
             'end' => (in_array($filterType, ['yearly', 'monthly'])) ? "$endYear-12-31" : $endDate,
@@ -197,6 +217,7 @@ class BorrowingStatisticsService
             $prodiListMap = \App\Models\M_Auv::getCachedProdiList()->pluck('lib', 'authorised_value')->toArray();
             $aggregatedData = [];
             $allBorrowers = [];
+            $prodiTotals = [];
 
             foreach ($rawQuery->cursor()->chunk(5000) as $chunk) {
                 $borrowerNumbers = collect($chunk)->pluck('borrowernumber')->unique()->values();
@@ -209,6 +230,9 @@ class BorrowingStatisticsService
                     $prodiCode = $info->prodi_code ?? '';
                     
                     $kode = $this->prodiService->identifyProdiCode($cardnumber, $catCode, $prodiCode);
+                    $namaProdi = $prodiListMap[$kode] ?? $kode;
+                    $prodiDisplay = $kode . ' - ' . $namaProdi;
+                    $prodiTotals[$prodiDisplay] = ($prodiTotals[$prodiDisplay] ?? 0) + 1;
                     
                     if ($selectedProdi && $selectedProdi !== 'semua') {
                         if ($selectedProdi === 'ALL_MAHASISWA') {
@@ -222,8 +246,6 @@ class BorrowingStatisticsService
                     }
 
                     $tgl = Carbon::parse($row->datetime)->format($sqlDateFormat === '%Y-%m' ? 'Y-m-01' : 'Y-m-d');
-                    $namaProdi = $prodiListMap[$kode] ?? $kode;
-                    $prodiDisplay = $kode . ' - ' . $namaProdi;
 
                     if (!isset($aggregatedData[$tgl])) $aggregatedData[$tgl] = [];
                     if (!isset($aggregatedData[$tgl][$prodiDisplay])) {
@@ -289,6 +311,12 @@ class BorrowingStatisticsService
             $totalCirculation = $totalIssues + $totalRenews + $totalReturns;
             $totalBorrowers = count($allBorrowers);
 
+            arsort($prodiTotals);
+            $rankingProdi = [];
+            foreach ($prodiTotals as $name => $total) {
+                $rankingProdi[] = ['name' => $name, 'total' => $total];
+            }
+
             return [
                 'totalIssues' => $totalIssues,
                 'totalRenews' => $totalRenews,
@@ -296,6 +324,7 @@ class BorrowingStatisticsService
                 'totalCirculation' => $totalCirculation,
                 'totalBorrowers' => $totalBorrowers,
                 'tableData' => $tableData->toArray(),
+                'rankingProdi' => $rankingProdi,
             ];
         });
     }

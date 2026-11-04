@@ -24,7 +24,7 @@ class VisitStatisticsService
         $prodiToFacultyMap = $this->prodiService->getProdiToFacultyMap($allProdiListObj);
         $prodiNameMap = $this->prodiService->getFullProdiList();
 
-        $cacheKey = 'kunjungan_fak_v3_' . md5(json_encode([
+        $cacheKey = 'kunjungan_fak_v4_' . md5(json_encode([
             'ft' => $filterType, 'fk' => $selectedFakultas, 'lok' => $selectedLokasi,
             'dt' => ($filterType == 'yearly') ? "$startYear-$endYear" : "$startDate-$endDate",
         ]));
@@ -49,6 +49,9 @@ class VisitStatisticsService
             $borrowerInfo = $this->borrowerService->getBorrowerInfoByCardnumbers($cardNumbers);
 
             $periodeData = [];
+            $facultyTotals = [];
+            $prodiTotals = [];
+
             foreach ($rawData as $row) {
                 $cn   = strtoupper(trim($row->cardnumber));
                 $info = $borrowerInfo[$cn] ?? null;
@@ -56,16 +59,22 @@ class VisitStatisticsService
                 $prodi = $info->prodi_code ?? '';
 
                 $kode = $this->prodiService->identifyProdiCode($cn, $cat, $prodi);
+                $fakItem = $prodiToFacultyMap[$kode] ?? \App\Helpers\FacultyHelper::mapCodeToFaculty($kode);
 
                 if ($selectedFakultas && $selectedFakultas !== 'semua') {
-                    $fakItem = $prodiToFacultyMap[$kode] ?? \App\Helpers\FacultyHelper::mapCodeToFaculty($kode);
                     if ($fakItem !== $selectedFakultas) continue;
                 }
+
+                $cnt = (int) $row->cnt;
+                if (!in_array($fakItem, ['Dosen', 'Tenaga Kependidikan', 'Alumni', 'Anggota Luar Biasa', 'Kartu Sekali Kunjung'])) {
+                    $facultyTotals[$fakItem] = ($facultyTotals[$fakItem] ?? 0) + $cnt;
+                }
+                $prodiTotals[$kode] = ($prodiTotals[$kode] ?? 0) + $cnt;
 
                 $p = $row->periode;
                 if (!isset($periodeData[$p])) $periodeData[$p] = [];
                 if (!isset($periodeData[$p][$kode])) $periodeData[$p][$kode] = 0;
-                $periodeData[$p][$kode] += (int) $row->cnt;
+                $periodeData[$p][$kode] += $cnt;
             }
 
             ksort($periodeData);
@@ -91,7 +100,23 @@ class VisitStatisticsService
                 $chartData[] = ['label' => $chartLabel, 'total_kunjungan' => $totalPeriode];
             }
 
-            return compact('tableData', 'chartData') + ['total' => collect($tableData)->sum('total_kunjungan')];
+            arsort($facultyTotals);
+            $rankingFakultas = [];
+            foreach ($facultyTotals as $name => $total) {
+                $rankingFakultas[] = ['name' => $name, 'total' => $total];
+            }
+
+            arsort($prodiTotals);
+            $rankingProdi = [];
+            foreach ($prodiTotals as $code => $total) {
+                $rankingProdi[] = [
+                    'name' => $code . ' - ' . ($prodiNameMap[$code] ?? 'Tidak Dikenal'),
+                    'kode' => $code,
+                    'total' => $total
+                ];
+            }
+
+            return compact('tableData', 'chartData', 'rankingFakultas', 'rankingProdi') + ['total' => collect($tableData)->sum('total_kunjungan')];
         });
     }
 
@@ -103,7 +128,7 @@ class VisitStatisticsService
         $allProdiListObj = \App\Models\M_Auv::getCachedProdiList();
         $prodiNameMap = $this->prodiService->getFullProdiList();
 
-        $cacheKey = 'kunj_prodi_v4_' . md5(json_encode([
+        $cacheKey = 'kunj_prodi_v5_' . md5(json_encode([
             'ft' => $filterType, 'kp' => $kodeProdiFilter,
             'dt' => ($filterType == 'yearly') ? "$startYear-$endYear" : "$startDate-$endDate",
         ]));
@@ -123,8 +148,9 @@ class VisitStatisticsService
 
             // Pengelompokan Data per Tanggal dan Prodi
             $periodeData = [];
+            $prodiTotals = [];
 
-            $processVisits = function ($visits) use (&$periodeData, $dateFormatPHP, $kodeProdiFilter) {
+            $processVisits = function ($visits) use (&$periodeData, &$prodiTotals, $dateFormatPHP, $kodeProdiFilter) {
                 $cardNumbers = collect($visits)->pluck('cardnumber');
                 $borrowerInfo = $this->borrowerService->getBorrowerInfoByCardnumbers($cardNumbers);
 
@@ -154,20 +180,19 @@ class VisitStatisticsService
                     if (!isset($periodeData[$tgl][$kode])) $periodeData[$tgl][$kode] = 0;
                     
                     $periodeData[$tgl][$kode]++;
+                    $prodiTotals[$kode] = ($prodiTotals[$kode] ?? 0) + 1;
                 }
             };
 
             \Illuminate\Support\Facades\DB::connection('mysql')->table('visitorhistory')
-                ->select('visittime', 'cardnumber')
+                ->select('id', 'visittime', 'cardnumber')
                 ->whereBetween('visittime', [$start, $end])
-                ->orderBy('id')
-                ->chunk(5000, $processVisits);
+                ->chunkById(5000, $processVisits);
 
             \Illuminate\Support\Facades\DB::connection('mysql')->table('visitorcorner')
-                ->select('visittime', 'cardnumber')
+                ->select('id', 'visittime', 'cardnumber')
                 ->whereBetween('visittime', [$start, $end])
-                ->orderBy('id')
-                ->chunk(5000, $processVisits);
+                ->chunkById(5000, $processVisits);
 
             ksort($periodeData);
             
@@ -196,7 +221,17 @@ class VisitStatisticsService
                 ];
             }
 
-            return compact('tableData', 'totalKeseluruhanKunjungan');
+            arsort($prodiTotals);
+            $rankingProdi = [];
+            foreach ($prodiTotals as $code => $total) {
+                $rankingProdi[] = [
+                    'name' => $code . ' - ' . ($prodiNameMap[$code] ?? 'Tidak Dikenal'),
+                    'kode' => $code,
+                    'total' => $total
+                ];
+            }
+
+            return compact('tableData', 'totalKeseluruhanKunjungan', 'rankingProdi');
         });
     }
 

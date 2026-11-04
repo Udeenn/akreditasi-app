@@ -48,6 +48,7 @@ class RewardController extends Controller
             $cacheKeyPengunjung = "pengunjung_teraktif_{$start->timestamp}_{$end->timestamp}_" . ($kategoriFilter ?: 'all') . "_limit{$limit}";
             
             $pengunjungTeraktif = Cache::remember($cacheKeyPengunjung, 3600, function () use ($start, $end, $getKategori, $kategoriFilter, $limit) {
+                $scanLimit = max(1500, (int)$limit * 25);
                 $sqlVisitor = "
                 SELECT cardnumber, SUM(total) as total_kunjungan
                 FROM (
@@ -63,20 +64,23 @@ class RewardController extends Controller
                 ) as gabungan
                 GROUP BY cardnumber
                 ORDER BY total_kunjungan DESC
-                LIMIT 25000
+                LIMIT {$scanLimit}
                 ";
 
                 $rawVisits = DB::connection('mysql')->select($sqlVisitor, [$start, $end, $start, $end]);
 
-                $cardNumbers = collect($rawVisits)->pluck('cardnumber')->map(fn($c) => trim(strtolower($c)))->all();
+                $cardNumbers = collect($rawVisits)->pluck('cardnumber')->map(fn($c) => trim(strtolower($c)))->unique()->values();
 
-                $borrowers = DB::connection('mysql2')->table('borrowers')
-                    ->select('cardnumber', 'surname', 'firstname', 'categorycode')
-                    ->whereIn('cardnumber', $cardNumbers)
-                    ->get()
-                    ->mapWithKeys(function ($item) {
-                        return [trim(strtolower($item->cardnumber)) => $item];
-                    });
+                $borrowers = collect();
+                foreach ($cardNumbers->chunk(1000) as $chunk) {
+                    $rows = DB::connection('mysql2')->table('borrowers')
+                        ->select('cardnumber', 'surname', 'firstname', 'categorycode')
+                        ->whereIn('cardnumber', $chunk->all())
+                        ->get();
+                    foreach ($rows as $item) {
+                        $borrowers->put(trim(strtolower($item->cardnumber)), $item);
+                    }
+                }
 
                 $pengunjungData = collect();
                 foreach ($rawVisits as $visit) {

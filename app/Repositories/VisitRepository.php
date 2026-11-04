@@ -23,8 +23,13 @@ class VisitRepository
             ->groupBy('periode', 'cardnumber');
 
         if ($selectedLokasi) {
-            $qHistory->where(DB::raw("IFNULL(location, 'pusat')"), $selectedLokasi);
-            $qCorner->where(DB::raw("COALESCE(NULLIF(notes, ''), 'pusat')"), $selectedLokasi);
+            if ($selectedLokasi === 'pusat') {
+                $qHistory->where(fn($q) => $q->where('location', 'pusat')->orWhereNull('location'));
+                $qCorner->where(fn($q) => $q->where('notes', 'pusat')->orWhere('notes', '')->orWhereNull('notes'));
+            } else {
+                $qHistory->where('location', $selectedLokasi);
+                $qCorner->where('notes', $selectedLokasi);
+            }
         }
 
         return $qHistory->unionAll($qCorner)->get();
@@ -45,8 +50,13 @@ class VisitRepository
             ->whereBetween('visittime', [$start, $end]);
 
         if ($selectedLokasi) {
-            $qHistory->where(DB::raw("IFNULL(location, 'pusat')"), $selectedLokasi);
-            $qCorner->where(DB::raw("COALESCE(NULLIF(notes, ''), 'pusat')"), $selectedLokasi);
+            if ($selectedLokasi === 'pusat') {
+                $qHistory->where(fn($q) => $q->where('location', 'pusat')->orWhereNull('location'));
+                $qCorner->where(fn($q) => $q->where('notes', 'pusat')->orWhere('notes', '')->orWhereNull('notes'));
+            } else {
+                $qHistory->where('location', $selectedLokasi);
+                $qCorner->where('notes', $selectedLokasi);
+            }
         }
 
         return $qHistory->unionAll($qCorner);

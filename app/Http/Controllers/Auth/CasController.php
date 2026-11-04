@@ -173,12 +173,12 @@ class CasController extends Controller
                     return null;
                 }
                 
-                // Coba ambil nama dan email dari atribut CAS (format standar JASIG/Apereo)
-                if (preg_match('/<cas:nama>(.*?)<\/cas:nama>/s', $body, $matches) || preg_match('/<cas:name>(.*?)<\/cas:name>/s', $body, $matches) || preg_match('/<cas:fullName>(.*?)<\/cas:fullName>/s', $body, $matches)) {
+                // Coba ambil nama dan email dari atribut CAS (format standar JASIG/Apereo/UMS)
+                if (preg_match('/<cas:(?:nama|name|fullname|displayname|cn)>(.*?)<\/cas:/is', $body, $matches)) {
                     $userData['name'] = trim($matches[1]);
                 }
-                
-                if (preg_match('/<cas:email>(.*?)<\/cas:email>/s', $body, $matches)) {
+
+                if (preg_match('/<cas:(?:email|mail)>(.*?)<\/cas:/is', $body, $matches)) {
                     $userData['email'] = trim($matches[1]);
                 }
 

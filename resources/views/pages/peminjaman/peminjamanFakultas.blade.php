@@ -217,14 +217,30 @@
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card border-0 shadow-sm">
-                        <div class="card-header border-0 pt-4 px-4">
+                        <div class="card-header border-0 pt-4 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <h5 class="fw-bold mb-0 text-body">
-                                <i class="fas fa-chart-bar me-2 text-primary"></i>Tren Sirkulasi Per Fakultas
+                                <i class="fas fa-chart-bar me-2 text-primary"></i><span id="chartHeadingText">Tren Sirkulasi Per Fakultas</span>
                             </h5>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-primary active" id="btnModeTrend" onclick="togglePeminjamanChart('trend')">
+                                        <i class="fas fa-chart-line me-1"></i> Tren Waktu
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary" id="btnModeRanking" onclick="togglePeminjamanChart('ranking')">
+                                        <i class="fas fa-trophy me-1"></i> Ranking Terbanyak
+                                    </button>
+                                </div>
+                                <div id="rankingRangeGroup" class="btn-group btn-group-sm d-none" role="group">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary active" onclick="setPeminjamanRankingRange(10, this)">Top 10</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setPeminjamanRankingRange(20, this)">Top 20</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setPeminjamanRankingRange(0, this)">Semua</button>
+                                </div>
+                            </div>
                         </div>
                         <div class="card-body px-4 pb-4">
-                            <div style="height: 350px; position: relative;">
+                            <div style="min-height: 350px; position: relative;">
                                 <div id="peminjamanFakultasChart" style="min-height: 350px; width: 100%;"></div>
+                                <div id="peminjamanRankingChart" style="min-height: 350px; width: 100%; display: none;"></div>
                             </div>
                         </div>
                     </div>
@@ -538,6 +554,104 @@
 
                 window.peminjamanFakultasChartInstance = new ApexCharts(document.querySelector("#peminjamanFakultasChart"), options);
                 window.peminjamanFakultasChartInstance.render();
+
+                // --- RANKING CHART SETUP ---
+                const rankingFakultas = @json($rankingFakultas ?? []);
+                const rankingProdi = @json($rankingProdi ?? []);
+                const selectedFakultas = "{{ $selectedFakultas ?? 'semua' }}";
+                const activeRankingData = (selectedFakultas && selectedFakultas !== 'semua') ? rankingProdi : rankingFakultas;
+                const isProdiRanking = (selectedFakultas && selectedFakultas !== 'semua');
+                let rankingChartInstance = null;
+                let currentRankingLimit = isProdiRanking ? 10 : 0;
+
+                window.renderPeminjamanRanking = function(limit) {
+                    const dataToDisplay = (limit > 0) ? activeRankingData.slice(0, limit) : activeRankingData;
+                    const categories = dataToDisplay.map(i => i.name);
+                    const seriesData = dataToDisplay.map(i => i.total);
+                    const dynamicHeight = Math.max(350, categories.length * 32 + 50);
+
+                    const rankingOpts = {
+                        series: [{ name: 'Total Sirkulasi', data: seriesData }],
+                        chart: {
+                            type: 'bar',
+                            height: dynamicHeight,
+                            fontFamily: 'Inter, Helvetica, Arial, sans-serif',
+                            toolbar: { show: false },
+                            animations: { enabled: true }
+                        },
+                        plotOptions: {
+                            bar: {
+                                horizontal: true,
+                                borderRadius: 4,
+                                barHeight: '70%',
+                                dataLabels: { position: 'top' }
+                            }
+                        },
+                        colors: ['#1cc88a'],
+                        dataLabels: {
+                            enabled: true,
+                            offsetX: 25,
+                            style: { fontSize: '11px', fontWeight: 600, colors: ['#495057'] },
+                            formatter: val => val.toLocaleString('id-ID')
+                        },
+                        xaxis: {
+                            categories: categories,
+                            labels: {
+                                style: { colors: '#6c757d', fontSize: '11px' },
+                                formatter: val => Math.round(val).toLocaleString('id-ID')
+                            }
+                        },
+                        yaxis: {
+                            labels: {
+                                style: { colors: '#495057', fontSize: '12px', fontWeight: 500 },
+                                maxWidth: 260
+                            }
+                        },
+                        grid: {
+                            borderColor: '#f0f2f5',
+                            strokeDashArray: 4,
+                            xaxis: { lines: { show: true } }
+                        },
+                        tooltip: {
+                            theme: 'dark',
+                            y: { formatter: val => val.toLocaleString('id-ID') + " Transaksi Sirkulasi" }
+                        }
+                    };
+
+                    if (rankingChartInstance) {
+                        rankingChartInstance.destroy();
+                    }
+                    rankingChartInstance = new ApexCharts(document.querySelector("#peminjamanRankingChart"), rankingOpts);
+                    rankingChartInstance.render();
+                };
+
+                window.togglePeminjamanChart = function(mode) {
+                    if (mode === 'trend') {
+                        $('#btnModeTrend').addClass('active');
+                        $('#btnModeRanking').removeClass('active');
+                        $('#peminjamanFakultasChart').show();
+                        $('#peminjamanRankingChart').hide();
+                        $('#rankingRangeGroup').addClass('d-none');
+                        $('#chartHeadingText').text('Tren Sirkulasi Per Fakultas');
+                    } else {
+                        $('#btnModeRanking').addClass('active');
+                        $('#btnModeTrend').removeClass('active');
+                        $('#peminjamanFakultasChart').hide();
+                        $('#peminjamanRankingChart').show();
+                        if (activeRankingData.length > 15) {
+                            $('#rankingRangeGroup').removeClass('d-none');
+                        }
+                        $('#chartHeadingText').text('Ranking Sirkulasi Terbanyak');
+                        renderPeminjamanRanking(currentRankingLimit);
+                    }
+                };
+
+                window.setPeminjamanRankingRange = function(limit, btn) {
+                    currentRankingLimit = limit;
+                    $('#rankingRangeGroup button').removeClass('active');
+                    $(btn).addClass('active');
+                    renderPeminjamanRanking(limit);
+                };
             }
 
             // --- CSV EXPORT ---

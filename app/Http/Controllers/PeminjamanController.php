@@ -419,12 +419,16 @@ public function pertanggal(Request $request)
         $totalBooks = 0; $totalReturns = 0; $totalBorrowers = 0; $totalCirculation = 0; $rerataPeminjaman = 0;
         $statistics = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10, 1);
 
+        $rankingProdi = [];
+
         try {
             if ($hasFilter) {
                 $borrowingService = app(\App\Services\BorrowingStatisticsService::class);
                 $result = $borrowingService->getPeminjamanProdi(
                     $filterType, $startDate, $endDate, $startYear, $endYear, $selectedProdiCode
                 );
+
+                $rankingProdi = $result['rankingProdi'] ?? [];
 
                 $dataExists = count($result['tableData']) > 0;
                 $allStatistics = collect($result['tableData'])->map(fn($item) => (object) [
@@ -482,7 +486,7 @@ public function pertanggal(Request $request)
             'filterType', 'startDate', 'endDate', 'statistics',
             'chartLabels', 'chartDatasets', 'dataExists',
             'totalBooks', 'totalBorrowers', 'totalReturns', 'totalCirculation', 'rerataPeminjaman',
-            'hasFilter', 'allStatistics'
+            'hasFilter', 'allStatistics', 'rankingProdi'
         ));
     }
 
@@ -1304,6 +1308,8 @@ public function pertanggal(Request $request)
                 $totalReturns = $result['totalReturns'];
                 $totalCirculation = $result['totalCirculation'];
                 $totalBorrowers = $result['totalBorrowers'];
+                $rankingFakultas = $result['rankingFakultas'] ?? [];
+                $rankingProdi = $result['rankingProdi'] ?? [];
                 
                 $tableData = collect($result['tableData'])->map(fn($item) => (object) $item);
                 
@@ -1327,7 +1333,7 @@ public function pertanggal(Request $request)
             'listFakultas', 'selectedFakultas',
             'startDate', 'endDate', 'startYear', 'endYear',
             'filterType', 'hasFilter', 'dataExists',
-            'tableData', 'chartData',
+            'tableData', 'chartData', 'rankingFakultas', 'rankingProdi',
             'totalIssues', 'totalRenews', 'totalReturns', 'totalBorrowers',
             'totalCirculation', 'rerataPeminjaman'
         ));
