@@ -113,13 +113,18 @@ class ProdiService
      */
     public function getFullProdiList(): array
     {
-        return Cache::remember('prodi_full_list_v3', 3600, function () {
+        return Cache::remember('prodi_full_list_v4', 3600, function () {
             $allProdiListObj = M_Auv::getCachedProdiList();
             $facultyMap = $this->getProdiToFacultyMap($allProdiListObj);
             $prodiNameMap = $allProdiListObj->pluck('lib', 'authorised_value')->toArray();
 
             $list = [];
             foreach ($prodiNameMap as $code => $name) {
+                // Hanya prodi valid berformat 4 karakter (misal A210, B100). Abaikan data kotor Koha seperti 'ALL'
+                if (!preg_match('/^[A-Za-z][0-9A-Za-z]{3}$/', $code)) {
+                    continue;
+                }
+
                 $facultyString = $facultyMap[$code] ?? '';
                 $parts = explode(' - ', $facultyString);
                 $acronym = isset($parts[0]) ? trim($parts[0]) : '';

@@ -259,8 +259,7 @@ class VisitHistory extends Controller
         });
 
         // --- STEP 5: MAPPING NAMA PRODI ---
-        $allProdiListObj = \App\Models\M_Auv::where('category', 'PRODI')->get();
-        $facultyMap = $this->getProdiToFacultyMap($allProdiListObj);
+        $facultyMap = $this->prodiService->getProdiToFacultyMap();
         
         // Filter Fakultasi logic (moved here from Query for flexibility)
         if ($fakultasFilter && $fakultasFilter !== 'semua') {
@@ -705,40 +704,7 @@ class VisitHistory extends Controller
      * Helper sentral untuk menarik daftar lengkap prodi + kategori manual
      */
     private function getFullProdiList() {
-        $allProdiListObj = \App\Models\M_Auv::where('category', 'PRODI')->get();
-        $facultyMap = $this->getProdiToFacultyMap($allProdiListObj);
-        $prodiNameMap = $allProdiListObj->pluck('lib', 'authorised_value')->toArray();
-
-        $list = [];
-        foreach ($prodiNameMap as $code => $name) {
-            $facultyString = $facultyMap[$code] ?? '';
-            $parts = explode(' - ', $facultyString);
-            $acronym = isset($parts[0]) ? trim($parts[0]) : '';
-
-            $cleanName = $name;
-            if (!empty($acronym) && str_starts_with(strtoupper($name), $acronym)) {
-                $cleanName = ltrim(substr($name, strlen($acronym)), "/- ");
-            }
-
-            if (!empty($acronym) && $acronym !== 'Lainnya') {
-                $list[$code] = $acronym . ' / ' . $cleanName;
-            } else {
-                $list[$code] = $name;
-            }
-        }
-
-        // Manual Names Injection
-        $manualNames = [
-            'DOSEN' => 'Dosen & Pengajar', 'TENDIK' => 'Tenaga Kependidikan',
-            'KSP' => 'Kartu Sekali Kunjung', 'KSPMBKM' => 'MBKM', 'KSPBIPA' => 'BIPA',
-            'XA' => 'Alumni Universitas', 'LB' => 'Anggota Luar Biasa'
-        ];
-        
-        foreach ($manualNames as $c => $n) {
-            $list[$c] = $n;
-        }
-
-        return $list;
+        return $this->prodiService->getFullProdiList();
     }
 
 

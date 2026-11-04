@@ -28,7 +28,7 @@ class M_Auv extends Model
      */
     public static function getCachedProdiList(bool $forceRefresh = false)
     {
-        $cacheKey = 'prodi_list_tampil_cached';
+        $cacheKey = 'prodi_list_tampil_cached_v2';
         
         if ($forceRefresh) {
             Cache::forget($cacheKey);
