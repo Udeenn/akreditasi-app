@@ -32,8 +32,11 @@ Route::get('/login', [CasController::class, 'login'])->name('login');
 Route::prefix('cas')->name('cas.')->group(function () {
     Route::get('/login', [CasController::class, 'login'])->name('login');
     Route::get('/callback', [CasController::class, 'callback'])->name('callback');
-    Route::post('/logout', [CasController::class, 'logout'])->name('logout');
+    Route::match(['get', 'post'], '/logout', [CasController::class, 'logout'])->name('logout');
 });
+
+// Logout global (support GET & POST agar jika session expired tidak mentok CSRF/405)
+Route::match(['get', 'post'], '/logout', [CasController::class, 'logout'])->name('logout');
 
 // Dev-only login (hanya di environment local)
 if (app()->environment('local')) {
@@ -60,10 +63,6 @@ Route::get('/preview-error/{code}', function ($code) {
 // =============================================
 
 Route::middleware('auth')->group(function () {
-    
-    
-    // Logout
-    Route::post('/logout', [CasController::class, 'logout'])->name('logout');
     
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'totalStatistik'])->name('dashboard');

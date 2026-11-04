@@ -52,7 +52,7 @@ class SessionTimeout
                     ], 401);
                 }
 
-                return redirect()->route('cas.login')
+                return redirect()->route('cas.login', ['renew' => 'true'])
                     ->with('warning', 'Sesi Anda telah berakhir karena tidak ada aktivitas. Silakan login kembali.');
             }
         }

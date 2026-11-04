@@ -17,11 +17,16 @@ class CasController extends Controller
      */
     public function login(Request $request)
     {
-        if (Auth::check()) {
+        if (Auth::check() && !$request->has('renew')) {
             return redirect()->route('dashboard');
         }
 
-        $casLoginUrl = $this->buildCasUrl('/login', ['service' => $this->getServiceUrl()]);
+        $params = ['service' => $this->getServiceUrl()];
+        if ($request->has('renew') || $request->has('force')) {
+            $params['renew'] = 'true';
+        }
+
+        $casLoginUrl = $this->buildCasUrl('/login', $params);
 
         Log::info('CAS Login redirect', ['url' => $casLoginUrl, 'service' => $this->getServiceUrl()]);
 
@@ -71,7 +76,12 @@ class CasController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        $logoutUrl = $this->buildCasUrl('/logout', ['service' => config('app.url')]);
+        // Redirect ke CAS logout dengan service diarahkan kembali ke CAS login (dengan renew=true)
+        $loginUrl = route('cas.login', ['renew' => 'true']);
+        $logoutUrl = $this->buildCasUrl('/logout', [
+            'service' => $loginUrl,
+            'url'     => $loginUrl,
+        ]);
 
         return redirect($logoutUrl);
     }

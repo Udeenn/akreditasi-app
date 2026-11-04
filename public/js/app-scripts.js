@@ -237,9 +237,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     if (countdownSeconds <= 0) {
                         clearInterval(countdownTimer);
-                        // Session sudah habis — langsung redirect ke login
-                        // (tidak submit form karena CSRF token juga sudah expired)
-                        window.location.href = window.AppConfig.casLoginUrl;
+                        // Session sudah habis — langsung arahkan ke logout agar membersihkan sesi SSO & menuju login CAS
+                        window.location.href = window.AppConfig.logoutUrl || '/logout';
                     }
                 }, 1000);
             }
@@ -285,25 +284,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
 
-            // Tombol Logout di modal: langsung submit, CSRF token sudah ada di form
+            // Tombol Logout di modal: langsung redirect ke endpoint logout
             const btnLogoutNow = document.getElementById('btnLogoutNow');
             if (btnLogoutNow) {
                 btnLogoutNow.addEventListener('click', function () {
                     btnLogoutNow.disabled = true;
-                    btnLogoutNow.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Memproses...';
-
-                    var form = document.getElementById('logoutFormModal');
-                    if (form) {
-                        // Pastikan token dari meta tag digunakan (paling mutakhir)
-                        var tokenInput = form.querySelector('input[name="_token"]');
-                        var metaToken = document.querySelector('meta[name="csrf-token"]');
-                        if (tokenInput && metaToken) {
-                            tokenInput.value = metaToken.getAttribute('content');
-                        }
-                        form.submit();
-                    } else {
-                        window.location.href = window.AppConfig.casLoginUrl;
-                    }
+                    btnLogoutNow.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Memproses...';
+                    window.location.href = window.AppConfig.logoutUrl || '/logout';
                 });
             }
 
