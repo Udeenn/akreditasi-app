@@ -120,10 +120,16 @@
     background-color: rgba(0, 0, 0, 0.02);
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 0.75rem;
+    font-size: 0.75rem !important;
     letter-spacing: 0.5px;
     color: #6c757d;
     border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+}
+
+.table tbody td,
+.unified-table tbody td {
+    font-size: 0.8125rem !important;
+    vertical-align: middle;
 }
 
 

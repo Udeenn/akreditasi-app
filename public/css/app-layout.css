@@ -86,6 +86,17 @@
         :root {
             --bs-body-font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
             --bs-font-sans-serif: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+
+            /* ── Typography Scale Guidelines (Inter) ── */
+            --font-kpi: 2.25rem;       /* 36px - KPI numbers, Hero countdowns */
+            --font-title: 1.5rem;      /* 24px - Page main titles */
+            --font-card: 1.125rem;     /* 18px - Card headers, modal titles */
+            --font-nav: 0.95rem;       /* 15px - Sidebar nav item */
+            --font-base: 0.9rem;       /* 14.5px - Default body, paragraphs */
+            --font-form: 0.875rem;     /* 14px - Form controls, action buttons */
+            --font-sm: 0.8125rem;      /* 13px - Table body rows, sub-navs */
+            --font-xs: 0.75rem;        /* 12px - Table thead, form filter labels */
+            --font-xxs: 0.6875rem;     /* 11px - Status badges, micro tags */
         }
 
         html, body, button, input, select, textarea, optgroup,
@@ -95,6 +106,48 @@
         .nav, .nav-link, .nav-text, .breadcrumb, .breadcrumb-item, .select2-container,
         .dataTables_wrapper, .apexcharts-canvas, .popover, .tooltip {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+        }
+
+        /* ── Typography Scale Classes ── */
+        .text-kpi { font-size: var(--font-kpi) !important; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; }
+        .page-title, h1.page-title, h1 { font-size: var(--font-title); font-weight: 700; line-height: 1.25; letter-spacing: -0.015em; }
+        .card-title, .modal-title, h2.card-title, h2 { font-size: var(--font-card); font-weight: 600; line-height: 1.35; }
+        .nav-text { font-size: var(--font-nav) !important; font-weight: 500; }
+        .text-body-custom, .text-base { font-size: var(--font-base) !important; font-weight: 400; line-height: 1.5; }
+        .form-control, .form-select, .btn, .select2-container .select2-selection { font-size: var(--font-form) !important; }
+        .table tbody td, .sub-menu .nav-link, .text-sm { font-size: var(--font-sm) !important; }
+        .table thead th, .form-label, .nav-label, .text-xs { font-size: var(--font-xs) !important; }
+        .badge, .text-xxs { font-size: var(--font-xxs) !important; font-weight: 600; }
+
+        /* Standardized Form Filter Labels */
+        .form-label, label.form-label {
+            font-size: var(--font-xs) !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.04em !important;
+            text-transform: uppercase !important;
+            margin-bottom: 0.35rem;
+        }
+
+        /* Standardized Table Headers & Cells */
+        .table thead th {
+            font-size: var(--font-xs) !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.04em !important;
+            text-transform: uppercase !important;
+            vertical-align: middle;
+        }
+
+        .table tbody td {
+            font-size: var(--font-sm) !important;
+            vertical-align: middle;
+        }
+
+        /* Standardized Badges */
+        .badge {
+            font-size: var(--font-xxs) !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.02em !important;
+            padding: 0.35em 0.65em !important;
         }
 
         /* Unified Modern SVG Icons */
@@ -265,6 +318,7 @@
             padding: 0.75rem 1rem;
             border-radius: 8px;
             color: var(--text-light);
+            font-size: var(--font-nav) !important;
             font-weight: 500;
             transition: all 0.2s ease;
         }
@@ -301,7 +355,7 @@
 
         .sidebar .sub-menu .nav-link {
             padding: 0.5rem 1rem;
-            font-size: 0.9rem;
+            font-size: var(--font-sm) !important;
             position: relative;
         }
 
