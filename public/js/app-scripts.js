@@ -413,4 +413,98 @@ document.addEventListener('DOMContentLoaded', function() {
 
     })();
 
+    // ============================================================
+    // UNIVERSAL MODERN SVG ICON ENGINE
+    // Converts all legacy FontAwesome & Bootstrap Icons into unified SVGs
+    // ============================================================
+    (function () {
+        const aliases = {
+            'bars': 'menu', 'home': 'house', 'house-chimney': 'house', 'dashboard': 'house',
+            'sign-in': 'sign-in-alt', 'login': 'sign-in-alt', 'sign-out': 'sign-out-alt', 'logout': 'sign-out-alt',
+            'gear': 'settings', 'gears': 'settings', 'cogs': 'settings',
+            'chart-line': 'chart-line', 'line-chart': 'chart-line', 'pie-chart': 'chart-pie',
+            'pie-chart-fill': 'chart-pie', 'bar-chart-fill': 'bar-chart', 'bookmarks-fill': 'bookmark',
+            'book-fill': 'book', 'collection-fill': 'collection', 'people-fill': 'users',
+            'gift-fill': 'gift', 'shield-lock-fill': 'shield-lock-fill', 'grid-3x3-gap': 'grid-3x3-gap',
+            'grid-fill': 'grid-fill', 'gear-fill': 'gear-fill', 'check-circle': 'circle-check',
+            'exclamation-triangle': 'alert-triangle', 'exclamation-circle': 'alert-circle',
+            'info-circle': 'circle-info', 'tablet': 'tablet-alt', 'building': 'university',
+            'chevron-down': 'chevron-down', 'chevron-up': 'chevron-up', 'chevron-left': 'chevron-left',
+            'chevron-right': 'chevron-right', 'arrow-right': 'arrow-right', 'arrow-left': 'arrow-left',
+            'rotate-right': 'rotate-right', 'rotate-left': 'rotate-left'
+        };
+
+        function replaceIcons(context) {
+            if (!window.AppSvgIcons) return;
+            const root = context || document;
+            const elements = root.querySelectorAll('i[class*="fa-"], i[class*="bi-"]');
+            elements.forEach(function (el) {
+                if (el.dataset.svgReplaced) return;
+                const classes = el.className || '';
+                const match = classes.match(/(?:fa|bi)-([a-z0-9-]+)/);
+                if (!match) return;
+                let name = match[1];
+                if (aliases[name]) name = aliases[name];
+
+                const svgContent = window.AppSvgIcons[name] || window.AppSvgIcons['circle-info'];
+                if (!svgContent) return;
+
+                const extraClasses = classes
+                    .replace(/\b(?:fa[srb]?|bi|fa-[a-z0-9-]+|bi-[a-z0-9-]+)\b/g, '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                svgEl.setAttribute('width', '1.15em');
+                svgEl.setAttribute('height', '1.15em');
+                svgEl.setAttribute('viewBox', '0 0 24 24');
+                svgEl.setAttribute('fill', 'none');
+                svgEl.setAttribute('stroke', 'currentColor');
+                svgEl.setAttribute('stroke-width', '2');
+                svgEl.setAttribute('stroke-linecap', 'round');
+                svgEl.setAttribute('stroke-linejoin', 'round');
+                svgEl.setAttribute('class', 'svg-icon svg-icon-' + name + (extraClasses ? ' ' + extraClasses : ''));
+                svgEl.setAttribute('aria-hidden', 'true');
+                if (el.getAttribute('style')) {
+                    svgEl.setAttribute('style', el.getAttribute('style'));
+                }
+                svgEl.innerHTML = svgContent;
+                svgEl.dataset.svgReplaced = 'true';
+
+                if (el.parentNode) {
+                    el.parentNode.replaceChild(svgEl, el);
+                }
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function () { replaceIcons(); });
+        } else {
+            replaceIcons();
+        }
+
+        // MutationObserver to convert dynamically inserted elements (DataTables, AJAX, modals)
+        if (typeof MutationObserver !== 'undefined') {
+            const observer = new MutationObserver(function (mutations) {
+                for (let i = 0; i < mutations.length; i++) {
+                    const m = mutations[i];
+                    if (m.addedNodes && m.addedNodes.length > 0) {
+                        for (let j = 0; j < m.addedNodes.length; j++) {
+                            const node = m.addedNodes[j];
+                            if (node.nodeType === 1) { // ELEMENT_NODE
+                                replaceIcons(node);
+                            }
+                        }
+                    }
+                }
+            });
+
+            observer.observe(document.body || document.documentElement, {
+                childList: true,
+                subtree: true
+            });
+        }
+    })();
+
 });

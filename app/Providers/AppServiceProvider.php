@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Schema;
+use App\Helpers\SvgHelper;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,6 +24,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Blade::directive('svg', function ($expression) {
+            return "<?php echo \App\Helpers\SvgHelper::render($expression); ?>";
+        });
         error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
         Paginator::useBootstrapFive();
         Gate::define('admin-action', function ($user) {

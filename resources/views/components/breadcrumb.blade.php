@@ -201,7 +201,7 @@ $showBreadcrumb = $crumbs !== null && $currentRoute !== 'dashboard';
                 <ol class="breadcrumb mb-0 align-items-center">
                     <li class="breadcrumb-item">
                         <a href="{{ route('dashboard') }}" class="breadcrumb-home" title="Beranda / Dashboard">
-                            <i class="fas fa-house-chimney" style="font-size: 0.75rem;"></i>
+                            <x-icon name="house" size="14" />
                         </a>
                     </li>
 

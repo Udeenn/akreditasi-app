@@ -7,5 +7,6 @@
         dashboardUrl: @json(url('/dashboard')),
         isAuthenticated: @json(auth()->check())
     };
+    window.AppSvgIcons = {!! \App\Helpers\SvgHelper::getAllIconsJson() !!};
 </script>
 <script src="{{ asset('js/app-scripts.js') }}?v={{ time() }}"></script>

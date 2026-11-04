@@ -29,9 +29,11 @@
     <link rel="icon" href="{{ asset('img/logo4.png') }}?v={{ time() }}" type="image/png">
     <link rel="shortcut icon" href="{{ asset('img/logo4.png') }}?v={{ time() }}" type="image/png">
     {{-- CSS LINKS — served locally to avoid CDN blocks (ad blockers & tracking prevention) --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
     <link href="{{ asset('vendor/bootstrap/5.3.3/css/bootstrap.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('vendor/fontawesome/6.5.1/css/all.min.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="{{ asset('vendor/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/unified-components.css') }}?v={{ time() + 1 }}">
     {{-- NProgress (top loading bar) --}}
@@ -60,7 +62,7 @@
             <header class="app-header">
                 <div class="header-left d-flex align-items-center gap-3">
                     <button class="btn p-0 sidebar-toggle-btn" id="toggleSidebarBtn">
-                        <i class="fas fa-bars"></i>
+                        <x-icon name="menu" />
                     </button>
 
                     {{-- Greeting dan Waktu --}}
@@ -84,14 +86,14 @@
 
                         @guest
                             <a href="{{ route('cas.login') }}" class="btn btn-sm btn-outline-secondary text-body-emphasis m-0 d-flex align-items-center">
-                                <i class="fas fa-sign-in-alt me-1"></i>
+                                <x-icon name="sign-in-alt" class="me-1" />
                                 Login
                             </a>
                         @else
                             <form action="{{ route('logout') }}" method="POST" class="m-0 d-flex align-items-center">
                                 @csrf
                                 <button type="submit" class="btn btn-sm btn-outline-danger fw-bold d-flex align-items-center">
-                                    <i class="fas fa-sign-out-alt me-1"></i>
+                                    <x-icon name="sign-out-alt" class="me-1" />
                                     Logout
                                 </button>
                             </form>
@@ -115,13 +117,13 @@
                             <div class="modal-content border-0 shadow-lg">
                                 <div class="modal-body text-center py-4">
                                     <div class="mb-3">
-                                        <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+                                        <x-icon name="check-circle" class="text-success" size="48" />
                                     </div>
                                     <h5 class="modal-title text-success fw-bold" id="notificationModalTitle">Berhasil!
                                     </h5>
                                     <p class="text-muted mt-2" id="notificationModalMessage"></p>
                                     <button type="button" class="btn btn-success mt-3" data-bs-dismiss="modal">
-                                        <i class="fas fa-check me-1"></i> Oke
+                                        <x-icon name="check" class="me-1" /> Oke
                                     </button>
                                 </div>
                             </div>
@@ -146,19 +148,19 @@
     @endphp
     <nav class="mobile-bottom-nav" id="mobileBottomNav">
         <a href="{{ route('dashboard') }}" class="bnav-item {{ $currentRoute === 'dashboard' ? 'active' : '' }}">
-            <i class="bi bi-house-fill"></i>
+            <x-icon name="house" />
             <span>Beranda</span>
         </a>
         <button type="button" class="bnav-item {{ $isKoleksi ? 'active' : '' }}" data-panel="koleksi">
-            <i class="bi bi-collection-fill"></i>
+            <x-icon name="collection" />
             <span>Koleksi</span>
         </button>
         <button type="button" class="bnav-item {{ $isAnalitik ? 'active' : '' }}" data-panel="analitik">
-            <i class="bi bi-bar-chart-fill"></i>
+            <x-icon name="bar-chart" />
             <span>Analitik</span>
         </button>
         <button type="button" class="bnav-item" data-panel="more">
-            <i class="bi bi-grid-fill"></i>
+            <x-icon name="grid-fill" />
             <span>Lainnya</span>
         </button>
     </nav>
@@ -172,32 +174,32 @@
         <div class="panel-body">
             <div class="panel-section-label">Daftar Koleksi</div>
             <a href="{{ route('koleksi.rekap_fakultas') }}" class="panel-nav-link {{ request()->routeIs('koleksi.rekap_fakultas') ? 'active' : '' }}">
-                <i class="fas fa-university"></i> Per Fakultas
+                <x-icon name="university" class="me-2" /> Per Fakultas
             </a>
             <a href="{{ route('koleksi.textbook') }}" class="panel-nav-link {{ request()->routeIs('koleksi.textbook') ? 'active' : '' }}">
-                <i class="fas fa-book-open"></i> Text Book
+                <x-icon name="book-open" class="me-2" /> Text Book
             </a>
             <a href="{{ route('koleksi.ebook') }}" class="panel-nav-link {{ request()->routeIs('koleksi.ebook') ? 'active' : '' }}">
-                <i class="fas fa-tablet-alt"></i> E-Book
+                <x-icon name="tablet-alt" class="me-2" /> E-Book
             </a>
             <a href="{{ route('koleksi.jurnal') }}" class="panel-nav-link {{ request()->routeIs('koleksi.jurnal') ? 'active' : '' }}">
-                <i class="fas fa-newspaper"></i> Journal
+                <x-icon name="newspaper" class="me-2" /> Journal
             </a>
             <a href="{{ route('koleksi.ejurnal') }}" class="panel-nav-link {{ request()->routeIs('koleksi.ejurnal') ? 'active' : '' }}">
-                <i class="fas fa-globe"></i> E-Journal
+                <x-icon name="globe" class="me-2" /> E-Journal
             </a>
             <a href="{{ route('koleksi.prosiding') }}" class="panel-nav-link {{ request()->routeIs('koleksi.prosiding') ? 'active' : '' }}">
-                <i class="fas fa-file-alt"></i> Prosiding
+                <x-icon name="file-alt" class="me-2" /> Prosiding
             </a>
             <a href="{{ route('koleksi.referensi') }}" class="panel-nav-link {{ request()->routeIs('koleksi.referensi') ? 'active' : '' }}">
-                <i class="fas fa-bookmark"></i> Referensi
+                <x-icon name="bookmark" class="me-2" /> Referensi
             </a>
             <a href="{{ route('koleksi.eresource') }}" class="panel-nav-link {{ request()->routeIs('koleksi.eresource') ? 'active' : '' }}">
-                <i class="fas fa-database"></i> E-Resource
+                <x-icon name="database" class="me-2" /> E-Resource
             </a>
             @if(auth()->check() && auth()->user()->role === 'librarian')
             <a href="{{ route('koleksi.tren_pertambahan') }}" class="panel-nav-link {{ request()->routeIs('koleksi.tren_pertambahan') ? 'active' : '' }}">
-                <i class="fas fa-chart-line"></i> Pengadaan Koleksi
+                <x-icon name="chart-line" class="me-2" /> Pengadaan Koleksi
             </a>
             @endif
         </div>
@@ -209,46 +211,46 @@
         <div class="panel-body">
             <div class="panel-section-label">Kunjungan</div>
             <a href="{{ route('kunjungan.fakultasTable') }}" class="panel-nav-link {{ request()->routeIs('kunjungan.fakultasTable') ? 'active' : '' }}">
-                <i class="fas fa-university"></i> Per Fakultas
+                <x-icon name="university" class="me-2" /> Per Fakultas
             </a>
             <a href="{{ route('kunjungan.keseluruhan') }}" class="panel-nav-link {{ request()->routeIs('kunjungan.keseluruhan') ? 'active' : '' }}">
-                <i class="fas fa-chart-line"></i> Keseluruhan
+                <x-icon name="chart-line" class="me-2" /> Keseluruhan
             </a>
             <a href="{{ route('kunjungan.prodi') }}" class="panel-nav-link {{ request()->routeIs('kunjungan.prodi') ? 'active' : '' }}">
-                <i class="fas fa-users"></i> Prodi
+                <x-icon name="users" class="me-2" /> Prodi
             </a>
             <a href="{{ route('kunjungan.cekKehadiran') }}" class="panel-nav-link {{ request()->routeIs('kunjungan.cekKehadiran') ? 'active' : '' }}">
-                <i class="fas fa-search"></i> Cek Kunjungan
+                <x-icon name="search" class="me-2" /> Cek Kunjungan
             </a>
 
             <div class="panel-section-label">Peminjaman</div>
             <a href="{{ route('peminjaman.peminjaman_fakultas') }}" class="panel-nav-link {{ request()->routeIs('peminjaman.peminjaman_fakultas') ? 'active' : '' }}">
-                <i class="fas fa-university"></i> Per Fakultas
+                <x-icon name="university" class="me-2" /> Per Fakultas
             </a>
             <a href="{{ route('peminjaman.keseluruhan') }}" class="panel-nav-link {{ request()->routeIs('peminjaman.keseluruhan') ? 'active' : '' }}">
-                <i class="fas fa-chart-area"></i> Keseluruhan
+                <x-icon name="chart-area" class="me-2" /> Keseluruhan
             </a>
             <a href="{{ route('peminjaman.prodi') }}" class="panel-nav-link {{ request()->routeIs('peminjaman.prodi') ? 'active' : '' }}">
-                <i class="fas fa-user-graduate"></i> Prodi
+                <x-icon name="user-graduate" class="me-2" /> Prodi
             </a>
             <a href="{{ route('peminjaman.cek_pinjaman') }}" class="panel-nav-link {{ request()->routeIs('peminjaman.cek_pinjaman') ? 'active' : '' }}">
-                <i class="fas fa-search"></i> Cek Pinjaman
+                <x-icon name="search" class="me-2" /> Cek Pinjaman
             </a>
             <a href="{{ route('peminjaman.berlangsung') }}" class="panel-nav-link {{ request()->routeIs('peminjaman.berlangsung') ? 'active' : '' }}">
-                <i class="fas fa-clock"></i> Sedang Berlangsung
+                <x-icon name="clock" class="me-2" /> Sedang Berlangsung
             </a>
             <a href="{{ route('peminjaman.buku_terlaris_prodi') }}" class="panel-nav-link {{ request()->routeIs('peminjaman.buku_terlaris_prodi') ? 'active' : '' }}">
-                <i class="fas fa-book-open"></i> Terlaris per Prodi
+                <x-icon name="book-open" class="me-2" /> Terlaris per Prodi
             </a>
             <div class="panel-section-label">Statistik Sirkulasi</div>
             <a href="{{ route('penggunaan.keterpakaian_koleksi') }}" class="panel-nav-link {{ request()->routeIs('penggunaan.keterpakaian_koleksi') ? 'active' : '' }}">
-                <i class="fas fa-barcode"></i> Keterpakaian Koleksi
+                <x-icon name="barcode" class="me-2" /> Keterpakaian Koleksi
             </a>
             <a href="{{ route('penggunaan.cek_histori_buku_buku') }}" class="panel-nav-link {{ request()->routeIs('penggunaan.cek_histori_buku_buku') ? 'active' : '' }}">
-                <i class="fas fa-history"></i> Cek Histori Buku
+                <x-icon name="history" class="me-2" /> Cek Histori Buku
             </a>
             <a href="{{ route('penggunaan.sering_dibaca') }}" class="panel-nav-link {{ request()->routeIs('penggunaan.sering_dibaca') ? 'active' : '' }}">
-                <i class="fas fa-trophy"></i> Buku Terlaris
+                <x-icon name="trophy" class="me-2" /> Buku Terlaris
             </a>
         </div>
     </div>
@@ -259,12 +261,12 @@
         <div class="panel-body">
             <div class="panel-section-label">Lainnya</div>
             <a href="{{ route('reward.pemustaka_teraktif') }}" class="panel-nav-link {{ request()->routeIs('reward.pemustaka_teraktif') ? 'active' : '' }}">
-                <i class="fas fa-gift"></i> Pemustaka Teraktif
+                <x-icon name="gift" class="me-2" /> Pemustaka Teraktif
             </a>
             @auth
             @if(Auth::user()->isLibrarian())
             <a href="{{ route('admin.activity-log') }}" class="panel-nav-link {{ request()->routeIs('admin.activity-log') ? 'active' : '' }}">
-                <i class="fas fa-shield-halved"></i> Audit Trail
+                <x-icon name="shield-halved" class="me-2" /> Audit Trail
             </a>
             @endif
             @endauth
@@ -276,7 +278,7 @@
             <div class="modal-content text-center border-0 shadow-lg" style="border-radius: 1rem;">
                 <div class="modal-body p-4 p-md-5">
                     <div class="welcome-modal-icon-container">
-                        <i class="fas fa-rocket"></i>
+                        <x-icon name="rocket" size="48" />
                     </div>
                     <h4 class="modal-title fw-bold mb-2" id="welcomeModalGreeting">Selamat Datang!</h4>
 
@@ -285,7 +287,7 @@
                     </p>
 
                     <button type="button" class="btn btn-primary btn-lg mt-3" data-bs-dismiss="modal">
-                        Mulai Jelajahi <i class="fas fa-arrow-right ms-2"></i>
+                        Mulai Jelajahi <x-icon name="arrow-right" class="ms-2" />
                     </button>
                 </div>
             </div>
@@ -313,7 +315,7 @@
                             box-shadow: 0 8px 24px rgba(245, 158, 11, 0.3);
                             animation: pulseWarning 2s ease-in-out infinite;
                         ">
-                            <i class="fas fa-clock" style="font-size: 3rem; color: #d97706; line-height: 1; display: flex;"></i>
+                            <x-icon name="clock" size="48" style="color: #d97706; display: flex;" />
                         </div>
                     </div>
 
@@ -339,11 +341,11 @@
 
                     <div class="d-flex gap-3 justify-content-center">
                         <button type="button" id="btnExtendSession" class="btn btn-primary px-4 py-2" style="border-radius: 0.75rem; font-weight: 600;">
-                            <i class="fas fa-rotate-right me-2"></i>Lanjutkan Sesi
+                            <x-icon name="rotate-right" class="me-2" />Lanjutkan Sesi
                         </button>
                         {{-- Tombol logout: pakai JS agar bisa handle CSRF token yang sudah expired --}}
                         <button type="button" id="btnLogoutNow" class="btn btn-outline-danger px-4 py-2" style="border-radius: 0.75rem; font-weight: 600;">
-                            <i class="fas fa-sign-out-alt me-2"></i>Logout Sekarang
+                            <x-icon name="sign-out-alt" class="me-2" />Logout Sekarang
                         </button>
                         {{-- Hidden form untuk submit logout setelah token diperbarui --}}
                         <form id="logoutFormModal" action="{{ route('logout') }}" method="POST" class="d-none">
@@ -358,8 +360,8 @@
 
     <div class="theme-fab">
         <button class="btn" id="theme-toggle" type="button" title="Ganti Tema">
-            <i class="fas fa-moon"></i>
-            <i class="fas fa-sun"></i>
+            <x-icon name="moon" />
+            <x-icon name="sun" />
         </button>
     </div>
 

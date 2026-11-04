@@ -20,7 +20,7 @@
         <li class="nav-item">
             <a class="nav-link {{ Route::currentRouteName() === 'dashboard' ? 'active' : '' }}"
                 href="{{ route('dashboard') }}">
-                <i class="bi bi-house-fill nav-icon"></i>
+                <x-icon name="house" class="nav-icon" />
                 <span class="nav-text">Dashboard</span>
             </a>
 
@@ -31,7 +31,7 @@
         @php $isSdmActive = request()->routeIs(['sdm.*']); @endphp
         <li class="nav-item">
             <a class="nav-link {{ $isSdmActive ? 'active' : '' }}" href="{{ route('sdm.index') }}">
-                <i class="fas fa-users nav-icon"></i>
+                <x-icon name="users" class="nav-icon" />
                 <span class="nav-text">SDM</span>
             </a>
             <div class="collapse {{ $isSdmActive ? 'show' : '' }}" id="sdmCollapse">
@@ -59,9 +59,9 @@
                 data-bs-toggle="collapse" data-bs-target="#daftarKoleksiCollapse"
                 aria-expanded="{{ $isDaftarKoleksiActive ? 'true' : 'false' }}" data-bs-auto-close="outside"
                 aria-controls="daftarKoleksiCollapse">
-                <i class="bi bi-collection-fill nav-icon"></i>
+                <x-icon name="collection" class="nav-icon" />
                 <span class="nav-text">Daftar Koleksi</span>
-                <i class="bi bi-chevron-down ms-auto nav-arrow-small"></i>
+                <x-icon name="chevron-down" class="ms-auto nav-arrow-small" />
             </button>
             <div class="collapse {{ $isDaftarKoleksiActive ? 'show' : '' }}" id="daftarKoleksiCollapse">
                 <ul class="nav flex-column mt-1 sub-menu">
@@ -101,9 +101,9 @@
     <button class="nav-link {{ $isKunjunganActive ? 'active' : '' }}" type="button" data-bs-toggle="collapse"
         data-bs-target="#kunjunganCollapse" aria-expanded="{{ $isKunjunganActive ? 'true' : 'false' }}"
         data-bs-auto-close="outside" aria-controls="kunjunganCollapse">
-        <i class="bi bi-people-fill nav-icon"></i>
+        <x-icon name="users" class="nav-icon" />
         <span class="nav-text">Kunjungan</span>
-        <i class="bi bi-chevron-down ms-auto nav-arrow-small"></i>
+        <x-icon name="chevron-down" class="ms-auto nav-arrow-small" />
     </button>
     <div class="collapse {{ $isKunjunganActive ? 'show' : '' }}" id="kunjunganCollapse">
         <ul class="nav flex-column mt-1 sub-menu">
@@ -126,9 +126,9 @@
     <button class="nav-link {{ $isPeminjamanActive ? 'active' : '' }}" type="button" data-bs-toggle="collapse"
         data-bs-target="#peminjamanCollapse" aria-expanded="{{ $isPeminjamanActive ? 'true' : 'false' }}"
         data-bs-auto-close="outside" aria-controls="peminjamanCollapse">
-        <i class="bi bi-bookmarks-fill nav-icon"></i>
+        <x-icon name="bookmark" class="nav-icon" />
         <span class="nav-text">Peminjaman</span>
-        <i class="bi bi-chevron-down ms-auto nav-arrow-small"></i>
+        <x-icon name="chevron-down" class="ms-auto nav-arrow-small" />
     </button>
     <div class="collapse {{ $isPeminjamanActive ? 'show' : '' }}" id="peminjamanCollapse">
         <ul class="nav flex-column mt-1 sub-menu">
@@ -154,9 +154,9 @@
     <button class="nav-link {{ $isPenggunaanActive ? 'active' : '' }}" type="button" data-bs-toggle="collapse"
         data-bs-target="#penggunaanCollapse" aria-expanded="{{ $isPenggunaanActive ? 'true' : 'false' }}"
         data-bs-auto-close="outside" aria-controls="penggunaanCollapse">
-        <i class="bi bi-bar-chart-fill nav-icon"></i>
+        <x-icon name="bar-chart" class="nav-icon" />
         <span class="nav-text">Statistik Sirkulasi</span>
-        <i class="bi bi-chevron-down ms-auto nav-arrow-small"></i>
+        <x-icon name="chevron-down" class="ms-auto nav-arrow-small" />
     </button>
     <div class="collapse {{ $isPenggunaanActive ? 'show' : '' }}" id="penggunaanCollapse">
         <ul class="nav flex-column mt-1 sub-menu">
@@ -177,9 +177,9 @@
 @php $isRewardActive = request()->routeIs(['reward.*']); @endphp
 {{-- <li class="nav-item">
             <a class="nav-link {{ $isRewardActive ? 'active' : '' }}" data-bs-toggle="collapse" href="#rewardCollapse">
-                <i class="fas fa-gift nav-icon"></i>
+                <x-icon name="gift" class="nav-icon" />
                 <span class="nav-text">Reward</span>
-                <i class="fas fa-chevron-down ms-auto nav-arrow-small"></i>
+                <x-icon name="chevron-down" class="ms-auto nav-arrow-small" />
             </a>
             <div class="collapse {{ $isRewardActive ? 'show' : '' }}" id="rewardCollapse">
                 <ul class="nav flex-column mt-1 sub-menu">
@@ -191,7 +191,7 @@
 <li class="nav-item">
     <a class="nav-link {{ Route::currentRouteName() === 'reward.pemustaka_teraktif' ? 'active' : '' }}"
         href="{{ route('reward.pemustaka_teraktif') }}">
-        <i class="bi bi-gift-fill nav-icon"></i>
+        <x-icon name="gift" class="nav-icon" />
         <span class="nav-text">Pemustaka Teraktif</span>
     </a>
 </li>
@@ -203,21 +203,21 @@
 <li class="nav-item">
     <a class="nav-link {{ Route::currentRouteName() === 'admin.activity-log' ? 'active' : '' }}"
         href="{{ route('admin.activity-log') }}">
-        <i class="bi bi-shield-lock-fill nav-icon"></i>
+        <x-icon name="shield-lock-fill" class="nav-icon" />
         <span class="nav-text">Audit Trail</span>
     </a>
 </li>
 <li class="nav-item">
     <a class="nav-link {{ request()->routeIs('cnclass.*') ? 'active' : '' }}"
         href="{{ route('cnclass.index') }}">
-        <i class="bi bi-grid-3x3-gap nav-icon"></i>
+        <x-icon name="grid-3x3-gap" class="nav-icon" />
         <span class="nav-text">Pengaturan Kelas Koleksi</span>
     </a>
 </li>
 <li class="nav-item">
     <a class="nav-link {{ request()->routeIs('fakultas.*') ? 'active' : '' }}"
         href="{{ route('fakultas.index') }}">
-        <i class="bi bi-gear-fill nav-icon"></i>
+        <x-icon name="gear-fill" class="nav-icon" />
         <span class="nav-text">Pengaturan Fakultas</span>
     </a>
 </li>
