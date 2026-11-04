@@ -1,78 +1,83 @@
 <!DOCTYPE html>
-<html lang="id" data-theme="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>500 — Terjadi Kesalahan Server | Library Data</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="shortcut icon" href="{{ asset('img/logo4.png') }}" type="image/x-icon">
-    <link rel="stylesheet" href="{{ asset('css/500.css') }}">
+    <link rel="icon" href="{{ asset('img/logo4.png') }}" type="image/png">
+    <link rel="shortcut icon" href="{{ asset('img/logo4.png') }}" type="image/png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" crossorigin="anonymous">
+
+    <link href="{{ asset('vendor/bootstrap/5.3.3/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/unified-components.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/app-layout.css') }}">
 </head>
-<body>
+<body class="{{ isset($_COOKIE['theme']) && $_COOKIE['theme'] == 'dark' ? 'dark-mode' : '' }}" style="background-color: var(--main-bg); min-height: 100vh;">
 
-    <div class="bg-orbs">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-        <div class="orb orb-3"></div>
-    </div>
-    <div class="grid-overlay"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-
-    <div class="error-card">
-
-        <div class="error-code">500</div>
-
-        <div class="cog-wrap">
-            <div class="cog-outer"></div>
-            <div class="cog-inner"></div>
-            <div class="cog-icon">
-                <i class="fas fa-gears" style="color: #a78bfa;"></i>
+    <div class="min-vh-100 d-flex align-items-center justify-content-center p-3 p-md-4">
+        <div class="card border shadow-sm text-center p-4 p-md-5" style="max-width: 540px; width: 100%; border-radius: 1.25rem; background-color: var(--sidebar-bg); border-color: var(--border-color) !important;">
+            
+            {{-- Brand Header --}}
+            <div class="mb-4">
+                <a href="{{ route('dashboard') }}" class="d-inline-flex align-items-center text-decoration-none gap-2">
+                    <img src="{{ asset('img/logo4.png') }}" alt="Logo UMS" style="height: 38px;">
+                    <div class="text-start">
+                        <div class="fw-bold tracking-tight" style="color: var(--text-dark); font-size: 1.15rem; line-height: 1.2;">Library Data</div>
+                        <small class="text-muted" style="font-size: var(--font-xs);">Sistem Statistik Perpustakaan UMS</small>
+                    </div>
+                </a>
             </div>
-        </div>
 
-        <div class="divider"></div>
-
-        <h1 class="error-title">Terjadi Kesalahan Server</h1>
-        <p class="error-desc">
-            Server sedang mengalami gangguan sementara. Tim kami sedang memperbaikinya.
-            Silakan coba lagi dalam beberapa saat.
-        </p>
-
-        {{-- Terminal-style log box --}}
-        <div class="terminal">
-            <div class="terminal-header">
-                <div class="terminal-dot" style="background:#f87171;"></div>
-                <div class="terminal-dot" style="background:#facc15;"></div>
-                <div class="terminal-dot" style="background:#34d399;"></div>
-                <span style="color:rgba(255,255,255,0.3); font-size:0.75rem; margin-left:0.5rem;">system.log</span>
+            {{-- Icon Container --}}
+            <div class="d-flex justify-content-center mb-3">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 80px; height: 80px; background: rgba(74, 105, 255, 0.12); color: #4A69FF;">
+                    <x-icon name="alert-triangle" size="40" />
+                </div>
             </div>
-            <div class="terminal-line"><span class="cmd">$ </span>status --check application</div>
-            <div class="terminal-line"><span class="err">[ERROR]</span> Internal server exception caught</div>
-            <div class="terminal-line"><span class="cmd">$ </span>auto-recovery --mode=safe</div>
-            <div class="terminal-line"><span class="ok">[INFO] </span>Alert dispatched to tech team...</div>
-            <div class="terminal-line" style="color:rgba(255,255,255,0.25);">Timestamp: {{ now()->format('Y-m-d H:i:s') }}</div>
-        </div>
 
-        <div class="d-flex flex-wrap gap-3 justify-content-center">
-            <button onclick="window.location.reload()" class="btn-back">
-                <i class="fas fa-rotate-right"></i> Coba Lagi
-            </button>
-            <a href="{{ url('/') }}" class="btn-ghost">
-                <i class="fas fa-house"></i> Beranda
-            </a>
-        </div>
+            {{-- Error Badge --}}
+            <div>
+                <span class="badge rounded-pill mb-2 px-3 py-1 text-uppercase" style="background: rgba(74, 105, 255, 0.15); color: #4A69FF; font-size: var(--font-xs); font-weight: 700; letter-spacing: 0.05em;">
+                    Kode 500 · Server Error
+                </span>
+            </div>
 
-        <div class="brand-footer">
-            &copy; {{ date('Y') }} <span>UPT Perpustakaan dan Layanan Digital UMS</span> · Library Data Akreditasi
+            {{-- Title & Description --}}
+            <h1 class="h3 fw-bold mb-2 mt-2" style="color: var(--text-dark);">Terjadi Kesalahan Server</h1>
+            <p class="text-muted mb-4" style="font-size: var(--font-base); line-height: 1.6;">
+                Sistem sedang mengalami kendala teknis saat memproses permintaan ini. Silakan coba muat ulang halaman beberapa saat lagi.
+            </p>
+
+            @if(config('app.debug') && isset($exception) && $exception->getMessage())
+            <div class="p-3 mb-4 rounded-3 text-start font-monospace" style="background: rgba(0,0,0,0.06); color: var(--text-dark); font-size: var(--font-xs); word-break: break-all; border: 1px dashed var(--border-color);">
+                <strong>Debug Info:</strong> {{ $exception->getMessage() }}
+            </div>
+            @endif
+
+            {{-- Actions --}}
+            <div class="d-flex flex-wrap gap-2 justify-content-center mb-3">
+                <button type="button" onclick="window.location.reload()" class="btn btn-primary px-4 py-2 d-inline-flex align-items-center gap-2" style="border-radius: 0.65rem; font-weight: 600;">
+                    <x-icon name="rotate-right" />
+                    <span>Muat Ulang Halaman</span>
+                </button>
+                <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary px-4 py-2 d-inline-flex align-items-center gap-2" style="border-radius: 0.65rem; font-weight: 600;">
+                    <x-icon name="house" />
+                    <span>Kembali ke Dashboard</span>
+                </a>
+            </div>
+
+            {{-- Footer Note --}}
+            <div class="mt-4 pt-3 border-top" style="border-color: var(--border-color) !important;">
+                <small class="text-muted" style="font-size: var(--font-xs);">
+                    &copy; {{ date('Y') }} UPT Perpustakaan dan Layanan Digital UMS · Sistem Statistik Akreditasi
+                </small>
+            </div>
+
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

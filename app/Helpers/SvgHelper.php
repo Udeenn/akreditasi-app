@@ -218,3 +218,4 @@ class SvgHelper
         return json_encode(self::$icons);
     }
 }
+

@@ -417,9 +417,8 @@ public function pertanggal(Request $request)
         $chartDatasets = [];
         $dataExists = false;
         $totalBooks = 0; $totalReturns = 0; $totalBorrowers = 0; $totalCirculation = 0; $rerataPeminjaman = 0;
-        $statistics = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10, 1);
-
         $rankingProdi = [];
+        $statistics = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10, 1);
 
         try {
             if ($hasFilter) {
@@ -1295,6 +1294,8 @@ public function pertanggal(Request $request)
         $chartData = collect();
         $totalIssues = 0; $totalRenews = 0; $totalReturns = 0; $totalBorrowers = 0;
         $totalCirculation = 0; $rerataPeminjaman = 0; $dataExists = false;
+        $rankingFakultas = [];
+        $rankingProdi = [];
 
         try {
             if ($hasFilter) {

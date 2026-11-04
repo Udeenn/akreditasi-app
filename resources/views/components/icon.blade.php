@@ -5,3 +5,4 @@
 ])
 
 {!! \App\Helpers\SvgHelper::render($name, $class, $size) !!}
+
