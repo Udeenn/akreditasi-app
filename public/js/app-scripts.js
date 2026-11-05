@@ -79,6 +79,24 @@ document.addEventListener('DOMContentLoaded', function() {
         body.classList.add('sidebar-collapsed');
     }
 
+    // Set tooltip/title for nav-links in sidebar
+    document.querySelectorAll('.sidebar .nav-link').forEach(function(link) {
+        const textEl = link.querySelector('.nav-text');
+        if (textEl && !link.getAttribute('title')) {
+            link.setAttribute('title', textEl.textContent.trim());
+        }
+    });
+
+    // Auto expand sidebar if clicking a collapsed parent dropdown
+    document.querySelectorAll('.sidebar .nav-item button[data-bs-toggle="collapse"]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            if (body.classList.contains('sidebar-collapsed')) {
+                body.classList.remove('sidebar-collapsed');
+                localStorage.setItem('sidebarState', 'expanded');
+            }
+        });
+    });
+
     if (toggleBtn) {
         toggleBtn.addEventListener('click', function() {
             if (isMobile()) {

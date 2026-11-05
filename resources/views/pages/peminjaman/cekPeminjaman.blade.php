@@ -41,7 +41,7 @@
                             </div>
                             
                             <div class="col-md-2">
-                                <button type="submit" class="btn btn-primary w-100 shadow-sm fw-bold">Cari Data</button>
+                                <button type="submit" class="btn btn-primary w-100 shadow-sm"><i class="fas fa-search"></i> Cari Data</button>
                             </div>
                         </form>
                     </div>

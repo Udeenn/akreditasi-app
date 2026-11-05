@@ -78,7 +78,7 @@
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between py-3 px-4">
             <h6 class="fw-bold mb-0"><i class="fas fa-building me-2 text-primary"></i>Daftar Fakultas & Mapping Kode Prodi</h6>
-            <button type="button" class="btn btn-primary btn-sm rounded-3 px-3 fw-semibold shadow-sm"
+            <button type="button" class="btn btn-primary btn-sm rounded-3 px-3 shadow-sm"
                 data-bs-toggle="modal" data-bs-target="#createModal">
                 <i class="fas fa-plus me-1"></i> Tambah Fakultas
             </button>

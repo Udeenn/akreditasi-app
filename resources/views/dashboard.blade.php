@@ -182,9 +182,9 @@
                 'Juni' => 13088,
                 'Juli' => 14992,
                 'Agustus' => 24872,
-                'September' => 12525,
-                'Oktober' => 0,
-                'November' => 0,
+                'September' => 18719,
+                'Oktober' => 19114,
+                'November' => 2462,
                 'Desember' => 0,
             ];
             $bulanLengkap = [
@@ -221,9 +221,9 @@
                 'Juni' => 7018,
                 'Juli' => 7598,
                 'Agustus' => 65036,
-                'September' => 5952,
-                'Oktober' => 0,
-                'November' => 0,
+                'September' => 9768,
+                'Oktober' => 24594,
+                'November' => 1617,
                 'Desember' => 0,
             ];
             foreach ($bulanLengkap as $bln) {

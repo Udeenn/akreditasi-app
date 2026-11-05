@@ -66,7 +66,7 @@
                         </div>
 
                         {{-- Tombol Cari + Export dalam satu grup --}}
-                        <div class="col-md-6 d-flex align-items-end gap-2 flex-wrap">
+                        <div class="col-md-6 d-flex align-items-end gap-2 flex-wrap justify-content-end">
                             <button type="submit" class="btn btn-primary shadow-sm px-4">
                                 <i class="fas fa-search me-1"></i> Cari
                             </button>
@@ -74,12 +74,12 @@
                             <button type="button" id="exportPengunjungButton"
                                 class="btn btn-success shadow-sm {{ !$hasFilter ? 'disabled' : '' }}"
                                 title="Export Data Pengunjung">
-                                <i class="fas fa-file-excel me-1"></i> Pengunjung
+                                <i class="fas fa-file-excel me-1"></i> CSV Pengunjung
                             </button>
                             <button type="button" id="exportPeminjamButton"
-                                class="btn btn-warning shadow-sm {{ !$hasFilter ? 'disabled' : '' }}"
+                                class="btn btn-success shadow-sm {{ !$hasFilter ? 'disabled' : '' }}"
                                 title="Export Data Peminjam">
-                                <i class="fas fa-file-excel me-1"></i> Peminjam
+                                <i class="fas fa-file-excel me-1"></i>CSV Peminjam
                             </button>
                         </div>
 

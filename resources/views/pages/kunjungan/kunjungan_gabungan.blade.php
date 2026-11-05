@@ -82,7 +82,7 @@
                             </div>
 
                             <div class="col-md-auto ms-auto">
-                                <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">
+                                <button type="submit" class="btn btn-primary px-4 shadow-sm">
                                     <i class="fas fa-search me-1"></i> Tampilkan
                                 </button>
                             </div>

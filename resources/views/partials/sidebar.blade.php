@@ -211,14 +211,14 @@
     <a class="nav-link {{ request()->routeIs('cnclass.*') ? 'active' : '' }}"
         href="{{ route('cnclass.index') }}">
         <x-icon name="grid-3x3-gap" class="nav-icon" />
-        <span class="nav-text">Pengaturan Kelas Koleksi</span>
+        <span class="nav-text">Setting CN Kelas</span>
     </a>
 </li>
 <li class="nav-item">
     <a class="nav-link {{ request()->routeIs('fakultas.*') ? 'active' : '' }}"
         href="{{ route('fakultas.index') }}">
         <x-icon name="gear-fill" class="nav-icon" />
-        <span class="nav-text">Pengaturan Fakultas</span>
+        <span class="nav-text">Setting Fakultas</span>
     </a>
 </li>
 @endif

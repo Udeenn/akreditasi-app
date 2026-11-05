@@ -50,7 +50,7 @@
                             </select>
                         </div>
                         <div class="col-lg-auto">
-                            <button type="submit" class="btn btn-primary w-100">Cari Histori</button>
+                            <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search mr-2"></i> Cari Histori</button>
                         </div>
                     </div>
                 </form>

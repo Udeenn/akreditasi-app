@@ -92,11 +92,11 @@
 
                                 {{-- Tombol Action --}}
                                 <div class="col-md-auto col-12 d-flex gap-2">
-                                    <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">
+                                    <button type="submit" class="btn btn-primary px-4 shadow-sm">
                                         <i class="fas fa-search me-1"></i> Cari
                                     </button>
                                     <button type="button" id="btnExportCsv"
-                                        class="btn btn-success px-4 fw-bold shadow-sm">
+                                        class="btn btn-success px-4 shadow-sm">
                                         <i class="fas fa-file-csv me-1"></i> CSV
                                     </button>
                                 </div>

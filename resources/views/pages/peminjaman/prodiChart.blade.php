@@ -118,7 +118,7 @@
 
                             <div class="col-md-1 ms-auto">
                                 <button type="submit" id="btnCari" class="btn btn-primary w-100 shadow-sm">
-                                    <i class="fas fa-search"></i>
+                                    <i class="fas fa-search"></i> Cari
                                 </button>
                             </div>
                         </form>

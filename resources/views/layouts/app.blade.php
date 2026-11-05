@@ -46,6 +46,13 @@
 </head>
 
 <body class="{{ isset($_COOKIE['theme']) && $_COOKIE['theme'] == 'dark' ? 'dark-mode' : '' }}">
+    <script>
+        (function() {
+            if (window.innerWidth >= 992 && localStorage.getItem('sidebarState') === 'collapsed') {
+                document.body.classList.add('sidebar-collapsed');
+            }
+        })();
+    </script>
 
     <div id="page-loader" role="status" aria-label="Memuat halaman...">
         <div class="loader-ring"></div>
@@ -58,10 +65,10 @@
             @include('partials.sidebar')
         </aside>
 
-        <div class="flex-grow-1 d-flex flex-column">
+        <div class="main-container flex-grow-1 d-flex flex-column">
             <header class="app-header">
                 <div class="header-left d-flex align-items-center gap-3">
-                    <button class="btn p-0 sidebar-toggle-btn" id="toggleSidebarBtn">
+                    <button class="btn p-0 sidebar-toggle-btn" id="toggleSidebarBtn" type="button" title="Toggle Sidebar" aria-label="Toggle Sidebar">
                         <x-icon name="menu" />
                     </button>
 

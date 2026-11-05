@@ -118,11 +118,11 @@
         <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between py-3 px-4">
             <h6 class="fw-bold mb-0"><i class="fas fa-tags me-2 text-primary"></i>Daftar Ruleset Kelas Koleksi</h6>
             <div>
-                <button type="button" class="btn btn-outline-info btn-sm rounded-3 px-3 fw-semibold shadow-sm me-2"
+                <button type="button" class="btn btn-outline-info btn-sm rounded-3 px-3 shadow-sm me-2"
                     data-bs-toggle="modal" data-bs-target="#guideModal">
                     <i class="fas fa-info-circle me-1"></i> Panduan Pengisian
                 </button>
-                <button type="button" class="btn btn-primary btn-sm rounded-3 px-3 fw-semibold shadow-sm"
+                <button type="button" class="btn btn-primary btn-sm rounded-3 px-3 shadow-sm"
                     data-bs-toggle="modal" data-bs-target="#createModal">
                     <i class="fas fa-plus me-1"></i> Tambah Ruleset
                 </button>

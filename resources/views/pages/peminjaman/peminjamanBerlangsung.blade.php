@@ -56,7 +56,10 @@
             border: 1px solid #e5e7eb;
             border-radius: 8px;
             padding: 0.5rem 0.75rem;
-            min-height: 46px;
+            height: 46px !important;
+            min-height: 46px !important;
+            border-radius: 8px !important;
+            box-sizing: border-box;
             display: flex;
             align-items: center;
             transition: all 0.2s ease;
@@ -64,6 +67,22 @@
         .select2-container--bootstrap-5.select2-container--focus .select2-selection {
             border-color: #3b82f6;
             box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+        }
+        #prodi.form-select,
+        #btnTerapkanFilter {
+            height: 46px !important;
+            min-height: 46px !important;
+            border-radius: 8px !important;
+            box-sizing: border-box;
+        }
+        #btnTerapkanFilter {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: var(--font-form);
+            letter-spacing: 0.025em;
+            transition: all 0.2s ease;
         }
         .btn-modern {
             border-radius: 8px;
@@ -97,7 +116,7 @@
             <div class="col-12">
                 <div class="card unified-card border-0 shadow-sm">
                     <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
-                        <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
+                        <h5 class="mb-0 fw-bold"><x-icon name="filter" class="text-primary me-2" /> Filter Data</h5>
                     </div>
                     <div class="card-body px-4 pb-4 pt-3">
                         <form id="filterPeminjamanBerlangsungForm" class="row g-3 align-items-end">
@@ -116,7 +135,7 @@
                             </div>
                             <div class="col-md-3">
                                 <button type="button" id="btnTerapkanFilter" class="btn btn-primary w-100 shadow-sm">
-                                    <i class="fas fa-search me-2"></i> Terapkan Filter
+                                    <x-icon name="search" class="me-2" /> Terapkan Filter
                                 </button>
                             </div>
                         </form>
@@ -130,7 +149,7 @@
             <div class="card-header bg-white border-bottom px-4 py-3 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
                 <div class="d-flex align-items-center">
                     <div class="avatar-circle bg-indigo-soft me-3">
-                        <i class="fas fa-list-ul"></i>
+                        <x-icon name="list" />
                     </div>
                     <div>
                         <h5 class="fw-bold mb-0">Daftar Peminjaman</h5>
@@ -139,7 +158,7 @@
                 </div>
 
                 <button type="button" id="exportCsvBtn"
-                    class="btn btn-success btn-modern shadow-sm"><i class="fas fa-file-excel me-2"></i> Export Data
+                    class="btn btn-success btn-modern shadow-sm"><x-icon name="file-excel" class="me-2" /> Export Data
                 </button>
             </div>
 
