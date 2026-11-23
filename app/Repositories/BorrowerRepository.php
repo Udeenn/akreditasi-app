@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class BorrowerRepository
 {
@@ -12,15 +13,38 @@ class BorrowerRepository
 
     /**
      * Mengambil info borrower (termasuk atribut prodi) secara batch.
-     * Menggunakan chunking dan memory cache untuk efisiensi cross-database.
+     * Menggunakan chunking, memory cache, dan Redis Cache untuk efisiensi cross-database.
      */
     public function getBorrowerInfoByCardnumbers(Collection $uniqueCards): array
     {
         $normalized = $uniqueCards->map(fn($c) => strtoupper(trim((string)$c)))->unique()->values();
+        if ($normalized->isEmpty()) {
+            return [];
+        }
+
+        // 1. Cek in-memory cache
         $missing = $normalized->reject(fn($c) => isset(self::$cardCache[$c]))->values();
 
+        // 2. Cek Redis / Persistent Cache untuk yang belum ada di memory
         if ($missing->isNotEmpty()) {
-            foreach ($missing->chunk(1000) as $chunk) {
+            $cacheKeys = $missing->mapWithKeys(fn($c) => ["bw_c_{$c}" => $c])->all();
+            try {
+                $fromCache = Cache::many(array_keys($cacheKeys));
+                foreach ($fromCache as $k => $val) {
+                    if ($val !== null) {
+                        $card = $cacheKeys[$k];
+                        self::$cardCache[$card] = $val;
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        // 3. Hanya query ke DB Koha (mysql2) untuk cardnumber yang benar-benar belum di-cache
+        $stillMissing = $normalized->reject(fn($c) => isset(self::$cardCache[$c]))->values();
+
+        if ($stillMissing->isNotEmpty()) {
+            $toCache = [];
+            foreach ($stillMissing->chunk(1000) as $chunk) {
                 $rows = DB::connection('mysql2')->table('borrowers as b')
                     ->leftJoin('borrower_attributes as ba', function ($j) {
                         $j->on('ba.borrowernumber', '=', 'b.borrowernumber')
@@ -33,7 +57,14 @@ class BorrowerRepository
                 foreach ($rows as $r) {
                     $key = strtoupper(trim($r->cardnumber));
                     self::$cardCache[$key] = $r;
+                    $toCache["bw_c_{$key}"] = $r;
                 }
+            }
+
+            if (!empty($toCache)) {
+                try {
+                    Cache::putMany($toCache, 86400); // Simpan 24 jam di Redis
+                } catch (\Throwable $e) {}
             }
         }
 
@@ -48,15 +79,35 @@ class BorrowerRepository
 
     /**
      * Mengambil info borrower (termasuk atribut prodi) berdasarkan borrowernumber (secara batch).
-     * Menggunakan chunking dan memory cache untuk efisiensi cross-database.
+     * Menggunakan chunking, memory cache, dan Redis Cache untuk efisiensi cross-database.
      */
     public function getBorrowerInfoByBorrowerNumbers(Collection $uniqueBorrowerNumbers): array
     {
         $unique = $uniqueBorrowerNumbers->unique()->values();
+        if ($unique->isEmpty()) {
+            return [];
+        }
+
         $missing = $unique->reject(fn($id) => isset(self::$borrowerNumberCache[$id]))->values();
 
         if ($missing->isNotEmpty()) {
-            foreach ($missing->chunk(1000) as $chunk) {
+            $cacheKeys = $missing->mapWithKeys(fn($id) => ["bw_id_{$id}" => $id])->all();
+            try {
+                $fromCache = Cache::many(array_keys($cacheKeys));
+                foreach ($fromCache as $k => $val) {
+                    if ($val !== null) {
+                        $id = $cacheKeys[$k];
+                        self::$borrowerNumberCache[$id] = $val;
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        $stillMissing = $unique->reject(fn($id) => isset(self::$borrowerNumberCache[$id]))->values();
+
+        if ($stillMissing->isNotEmpty()) {
+            $toCache = [];
+            foreach ($stillMissing->chunk(1000) as $chunk) {
                 $rows = DB::connection('mysql2')->table('borrowers as b')
                     ->leftJoin('borrower_attributes as ba', function ($j) {
                         $j->on('ba.borrowernumber', '=', 'b.borrowernumber')
@@ -68,7 +119,14 @@ class BorrowerRepository
 
                 foreach ($rows as $r) {
                     self::$borrowerNumberCache[$r->borrowernumber] = $r;
+                    $toCache["bw_id_{$r->borrowernumber}"] = $r;
                 }
+            }
+
+            if (!empty($toCache)) {
+                try {
+                    Cache::putMany($toCache, 86400); // Simpan 24 jam di Redis
+                } catch (\Throwable $e) {}
             }
         }
 

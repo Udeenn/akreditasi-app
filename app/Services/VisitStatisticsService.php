@@ -184,15 +184,22 @@ class VisitStatisticsService
                 }
             };
 
-            \Illuminate\Support\Facades\DB::connection('mysql')->table('visitorhistory')
+            $qHistory = \Illuminate\Support\Facades\DB::connection('mysql')->table('visitorhistory')
                 ->select('id', 'visittime', 'cardnumber')
-                ->whereBetween('visittime', [$start, $end])
-                ->chunkById(5000, $processVisits);
+                ->whereBetween('visittime', [$start, $end]);
 
-            \Illuminate\Support\Facades\DB::connection('mysql')->table('visitorcorner')
+            $qCorner = \Illuminate\Support\Facades\DB::connection('mysql')->table('visitorcorner')
                 ->select('id', 'visittime', 'cardnumber')
-                ->whereBetween('visittime', [$start, $end])
-                ->chunkById(5000, $processVisits);
+                ->whereBetween('visittime', [$start, $end]);
+
+            // Optimasi: jika filter prodi spesifik (seperti D400), query SQL hanya kartu yang relevan
+            if ($kodeProdiFilter && !in_array($kodeProdiFilter, ['ALL_MAHASISWA', 'DOSEN', 'TENDIK', 'KSP', 'KSPMBKM', 'KSPBIPA', 'XA', 'LB', 'XC'])) {
+                $qHistory->where('cardnumber', 'LIKE', $kodeProdiFilter . '%');
+                $qCorner->where('cardnumber', 'LIKE', $kodeProdiFilter . '%');
+            }
+
+            $qHistory->chunkById(5000, $processVisits);
+            $qCorner->chunkById(5000, $processVisits);
 
             ksort($periodeData);
             
