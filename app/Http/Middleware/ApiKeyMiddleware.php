@@ -22,7 +22,7 @@ class ApiKeyMiddleware
             ?? $request->input('api_key')
             ?? $request->input('apiKey');
 
-        $validKey = env('APP_API_KEY') ?: config('app.api_key', 'akreditasi_secret_api_key_123');
+        $validKey = config('app.api_key');
 
         if (!$validKey) {
             return response()->json([
@@ -31,7 +31,7 @@ class ApiKeyMiddleware
             ], 500);
         }
 
-        if ($apiKey !== $validKey) {
+        if (!is_string($apiKey) || !hash_equals((string) $validKey, $apiKey)) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Unauthorized. Invalid API Key.'

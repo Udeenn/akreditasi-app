@@ -23,64 +23,55 @@ class DashboardController extends Controller
         private BorrowerService $borrowerService
     ) {}
 
+    private function safeCacheCount(string $cacheKey, callable $filter, string $selectExpr): int
+    {
+        try {
+            return (int) Cache::remember($cacheKey, 3600, function () use ($filter, $selectExpr) {
+                $q = M_items::on('mysql2')
+                    ->select(DB::raw("{$selectExpr} AS total"))
+                    ->where('items.damaged', 0)
+                    ->where('items.itemlost', 0)
+                    ->where('items.withdrawn', 0);
+                $filter($q);
+                return $q->value('total') ?? 0;
+            });
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Dashboard count error [{$cacheKey}]: " . $e->getMessage());
+            return 0;
+        }
+    }
+
     public function totalStatistik()
     {
-        // Kunjungan Harian - Cache 5 menit (berubah sering)
-        $kunjunganHarian = Cache::remember('dashboard_kunjungan_harian_' . Carbon::today()->toDateString(), 300, function() {
-            return M_vishistory::whereDate('visittime', Carbon::today())->count();
-        });
+        try {
+            $kunjunganHarian = Cache::remember('dashboard_kunjungan_harian_' . Carbon::today()->toDateString(), 300, function() {
+                return M_vishistory::whereDate('visittime', Carbon::today())->count();
+            });
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Dashboard kunjungan harian error: ' . $e->getMessage());
+            $kunjunganHarian = 0;
+        }
 
-        // Total Judul Buku - Cache 1 jam (jarang berubah)
-        $totalJudulBuku = Cache::remember('dashboard_total_judul_buku', 3600, function() {
-            return M_items::on('mysql2')
-                ->select(DB::raw("COUNT(DISTINCT items.biblionumber) AS total_judul_buku"))
-                ->leftJoin('biblioitems', 'biblioitems.biblioitemnumber', '=', 'items.biblioitemnumber')
-                ->leftJoin('biblio', 'biblio.biblionumber', '=', 'items.biblionumber')
-                ->where('items.damaged', 0)
-                ->where('items.itemlost', 0)
-                ->where('items.withdrawn', 0)
-                ->where(DB::raw('LEFT(items.itype, 2)'), 'BK')
-                ->value('total_judul_buku');
-        });
-
-        // Total Eksemplar - Cache 1 jam
-        $totalEksemplar = Cache::remember('dashboard_total_eksemplar', 3600, function() {
-            return M_items::on('mysql2')
-                ->select(DB::raw("COUNT(items.biblionumber) AS total_eksemplar"))
-                ->leftJoin('biblioitems', 'biblioitems.biblioitemnumber', '=', 'items.biblioitemnumber')
-                ->leftJoin('biblio', 'biblio.biblionumber', '=', 'items.biblionumber')
-                ->where('items.damaged', 0)
-                ->where('items.itemlost', 0)
-                ->where('items.withdrawn', 0)
-                ->where(DB::raw('LEFT(items.itype, 2)'), 'BK')
-                ->value('total_eksemplar');
-        });
-
-        // Total Ebooks - Cache 1 jam
-        $totalEbooks = Cache::remember('dashboard_total_ebooks', 3600, function() {
-            return M_items::on('mysql2')
-                ->select(DB::raw("COUNT(items.biblionumber) AS total_ebooks"))
-                ->leftJoin('biblioitems', 'biblioitems.biblioitemnumber', '=', 'items.biblioitemnumber')
-                ->leftJoin('biblio', 'biblio.biblionumber', '=', 'items.biblionumber')
-                ->where('items.damaged', 0)
-                ->where('items.itemlost', 0)
-                ->where('items.withdrawn', 0)
-                ->where(DB::raw('LEFT(items.itype, 2)'), 'EB')
-                ->value('total_ebooks');
-        });
-
-        // Total Jurnal - Cache 1 jam
-        $totalJurnal = Cache::remember('dashboard_total_jurnal', 3600, function() {
-            return M_items::on('mysql2')
-                ->select(DB::raw("COUNT(items.biblionumber) AS total_jurnal"))
-                ->leftJoin('biblioitems', 'biblioitems.biblioitemnumber', '=', 'items.biblioitemnumber')
-                ->leftJoin('biblio', 'biblio.biblionumber', '=', 'items.biblionumber')
-                ->where('items.damaged', 0)
-                ->where('items.itemlost', 0)
-                ->where('items.withdrawn', 0)
-                ->whereIn('items.itype', ['EJ', 'JRA', 'JR', 'JRT'])
-                ->value('total_jurnal');
-        });
+        $totalJudulBuku = $this->safeCacheCount(
+            'dashboard_total_judul_buku',
+            fn($q) => $q->where(DB::raw('LEFT(items.itype, 2)'), 'BK'),
+            'COUNT(DISTINCT items.biblionumber)'
+        );
+        $totalEksemplar = $this->safeCacheCount(
+            'dashboard_total_eksemplar',
+            fn($q) => $q->where(DB::raw('LEFT(items.itype, 2)'), 'BK'),
+            'COUNT(items.biblionumber)'
+        );
+        $totalEbooks = $this->safeCacheCount(
+            'dashboard_total_ebooks',
+            fn($q) => $q->where(DB::raw('LEFT(items.itype, 2)'), 'EB'),
+            'COUNT(items.biblionumber)'
+        );
+        $totalJurnal = $this->safeCacheCount(
+            'dashboard_total_jurnal',
+            fn($q) => $q->whereIn('items.itype', ['EJ', 'JRA', 'JR', 'JRT']),
+            'COUNT(items.biblionumber)'
+        );
 
         $formatTotalJudulBuku = number_format($totalJudulBuku, 0, ',', '.');
         $formatTotalEksemplar = number_format($totalEksemplar, 0, ',', '.');
@@ -89,6 +80,7 @@ class DashboardController extends Controller
 
         // === KUNJUNGAN PER FAKULTAS TAHUN INI ===
         $currentYear = Carbon::now()->year;
+        try {
         $kunjunganFakultas = Cache::remember("dashboard_kunjungan_fakultas_{$currentYear}", 3600, function () use ($currentYear) {
             $start = Carbon::createFromDate($currentYear, 1, 1)->startOfDay();
             $end = Carbon::createFromDate($currentYear, 12, 31)->endOfDay();
@@ -132,8 +124,13 @@ class DashboardController extends Controller
             arsort($fakultasCount);
             return $fakultasCount;
         });
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Dashboard kunjungan fakultas error: ' . $e->getMessage());
+            $kunjunganFakultas = [];
+        }
 
         // === PEMINJAMAN PER FAKULTAS TAHUN INI ===
+        try {
         $peminjamanFakultas = Cache::remember("dashboard_peminjaman_fakultas_{$currentYear}", 3600, function () use ($currentYear) {
             $start = Carbon::createFromDate($currentYear, 1, 1)->startOfDay();
             $end = Carbon::createFromDate($currentYear, 12, 31)->endOfDay();
@@ -169,6 +166,10 @@ class DashboardController extends Controller
             arsort($fakultasCount);
             return $fakultasCount;
         });
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Dashboard peminjaman fakultas error: ' . $e->getMessage());
+            $peminjamanFakultas = [];
+        }
 
         return view('dashboard', compact(
             'totalJurnal', 'kunjunganHarian',

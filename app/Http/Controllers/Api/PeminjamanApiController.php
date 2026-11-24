@@ -139,7 +139,7 @@ class PeminjamanApiController extends Controller
     public function berlangsung(Request $request): JsonResponse
     {
         try {
-            $limit = $request->input('limit', 100);
+            $limit = max(1, min(1000, (int) $request->input('limit', 100)));
             
             // Get all current issues
             $issues = DB::connection('mysql2')->table('issues')

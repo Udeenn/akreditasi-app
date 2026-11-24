@@ -63,6 +63,7 @@ class CasController extends Controller
         }
 
         Auth::login($user, true);
+        $request->session()->regenerate();
 
         return redirect()->route('dashboard');
     }
@@ -114,6 +115,7 @@ class CasController extends Controller
         );
 
         Auth::login($user, true);
+        $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard'))->with('login_success', true);
     }
@@ -169,7 +171,6 @@ class CasController extends Controller
 
             Log::info('CAS validation response', [
                 'status' => $response->status(),
-                'body' => $response->body(),
             ]);
 
             if ($response->successful()) {
@@ -231,17 +232,27 @@ class CasController extends Controller
         $finalEmail = (!empty($patron['email']) ? $patron['email'] : ($ssoEmail ?: null));
 
         if ($user) {
-            // Update sinkronisasi sesuai instruksimu
-            $user->update([
-                'role'          => $role,
-                'categorycode'  => $categorycode,
-                'koha_patron_id' => $patron['patron_id'] ?? $user->koha_patron_id,
-                'cardnumber'    => $patron['cardnumber'] ?? $user->cardnumber,
-                'name'          => $finalName,
-                'email'         => $finalEmail,
-            ]);
+            // Jangan downgrade role/categorycode jika Koha sedang gagal diambil ($patron === null)
+            $updateData = [
+                'name'  => $finalName,
+                'email' => $finalEmail ?? $user->email,
+            ];
 
-            Log::info("User synced from Koha and SSO", ['username' => $username, 'role' => $role, 'categorycode' => $categorycode]);
+            if ($patron !== null) {
+                $updateData['role'] = $role;
+                $updateData['categorycode'] = $categorycode;
+                $updateData['koha_patron_id'] = $patron['patron_id'] ?? $user->koha_patron_id;
+                $updateData['cardnumber'] = $patron['cardnumber'] ?? $user->cardnumber;
+            }
+
+            $user->update($updateData);
+
+            Log::info("User synced from Koha and SSO", [
+                'username' => $username,
+                'role' => $user->role,
+                'categorycode' => $user->categorycode,
+                'koha_synced' => $patron !== null,
+            ]);
             return $user;
         }
 

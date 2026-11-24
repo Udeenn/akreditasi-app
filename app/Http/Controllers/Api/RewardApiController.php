@@ -12,6 +12,15 @@ use Illuminate\Support\Facades\Log;
 
 class RewardApiController extends Controller
 {
+    private function resolveKategori(?string $cat): ?string
+    {
+        if (!$cat) return null;
+        if (str_starts_with($cat, 'STD')) return 'Mahasiswa';
+        if (str_starts_with($cat, 'TC')) return 'Dosen';
+        if (str_starts_with($cat, 'STAF') || $cat === 'LIBRARIAN') return 'Tendik';
+        return null;
+    }
+
     #[OA\Get(
         path: "/api/v1/reward/pemustaka",
         summary: "Get top pemustaka (visitors) per year",
@@ -24,20 +33,12 @@ class RewardApiController extends Controller
     #[OA\Response(response: 401, description: "Unauthorized")]
     public function pemustaka(Request $request): JsonResponse
     {
-        $tahun = $request->input('tahun', Carbon::now()->year);
+        $tahun = max(2000, min(2100, (int) $request->input('tahun', Carbon::now()->year)));
         $kategoriFilter = $request->input('kategori'); // e.g. Mahasiswa, Dosen, Tendik
 
         try {
             $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
             $end   = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
-
-            $getKategori = function ($cat) {
-                if (!$cat) return null;
-                if (str_starts_with($cat, 'STD') && !str_starts_with($cat, 'LIB')) return 'Mahasiswa';
-                if (str_starts_with($cat, 'TC') && !str_starts_with($cat, 'LIB')) return 'Dosen';
-                if ((str_starts_with($cat, 'STAF') || $cat === 'LIBRARIAN') && !str_starts_with($cat, 'LIB')) return 'Tendik';
-                return null;
-            };
 
             $sqlVisitor = "
                 SELECT cardnumber, SUM(total) as total_kunjungan
@@ -58,15 +59,18 @@ class RewardApiController extends Controller
             ";
 
             $rawVisits = DB::connection('mysql')->select($sqlVisitor, [$start, $end, $start, $end]);
-            $cardNumbers = collect($rawVisits)->pluck('cardnumber')->map(fn($c) => trim(strtolower($c)))->all();
+            $cardNumbers = collect($rawVisits)->pluck('cardnumber')->map(fn($c) => trim(strtolower($c)))->unique()->values();
 
-            $borrowers = DB::connection('mysql2')->table('borrowers')
-                ->select('cardnumber', 'surname', 'firstname', 'categorycode')
-                ->whereIn('cardnumber', $cardNumbers)
-                ->get()
-                ->mapWithKeys(function ($item) {
-                    return [trim(strtolower($item->cardnumber)) => $item];
-                });
+            $borrowers = collect();
+            foreach ($cardNumbers->chunk(1000) as $chunk) {
+                $rows = DB::connection('mysql2')->table('borrowers')
+                    ->select('cardnumber', 'surname', 'firstname', 'categorycode')
+                    ->whereIn('cardnumber', $chunk->all())
+                    ->get();
+                foreach ($rows as $item) {
+                    $borrowers->put(trim(strtolower($item->cardnumber)), $item);
+                }
+            }
 
             $pengunjungData = collect();
             foreach ($rawVisits as $visit) {
@@ -75,7 +79,7 @@ class RewardApiController extends Controller
 
                 if (!$user) continue;
 
-                $kategori = $getKategori($user->categorycode);
+                $kategori = $this->resolveKategori($user->categorycode);
 
                 if ($kategoriFilter && $kategori !== $kategoriFilter) continue;
 
@@ -124,20 +128,12 @@ class RewardApiController extends Controller
     #[OA\Response(response: 401, description: "Unauthorized")]
     public function peminjam(Request $request): JsonResponse
     {
-        $tahun = $request->input('tahun', Carbon::now()->year);
+        $tahun = max(2000, min(2100, (int) $request->input('tahun', Carbon::now()->year)));
         $kategoriFilter = $request->input('kategori');
 
         try {
             $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
             $end   = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
-
-            $getKategori = function ($cat) {
-                if (!$cat) return null;
-                if (str_starts_with($cat, 'STD') && !str_starts_with($cat, 'LIB')) return 'Mahasiswa';
-                if (str_starts_with($cat, 'TC') && !str_starts_with($cat, 'LIB')) return 'Dosen';
-                if ((str_starts_with($cat, 'STAF') || $cat === 'LIBRARIAN') && !str_starts_with($cat, 'LIB')) return 'Tendik';
-                return null;
-            };
 
             $sqlPeminjam = "
                 SELECT borrowernumber, COUNT(*) as total_pinjam
@@ -150,22 +146,25 @@ class RewardApiController extends Controller
             ";
             
             $rawPeminjaman = DB::connection('mysql2')->select($sqlPeminjam, [$start, $end]);
-            $borrowerNumbers = collect($rawPeminjaman)->pluck('borrowernumber')->all();
+            $borrowerNumbers = collect($rawPeminjaman)->pluck('borrowernumber')->filter()->unique()->values();
 
-            $borrowers = DB::connection('mysql2')->table('borrowers')
-                ->select('borrowernumber', 'cardnumber', 'surname', 'firstname', 'categorycode')
-                ->whereIn('borrowernumber', $borrowerNumbers)
-                ->get()
-                ->mapWithKeys(function ($item) {
-                    return [$item->borrowernumber => $item];
-                });
+            $borrowers = collect();
+            foreach ($borrowerNumbers->chunk(1000) as $chunk) {
+                $rows = DB::connection('mysql2')->table('borrowers')
+                    ->select('borrowernumber', 'cardnumber', 'surname', 'firstname', 'categorycode')
+                    ->whereIn('borrowernumber', $chunk->all())
+                    ->get();
+                foreach ($rows as $item) {
+                    $borrowers->put($item->borrowernumber, $item);
+                }
+            }
 
             $peminjamData = collect();
             foreach ($rawPeminjaman as $row) {
                 $user = $borrowers->get($row->borrowernumber);
                 if (!$user) continue;
 
-                $kategori = $getKategori($user->categorycode);
+                $kategori = $this->resolveKategori($user->categorycode);
 
                 if ($kategoriFilter && $kategori !== $kategoriFilter) continue;
 

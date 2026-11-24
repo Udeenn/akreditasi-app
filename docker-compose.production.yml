@@ -7,8 +7,13 @@ services:
       dockerfile: .docker/php/Dockerfile.prod
     container_name: akreditasi_app
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
     healthcheck:
-      test: ["CMD-SHELL", "php-fpm -t 2>/dev/null || exit 1"]
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 9001 || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -33,6 +38,11 @@ services:
     image: nginx:alpine
     container_name: akreditasi_nginx
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
     # Port tidak di-expose ke host — traffic masuk via Nginx Proxy Manager
     volumes:
       - ./.docker/nginx/datapustaka.conf:/etc/nginx/conf.d/default.conf
@@ -50,7 +60,12 @@ services:
     image: redis:alpine
     container_name: akreditasi_redis
     restart: unless-stopped
-    command: redis-server --save 60 1 --loglevel warning
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    command: redis-server --save 60 1 --loglevel warning --maxmemory 512mb --maxmemory-policy volatile-lru
     volumes:
       - redis_data:/data
     networks:

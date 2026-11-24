@@ -86,34 +86,34 @@ class KunjunganApiController extends Controller
     #[OA\Parameter(name: "tanggal_akhir", in: "query", description: "Tanggal akhir (YYYY-MM-DD) untuk filter daily", required: false, schema: new OA\Schema(type: "string"))]
     #[OA\Parameter(name: "tahun_awal", in: "query", description: "Tahun awal (YYYY) untuk filter yearly/monthly", required: false, schema: new OA\Schema(type: "integer"))]
     #[OA\Parameter(name: "tahun_akhir", in: "query", description: "Tahun akhir (YYYY) untuk filter yearly/monthly", required: false, schema: new OA\Schema(type: "integer"))]
-    #[OA\Parameter(name: "lokasi", in: "query", description: "Filter lokasi gedung / branchcode", required: false, schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "prodi", in: "query", description: "Filter kode Prodi (misal: D400, ALL_MAHASISWA)", required: false, schema: new OA\Schema(type: "string"))]
     #[OA\Response(response: 200, description: "Successful operation")]
     #[OA\Response(response: 401, description: "Unauthorized")]
     public function prodi(Request $request): JsonResponse
     {
         try {
             $filters = $this->dateFilterService->parseFilter($request);
-            $selectedLokasi = $request->input('lokasi');
+            $selectedProdi = $request->input('prodi');
 
             $result = $this->visitService->getKunjunganProdi(
-                $filters['filterType'], 
-                $filters['tanggalAwal'], 
-                $filters['tanggalAkhir'], 
-                $filters['tahunAwal'], 
-                $filters['tahunAkhir'], 
-                $selectedLokasi
+                $filters['filterType'],
+                $filters['tanggalAwal'],
+                $filters['tanggalAkhir'],
+                $filters['tahunAwal'],
+                $filters['tahunAkhir'],
+                $selectedProdi
             );
 
             return response()->json([
                 'status' => 'success',
                 'data' => [
                     'table_data' => $result['tableData'],
-                    'chart_data' => $result['chartData'],
-                    'total' => $result['total']
+                    'ranking_prodi' => $result['rankingProdi'],
+                    'total' => $result['totalKeseluruhanKunjungan']
                 ],
                 'meta' => [
                     'filters' => $filters,
-                    'selected_lokasi' => $selectedLokasi
+                    'selected_prodi' => $selectedProdi
                 ]
             ]);
 

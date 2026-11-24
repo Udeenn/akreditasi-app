@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use App\Models\M_Auv;
 use App\Models\M_eprodi;
 use App\Models\M_items;
-use App\Helpers\CnClassHelper;
 use App\Helpers\CnClassHelperr;
 use App\Helpers\QueryHelper;
 use Illuminate\Support\Facades\DB;
@@ -517,7 +516,7 @@ class StatistikKoleksi extends Controller
             $cacheKey = "koleksi_prodi:{$prodi}:{$tahunTerakhir}";
             $cachedResult = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir, $listprodi) {
                 $prodiMapping = $listprodi->pluck('nama', 'kode')->toArray();
-                $cnClasses = CnClassHelper::getCnClassByProdi($prodi);
+                $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
                 $namaProdi = $prodiMapping[$prodi] ?? 'Tidak Ditemukan';
 
                 $query = M_items::select('t.description AS Jenis', 'i.ccode AS Koleksi')
@@ -534,7 +533,7 @@ class StatistikKoleksi extends Controller
                     });
 
                 if ($tahunTerakhir !== 'all') {
-                    $query->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
+                    $query->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [(int) $tahunTerakhir]);
                 }
 
                 $data = $query->groupBy('Jenis', 'Koleksi')->orderBy('Jenis', 'asc')->orderBy('Koleksi', 'asc')->get();
@@ -564,7 +563,7 @@ class StatistikKoleksi extends Controller
         if ($prodi && $jenis) {
             $cacheKey = "detail_koleksi:{$prodi}:{$jenis}:{$tahunTerakhir}:{$page}";
             $detailData = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodi, $jenis, $tahunTerakhir, $page, $perPage) {
-                $cnClasses = CnClassHelper::getCnClassByProdi($prodi);
+                $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
 
                 $query = M_items::select(
                     'b.title AS Judul',
@@ -584,7 +583,7 @@ class StatistikKoleksi extends Controller
                     ->where('t.description', $jenis);
 
                 if ($tahunTerakhir !== 'all') {
-                    $query->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [$tahunTerakhir]);
+                    $query->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [(int) $tahunTerakhir]);
                 }
 
                 return $query->groupBy('b.title')->orderBy('Kelas', 'asc')->paginate($perPage, ['*'], 'page', $page);
@@ -604,19 +603,22 @@ class StatistikKoleksi extends Controller
         $query = $request->input('query', '');
         if (empty($query)) return response()->json(['error' => 'Query tidak boleh kosong'], 400);
 
-        $apiKey = config('services.scopus.api_key') ?: env('SCOPUS_API_KEY', '084a902b2b13bcebed5e401e22585d7e');
-        $baseUrl = config('services.scopus.url') ?: env('SCOPUS_URL', 'https://api.elsevier.com/content/search/scopus');
-        
+        $apiKey = config('services.scopus.api_key');
+        $baseUrl = config('services.scopus.url', 'https://api.elsevier.com/content/search/scopus');
+
         if (empty($apiKey)) return response()->json(['error' => 'API Key Scopus belum dikonfigurasi'], 500);
 
+        $count = max(1, min(100, (int) $request->input('count', 10)));
+        $start = max(0, (int) $request->input('start', 0));
+
         try {
-            $response = \Illuminate\Support\Facades\Http::withHeaders([
+            $response = \Illuminate\Support\Facades\Http::timeout(15)->withHeaders([
                 'X-ELS-APIKey' => $apiKey,
                 'Accept' => 'application/json'
             ])->get($baseUrl, [
                 'query' => $query,
-                'count' => $request->input('count', 10),
-                'start' => $request->input('start', 0),
+                'count' => $count,
+                'start' => $start,
             ]);
 
             if ($response->successful()) return response()->json($response->json());

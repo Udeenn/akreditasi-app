@@ -6,6 +6,7 @@ use App\Models\Faculty;
 use App\Models\FacultyProdiMapping;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class FacultyController extends Controller
 {
@@ -22,21 +23,23 @@ class FacultyController extends Controller
             'mappings' => 'nullable|string',
         ]);
 
-        $faculty = Faculty::create([
-            'name' => $request->name,
-        ]);
+        DB::transaction(function () use ($request) {
+            $faculty = Faculty::create([
+                'name' => $request->name,
+            ]);
 
-        if (!empty($request->mappings)) {
-            $codes = array_map('trim', explode(',', $request->mappings));
-            foreach ($codes as $code) {
-                if ($code !== '') {
-                    FacultyProdiMapping::create([
-                        'faculty_id' => $faculty->id,
-                        'prodi_code' => strtoupper($code),
-                    ]);
+            if (!empty($request->mappings)) {
+                $codes = array_map('trim', explode(',', $request->mappings));
+                foreach ($codes as $code) {
+                    if ($code !== '') {
+                        FacultyProdiMapping::create([
+                            'faculty_id' => $faculty->id,
+                            'prodi_code' => strtoupper($code),
+                        ]);
+                    }
                 }
             }
-        }
+        });
 
         Cache::forget('faculty_prodi_mapping_data');
 
@@ -50,23 +53,25 @@ class FacultyController extends Controller
             'mappings' => 'nullable|string',
         ]);
 
-        $fakulta->update([
-            'name' => $request->name,
-        ]);
+        DB::transaction(function () use ($request, $fakulta) {
+            $fakulta->update([
+                'name' => $request->name,
+            ]);
 
-        $fakulta->mappings()->delete();
+            $fakulta->mappings()->delete();
 
-        if (!empty($request->mappings)) {
-            $codes = array_map('trim', explode(',', $request->mappings));
-            foreach ($codes as $code) {
-                if ($code !== '') {
-                    FacultyProdiMapping::create([
-                        'faculty_id' => $fakulta->id,
-                        'prodi_code' => strtoupper($code),
-                    ]);
+            if (!empty($request->mappings)) {
+                $codes = array_map('trim', explode(',', $request->mappings));
+                foreach ($codes as $code) {
+                    if ($code !== '') {
+                        FacultyProdiMapping::create([
+                            'faculty_id' => $fakulta->id,
+                            'prodi_code' => strtoupper($code),
+                        ]);
+                    }
                 }
             }
-        }
+        });
 
         Cache::forget('faculty_prodi_mapping_data');
 

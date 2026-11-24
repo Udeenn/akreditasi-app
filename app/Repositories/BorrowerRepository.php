@@ -43,6 +43,10 @@ class BorrowerRepository
         $stillMissing = $normalized->reject(fn($c) => isset(self::$cardCache[$c]))->values();
 
         if ($stillMissing->isNotEmpty()) {
+            // Batasi ukuran static cache agar worker/batch besar tidak memakan memori berlebih
+            if (count(self::$cardCache) > 20000) {
+                self::$cardCache = [];
+            }
             $toCache = [];
             foreach ($stillMissing->chunk(1000) as $chunk) {
                 $rows = DB::connection('mysql2')->table('borrowers as b')
@@ -106,6 +110,9 @@ class BorrowerRepository
         $stillMissing = $unique->reject(fn($id) => isset(self::$borrowerNumberCache[$id]))->values();
 
         if ($stillMissing->isNotEmpty()) {
+            if (count(self::$borrowerNumberCache) > 20000) {
+                self::$borrowerNumberCache = [];
+            }
             $toCache = [];
             foreach ($stillMissing->chunk(1000) as $chunk) {
                 $rows = DB::connection('mysql2')->table('borrowers as b')

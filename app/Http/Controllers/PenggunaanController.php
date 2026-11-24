@@ -449,17 +449,18 @@ class PenggunaanController extends Controller
         $cacheKey = "export_sering_dibaca:{$kategori}:{$tahun}:{$bulan}";
         $sortedData = Cache::remember($cacheKey, 3600, function () use ($kategori, $start_date, $end_date, $fiksiCodes) {
 
-            // Step 1: Query HANYA tabel statistics — ZERO JOIN
+            // Step 1: Query HANYA tabel statistics — chunk per bulan (max 12 query/tahun vs 365 query/hari)
             $itemCounts = []; // itemnumber => count
 
             $current = Carbon::parse($start_date)->startOfDay();
             $endDay = Carbon::parse($end_date)->endOfDay();
 
             while ($current->lte($endDay)) {
-                $dayStart = $current->copy()->startOfDay();
-                $dayEnd = $current->copy()->endOfDay();
+                $chunkStart = $current->copy()->startOfDay();
+                $monthEnd = $current->copy()->endOfMonth()->endOfDay();
+                $chunkEnd = $monthEnd->lt($endDay) ? $monthEnd : $endDay->copy();
 
-                $dailyStats = DB::connection('mysql2')->table('statistics')
+                $statsRows = DB::connection('mysql2')->table('statistics')
                     ->select('itemnumber', DB::raw('COUNT(*) as cnt'))
                     ->whereIn('type', ['issue', 'return', 'localuse', 'renew'])
                     ->where(function($q) {
@@ -469,16 +470,16 @@ class PenggunaanController extends Controller
                                   ->whereNotNull('borrowernumber');
                           });
                     })
-                    ->whereBetween('datetime', [$dayStart, $dayEnd])
+                    ->whereBetween('datetime', [$chunkStart, $chunkEnd])
                     ->whereNotNull('itemnumber')
                     ->groupBy('itemnumber')
                     ->get();
 
-                foreach ($dailyStats as $row) {
+                foreach ($statsRows as $row) {
                     $itemCounts[$row->itemnumber] = ($itemCounts[$row->itemnumber] ?? 0) + $row->cnt;
                 }
 
-                $current->addDay();
+                $current = $chunkEnd->copy()->addSecond()->startOfDay();
             }
 
             if (empty($itemCounts)) {
@@ -509,20 +510,26 @@ class PenggunaanController extends Controller
                 }
             }
 
-            // Step 4: Filter fiksi/nonfiksi
-            $fiksiBiblios = DB::connection('mysql2')->table('biblioitems')
-                ->where(function ($q) use ($fiksiCodes) {
-                    foreach ($fiksiCodes as $code) {
-                        $q->orWhere('cn_class', 'LIKE', $code . '%');
-                    }
-                })
-                ->pluck('biblionumber')
-                ->flip();
+            // Step 4: Filter fiksi/nonfiksi hanya untuk biblionumber yang muncul di hasil
+            $fiksiSet = [];
+            foreach (array_chunk(array_keys($biblioCounts), 1000) as $biblioChunk) {
+                $matched = DB::connection('mysql2')->table('biblioitems')
+                    ->whereIn('biblionumber', $biblioChunk)
+                    ->where(function ($q) use ($fiksiCodes) {
+                        foreach ($fiksiCodes as $code) {
+                            $q->orWhere('cn_class', 'LIKE', $code . '%');
+                        }
+                    })
+                    ->pluck('biblionumber');
+                foreach ($matched as $bId) {
+                    $fiksiSet[$bId] = true;
+                }
+            }
 
             if ($kategori === 'fiksi') {
-                $biblioCounts = array_filter($biblioCounts, fn($cnt, $biblio) => $fiksiBiblios->has($biblio), ARRAY_FILTER_USE_BOTH);
+                $biblioCounts = array_filter($biblioCounts, fn($cnt, $biblio) => isset($fiksiSet[$biblio]), ARRAY_FILTER_USE_BOTH);
             } else {
-                $biblioCounts = array_filter($biblioCounts, fn($cnt, $biblio) => !$fiksiBiblios->has($biblio), ARRAY_FILTER_USE_BOTH);
+                $biblioCounts = array_filter($biblioCounts, fn($cnt, $biblio) => !isset($fiksiSet[$biblio]), ARRAY_FILTER_USE_BOTH);
             }
 
             // Step 5: Sort by count desc
@@ -539,7 +546,8 @@ class PenggunaanController extends Controller
 
         // === Generate CSV ===
         $kategoriTitle = $kategori === 'fiksi' ? 'Fiksi' : 'Non-Fiksi';
-        $bulanTitle = $bulan ? \Carbon\Carbon::create()->month($bulan)->format('F') : "Satu Tahun Penuh";
+        $bulanInt = ($bulan && (int)$bulan >= 1 && (int)$bulan <= 12) ? (int)$bulan : null;
+        $bulanTitle = $bulanInt ? \Carbon\Carbon::create()->month($bulanInt)->format('F') : "Satu Tahun Penuh";
         $laporanTitle = "Laporan Buku Terlaris - Kategori: $kategoriTitle";
         $periodeTitle = "Periode: $bulanTitle $tahun";
 

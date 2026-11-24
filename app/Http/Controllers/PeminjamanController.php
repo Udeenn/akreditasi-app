@@ -1345,43 +1345,24 @@ public function pertanggal(Request $request)
      */
     public function exportCsvPeminjamanFakultas(Request $request)
     {
-
         $filterType = $request->input('filter_type', 'daily');
         $startDate = $request->input('start_date', Carbon::now()->subDays(30)->format('Y-m-d'));
         $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
-        $startYear = $request->input('start_year', Carbon::now()->year);
-        $endYear = $request->input('end_year', Carbon::now()->year);
+        $startYear = (int) $request->input('start_year', Carbon::now()->year);
+        $endYear = (int) $request->input('end_year', Carbon::now()->year);
         $selectedFakultas = $request->input('fakultas', 'semua');
 
         // Setup tanggal
         if ($filterType == 'daily') {
             if ($startDate > $endDate) [$startDate, $endDate] = [$endDate, $startDate];
-            $start = Carbon::parse($startDate)->startOfDay();
-            $end = Carbon::parse($endDate)->endOfDay();
         } else {
             if ($startYear > $endYear) [$startYear, $endYear] = [$endYear, $startYear];
-            $start = Carbon::createFromDate($startYear, 1, 1)->startOfDay();
-            $end = Carbon::createFromDate($endYear, 12, 31)->endOfDay();
         }
 
-        $cacheKey = 'peminjaman_fakultas_v3_' . md5(json_encode([
-            'filterType' => $filterType,
-            'start' => ($filterType == 'yearly') ? "$startYear-01-01" : $startDate,
-            'end' => ($filterType == 'yearly') ? "$endYear-12-31" : $endDate,
-            'selectedFakultas' => $selectedFakultas,
-        ]));
-
-        $cachedResult = Cache::get($cacheKey);
-
-        // Jika tidak ada di cache, picu fungsi tabel untuk memuat ulang cache
-        if (!$cachedResult) {
-            $this->peminjamanFakultasTable($request);
-            $cachedResult = Cache::get($cacheKey);
-        }
-
-        if (!$cachedResult) {
-            return back()->with('error', 'Data tidak tersedia, silakan coba lagi atau buka tabel terlebih dahulu.');
-        }
+        // Ambil data via BorrowingService (single source of truth dengan cache v5)
+        $result = $this->borrowingService->getPeminjamanFakultas(
+            $filterType, $startDate, $endDate, $startYear, $endYear, $selectedFakultas
+        );
 
         // Build CSV Data
         $judulLaporan = "LAPORAN PEMINJAMAN PER FAKULTAS";
@@ -1389,7 +1370,7 @@ public function pertanggal(Request $request)
         $filePeriod = "";
 
         try {
-            if ($filterType === 'monthly') {
+            if ($filterType === 'monthly' || $filterType === 'yearly') {
                 $subJudul = "PERIODE TAHUNAN: $startYear s.d. $endYear";
                 $filePeriod = "Tahunan_{$startYear}_sd_{$endYear}";
             } else {
@@ -1407,26 +1388,25 @@ public function pertanggal(Request $request)
         }
 
         $fileName = 'Laporan_Peminjaman_Fakultas' . $namaFileFakultas . '_' . $filePeriod . '.csv';
-        $tableData = $cachedResult['tableData'];
-        $totalBorrowersUnik = $cachedResult['totalBorrowers'];
+        $tableData = $result['tableData'];
 
         $csvHeaders = ['No', 'Periode', 'Kode Prodi', 'Nama Prodi', 'Peminjaman', 'Perpanjangan', 'Pengembalian', 'Total Sirkulasi', 'Peminjam'];
         $titles = [$judulLaporan, $subJudul];
         
         $footerRow = [
             '', '', '', 'TOTAL KESELURUHAN', 
-            $cachedResult['totalIssues'], 
-            $cachedResult['totalRenews'], 
-            $cachedResult['totalReturns'], 
-            $cachedResult['totalCirculation'], 
-            $cachedResult['totalBorrowers']
+            $result['totalIssues'], 
+            $result['totalRenews'], 
+            $result['totalReturns'], 
+            $result['totalCirculation'], 
+            $result['totalBorrowers']
         ];
 
         return $this->streamCsvExport($tableData, $fileName, $csvHeaders, function($row, &$index) use ($filterType) {
             $rowArray = (array) $row;
             $periodeDisplay = $rowArray['periode'] ?? '-';
             try {
-                if ($filterType === 'monthly') {
+                if ($filterType === 'monthly' || $filterType === 'yearly') {
                     $periodeDisplay = Carbon::createFromFormat('Y-m', $periodeDisplay)->locale('id')->isoFormat('MMMM Y');
                 } else {
                     $periodeDisplay = Carbon::parse($periodeDisplay)->locale('id')->isoFormat('dddd, D MMMM Y');

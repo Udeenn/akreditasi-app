@@ -99,8 +99,11 @@ class CollectionStatisticsService
         $cacheKey = "stats_collection_generic_v3_{$type}_{$prodi}_{$tahunTerakhir}";
 
         return Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir, $config, $type) {
-            // 1. Total Query
+            // 1. Total Query (join biblio_metadata hanya jika filter tahun membutuhkannya)
             $totalQuery = $this->collectionRepository->getBaseTotalQuery($prodi, $tahunTerakhir);
+            if ($tahunTerakhir !== 'all' && !$config['enumchronEndWithYear']) {
+                $totalQuery->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'items.biblionumber');
+            }
             $this->collectionRepository->applyConfigFilters($totalQuery, $config, $tahunTerakhir);
             
             $totals = $totalQuery->selectRaw("

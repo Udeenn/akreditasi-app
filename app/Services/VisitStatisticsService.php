@@ -242,4 +242,56 @@ class VisitStatisticsService
         });
     }
 
+    /**
+     * Agregasi kunjungan harian/bulanan (dipakai API kunjungan/harian).
+     */
+    public function getKunjunganHarian(string $filterType, string $startDate, string $endDate, int $startYear, int $endYear, ?string $selectedLokasi = null): array
+    {
+        $cacheKey = 'kunj_harian_api_v1_' . md5(json_encode([
+            'ft' => $filterType,
+            'lok' => $selectedLokasi,
+            'dt' => ($filterType === 'yearly') ? "$startYear-$endYear" : "$startDate-$endDate",
+        ]));
+
+        return Cache::remember($cacheKey, 3600, function () use ($filterType, $startDate, $endDate, $startYear, $endYear, $selectedLokasi) {
+            if ($filterType === 'yearly') {
+                $start = Carbon::createFromDate($startYear, 1, 1)->startOfDay();
+                $end = Carbon::createFromDate($endYear, 12, 31)->endOfDay();
+                $sqlDateFormat = '%Y-%m';
+            } else {
+                $start = Carbon::parse($startDate)->startOfDay();
+                $end = Carbon::parse($endDate)->endOfDay();
+                $sqlDateFormat = '%Y-%m-%d';
+            }
+
+            $rawData = $this->visitRepository->getVisitDataUnionByDateRange($start, $end, $sqlDateFormat, $selectedLokasi);
+
+            $grouped = [];
+            foreach ($rawData as $row) {
+                $grouped[$row->periode] = ($grouped[$row->periode] ?? 0) + (int) $row->cnt;
+            }
+            ksort($grouped);
+
+            $tableData = [];
+            $chartData = [];
+            foreach ($grouped as $periode => $jumlah) {
+                $tableData[] = ['periode' => $periode, 'total_kunjungan' => $jumlah];
+                $label = $periode;
+                try {
+                    if ($filterType === 'yearly') {
+                        $label = Carbon::createFromFormat('Y-m', $periode)->locale('id')->isoFormat('MMMM Y');
+                    }
+                } catch (\Throwable $e) {
+                }
+                $chartData[] = ['label' => $label, 'total_kunjungan' => $jumlah];
+            }
+
+            return [
+                'tableData' => $tableData,
+                'chartData' => $chartData,
+                'total' => array_sum($grouped),
+            ];
+        });
+    }
+
 }

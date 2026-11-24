@@ -14,7 +14,8 @@ RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && pecl install redis && docker-php-ext-enable redis \
-    && docker-php-ext-install pdo_mysql zip gd
+    && docker-php-ext-install pdo_mysql zip gd bcmath \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -64,12 +65,11 @@ RUN apk add --no-cache \
     && pecl install redis \
     && docker-php-ext-enable redis \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql gd zip \
+    && docker-php-ext-install pdo_mysql gd zip bcmath opcache \
     && apk del .build-deps
 
 # Copy semua kode aplikasi dari stage builder
 COPY --from=builder /var/www/html .
-COPY --from=builder /usr/bin/composer /usr/bin/composer
 
 # Copy entrypoint production
 COPY .docker/php/entrypoint.prod.sh /usr/local/bin/entrypoint.sh
@@ -80,8 +80,33 @@ RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framewor
     && chown -R www-data:www-data storage bootstrap/cache vendor \
     && chmod -R 775 storage bootstrap/cache vendor
 
-# Fix: Port 9000 conflict with Portainer - append listen = 9001
-RUN echo 'listen = 9001' >> /usr/local/etc/php-fpm.d/zz-docker.conf
+# Konfigurasi PHP & OPcache untuk stabilitas production
+RUN { \
+    echo 'memory_limit = 512M'; \
+    echo 'max_execution_time = 300'; \
+    echo 'post_max_size = 25M'; \
+    echo 'upload_max_filesize = 25M'; \
+    echo 'expose_php = Off'; \
+    echo 'opcache.enable = 1'; \
+    echo 'opcache.memory_consumption = 192'; \
+    echo 'opcache.interned_strings_buffer = 16'; \
+    echo 'opcache.max_accelerated_files = 20000'; \
+    echo 'opcache.validate_timestamps = 1'; \
+    echo 'opcache.revalidate_freq = 2'; \
+} > /usr/local/etc/php/conf.d/zz-app-prod.ini
+
+# Port 9001 (hindari konflik Portainer 9000) & tuning PHP-FPM pool agar tidak mudah 503
+RUN { \
+    echo '[www]'; \
+    echo 'listen = 9001'; \
+    echo 'pm = dynamic'; \
+    echo 'pm.max_children = 20'; \
+    echo 'pm.start_servers = 4'; \
+    echo 'pm.min_spare_servers = 2'; \
+    echo 'pm.max_spare_servers = 8'; \
+    echo 'pm.max_requests = 500'; \
+    echo 'request_terminate_timeout = 310s'; \
+} >> /usr/local/etc/php-fpm.d/zz-docker.conf
 
 USER www-data
 

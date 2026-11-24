@@ -17,7 +17,7 @@ class ActivityLogController extends Controller
         [$query, $dateFrom, $dateTo] = $this->buildQuery($request);
 
         // ── Paginate ──────────────────────────────────────────────
-        $perPage = $request->input('per_page', 10);
+        $perPage = max(1, min(200, (int) $request->input('per_page', 10)));
         $logs = $query->paginate($perPage)->withQueryString();
 
         // ── Summary stats (untuk hari yang difilter) ──────────────
@@ -116,8 +116,16 @@ class ActivityLogController extends Controller
         }
 
         // Filter: tanggal
-        $dateFrom = $request->input('date_from', Carbon::today()->toDateString());
-        $dateTo   = $request->input('date_to',   Carbon::today()->toDateString());
+        try {
+            $dateFrom = Carbon::parse($request->input('date_from', Carbon::today()->toDateString()))->toDateString();
+        } catch (\Throwable $e) {
+            $dateFrom = Carbon::today()->toDateString();
+        }
+        try {
+            $dateTo = Carbon::parse($request->input('date_to', Carbon::today()->toDateString()))->toDateString();
+        } catch (\Throwable $e) {
+            $dateTo = Carbon::today()->toDateString();
+        }
         $query->byDate($dateFrom, $dateTo);
 
         // Filter: route / url

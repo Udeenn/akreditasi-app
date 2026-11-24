@@ -32,15 +32,13 @@ class CollectionRepository
     }
 
     /**
-     * Get Base Collection Query WITHOUT metadata for fast counting.
+     * Get Base Collection Query WITHOUT biblio/metadata for fast counting.
      */
     public function getBaseTotalQuery(string $prodi, string $tahunTerakhir = 'all'): Builder
     {
         $query = M_items::query()
             ->from('items')
             ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-            ->join('biblio as b', 'b.biblionumber', '=', 'items.biblionumber')
-            ->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'items.biblionumber')
             ->where('items.itemlost', 0)
             ->where('items.withdrawn', 0);
 

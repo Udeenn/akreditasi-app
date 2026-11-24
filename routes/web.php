@@ -38,23 +38,23 @@ Route::prefix('cas')->name('cas.')->group(function () {
 // Logout global (support GET & POST agar jika session expired tidak mentok CSRF/405)
 Route::match(['get', 'post'], '/logout', [CasController::class, 'logout'])->name('logout');
 
-// Dev-only login (hanya di environment local)
+// Dev-only routes (hanya di environment local)
 if (app()->environment('local')) {
     Route::get('/dev-login', function () {
         return view('dev-login');
     })->name('dev.login.form');
     Route::post('/dev-login', [CasController::class, 'devLogin'])->name('dev.login');
-}
 
-// Preview Halaman Error (403, 404, 500)
-Route::get('/preview-error/{code}', function ($code) {
-    if (!in_array($code, ['403', '404', '500'])) {
-        abort(404);
-    }
-    return response()->view("errors.{$code}", [
-        'exception' => new \Exception("Ini adalah contoh pesan keterangan error untuk pengetesan UI.")
-    ], (int) $code);
-})->name('preview.error');
+    // Preview Halaman Error (403, 404, 500)
+    Route::get('/preview-error/{code}', function ($code) {
+        if (!in_array($code, ['403', '404', '500'])) {
+            abort(404);
+        }
+        return response()->view("errors.{$code}", [
+            'exception' => new \Exception("Ini adalah contoh pesan keterangan error untuk pengetesan UI.")
+        ], (int) $code);
+    })->name('preview.error');
+}
 
 
 

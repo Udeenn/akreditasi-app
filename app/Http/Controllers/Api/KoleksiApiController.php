@@ -121,7 +121,6 @@ class KoleksiApiController extends Controller
                         ];
                     }
 
-                    // This logic mirrors the web controller exactly, simplified for brevity
                     $processCategory = function($category, $itypes, $isSerial = false, $isCcodeR = false, $isBarcodeJE = false, $isNotBarcodeJE = false) use (&$countsPerProdi, $targetProdiCodes, $tahunTerakhir, $combinedRules) {
                         $q = M_items::query()
                             ->from('items')
@@ -152,47 +151,29 @@ class KoleksiApiController extends Controller
                         }
 
                         if (!empty($combinedRules)) {
-                            $q->where(function ($query) use ($combinedRules) {
-                                foreach ($combinedRules as $rule) {
-                                    $query->orWhere('bi.cn_class', 'REGEXP', '^' . $rule);
-                                }
-                            });
+                            \App\Helpers\QueryHelper::applyCnClassRules($q, $combinedRules);
                         }
 
-                        $items = $q->get();
-                        
-                        foreach ($items as $item) {
+                        foreach ($q->cursor() as $row) {
+                            $actualClass = !empty($row->cn_class) ? $row->cn_class : $row->itemcallnumber;
+                            if (empty($actualClass)) continue;
+
+                            $key = $isSerial ? $row->biblionumber . '_' . $row->enumchron : $row->biblionumber;
+
                             foreach ($targetProdiCodes as $prodiCode) {
-                                $rules = CnClassHelperr::getCnClassByProdi($prodiCode);
-                                if (!$rules) continue;
-                                
-                                $matched = false;
-                                foreach ($rules as $rule) {
-                                    if (preg_match('/^' . $rule . '/i', $item->cn_class)) {
-                                        $matched = true;
-                                        break;
-                                    }
-                                }
-                                
-                                if ($matched) {
+                                if (CnClassHelperr::isValidCnClass($prodiCode, $actualClass)) {
+                                    $countsPerProdi[$prodiCode][$category]['judul'][$key] = true;
                                     $countsPerProdi[$prodiCode][$category]['eksemplar']++;
-                                    if ($isSerial) {
-                                        $year = substr(trim($item->enumchron), -4);
-                                        $uniqueKey = $item->biblionumber . '_' . $year;
-                                        $countsPerProdi[$prodiCode][$category]['judul'][$uniqueKey] = true;
-                                    } else {
-                                        $countsPerProdi[$prodiCode][$category]['judul'][$item->biblionumber] = true;
-                                    }
                                 }
                             }
                         }
                     };
 
-                    $processCategory('Jurnal', 'JR', true, false, false, true);
-                    $processCategory('E-Jurnal', 'JR', true, false, true, false);
+                    $processCategory('Jurnal', ['JR', 'JRA', 'JRT', 'EJ'], true, false, false, true);
+                    $processCategory('E-Jurnal', ['JR', 'JRA', 'JRT', 'EJ'], true, false, true, false);
                     $processCategory('Textbook', ['BKS', 'BKSA', 'BKSCA', 'BKSC']);
-                    $processCategory('E-Book', ['BKE']);
-                    $processCategory('Prosiding', ['PR']);
+                    $processCategory('E-Book', 'EB');
+                    $processCategory('Prosiding', ['PR', 'EPR'], true);
                     $processCategory('Referensi', ['BKS', 'BKSA', 'BKSCA', 'BKSC'], false, true);
 
                     $resultData = [];

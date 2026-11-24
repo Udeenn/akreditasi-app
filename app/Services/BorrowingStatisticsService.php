@@ -90,54 +90,11 @@ class BorrowingStatisticsService
                 }
             }
 
-            $totalIssues = 0; $totalRenews = 0; $totalReturns = 0;
-            $tableData = [];
-
-            foreach ($aggregatedData as $periode => $prodis) {
-                $prodiDetails = [];
-                $periodeIssues = 0; $periodeRenews = 0; $periodeReturns = 0; $periodeBorrowers = [];
-
-                foreach ($prodis as $prodiName => $counts) {
-                    $issue = $counts['issue'] ?? 0;
-                    $renew = $counts['renew'] ?? 0;
-                    $return = $counts['return'] ?? 0;
-                    $sirkulasi = $issue + $renew + $return;
-                    $uniqBorrowersCount = count($counts['borrowers']);
-
-                    $prodiDetails[] = [
-                        'prodi' => $prodiName,
-                        'jumlah_issue' => $issue,
-                        'jumlah_renew' => $renew,
-                        'jumlah_buku_kembali' => $return,
-                        'total_sirkulasi' => $sirkulasi,
-                        'jumlah_peminjam_unik' => $uniqBorrowersCount,
-                    ];
-
-                    $periodeIssues += $issue;
-                    $periodeRenews += $renew;
-                    $periodeReturns += $return;
-                    foreach ($counts['borrowers'] as $b => $t) $periodeBorrowers[$b] = true;
-                    
-                    $totalIssues += $issue;
-                    $totalRenews += $renew;
-                    $totalReturns += $return;
-                }
-
-                usort($prodiDetails, fn($a, $b) => $b['total_sirkulasi'] <=> $a['total_sirkulasi']);
-
-                $tableData[] = [
-                    'periode' => $periode,
-                    'jumlah_issue' => $periodeIssues,
-                    'jumlah_renew' => $periodeRenews,
-                    'jumlah_buku_kembali' => $periodeReturns,
-                    'total_sirkulasi' => $periodeIssues + $periodeRenews + $periodeReturns,
-                    'jumlah_peminjam_unik' => count($periodeBorrowers),
-                    'prodi_details' => collect($prodiDetails),
-                ];
-            }
-
-            usort($tableData, fn($a, $b) => $a['periode'] <=> $b['periode']);
-            $tableData = collect($tableData);
+            $summary = $this->buildPeriodTableData($aggregatedData);
+            $tableData = $summary['tableData'];
+            $totalIssues = $summary['totalIssues'];
+            $totalRenews = $summary['totalRenews'];
+            $totalReturns = $summary['totalReturns'];
             $totalCirculation = $totalIssues + $totalRenews + $totalReturns;
             $totalBorrowers = count($allBorrowers);
 
@@ -230,10 +187,7 @@ class BorrowingStatisticsService
                     $prodiCode = $info->prodi_code ?? '';
                     
                     $kode = $this->prodiService->identifyProdiCode($cardnumber, $catCode, $prodiCode);
-                    $namaProdi = $prodiListMap[$kode] ?? $kode;
-                    $prodiDisplay = $kode . ' - ' . $namaProdi;
-                    $prodiTotals[$prodiDisplay] = ($prodiTotals[$prodiDisplay] ?? 0) + 1;
-                    
+
                     if ($selectedProdi && $selectedProdi !== 'semua') {
                         if ($selectedProdi === 'ALL_MAHASISWA') {
                             $nonStudents = ['DOSEN', 'TENDIK', 'KSP', 'KSPMBKM', 'KSPBIPA', 'XA', 'LB', 'XC'];
@@ -244,6 +198,10 @@ class BorrowingStatisticsService
                             continue;
                         }
                     }
+
+                    $namaProdi = $prodiListMap[$kode] ?? $kode;
+                    $prodiDisplay = $kode . ' - ' . $namaProdi;
+                    $prodiTotals[$prodiDisplay] = ($prodiTotals[$prodiDisplay] ?? 0) + 1;
 
                     $tgl = Carbon::parse($row->datetime)->format($sqlDateFormat === '%Y-%m' ? 'Y-m-01' : 'Y-m-d');
 
@@ -260,54 +218,11 @@ class BorrowingStatisticsService
                 }
             }
 
-            $totalIssues = 0; $totalRenews = 0; $totalReturns = 0;
-            $tableData = [];
-
-            foreach ($aggregatedData as $periode => $prodis) {
-                $prodiDetails = [];
-                $periodeIssues = 0; $periodeRenews = 0; $periodeReturns = 0; $periodeBorrowers = [];
-
-                foreach ($prodis as $prodiName => $counts) {
-                    $issue = $counts['issue'] ?? 0;
-                    $renew = $counts['renew'] ?? 0;
-                    $return = $counts['return'] ?? 0;
-                    $sirkulasi = $issue + $renew + $return;
-                    $uniqBorrowersCount = count($counts['borrowers']);
-
-                    $prodiDetails[] = [
-                        'prodi' => $prodiName,
-                        'jumlah_issue' => $issue,
-                        'jumlah_renew' => $renew,
-                        'jumlah_buku_kembali' => $return,
-                        'total_sirkulasi' => $sirkulasi,
-                        'jumlah_peminjam_unik' => $uniqBorrowersCount,
-                    ];
-
-                    $periodeIssues += $issue;
-                    $periodeRenews += $renew;
-                    $periodeReturns += $return;
-                    foreach ($counts['borrowers'] as $b => $t) $periodeBorrowers[$b] = true;
-                    
-                    $totalIssues += $issue;
-                    $totalRenews += $renew;
-                    $totalReturns += $return;
-                }
-
-                usort($prodiDetails, fn($a, $b) => $b['total_sirkulasi'] <=> $a['total_sirkulasi']);
-
-                $tableData[] = [
-                    'periode' => $periode,
-                    'jumlah_issue' => $periodeIssues,
-                    'jumlah_renew' => $periodeRenews,
-                    'jumlah_buku_kembali' => $periodeReturns,
-                    'total_sirkulasi' => $periodeIssues + $periodeRenews + $periodeReturns,
-                    'jumlah_peminjam_unik' => count($periodeBorrowers),
-                    'prodi_details' => collect($prodiDetails),
-                ];
-            }
-
-            usort($tableData, fn($a, $b) => $a['periode'] <=> $b['periode']);
-            $tableData = collect($tableData);
+            $summary = $this->buildPeriodTableData($aggregatedData);
+            $tableData = $summary['tableData'];
+            $totalIssues = $summary['totalIssues'];
+            $totalRenews = $summary['totalRenews'];
+            $totalReturns = $summary['totalReturns'];
             $totalCirculation = $totalIssues + $totalRenews + $totalReturns;
             $totalBorrowers = count($allBorrowers);
 
@@ -327,6 +242,69 @@ class BorrowingStatisticsService
                 'rankingProdi' => $rankingProdi,
             ];
         });
+    }
+
+    private function buildPeriodTableData(array $aggregatedData): array
+    {
+        $totalIssues = 0;
+        $totalRenews = 0;
+        $totalReturns = 0;
+        $tableData = [];
+
+        foreach ($aggregatedData as $periode => $prodis) {
+            $prodiDetails = [];
+            $periodeIssues = 0;
+            $periodeRenews = 0;
+            $periodeReturns = 0;
+            $periodeBorrowers = [];
+
+            foreach ($prodis as $prodiName => $counts) {
+                $issue = $counts['issue'] ?? 0;
+                $renew = $counts['renew'] ?? 0;
+                $return = $counts['return'] ?? 0;
+
+                $prodiDetails[] = [
+                    'prodi' => $prodiName,
+                    'jumlah_issue' => $issue,
+                    'jumlah_renew' => $renew,
+                    'jumlah_buku_kembali' => $return,
+                    'total_sirkulasi' => $issue + $renew + $return,
+                    'jumlah_peminjam_unik' => count($counts['borrowers']),
+                ];
+
+                $periodeIssues += $issue;
+                $periodeRenews += $renew;
+                $periodeReturns += $return;
+                foreach ($counts['borrowers'] as $b => $t) {
+                    $periodeBorrowers[$b] = true;
+                }
+
+                $totalIssues += $issue;
+                $totalRenews += $renew;
+                $totalReturns += $return;
+            }
+
+            usort($prodiDetails, fn($a, $b) => $b['total_sirkulasi'] <=> $a['total_sirkulasi']);
+
+            $tableData[] = [
+                'periode' => $periode,
+                'jumlah_issue' => $periodeIssues,
+                'jumlah_renew' => $periodeRenews,
+                'jumlah_buku_kembali' => $periodeReturns,
+                'total_sirkulasi' => $periodeIssues + $periodeRenews + $periodeReturns,
+                'jumlah_peminjam_unik' => count($periodeBorrowers),
+                'prodi_details' => collect($prodiDetails),
+            ];
+        }
+
+        usort($tableData, fn($a, $b) => $a['periode'] <=> $b['periode']);
+
+        return [
+            'tableData' => collect($tableData),
+            'totalIssues' => $totalIssues,
+            'totalRenews' => $totalRenews,
+            'totalReturns' => $totalReturns,
+        ];
     }
 
 }

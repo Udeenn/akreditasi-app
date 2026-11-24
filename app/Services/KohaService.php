@@ -34,7 +34,7 @@ class KohaService
 
             Log::info('Koha: Requesting OAuth2 token', ['url' => $tokenUrl]);
 
-            $response = Http::withOptions(['verify' => false])
+            $response = Http::withOptions(['verify' => false, 'timeout' => 10])
                 ->asForm()
                 ->post($tokenUrl, [
                     'grant_type'    => 'client_credentials',
@@ -72,9 +72,8 @@ class KohaService
             return $http->withToken($token);
         }
 
-        // Fallback to Basic Auth if configured (Menggunakan getenv untuk mem-bypass config cache Docker yang menyangkut!)
-        $user = env('KOHA_API_USER') ?: getenv('KOHA_API_USER') ?: config('koha.api_user');
-        $pass = env('KOHA_API_PASSWORD') ?: getenv('KOHA_API_PASSWORD') ?: config('koha.api_password');
+        $user = config('koha.api_user');
+        $pass = config('koha.api_password');
         
         if ($user && $pass) {
             Log::info('Koha: Using Basic Auth fallback');

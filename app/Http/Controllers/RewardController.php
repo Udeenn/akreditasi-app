@@ -11,16 +11,22 @@ use Illuminate\Support\Facades\Cache;
 
 class RewardController extends Controller
 {
+    private function resolveKategori(?string $cat): ?string
+    {
+        if (!$cat) return null;
+        if ($cat === 'LIBRARIAN') return 'Pustakawan';
+        if (str_starts_with($cat, 'STD') && !str_starts_with($cat, 'LIB')) return 'Mahasiswa';
+        if (str_starts_with($cat, 'TC') && !str_starts_with($cat, 'LIB')) return 'Dosen';
+        if (str_starts_with($cat, 'STAF') && !str_starts_with($cat, 'LIB')) return 'Tendik';
+        return null;
+    }
 
     /**
      * Menampilkan laporan top 5 pengunjung dan peminjam buku per tahun.
      */
-
-
     public function pemustakaTeraktif(Request $request): View
     {
-        // Ambil input tahun & kategori
-        $tahun = $request->input('tahun', Carbon::now()->year);
+        $tahun = max(2000, min(2100, (int) $request->input('tahun', Carbon::now()->year)));
         $kategoriFilter = $request->input('kategori');
         $limit = max(1, min(500, (int) $request->input('limit', 10)));
         $hasFilter = $request->has('tahun');
@@ -29,25 +35,16 @@ class RewardController extends Controller
         $peminjamTeraktif   = collect();
 
         if ($hasFilter) {
+            try {
             $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
             $end   = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
-
-            // --- HELPER: Closure untuk penentuan kategori (Agar Kodingan Rapi) ---
-            $getKategori = function ($cat) {
-                if (!$cat) return null;
-                if ($cat === 'LIBRARIAN') return 'Pustakawan'; // dicek duluan sebelum guard 'LIB'
-                if (str_starts_with($cat, 'STD') && !str_starts_with($cat, 'LIB')) return 'Mahasiswa';
-                if (str_starts_with($cat, 'TC') && !str_starts_with($cat, 'LIB')) return 'Dosen';
-                if (str_starts_with($cat, 'STAF') && !str_starts_with($cat, 'LIB')) return 'Tendik';
-                return null;
-            };
 
             // ==========================================
             // 1. PENGUNJUNG TERAKTIF (OPTIMIZED SQL)
             // ==========================================
             $cacheKeyPengunjung = "pengunjung_teraktif_{$start->timestamp}_{$end->timestamp}_" . ($kategoriFilter ?: 'all') . "_limit{$limit}";
             
-            $pengunjungTeraktif = Cache::remember($cacheKeyPengunjung, 3600, function () use ($start, $end, $getKategori, $kategoriFilter, $limit) {
+            $pengunjungTeraktif = Cache::remember($cacheKeyPengunjung, 3600, function () use ($start, $end, $kategoriFilter, $limit) {
                 $scanLimit = max(1500, (int)$limit * 25);
                 $sqlVisitor = "
                 SELECT cardnumber, SUM(total) as total_kunjungan
@@ -89,7 +86,7 @@ class RewardController extends Controller
 
                     if (!$user) continue;
 
-                    $kategori = $getKategori($user->categorycode);
+                    $kategori = $this->resolveKategori($user->categorycode);
 
                     if ($kategoriFilter && $kategori !== $kategoriFilter) continue;
 
@@ -115,7 +112,7 @@ class RewardController extends Controller
             // ==========================================
             $cacheKeyPeminjam = "peminjam_teraktif_{$start->timestamp}_{$end->timestamp}_" . ($kategoriFilter ?: 'all') . "_limit{$limit}";
 
-            $peminjamTeraktif = Cache::remember($cacheKeyPeminjam, 3600, function () use ($start, $end, $getKategori, $kategoriFilter, $limit) {
+            $peminjamTeraktif = Cache::remember($cacheKeyPeminjam, 3600, function () use ($start, $end, $kategoriFilter, $limit) {
                 $rawLoans = DB::connection('mysql2')->table('statistics')
                     ->select('borrowernumber', DB::raw('count(*) as total'))
                     ->where('type', 'issue')
@@ -125,20 +122,25 @@ class RewardController extends Controller
                     ->limit(2000)
                     ->get();
 
-                $borrowerIds = $rawLoans->pluck('borrowernumber')->filter()->all();
+                $borrowerIds = $rawLoans->pluck('borrowernumber')->filter()->unique()->values();
 
-                $borrowersLoan = DB::connection('mysql2')->table('borrowers')
-                    ->select('borrowernumber', 'cardnumber', 'surname', 'firstname', 'categorycode')
-                    ->whereIn('borrowernumber', $borrowerIds)
-                    ->get()
-                    ->keyBy('borrowernumber');
+                $borrowersLoan = collect();
+                foreach ($borrowerIds->chunk(1000) as $chunk) {
+                    $rows = DB::connection('mysql2')->table('borrowers')
+                        ->select('borrowernumber', 'cardnumber', 'surname', 'firstname', 'categorycode')
+                        ->whereIn('borrowernumber', $chunk->all())
+                        ->get();
+                    foreach ($rows as $item) {
+                        $borrowersLoan->put($item->borrowernumber, $item);
+                    }
+                }
 
                 $peminjamData = collect();
                 foreach ($rawLoans as $stat) {
                     $user = $borrowersLoan->get($stat->borrowernumber);
                     if (!$user) continue;
 
-                    $kategori = $getKategori($user->categorycode);
+                    $kategori = $this->resolveKategori($user->categorycode);
 
                     if ($kategoriFilter && $kategori !== $kategoriFilter) continue;
 
@@ -156,6 +158,9 @@ class RewardController extends Controller
                     return $items->sortByDesc('jumlah')->take($limit)->values();
                 })->flatten()->sortBy([['kategori', 'asc'], ['jumlah', 'desc']]);
             });
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('RewardController error: ' . $e->getMessage());
+            }
         }
 
         return view('pages.reward.pemustaka_teraktif', compact('pengunjungTeraktif', 'peminjamTeraktif', 'tahun', 'hasFilter', 'limit'));
@@ -167,8 +172,9 @@ class RewardController extends Controller
      */
     public function exportCsvPemustakaTeraktif(Request $request)
     {
-        $tahun = $request->input('tahun', Carbon::now()->year);
+        $tahun = max(2000, min(2100, (int) $request->input('tahun', Carbon::now()->year)));
         $kategoriFilter = $request->input('kategori');
+        $limit = max(1, min(500, (int) $request->input('limit', 10)));
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end   = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -184,15 +190,6 @@ class RewardController extends Controller
         }
 
         $fileName = 'top_pengunjung_' . $tahun . $suffixFile . '.csv';
-
-        $getKategori = function ($cat) {
-            if (!$cat) return null;
-            if ($cat === 'LIBRARIAN') return 'Pustakawan';
-            if (str_starts_with($cat, 'STD') && !str_starts_with($cat, 'LIB')) return 'Mahasiswa';
-            if (str_starts_with($cat, 'TC') && !str_starts_with($cat, 'LIB')) return 'Dosen';
-            if (str_starts_with($cat, 'STAF') && !str_starts_with($cat, 'LIB')) return 'Tendik';
-            return null;
-        };
 
         // Build CSV in memory (avoids output buffer contamination)
         $file = fopen('php://temp', 'r+');
@@ -218,20 +215,25 @@ class RewardController extends Controller
         $rawVisits = DB::connection('mysql')->select($sqlVisitor, [$start, $end, $start, $end]);
 
         if (!empty($rawVisits)) {
-            $cardNumbers = collect($rawVisits)->pluck('cardnumber')->map(fn($c) => trim(strtolower($c)))->all();
+            $cardNumbers = collect($rawVisits)->pluck('cardnumber')->map(fn($c) => trim(strtolower($c)))->unique()->values();
 
-            $borrowers = DB::connection('mysql2')->table('borrowers')
-                ->select('cardnumber', 'surname', 'firstname', 'categorycode')
-                ->whereIn('cardnumber', $cardNumbers)
-                ->get()
-                ->mapWithKeys(fn($item) => [trim(strtolower($item->cardnumber)) => $item]);
+            $borrowers = collect();
+            foreach ($cardNumbers->chunk(1000) as $chunk) {
+                $rows = DB::connection('mysql2')->table('borrowers')
+                    ->select('cardnumber', 'surname', 'firstname', 'categorycode')
+                    ->whereIn('cardnumber', $chunk->all())
+                    ->get();
+                foreach ($rows as $item) {
+                    $borrowers->put(trim(strtolower($item->cardnumber)), $item);
+                }
+            }
 
             $finalData = collect();
             foreach ($rawVisits as $visit) {
                 $key = trim(strtolower($visit->cardnumber));
                 $user = $borrowers->get($key);
                 if (!$user) continue;
-                $kategori = $getKategori($user->categorycode);
+                $kategori = $this->resolveKategori($user->categorycode);
                 if (!$kategori) continue;
                 if ($kategoriFilter && $kategori !== $kategoriFilter) continue;
 
@@ -276,7 +278,7 @@ class RewardController extends Controller
      */
     public function exportCsvPeminjamTeraktif(Request $request)
     {
-        $tahun = $request->input('tahun', Carbon::now()->year);
+        $tahun = max(2000, min(2100, (int) $request->input('tahun', Carbon::now()->year)));
         $kategoriFilter = $request->input('kategori');
         $limit = max(1, min(500, (int) $request->input('limit', 10)));
 
@@ -295,15 +297,6 @@ class RewardController extends Controller
 
         $fileName = 'top_peminjam_' . $tahun . $suffixFile . '.csv';
 
-        $getKategori = function ($cat) {
-            if (!$cat) return null;
-            if ($cat === 'LIBRARIAN') return 'Pustakawan';
-            if (str_starts_with($cat, 'STD') && !str_starts_with($cat, 'LIB')) return 'Mahasiswa';
-            if (str_starts_with($cat, 'TC') && !str_starts_with($cat, 'LIB')) return 'Dosen';
-            if (str_starts_with($cat, 'STAF') && !str_starts_with($cat, 'LIB')) return 'Tendik';
-            return null;
-        };
-
         // Build CSV in memory
         $file = fopen('php://temp', 'r+');
         fwrite($file, "\xEF\xBB\xBF");
@@ -321,19 +314,24 @@ class RewardController extends Controller
             ->get();
 
         if ($rawLoans->isNotEmpty()) {
-            $borrowerIds = $rawLoans->pluck('borrowernumber')->filter()->all();
+            $borrowerIds = $rawLoans->pluck('borrowernumber')->filter()->unique()->values();
 
-            $borrowersLoan = DB::connection('mysql2')->table('borrowers')
-                ->select('borrowernumber', 'cardnumber', 'surname', 'firstname', 'categorycode')
-                ->whereIn('borrowernumber', $borrowerIds)
-                ->get()
-                ->keyBy('borrowernumber');
+            $borrowersLoan = collect();
+            foreach ($borrowerIds->chunk(1000) as $chunk) {
+                $rows = DB::connection('mysql2')->table('borrowers')
+                    ->select('borrowernumber', 'cardnumber', 'surname', 'firstname', 'categorycode')
+                    ->whereIn('borrowernumber', $chunk->all())
+                    ->get();
+                foreach ($rows as $item) {
+                    $borrowersLoan->put($item->borrowernumber, $item);
+                }
+            }
 
             $finalData = collect();
             foreach ($rawLoans as $stat) {
                 $user = $borrowersLoan->get($stat->borrowernumber);
                 if (!$user) continue;
-                $kategori = $getKategori($user->categorycode);
+                $kategori = $this->resolveKategori($user->categorycode);
                 if (!$kategori) continue;
                 if ($kategoriFilter && $kategori !== $kategoriFilter) continue;
 

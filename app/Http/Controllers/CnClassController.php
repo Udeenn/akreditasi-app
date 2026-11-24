@@ -6,6 +6,7 @@ use App\Models\CnclassRuleset;
 use App\Models\CnclassProdiMapping;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class CnClassController extends Controller
 {
@@ -30,22 +31,24 @@ class CnClassController extends Controller
 
         $rulesArray = $this->parseRules($request->rules);
 
-        $ruleset = CnclassRuleset::create([
-            'name' => $request->name,
-            'rules' => $rulesArray,
-        ]);
+        DB::transaction(function () use ($request, $rulesArray) {
+            $ruleset = CnclassRuleset::create([
+                'name' => $request->name,
+                'rules' => $rulesArray,
+            ]);
 
-        if ($request->mappings) {
-            $prodiCodes = array_map('trim', explode(',', $request->mappings));
-            foreach ($prodiCodes as $code) {
-                if (!empty($code)) {
-                    CnclassProdiMapping::create([
-                        'prodi_code' => $code,
-                        'ruleset_id' => $ruleset->id
-                    ]);
+            if ($request->mappings) {
+                $prodiCodes = array_map('trim', explode(',', $request->mappings));
+                foreach ($prodiCodes as $code) {
+                    if (!empty($code)) {
+                        CnclassProdiMapping::create([
+                            'prodi_code' => $code,
+                            'ruleset_id' => $ruleset->id
+                        ]);
+                    }
                 }
             }
-        }
+        });
 
         Cache::forget('cnclass_all_prodi_data');
 
@@ -68,24 +71,25 @@ class CnClassController extends Controller
 
         $rulesArray = $this->parseRules($request->rules);
 
-        $cnclass->update([
-            'name' => $request->name,
-            'rules' => $rulesArray,
-        ]);
+        DB::transaction(function () use ($request, $cnclass, $rulesArray) {
+            $cnclass->update([
+                'name' => $request->name,
+                'rules' => $rulesArray,
+            ]);
 
-        // Sync mappings
-        $cnclass->mappings()->delete();
-        if ($request->mappings) {
-            $prodiCodes = array_map('trim', explode(',', $request->mappings));
-            foreach ($prodiCodes as $code) {
-                if (!empty($code)) {
-                    CnclassProdiMapping::create([
-                        'prodi_code' => $code,
-                        'ruleset_id' => $cnclass->id
-                    ]);
+            $cnclass->mappings()->delete();
+            if ($request->mappings) {
+                $prodiCodes = array_map('trim', explode(',', $request->mappings));
+                foreach ($prodiCodes as $code) {
+                    if (!empty($code)) {
+                        CnclassProdiMapping::create([
+                            'prodi_code' => $code,
+                            'ruleset_id' => $cnclass->id
+                        ]);
+                    }
                 }
             }
-        }
+        });
 
         Cache::forget('cnclass_all_prodi_data');
 

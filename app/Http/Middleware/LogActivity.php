@@ -50,7 +50,6 @@ class LogActivity
 
         // Hanya catat request dari user yang sudah login
         if (!Auth::check()) {
-            \Illuminate\Support\Facades\Log::debug('[ActivityLog] SKIP: user not authenticated');
             return $response;
         }
 
@@ -67,7 +66,6 @@ class LogActivity
         // Skip berdasarkan route name
         $routeName = $request->route()?->getName() ?? '';
         if ($this->shouldSkipRoute($routeName)) {
-            \Illuminate\Support\Facades\Log::debug("[ActivityLog] SKIP route: {$routeName}");
             return $response;
         }
 
@@ -83,8 +81,6 @@ class LogActivity
 
         $user = Auth::user();
 
-        \Illuminate\Support\Facades\Log::debug("[ActivityLog] WRITING log for user={$user->cas_username} route={$routeName}");
-
         try {
             ActivityLog::create([
                 'user_id'     => $user->id,
@@ -98,11 +94,8 @@ class LogActivity
                 'user_agent'  => substr($request->userAgent() ?? '', 0, 500),
                 'status_code' => $response->getStatusCode(),
             ]);
-            \Illuminate\Support\Facades\Log::debug('[ActivityLog] OK - log saved');
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('[ActivityLog] FAILED: ' . $e->getMessage(), [
-                'exception' => $e->getTraceAsString(),
-            ]);
+            \Illuminate\Support\Facades\Log::error('[ActivityLog] FAILED: ' . $e->getMessage());
         }
 
         return $response;
