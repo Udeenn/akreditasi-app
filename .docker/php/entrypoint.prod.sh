@@ -8,9 +8,9 @@ echo "=========================================="
 echo "  Akreditasi App - Production"
 echo "=========================================="
 
-# 1. Set permissions
-echo "[1/4] Setting storage permissions..."
-chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+# 1. Pastikan direktori runtime ada (tanpa chmod -R lambat di seluruh storage/)
+echo "[1/4] Ensuring storage directories..."
+mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache 2>/dev/null || true
 
 # 2. Create storage link jika belum ada
 if [ ! -L "public/storage" ]; then
