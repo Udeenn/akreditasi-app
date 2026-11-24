@@ -26,8 +26,8 @@
     <meta name="twitter:description" content="Sistem Pelaporan, Statistik Data Kunjungan, Peminjaman, dan Koleksi Akreditasi Perpustakaan Universitas Muhammadiyah Surakarta.">
     <meta name="twitter:image" content="{{ asset('img/og_preview.png') }}">
 
-    <link rel="icon" href="{{ asset('img/logo4.png') }}?v={{ time() }}" type="image/png">
-    <link rel="shortcut icon" href="{{ asset('img/logo4.png') }}?v={{ time() }}" type="image/png">
+    <link rel="icon" href="{{ asset('img/logo4.png') }}?v={{ filemtime(public_path('img/logo4.png')) }}" type="image/png">
+    <link rel="shortcut icon" href="{{ asset('img/logo4.png') }}?v={{ filemtime(public_path('img/logo4.png')) }}" type="image/png">
     {{-- CSS LINKS — served locally to avoid CDN blocks (ad blockers & tracking prevention) --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,14 +35,14 @@
     <link href="{{ asset('vendor/bootstrap/5.3.3/css/bootstrap.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('vendor/fontawesome/6.5.1/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/unified-components.css') }}?v={{ time() + 1 }}">
+    <link rel="stylesheet" href="{{ asset('css/unified-components.css') }}?v={{ filemtime(public_path('css/unified-components.css')) }}">
     {{-- NProgress (top loading bar) --}}
     <link rel="stylesheet" href="{{ asset('vendor/nprogress/0.2.0/nprogress.min.css') }}">
-<link rel="stylesheet" href="{{ asset('css/app-loader.css') }}?v={{ time() + 1 }}">
+<link rel="stylesheet" href="{{ asset('css/app-loader.css') }}?v={{ filemtime(public_path('css/app-loader.css')) }}">
 
     @stack('styles')
 
-<link rel="stylesheet" href="{{ asset('css/app-layout.css') }}?v={{ time() + 1 }}">
+<link rel="stylesheet" href="{{ asset('css/app-layout.css') }}?v={{ filemtime(public_path('css/app-layout.css')) }}">
 </head>
 
 <body class="{{ isset($_COOKIE['theme']) && $_COOKIE['theme'] == 'dark' ? 'dark-mode' : '' }}">

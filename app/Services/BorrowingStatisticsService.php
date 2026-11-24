@@ -69,12 +69,13 @@ class BorrowingStatisticsService
                         continue;
                     }
 
+                    $cnt = (int) ($row->cnt ?? 1);
                     if (!in_array($fakultas, ['Dosen', 'Tenaga Kependidikan', 'Alumni', 'Anggota Luar Biasa', 'Kartu Sekali Kunjung', 'Lainnya'])) {
-                        $facultyTotals[$fakultas] = ($facultyTotals[$fakultas] ?? 0) + 1;
+                        $facultyTotals[$fakultas] = ($facultyTotals[$fakultas] ?? 0) + $cnt;
                     }
                     $namaProdi = $prodiListMap[$kode] ?? $kode;
                     $prodiDisplay = $kode . ' - ' . $namaProdi;
-                    $prodiTotals[$prodiDisplay] = ($prodiTotals[$prodiDisplay] ?? 0) + 1;
+                    $prodiTotals[$prodiDisplay] = ($prodiTotals[$prodiDisplay] ?? 0) + $cnt;
                     $periode = $row->periode;
 
                     if (!isset($aggregatedData[$periode])) $aggregatedData[$periode] = [];
@@ -82,7 +83,7 @@ class BorrowingStatisticsService
                         $aggregatedData[$periode][$prodiDisplay] = ['issue' => 0, 'renew' => 0, 'return' => 0, 'borrowers' => []];
                     }
 
-                    $aggregatedData[$periode][$prodiDisplay][$row->type]++;
+                    $aggregatedData[$periode][$prodiDisplay][$row->type] += $cnt;
                     if (in_array($row->type, ['issue', 'renew'])) {
                         $aggregatedData[$periode][$prodiDisplay]['borrowers'][$row->borrowernumber] = true;
                         $allBorrowers[$row->borrowernumber] = true;
@@ -161,22 +162,21 @@ class BorrowingStatisticsService
             if (in_array($filterType, ['yearly', 'monthly'])) {
                 $start = Carbon::createFromDate($startYear, 1, 1)->startOfDay();
                 $end = Carbon::createFromDate($endYear, 12, 31)->endOfDay();
-                $sqlDateFormat = '%Y-%m';
+                $sqlDateFormat = '%Y-%m-01';
             } else {
                 $start = Carbon::parse($startDate)->startOfDay();
                 $end = Carbon::parse($endDate)->endOfDay();
                 $sqlDateFormat = '%Y-%m-%d';
             }
 
-            // Gunakan base query dari StatisticsRepository via cursor() untuk iterasi hemat memori
-            $rawQuery = $this->statisticsRepository->getRawBorrowingStatisticsQuery($start, $end);
+            $rawData = $this->statisticsRepository->getBorrowingStatisticsByDateRange($start, $end, $sqlDateFormat);
             
             $prodiListMap = \App\Models\M_Auv::getCachedProdiList()->pluck('lib', 'authorised_value')->toArray();
             $aggregatedData = [];
             $allBorrowers = [];
             $prodiTotals = [];
 
-            foreach ($rawQuery->cursor()->chunk(5000) as $chunk) {
+            foreach ($rawData->chunk(5000) as $chunk) {
                 $borrowerNumbers = collect($chunk)->pluck('borrowernumber')->unique()->values();
                 $borrowerInfo = app(\App\Repositories\BorrowerRepository::class)->getBorrowerInfoByBorrowerNumbers($borrowerNumbers);
                 
@@ -199,18 +199,19 @@ class BorrowingStatisticsService
                         }
                     }
 
+                    $cnt = (int) ($row->cnt ?? 1);
                     $namaProdi = $prodiListMap[$kode] ?? $kode;
                     $prodiDisplay = $kode . ' - ' . $namaProdi;
-                    $prodiTotals[$prodiDisplay] = ($prodiTotals[$prodiDisplay] ?? 0) + 1;
+                    $prodiTotals[$prodiDisplay] = ($prodiTotals[$prodiDisplay] ?? 0) + $cnt;
 
-                    $tgl = Carbon::parse($row->datetime)->format($sqlDateFormat === '%Y-%m' ? 'Y-m-01' : 'Y-m-d');
+                    $tgl = $row->periode;
 
                     if (!isset($aggregatedData[$tgl])) $aggregatedData[$tgl] = [];
                     if (!isset($aggregatedData[$tgl][$prodiDisplay])) {
                         $aggregatedData[$tgl][$prodiDisplay] = ['issue' => 0, 'renew' => 0, 'return' => 0, 'borrowers' => []];
                     }
 
-                    $aggregatedData[$tgl][$prodiDisplay][$row->type]++;
+                    $aggregatedData[$tgl][$prodiDisplay][$row->type] += $cnt;
                     if (in_array($row->type, ['issue', 'renew'])) {
                         $aggregatedData[$tgl][$prodiDisplay]['borrowers'][$row->borrowernumber] = true;
                         $allBorrowers[$row->borrowernumber] = true;

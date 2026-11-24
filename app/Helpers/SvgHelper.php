@@ -200,6 +200,7 @@ class SvgHelper
             'grid-fill' => 'grid-fill',
             'gear-fill' => 'gear-fill',
             'check-circle' => 'circle-check',
+            'rotate-right' => 'refresh',
             'exclamation-triangle' => 'exclamation-triangle',
             'exclamation-circle' => 'exclamation-circle',
             'info-circle' => 'circle-info',

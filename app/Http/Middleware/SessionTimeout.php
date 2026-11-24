@@ -57,8 +57,11 @@ class SessionTimeout
             }
         }
 
-        // Perbarui timestamp aktivitas terakhir di setiap request
-        $request->session()->put('last_activity_time', time());
+        // Throttle session write: perbarui maksimal 1x per 60 detik
+        $now = time();
+        if ($lastActivity === null || ($now - $lastActivity) >= 60) {
+            $request->session()->put('last_activity_time', $now);
+        }
 
         return $next($request);
     }
