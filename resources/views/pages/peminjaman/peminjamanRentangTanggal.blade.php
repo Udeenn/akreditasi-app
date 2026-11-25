@@ -21,7 +21,7 @@
         {{-- 2. FILTER SECTION --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card unified-card border-0 shadow-sm">
+                <div class="card unified-card border-0 shadow-sm filter-card">
                     <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
                         <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
                     </div>
@@ -57,7 +57,7 @@
                                             <option value="{{ $year }}" {{ ($startYear ?? $currentYear) == $year ? 'selected' : '' }}>{{ $year }}</option>
                                         @endfor
                                     </select>
-                                    <span class="input-group-text text-muted">s.d.</span>
+                                    <span class="input-group-text text-muted">s/d</span>
                                     <select name="end_year" id="end_year" class="form-select">
                                         @for ($year = $loopStartYear; $year <= $loopEndYear; $year++)
                                             <option value="{{ $year }}" {{ ($endYear ?? $currentYear) == $year ? 'selected' : '' }}>{{ $year }}</option>
@@ -68,7 +68,7 @@
 
                             <div class="col-md-2">
                                 <button type="submit" class="btn btn-primary w-100 shadow-sm">
-                                    <i class="fas fa-search me-1"></i> Cari
+                                    <i class="fas fa-search me-1"></i> Tampilkan
                                 </button>
                             </div>
                         </form>
@@ -185,9 +185,9 @@
                             <h6 class="fw-bold m-0 text-primary">
                                 <i class="fas fa-table me-2"></i>Rincian Data Peminjaman
                             </h6>
-                            <div>
-                                <button type="button" id="exportPdfBtn" class="btn btn-danger  fw-bold shadow-sm px-3 me-2"><i class="fas fa-file-pdf me-2"></i> Cetak PDF</button>
-                                <button type="button" id="exportCsvBtn" class="btn btn-success  fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
+                            <div class="d-flex gap-2">
+                                <button type="button" id="exportPdfBtn" class="btn btn-danger btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-pdf me-1"></i> Export PDF</button>
+                                <button type="button" id="exportCsvBtn" class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-1"></i> Export CSV
                                 </button>
                             </div>
                         </div>

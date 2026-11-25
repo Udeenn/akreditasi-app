@@ -65,13 +65,13 @@
         {{-- 2. FILTER SECTION --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card unified-card border-0 shadow-sm">
+                <div class="card unified-card border-0 shadow-sm filter-card">
                     <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
                         <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
                     </div>
                     <div class="card-body px-4 pb-4 pt-3">
                         <form method="GET" action="{{ route('peminjaman.prodi') }}" class="row g-3 align-items-end" id="filterForm">
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label for="filter_type" class="form-label small text-muted text-uppercase">Mode Tampilan</label>
                                 <select name="filter_type" id="filter_type" class="form-select">
                                     <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>Harian</option>
@@ -96,7 +96,7 @@
                                             <option value="{{ $y }}" {{ $startYear == $y ? 'selected' : '' }}>{{ $y }}</option>
                                         @endfor
                                     </select>
-                                    <span class="input-group-text text-muted">s.d.</span>
+                                    <span class="input-group-text text-muted">s/d</span>
                                     <select name="end_year" id="end_year" class="form-select">
                                         @for ($y = date('Y'); $y >= date('Y') - 10; $y--)
                                             <option value="{{ $y }}" {{ $endYear == $y ? 'selected' : '' }}>{{ $y }}</option>
@@ -106,7 +106,7 @@
                             </div>
 
                             <div class="col-md-4">
-                                <label for="selected_prodi" class="form-label small text-muted text-uppercase">Program Studi</label>
+                                <label for="selected_prodi" class="form-label small text-muted text-uppercase">Program Studi / Unit</label>
                                 <select name="selected_prodi" id="selected_prodi" class="form-select">
                                     @foreach ($prodiOptions as $prodi)
                                         <option value="{{ $prodi->authorised_value }}" {{ $selectedProdiCode == $prodi->authorised_value ? 'selected' : '' }}>
@@ -116,9 +116,9 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-1 ms-auto">
-                                <button type="submit" id="btnCari" class="btn btn-primary w-100 shadow-sm">
-                                    <i class="fas fa-search"></i> Cari
+                            <div class="col-md-2">
+                                <button type="submit" id="btnTampilkan" class="btn btn-primary w-100 shadow-sm">
+                                    <i id="btnTampilkanIcon" class="fas fa-search me-1"></i><span id="btnTampilkanText">Tampilkan</span>
                                 </button>
                             </div>
                         </form>
@@ -217,20 +217,43 @@
                                         <i class="fas fa-chart-line me-1"></i> Tren Waktu
                                     </button>
                                     <button type="button" class="btn btn-outline-primary" id="btnModeRanking" onclick="togglePeminjamanProdiChart('ranking')">
-                                        <i class="fas fa-trophy me-1"></i> Ranking Terbanyak
+                                        <i class="fas fa-user-graduate me-1"></i> Daftar Mahasiswa
                                     </button>
                                 </div>
                                 <div id="rankingRangeGroup" class="btn-group btn-group-sm d-none" role="group">
                                     <button type="button" class="btn btn-sm btn-outline-secondary active" onclick="setProdiRankingRange(10, this)">Top 10</button>
                                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setProdiRankingRange(20, this)">Top 20</button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setProdiRankingRange(0, this)">Semua</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setProdiRankingRange(50, this)">Top 50</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setProdiRankingRange(0, this)">Top 200</button>
                                 </div>
                             </div>
                         </div>
                         <div class="card-body px-4 pb-4">
                               <div style="min-height: 350px; position: relative;">
                                   <div id="peminjamanProdiChart" style="min-height: 350px; width: 100%;"></div>
-                                  <div id="peminjamanProdiRankingChart" style="min-height: 350px; width: 100%; display: none;"></div>
+                                  <div id="peminjamanMahasiswaPanel" style="display: none;">
+                                      <div class="mb-3">
+                                          <input type="text" class="form-control form-control-sm" id="searchMahasiswaPeminjamInput"
+                                              placeholder="Cari NIM atau nama mahasiswa...">
+                                      </div>
+                                      <div class="table-responsive" style="max-height: 460px; overflow-y: auto;">
+                                          <table class="table table-hover align-middle mb-0 unified-table">
+                                              <thead>
+                                                  <tr>
+                                                      <th class="py-2 px-3 text-center" width="6%">No</th>
+                                                      <th class="py-2 px-3">NIM / Cardnumber</th>
+                                                      <th class="py-2 px-3">Nama Mahasiswa</th>
+                                                      <th class="py-2 px-3 text-center">Prodi</th>
+                                                      <th class="py-2 px-3 text-center">Pinjam</th>
+                                                      <th class="py-2 px-3 text-center">Perpanjang</th>
+                                                      <th class="py-2 px-3 text-center">Kembali</th>
+                                                      <th class="py-2 px-3 text-center">Total Sirkulasi</th>
+                                                  </tr>
+                                              </thead>
+                                              <tbody id="peminjamanMahasiswaBody"></tbody>
+                                          </table>
+                                      </div>
+                                  </div>
                               </div>
                         </div>
                     </div>
@@ -404,17 +427,15 @@
 @endsection
 
 @push('scripts')
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/locale/id.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
         // --- LOADING ON FORM SUBMIT ---
-        document.querySelector('form')?.addEventListener('submit', function() {
+        document.getElementById('filterForm')?.addEventListener('submit', function() {
             document.getElementById('loadingOverlay').style.display = 'block';
             const btn = document.getElementById('btnTampilkan');
             const icon = document.getElementById('btnTampilkanIcon');
@@ -554,87 +575,65 @@
                   window.peminjamanProdiChartInstance = new ApexCharts(document.querySelector("#peminjamanProdiChart"), options);
                   window.peminjamanProdiChartInstance.render();
 
-                  // --- RANKING CHART SETUP ---
-                  const rankingProdi = @json($rankingProdi ?? []);
-                  let rankingChartInstance = null;
+                  // --- DAFTAR MAHASISWA SETUP ---
+                  const rankingMahasiswa = @json($rankingMahasiswa ?? []);
                   let currentRankingLimit = 10;
 
+                  const escHtml = (str) => String(str ?? '').replace(/[&<>"']/g, (m) => ({
+                      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                  }[m]));
+
                   window.renderPeminjamanProdiRanking = function(limit) {
-                      const dataToDisplay = (limit > 0) ? rankingProdi.slice(0, limit) : rankingProdi;
-                      const categories = dataToDisplay.map(i => i.name);
-                      const seriesData = dataToDisplay.map(i => i.total);
-                      const dynamicHeight = Math.max(350, categories.length * 30 + 50);
+                      const q = ($('#searchMahasiswaPeminjamInput').val() || '').trim().toLowerCase();
+                      const filtered = q
+                          ? rankingMahasiswa.filter(i =>
+                              (i.cardnumber || '').toLowerCase().includes(q) ||
+                              (i.nama || '').toLowerCase().includes(q) ||
+                              (i.prodi || '').toLowerCase().includes(q)
+                            )
+                          : rankingMahasiswa;
+                      const dataToDisplay = (limit > 0) ? filtered.slice(0, limit) : filtered;
+                      const tbody = document.getElementById('peminjamanMahasiswaBody');
+                      if (!tbody) return;
 
-                      const rankingOpts = {
-                          series: [{ name: 'Total Sirkulasi', data: seriesData }],
-                          chart: {
-                              type: 'bar',
-                              height: dynamicHeight,
-                              fontFamily: 'Inter, Helvetica, Arial, sans-serif',
-                              toolbar: { show: false },
-                              animations: { enabled: true }
-                          },
-                          plotOptions: {
-                              bar: {
-                                  horizontal: true,
-                                  borderRadius: 4,
-                                  barHeight: '70%',
-                                  dataLabels: { position: 'top' }
-                              }
-                          },
-                          colors: ['#1cc88a'],
-                          dataLabels: {
-                              enabled: true,
-                              offsetX: 25,
-                              style: { fontSize: '11px', fontWeight: 600, colors: ['#495057'] },
-                              formatter: val => val.toLocaleString('id-ID')
-                          },
-                          xaxis: {
-                              categories: categories,
-                              labels: {
-                                  style: { colors: '#6c757d', fontSize: '11px' },
-                                  formatter: val => Math.round(val).toLocaleString('id-ID')
-                              }
-                          },
-                          yaxis: {
-                              labels: {
-                                  style: { colors: '#495057', fontSize: '12px', fontWeight: 500 },
-                                  maxWidth: 280
-                              }
-                          },
-                          grid: {
-                              borderColor: '#f0f2f5',
-                              strokeDashArray: 4,
-                              xaxis: { lines: { show: true } }
-                          },
-                          tooltip: {
-                              theme: 'dark',
-                              y: { formatter: val => val.toLocaleString('id-ID') + " Transaksi Sirkulasi" }
-                          }
-                      };
-
-                      if (rankingChartInstance) {
-                          rankingChartInstance.destroy();
+                      if (!dataToDisplay.length) {
+                          tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data mahasiswa untuk filter ini.</td></tr>';
+                          return;
                       }
-                      rankingChartInstance = new ApexCharts(document.querySelector("#peminjamanProdiRankingChart"), rankingOpts);
-                      rankingChartInstance.render();
+
+                      tbody.innerHTML = dataToDisplay.map((item, idx) => `
+                          <tr>
+                              <td class="px-3 text-center text-muted fw-bold">${idx + 1}</td>
+                              <td class="px-3"><code>${escHtml(item.cardnumber)}</code></td>
+                              <td class="px-3 fw-medium">${escHtml(item.nama)}</td>
+                              <td class="px-3 text-center"><span class="badge border text-body">${escHtml(item.prodi)}</span></td>
+                              <td class="px-3 text-center"><span class="badge bg-primary-soft text-primary rounded-pill px-3">${Number(item.issue || 0).toLocaleString('id-ID')}</span></td>
+                              <td class="px-3 text-center"><span class="badge bg-info-soft text-info rounded-pill px-3">${Number(item.renew || 0).toLocaleString('id-ID')}</span></td>
+                              <td class="px-3 text-center"><span class="badge bg-success-soft text-success rounded-pill px-3">${Number(item.return || 0).toLocaleString('id-ID')}</span></td>
+                              <td class="px-3 text-center"><span class="badge border text-body rounded-pill px-3 fw-bold">${Number(item.total || 0).toLocaleString('id-ID')}</span></td>
+                          </tr>
+                      `).join('');
                   };
+
+                  $('#searchMahasiswaPeminjamInput').on('input', function() {
+                      renderPeminjamanProdiRanking(currentRankingLimit);
+                  });
 
                   window.togglePeminjamanProdiChart = function(mode) {
                       if (mode === 'trend') {
                           $('#btnModeTrend').addClass('active');
                           $('#btnModeRanking').removeClass('active');
                           $('#peminjamanProdiChart').show();
-                          $('#peminjamanProdiRankingChart').hide();
+                          $('#peminjamanMahasiswaPanel').hide();
                           $('#rankingRangeGroup').addClass('d-none');
                           $('#chartHeadingText').text('Tren Sirkulasi');
                       } else {
                           $('#btnModeRanking').addClass('active');
                           $('#btnModeTrend').removeClass('active');
                           $('#peminjamanProdiChart').hide();
-                          $('#peminjamanProdiRankingChart').show();
+                          $('#peminjamanMahasiswaPanel').show();
                           $('#rankingRangeGroup').removeClass('d-none');
-                          $('#chartHeadingText').text('Ranking Sirkulasi Prodi Terbanyak');
+                          $('#chartHeadingText').text('Daftar Mahasiswa Peminjam');
                           renderPeminjamanProdiRanking(currentRankingLimit);
                       }
                   };

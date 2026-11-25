@@ -185,7 +185,7 @@ class StatistikKoleksi extends Controller
                 $headers = $this->getCsvHeaders($type);
                 return $this->streamCsvExport($processedData, $namaProdi, $tahunTerakhir, $type, $title, $headers, function($row, &$i, &$previousJudul) use ($type) {
                     return $this->mapCsvRow($row, $i, $type, $previousJudul);
-                });
+                }, $withdrawn);
             } else {
                 $data = $processedData;
                 $dataExists = $data->isNotEmpty();
@@ -634,7 +634,7 @@ class StatistikKoleksi extends Controller
         }
     }
 
-    private function streamCsvExport($data, $namaProdi, $tahunTerakhir, $filePrefix, $titleText, $headers, $rowMapper)
+    private function streamCsvExport($data, $namaProdi, $tahunTerakhir, $filePrefix, $titleText, $headers, $rowMapper, string $withdrawn = '0')
     {
         $filename = "koleksi_" . $filePrefix;
         if ($namaProdi && $namaProdi !== 'Pilih Program Studi' && $namaProdi !== 'Semua Program Studi') {
@@ -642,15 +642,25 @@ class StatistikKoleksi extends Controller
             $filename .= "_" . $cleanProdiName;
         }
         $filename .= "_" . ($tahunTerakhir !== 'all' ? $tahunTerakhir . "_tahun_terakhir" : "semua_tahun");
+        if ($withdrawn === '1') {
+            $filename .= "_withdrawn";
+        } elseif ($withdrawn === 'all') {
+            $filename .= "_semua_withdrawn";
+        }
         $filename .= "_" . Carbon::now()->format('Ymd_His') . ".csv";
 
-        $callback = function () use ($data, $headers, $namaProdi, $tahunTerakhir, $titleText, $rowMapper) {
+        $callback = function () use ($data, $headers, $namaProdi, $tahunTerakhir, $titleText, $rowMapper, $withdrawn) {
             if (ob_get_level()) ob_end_clean();
             $file = fopen('php://output', 'w');
             fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF));
 
             $judulProdi = 'Daftar Koleksi ' . $titleText . ' - ' . ($namaProdi ?: 'Semua Program Studi');
             $judulTahun = ($tahunTerakhir !== 'all') ? ('Filter: ' . $tahunTerakhir . ' tahun terakhir') : 'Semua Tahun';
+            if ($withdrawn === '1') {
+                $judulTahun .= ' | Status Withdrawn: Ya (Withdrawn)';
+            } elseif ($withdrawn === 'all') {
+                $judulTahun .= ' | Status Withdrawn: Semua';
+            }
             
             fputcsv($file, [$judulProdi . ' - ' . $judulTahun], ';');
             fputcsv($file, [''], ';');

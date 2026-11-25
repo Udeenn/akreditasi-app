@@ -391,18 +391,7 @@ public function pertanggal(Request $request)
 
     public function peminjamanProdiChart(Request $request)
     {
-        $prodiFromDb = \App\Models\M_Auv::getCachedProdiList()
-            ->sortBy('authorised_value')
-            ->map(function ($prodi) {
-                return (object) ['authorised_value' => $prodi->authorised_value, 'lib' => trim($prodi->lib)];
-            });
-
-        $staticOptions = collect([
-            (object) ['authorised_value' => 'DOSEN', 'lib' => 'Dosen'],
-            (object) ['authorised_value' => 'STAFF', 'lib' => 'Tenaga Kependidikan (Staff)'],
-        ]);
-
-        $prodiOptions = $staticOptions->concat($prodiFromDb);
+        $prodiOptions = $this->prodiService->getProdiDropdownOptions();
 
         $hasFilter = $request->hasAny(['filter_type', 'start_year', 'end_year', 'start_date', 'end_date', 'selected_prodi']);
         $filterType = $request->input('filter_type', 'yearly');
@@ -411,6 +400,9 @@ public function pertanggal(Request $request)
         $startDate = $request->input('start_date', \Carbon\Carbon::now()->subDays(30)->format('Y-m-d'));
         $endDate = $request->input('end_date', \Carbon\Carbon::now()->format('Y-m-d'));
         $selectedProdiCode = $request->input('selected_prodi', 'DOSEN');
+        if (strtoupper(trim((string) $selectedProdiCode)) === 'STAFF') {
+            $selectedProdiCode = 'TENDIK';
+        }
 
         $allStatistics = collect();
         $chartLabels = collect();
@@ -418,6 +410,7 @@ public function pertanggal(Request $request)
         $dataExists = false;
         $totalBooks = 0; $totalReturns = 0; $totalBorrowers = 0; $totalCirculation = 0; $rerataPeminjaman = 0;
         $rankingProdi = [];
+        $rankingMahasiswa = [];
         $statistics = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10, 1);
 
         try {
@@ -428,6 +421,7 @@ public function pertanggal(Request $request)
                 );
 
                 $rankingProdi = $result['rankingProdi'] ?? [];
+                $rankingMahasiswa = $result['rankingMahasiswa'] ?? [];
 
                 $dataExists = count($result['tableData']) > 0;
                 $allStatistics = collect($result['tableData'])->map(fn($item) => (object) [
@@ -485,7 +479,7 @@ public function pertanggal(Request $request)
             'filterType', 'startDate', 'endDate', 'statistics',
             'chartLabels', 'chartDatasets', 'dataExists',
             'totalBooks', 'totalBorrowers', 'totalReturns', 'totalCirculation', 'rerataPeminjaman',
-            'hasFilter', 'allStatistics', 'rankingProdi'
+            'hasFilter', 'allStatistics', 'rankingProdi', 'rankingMahasiswa'
         ));
     }
 
@@ -535,17 +529,43 @@ public function pertanggal(Request $request)
                 ->whereBetween('s.datetime', [$startDate, $endDate]);
 
             // Filter Prodi
-            $code = strtoupper($prodiCode);
+            $code = strtoupper(trim($prodiCode));
+            if ($code === 'STAFF') {
+                $code = 'TENDIK';
+            }
             if ($code === 'DOSEN') {
-                $borrowersQuery->where('b.categorycode', 'like', 'TC%');
-            } elseif ($code === 'STAFF') {
                 $borrowersQuery->where(function ($q) {
-                    $q->where('b.categorycode', 'like', 'STAF%')->orWhere('b.categorycode', '=', 'LIBRARIAN');
+                    $q->where('b.categorycode', 'like', 'TC%')
+                        ->orWhere('b.categorycode', 'like', 'DOSEN%')
+                        ->orWhere('b.cardnumber', 'like', 'VIP%');
                 });
-            } else {
-                $borrowersQuery->join('borrower_attributes as ba', 'ba.borrowernumber', '=', 'b.borrowernumber')
-                    ->where('ba.code', '=', 'PRODI')
-                    ->where('ba.attribute', '=', $code);
+            } elseif ($code === 'TENDIK') {
+                $borrowersQuery->where(function ($q) {
+                    $q->where('b.categorycode', 'like', 'STAF%')
+                        ->orWhere('b.categorycode', 'like', '%LIB%')
+                        ->orWhere('b.categorycode', '=', 'LIBRARIAN');
+                });
+            } elseif ($code === 'ALL_MAHASISWA') {
+                $borrowersQuery->where(function ($q) {
+                    $q->whereNull('b.categorycode')
+                        ->orWhere(function ($sub) {
+                            $sub->where('b.categorycode', 'not like', 'TC%')
+                                ->where('b.categorycode', 'not like', 'DOSEN%')
+                                ->where('b.categorycode', 'not like', 'STAF%')
+                                ->where('b.categorycode', 'not like', '%LIB%')
+                                ->where('b.categorycode', '!=', 'LIBRARIAN');
+                        });
+                });
+            } elseif ($code !== 'SEMUA') {
+                $borrowersQuery->leftJoin('borrower_attributes as ba', function ($j) {
+                    $j->on('ba.borrowernumber', '=', 'b.borrowernumber')
+                        ->where('ba.code', '=', 'PRODI');
+                })->where(function ($q) use ($code) {
+                    $q->where('ba.attribute', '=', $code)
+                        ->orWhere(function ($sub) use ($code) {
+                            $sub->whereNull('ba.attribute')->where('b.cardnumber', 'like', $code . '%');
+                        });
+                });
             }
 
             // 3. PAGINATION YANG AMAN
@@ -763,10 +783,14 @@ public function pertanggal(Request $request)
 
         // --- 1. AMBIL NAMA PRODI ---
         $prodiName = 'Semua Program Studi';
-        if ($selectedProdiCode !== 'semua' && $selectedProdiCode !== 'ALL_MAHASISWA') {
-            if (strtoupper($selectedProdiCode) === 'DOSEN') {
+        $upperSelected = strtoupper(trim((string) $selectedProdiCode));
+        if ($upperSelected === 'STAFF') {
+            $upperSelected = 'TENDIK';
+        }
+        if ($upperSelected !== 'SEMUA' && $upperSelected !== 'ALL_MAHASISWA') {
+            if ($upperSelected === 'DOSEN') {
                 $prodiName = 'Dosen';
-            } elseif (strtoupper($selectedProdiCode) === 'STAFF') {
+            } elseif ($upperSelected === 'TENDIK') {
                 $prodiName = 'Tenaga Kependidikan';
             } else {
                 $prodiDb = \App\Models\M_Auv::on('mysql2')->where('category', 'PRODI')->where('authorised_value', $selectedProdiCode)->first();
@@ -776,7 +800,7 @@ public function pertanggal(Request $request)
                     $prodiName = $selectedProdiCode;
                 }
             }
-        } elseif (strtoupper($selectedProdiCode) === 'ALL_MAHASISWA') {
+        } elseif ($upperSelected === 'ALL_MAHASISWA') {
             $prodiName = 'Semua Mahasiswa';
         }
 
@@ -810,7 +834,7 @@ public function pertanggal(Request $request)
 
         // Filter di level PHP menggunakan ProdiService
         $prodiService = app(\App\Services\ProdiService::class);
-        $targetProdi = strtoupper(trim($selectedProdiCode));
+        $targetProdi = $upperSelected;
         $isAllMahasiswa = ($targetProdi === 'ALL_MAHASISWA');
         $isSemua = ($targetProdi === 'SEMUA');
         $nonStudents = ['DOSEN', 'TENDIK', 'KSP', 'KSPMBKM', 'KSPBIPA', 'XA', 'LB', 'XC'];

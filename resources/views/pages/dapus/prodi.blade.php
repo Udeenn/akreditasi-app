@@ -1,6 +1,12 @@
 @extends('layouts.app')
 @section('title', 'Statistik Koleksi Per Prodi')
 
+@push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+@endpush
+
 @section('content')
     <div class="container-fluid px-3 px-md-4 pt-2 pb-4">
 
@@ -22,20 +28,19 @@
                     </div>
                     <div class="card-body px-4 pb-4 pt-3">
                         <form method="GET" action="{{ route('koleksi.prodi') }}" class="row g-3 align-items-end">
-                            <div class="col-12 col-md-4">
-                                <label for="prodi" class="form-label small text-muted text-uppercase">Pilih Prodi</label>
-                                <select name="prodi" id="prodi" class="form-select">
+                            <div class="col-12 col-md-5">
+                                <label for="prodi" class="form-label small text-muted text-uppercase">Program Studi</label>
+                                <select name="prodi" id="prodi" class="form-select select2">
                                     <option value="">-- Pilih Program Studi --</option>
                                     @foreach ($listprodi as $itemProdi)
                                         <option value="{{ $itemProdi->kode }}"
                                             {{ $prodi == $itemProdi->kode ? 'selected' : '' }}>
-                                            ({{ $itemProdi->kode }})
-                                            -- {{ $itemProdi->nama }}
+                                            {{ $itemProdi->kode }} - {{ $itemProdi->nama }}
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-12 col-md-3">
+                            <div class="col-12 col-md-4">
                                 <label for="tahun" class="form-label small text-muted text-uppercase">Tahun Terbit</label>
                                 <select name="tahun" id="tahun" class="form-select">
                                     <option value="all" {{ $tahunTerakhir == 'all' ? 'selected' : '' }}>Semua Tahun
@@ -48,8 +53,8 @@
                                     @endfor
                                 </select>
                             </div>
-                            <div class="col-12 col-md-2">
-                                <button type="submit" class="btn btn-primary w-100">
+                            <div class="col-12 col-md-3">
+                                <button type="submit" class="btn btn-primary w-100 shadow-sm">
                                     <i class="fas fa-search me-1"></i> Tampilkan
                                 </button>
                             </div>
@@ -68,8 +73,8 @@
                             <i class="fas fa-table me-1 text-primary"></i>
                             Koleksi Per Prodi
                         </h6>
-                        <button id="downloadExcelPerProdi" class="btn btn-warning btn-sm">
-                            <i class="fas fa-file-excel me-1"></i> Save Tabel (Excel)
+                        <button id="downloadExcelPerProdi" class="btn btn-success btn-sm fw-bold shadow-sm px-3">
+                            <i class="fas fa-file-csv me-1"></i> Export CSV
                         </button>
                     </div>
                     <div class="table-responsive">
@@ -181,3 +186,15 @@
         });
     </script>
 @endsection
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#prodi').select2({
+                theme: 'bootstrap-5',
+                width: '100%'
+            });
+        });
+    </script>
+@endpush

@@ -3,10 +3,23 @@
 namespace App\Repositories;
 
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class VisitRepository
 {
+    public static function hasCornerNotesColumn(): bool
+    {
+        return Cache::remember('schema_visitorcorner_has_notes', 3600, function () {
+            try {
+                return Schema::connection('mysql')->hasColumn('visitorcorner', 'notes');
+            } catch (\Throwable $e) {
+                return false;
+            }
+        });
+    }
+
     /**
      * Mengambil data union dari visitorhistory dan visitorcorner.
      */
@@ -22,15 +35,7 @@ class VisitRepository
             ->whereBetween('visittime', [$start, $end])
             ->groupBy('periode', 'cardnumber');
 
-        if ($selectedLokasi) {
-            if ($selectedLokasi === 'pusat') {
-                $qHistory->where(fn($q) => $q->where('location', 'pusat')->orWhereNull('location'));
-                $qCorner->where(fn($q) => $q->where('notes', 'pusat')->orWhere('notes', '')->orWhereNull('notes'));
-            } else {
-                $qHistory->where('location', $selectedLokasi);
-                $qCorner->where('notes', $selectedLokasi);
-            }
-        }
+        $this->applyLocationFilter($qHistory, $qCorner, $selectedLokasi);
 
         return $qHistory->unionAll($qCorner)->get();
     }
@@ -49,16 +54,31 @@ class VisitRepository
             ->select('visittime', 'cardnumber', 'id')
             ->whereBetween('visittime', [$start, $end]);
 
-        if ($selectedLokasi) {
-            if ($selectedLokasi === 'pusat') {
-                $qHistory->where(fn($q) => $q->where('location', 'pusat')->orWhereNull('location'));
-                $qCorner->where(fn($q) => $q->where('notes', 'pusat')->orWhere('notes', '')->orWhereNull('notes'));
-            } else {
-                $qHistory->where('location', $selectedLokasi);
-                $qCorner->where('notes', $selectedLokasi);
-            }
-        }
+        $this->applyLocationFilter($qHistory, $qCorner, $selectedLokasi);
 
         return $qHistory->unionAll($qCorner);
+    }
+
+    private function applyLocationFilter($qHistory, $qCorner, ?string $selectedLokasi): void
+    {
+        if (!$selectedLokasi) {
+            return;
+        }
+
+        $hasNotes = self::hasCornerNotesColumn();
+        if ($selectedLokasi === 'pusat') {
+            $qHistory->where(fn($q) => $q->where('location', 'pusat')->orWhereNull('location'));
+            if ($hasNotes) {
+                $qCorner->where(fn($q) => $q->where('notes', 'pusat')->orWhere('notes', '')->orWhereNull('notes'));
+            }
+            return;
+        }
+
+        $qHistory->where('location', $selectedLokasi);
+        if ($hasNotes) {
+            $qCorner->where('notes', $selectedLokasi);
+        } else {
+            $qCorner->whereRaw('1 = 0');
+        }
     }
 }

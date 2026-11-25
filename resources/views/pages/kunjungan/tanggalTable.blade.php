@@ -2,8 +2,12 @@
 
 @section('title', 'Statistik Kunjungan Keseluruhan')
 @section('content')
-    <div class="container">
-        <x-breadcrumb title="Statistik Kunjungan Keseluruhan" icon="fas fa-users" />
+    <div class="container-fluid px-3 px-md-4 pt-2 pb-4">
+        <x-breadcrumb title="Statistik Kunjungan Keseluruhan" icon="fas fa-users">
+            <x-slot name="subtitle">
+                Analisis jumlah kunjungan harian dan bulanan secara keseluruhan.
+            </x-slot>
+        </x-breadcrumb>
         <div class="card unified-card border-0 shadow-sm filter-card mb-4">
             <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
                 <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
@@ -12,11 +16,11 @@
                 <form method="GET" action="{{ route('kunjungan.tanggalTable') }}" class="row g-3 align-items-end"
                     id="filterForm">
                     <div class="col-md-auto">
-                        <label for="filter_type" class="form-label small text-muted text-uppercase">Tampilkan Data:</label>
+                        <label for="filter_type" class="form-label small text-muted text-uppercase">Mode Tampilan</label>
                         <select name="filter_type" id="filter_type" class="form-select">
-                            <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>Per Hari
+                            <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>Harian
                             </option>
-                            <option value="yearly" {{ ($filterType ?? '') == 'yearly' ? 'selected' : '' }}>Per Bulan
+                            <option value="yearly" {{ ($filterType ?? '') == 'yearly' ? 'selected' : '' }}>Bulanan
                             </option>
                         </select>
                     </div>
@@ -64,7 +68,7 @@
                     </div>
 
                     <div class="col-md-2">
-                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                        <button type="submit" class="btn btn-primary w-100 shadow-sm"><i class="fas fa-search me-1"></i> Tampilkan</button>
                     </div>
                 </form>
             </div>
@@ -77,25 +81,79 @@
         @endif
 
         @if ($hasFilter)
-            {{-- Chart Section --}}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Grafik Kunjungan</h5>
+            {{-- Stat Cards --}}
+            <div class="row g-3 g-md-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card unified-card border-0 shadow-sm h-100 hover-lift">
+                        <div class="card-body p-4 d-flex align-items-center">
+                            <div class="icon-box bg-primary-soft me-3 rounded-circle">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted text-uppercase small fw-bold mb-1">Total Kunjungan</h6>
+                                <h2 class="fw-bold mb-0">{{ number_format($totalKeseluruhanKunjungan, 0, ',', '.') }}</h2>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                  <div class="card-body">
+                <div class="col-md-4">
+                    <div class="card unified-card border-0 shadow-sm h-100 hover-lift">
+                        <div class="card-body p-4 d-flex align-items-center">
+                            <div class="icon-box bg-info-soft me-3 rounded-circle">
+                                <i class="fas fa-list-ol"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted text-uppercase small fw-bold mb-1">Total Entri Data</h6>
+                                <h2 class="fw-bold mb-0">{{ number_format($data->total(), 0, ',', '.') }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card unified-card border-0 shadow-sm h-100 hover-lift">
+                        <div class="card-body p-4 d-flex align-items-center">
+                            <div class="icon-box bg-success-soft me-3 rounded-circle">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted text-uppercase small fw-bold mb-1">Periode</h6>
+                                <div class="fw-bold">
+                                    @if (($filterType ?? 'daily') == 'daily')
+                                        @if ($tanggalAwal && $tanggalAkhir)
+                                            {{ \Carbon\Carbon::parse($tanggalAwal)->translatedFormat('d M Y') }} s/d
+                                            {{ \Carbon\Carbon::parse($tanggalAkhir)->translatedFormat('d M Y') }}
+                                        @else
+                                            -
+                                        @endif
+                                    @elseif (($filterType ?? '') == 'yearly')
+                                        Tahun {{ $tahunAwal }} s/d {{ $tahunAkhir }}
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Chart Section --}}
+            <div class="card unified-card border-0 shadow-sm mb-4">
+                <div class="card-header border-0 pt-4 px-4">
+                    <h5 class="fw-bold mb-0"><i class="fas fa-chart-area text-info me-2"></i>Grafik Kunjungan</h5>
+                </div>
+                  <div class="card-body px-4 pb-4">
                       <div id="kunjunganChart" style="min-height: 400px; width: 100%;"></div>
                   </div>
             </div>
 
             {{-- Table Section --}}
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center">
-                        <h5 class="mb-0 me-3">Statistik Data Kunjungan</h5>
-                    </div>
+            <div class="card unified-card border-0 shadow-sm">
+                <div class="card-header py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <h6 class="fw-bold m-0 text-primary">
+                        <i class="fas fa-table me-2"></i>Rincian Data Kunjungan
+                    </h6>
                     <div class="d-flex justify-content-end gap-2">
                         <div class="dropdown">
-                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="entriesDropdown"
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="entriesDropdown"
                                 data-bs-toggle="dropdown" aria-expanded="false">
                                 Tampilkan {{ $data->perPage() }} entri
                             </button>
@@ -108,44 +166,12 @@
                                         href="{{ request()->fullUrlWithQuery(['per_page' => 1000]) }}">1000</a></li>
                             </ul>
                         </div>
-                        <button type="button" id="downloadFullCsv" class="btn btn-success">
-                            <i class="fas fa-file-csv me-2"></i> Export ke CSV
+                        <button type="button" id="downloadFullCsv" class="btn btn-success btn-sm fw-bold shadow-sm px-3">
+                            <i class="fas fa-file-csv me-1"></i> Export CSV
                         </button>
                     </div>
                 </div>
-                <div class="card-body">
-                    <div class="row mb-4">
-                        <div class="col-md-4">
-                            <div class="alert alert-primary py-2 m-0">
-                                <i class="fas fa-book me-2"></i> Total Keseluruhan:
-                                <span class="fw-bold">{{ number_format($totalKeseluruhanKunjungan, 0, ',', '.') }}</span>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="alert alert-info py-2 m-0">
-                                <i class="fas fa-list-ol me-2"></i> Total Entri Data:
-                                <span class="fw-bold">{{ number_format($data->total(), 0, ',', '.') }}</span>
-                            </div>
-                        </div>
-                        <div class="col-md-5">
-                            <div class="alert alert-secondary py-2 m-0">
-                                <i class="fas fa-filter me-2"></i>
-                                <span class="fw-bold">
-                                    @if (($filterType ?? 'daily') == 'daily')
-                                        @if ($tanggalAwal && $tanggalAkhir)
-                                            {{ \Carbon\Carbon::parse($tanggalAwal)->translatedFormat('d F Y') }} s/d
-                                            {{ \Carbon\Carbon::parse($tanggalAkhir)->translatedFormat('d F Y') }}
-                                        @else
-                                            Tidak Ada
-                                        @endif
-                                    @elseif (($filterType ?? '') == 'yearly')
-                                        Tahun {{ $tahunAwal }} s/d {{ $tahunAkhir }}
-                                    @endif
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
+                <div class="card-body p-0">
                     <div class="table-responsive" id="tabelLaporan">
                         <table class="table table-hover align-middle mb-0 unified-table" id="myTable">
                             <thead>
@@ -187,7 +213,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="mt-3">
+                    <div class="p-3 border-top">
                         {{ $data->appends(request()->query())->links() }}
                     </div>
                 </div>

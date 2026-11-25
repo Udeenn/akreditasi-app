@@ -325,6 +325,7 @@ class VisitHistory extends Controller
             'totalKeseluruhanKunjungan' => $totalKeseluruhanKunjungan,
             'rerataKunjungan' => $rerataKunjungan,
             'rankingProdi'   => $result['rankingProdi'] ?? [],
+            'rankingMahasiswa' => $result['rankingMahasiswa'] ?? [],
             'topProdi'       => [],
             'hasFilter'      => $hasFilter
         ]);
@@ -576,28 +577,21 @@ class VisitHistory extends Controller
             return response()->json(['error' => 'Parameter tanggal/bulan tidak ditemukan.'], 400);
         }
 
-        $totalVisitors = M_vishistory::whereBetween('visittime', [$startDate, $endDate])->count();
-        $visitors = M_vishistory::select(
-            DB::raw('UPPER(visitorhistory.cardnumber) as cardnumber'),
-            'koha.borrowers.surname',
-            DB::raw('COUNT(visitorhistory.id) as visit_count')
-        )
-            ->join('koha.borrowers', 'visitorhistory.cardnumber', '=', 'koha.borrowers.cardnumber')
-            ->whereBetween('visittime', [$startDate, $endDate])
-            ->groupBy(DB::raw('UPPER(visitorhistory.cardnumber)'), 'koha.borrowers.surname')
-            ->orderBy('koha.borrowers.surname', 'asc')
-            ->paginate(5, ['*'], 'page', $page);
+        ['totalVisitors' => $totalVisitors, 'visitors' => $allVisitors] = $this->buildDailyVisitorBreakdown($startDate, $endDate);
 
-        $formattedVisitors = $visitors->map(function ($visitor) {
-            return [
-                'cardnumber' => $visitor->cardnumber,
-                'nama' => $visitor->surname ?? 'Nama tidak ditemukan',
-                'visit_count' => $visitor->visit_count,
-            ];
-        });
+        $perPage = 5;
+        $currentPage = max(1, (int) $page);
+        $pagedItems = $allVisitors->slice(($currentPage - 1) * $perPage, $perPage)->values();
+        $visitors = new LengthAwarePaginator(
+            $pagedItems,
+            $allVisitors->count(),
+            $perPage,
+            $currentPage,
+            ['path' => Paginator::resolveCurrentPath()]
+        );
 
         return response()->json([
-            'data' => $formattedVisitors,
+            'data' => $visitors->items(),
             'total' => number_format($totalVisitors, 0, ',', '.'),
             'modal_display_date' => $displayTanggal,
             'current_page' => $visitors->currentPage(),
@@ -626,26 +620,51 @@ class VisitHistory extends Controller
             $endDate = $dateCarbon->endOfDay()->toDateTimeString();
         }
 
-        $visitors = M_vishistory::select(
-            DB::raw('UPPER(visitorhistory.cardnumber) as cardnumber'),
-            'koha.borrowers.surname',
-            DB::raw('COUNT(visitorhistory.id) as visit_count')
-        )
-            ->join('koha.borrowers', 'visitorhistory.cardnumber', '=', 'koha.borrowers.cardnumber')
+        ['visitors' => $visitors] = $this->buildDailyVisitorBreakdown($startDate, $endDate);
+
+        return response()->json(['data' => $visitors->values()]);
+    }
+
+    private function buildDailyVisitorBreakdown(string $startDate, string $endDate): array
+    {
+        $qHistory = DB::connection('mysql')->table('visitorhistory')
+            ->selectRaw('UPPER(TRIM(cardnumber)) as cardnumber, COUNT(*) as visit_count')
             ->whereBetween('visittime', [$startDate, $endDate])
-            ->groupBy(DB::raw('UPPER(visitorhistory.cardnumber)'), 'koha.borrowers.surname')
-            ->orderBy('koha.borrowers.surname', 'asc')
-            ->get(); // Gunakan get() bukan paginate()
+            ->groupByRaw('UPPER(TRIM(cardnumber))');
 
-        $formattedVisitors = $visitors->map(function ($visitor) {
+        $qCorner = DB::connection('mysql')->table('visitorcorner')
+            ->selectRaw('UPPER(TRIM(cardnumber)) as cardnumber, COUNT(*) as visit_count')
+            ->whereBetween('visittime', [$startDate, $endDate])
+            ->groupByRaw('UPPER(TRIM(cardnumber))');
+
+        $aggregated = [];
+        $totalVisitors = 0;
+
+        foreach ($qHistory->unionAll($qCorner)->get() as $row) {
+            $card = (string) ($row->cardnumber ?? '');
+            $cnt = (int) ($row->visit_count ?? 0);
+            $totalVisitors += $cnt;
+            if ($card === '') {
+                continue;
+            }
+            $aggregated[$card] = ($aggregated[$card] ?? 0) + $cnt;
+        }
+
+        $borrowerInfo = !empty($aggregated)
+            ? app(\App\Repositories\BorrowerRepository::class)->getBorrowerInfoByCardnumbers(collect(array_keys($aggregated)))
+            : [];
+
+        $visitors = collect($aggregated)->map(function ($count, $card) use ($borrowerInfo) {
+            $info = $borrowerInfo[$card] ?? null;
+            $nama = $info ? trim(($info->firstname ?? '') . ' ' . ($info->surname ?? '')) : '';
             return [
-                'nama' => $visitor->surname ?? 'Nama tidak ditemukan',
-                'cardnumber' => $visitor->cardnumber,
-                'visit_count' => $visitor->visit_count,
+                'cardnumber' => $card,
+                'nama' => $nama !== '' ? $nama : 'Nama tidak ditemukan',
+                'visit_count' => $count,
             ];
-        });
+        })->sortBy('nama', SORT_NATURAL | SORT_FLAG_CASE)->values();
 
-        return response()->json(['data' => $formattedVisitors]);
+        return compact('totalVisitors', 'visitors');
     }
 
     public function getKunjunganHarianExportData(Request $request)
@@ -824,9 +843,13 @@ class VisitHistory extends Controller
                 ->where('cardnumber', $cardnumber)
                 ->whereBetween('visittime', [$startMonth, $endMonth]);
 
-            // 3. Query Corner (Gunakan whereBetween sargable)
+            // 3. Query Corner (Gunakan whereBetween sargable, guard kolom notes)
+            $cornerLocExpr = \App\Repositories\VisitRepository::hasCornerNotesColumn()
+                ? DB::raw("COALESCE(NULLIF(notes, ''), 'pusat') as visit_location")
+                : DB::raw("'pusat' as visit_location");
+
             $queryCorner = DB::connection('mysql')->table('visitorcorner')
-                ->select('visittime as visit_date', 'notes as visit_location')
+                ->select('visittime as visit_date', $cornerLocExpr)
                 ->where('cardnumber', $cardnumber)
                 ->whereBetween('visittime', [$startMonth, $endMonth]);
 
@@ -1009,11 +1032,29 @@ class VisitHistory extends Controller
                 return $q;
             };
 
+            $hasNotes = \App\Repositories\VisitRepository::hasCornerNotesColumn();
+            $applyCornerFilter = function ($q) use ($dbLoc, $hasNotes) {
+                if ($dbLoc !== 'all') {
+                    if ($dbLoc === 'pusat') {
+                        if ($hasNotes) {
+                            $q->where(fn($sub) => $sub->where('notes', 'pusat')->orWhereNull('notes')->orWhere('notes', ''));
+                        }
+                    } else {
+                        if ($hasNotes) {
+                            $q->where('notes', $dbLoc);
+                        } else {
+                            $q->whereRaw('1 = 0');
+                        }
+                    }
+                }
+                return $q;
+            };
+
             $hQuery = DB::connection('mysql')->table('visitorhistory')->select(DB::raw("{$groupByFormat} as periode"), DB::raw("COUNT(*) as jumlah"));
             $cQuery = DB::connection('mysql')->table('visitorcorner')->select(DB::raw("{$groupByFormat} as periode"), DB::raw("COUNT(*) as jumlah"));
 
             $allResults = $applyFilter($hQuery, 'location')->groupBy('periode')->get()
-                ->merge($applyFilter($cQuery, 'notes')->groupBy('periode')->get());
+                ->merge($applyCornerFilter($cQuery)->groupBy('periode')->get());
 
             $allSummarizedResults = $allResults->groupBy('periode')->map(function ($item, $key) {
                 return (object)['periode' => $key, 'jumlah' => $item->sum('jumlah')];
@@ -1024,10 +1065,13 @@ class VisitHistory extends Controller
 
             // Query Top Lokasi
             $hLocQuery = DB::connection('mysql')->table('visitorhistory')->select(DB::raw("IFNULL(location, 'pusat') as lokasi"), DB::raw("COUNT(*) as jumlah"));
-            $cLocQuery = DB::connection('mysql')->table('visitorcorner')->select(DB::raw("COALESCE(NULLIF(notes, ''), 'pusat') as lokasi"), DB::raw("COUNT(*) as jumlah"));
+            $cornerLocExpr = $hasNotes
+                ? DB::raw("COALESCE(NULLIF(notes, ''), 'pusat') as lokasi")
+                : DB::raw("'pusat' as lokasi");
+            $cLocQuery = DB::connection('mysql')->table('visitorcorner')->select($cornerLocExpr, DB::raw("COUNT(*) as jumlah"));
 
             $allLokasiResults = $applyFilter($hLocQuery, 'location')->groupBy('lokasi')->get()
-                ->merge($applyFilter($cLocQuery, 'notes')->groupBy('lokasi')->get());
+                ->merge($applyCornerFilter($cLocQuery)->groupBy('lokasi')->get());
 
             $topLokasi = $allLokasiResults
                 ->whereNotIn('lokasi', ['sni', 'bi', 'mc', 'ref'])

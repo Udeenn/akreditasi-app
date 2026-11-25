@@ -144,7 +144,11 @@ class BorrowingStatisticsService
      */
     public function getPeminjamanProdi(string $filterType, string $startDate, string $endDate, int $startYear, int $endYear, ?string $selectedProdi): array
     {
-        $cacheKey = 'peminjaman_prodi_v5_' . md5(json_encode([
+        if ($selectedProdi !== null && strtoupper(trim($selectedProdi)) === 'STAFF') {
+            $selectedProdi = 'TENDIK';
+        }
+
+        $cacheKey = 'peminjaman_prodi_v6_' . md5(json_encode([
             'filterType' => $filterType,
             'start' => (in_array($filterType, ['yearly', 'monthly'])) ? "$startYear-01-01" : $startDate,
             'end' => (in_array($filterType, ['yearly', 'monthly'])) ? "$endYear-12-31" : $endDate,
@@ -175,6 +179,8 @@ class BorrowingStatisticsService
             $aggregatedData = [];
             $allBorrowers = [];
             $prodiTotals = [];
+            $studentStats = [];
+            $nonStudents = ['DOSEN', 'TENDIK', 'KSP', 'KSPMBKM', 'KSPBIPA', 'XA', 'LB', 'XC', 'UMUM'];
 
             foreach ($rawData->chunk(5000) as $chunk) {
                 $borrowerNumbers = collect($chunk)->pluck('borrowernumber')->unique()->values();
@@ -190,7 +196,6 @@ class BorrowingStatisticsService
 
                     if ($selectedProdi && $selectedProdi !== 'semua') {
                         if ($selectedProdi === 'ALL_MAHASISWA') {
-                            $nonStudents = ['DOSEN', 'TENDIK', 'KSP', 'KSPMBKM', 'KSPBIPA', 'XA', 'LB', 'XC'];
                             if (in_array($kode, $nonStudents)) {
                                 continue;
                             }
@@ -203,6 +208,25 @@ class BorrowingStatisticsService
                     $namaProdi = $prodiListMap[$kode] ?? $kode;
                     $prodiDisplay = $kode . ' - ' . $namaProdi;
                     $prodiTotals[$prodiDisplay] = ($prodiTotals[$prodiDisplay] ?? 0) + $cnt;
+
+                    if (!in_array($kode, $nonStudents) && $cardnumber !== '') {
+                        $bId = $row->borrowernumber;
+                        if (!isset($studentStats[$bId])) {
+                            $nama = trim(($info->firstname ?? '') . ' ' . ($info->surname ?? ''));
+                            $studentStats[$bId] = [
+                                'cardnumber' => strtoupper(trim($cardnumber)),
+                                'nama'       => $nama !== '' ? $nama : 'Tanpa Nama',
+                                'prodi'      => $kode,
+                                'prodi_name' => $namaProdi,
+                                'issue'      => 0,
+                                'renew'      => 0,
+                                'return'     => 0,
+                                'total'      => 0,
+                            ];
+                        }
+                        $studentStats[$bId][$row->type] += $cnt;
+                        $studentStats[$bId]['total'] += $cnt;
+                    }
 
                     $tgl = $row->periode;
 
@@ -233,6 +257,9 @@ class BorrowingStatisticsService
                 $rankingProdi[] = ['name' => $name, 'total' => $total];
             }
 
+            usort($studentStats, fn($a, $b) => $b['total'] <=> $a['total']);
+            $rankingMahasiswa = array_slice($studentStats, 0, 200);
+
             return [
                 'totalIssues' => $totalIssues,
                 'totalRenews' => $totalRenews,
@@ -241,6 +268,7 @@ class BorrowingStatisticsService
                 'totalBorrowers' => $totalBorrowers,
                 'tableData' => $tableData->toArray(),
                 'rankingProdi' => $rankingProdi,
+                'rankingMahasiswa' => $rankingMahasiswa,
             ];
         });
     }

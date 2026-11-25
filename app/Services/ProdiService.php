@@ -154,20 +154,23 @@ class ProdiService
     }
 
     /**
-     * Daftar prodi untuk dropdown (dengan opsi statis Dosen & Tendik di atas).
+     * Daftar prodi untuk dropdown (dengan opsi statis Semua, Mahasiswa, Dosen & Tendik di atas).
      * Digunakan di peminjaman prodi chart dropdown.
      */
     public function getProdiDropdownOptions(): Collection
     {
         $prodiFromDb = M_Auv::getCachedProdiList()
+            ->filter(fn($prodi) => preg_match('/^[A-Za-z][0-9A-Za-z]{3}$/', (string) $prodi->authorised_value))
             ->sortBy('authorised_value')
             ->map(function ($prodi) {
                 return (object) ['authorised_value' => $prodi->authorised_value, 'lib' => trim($prodi->lib)];
             });
 
         $staticOptions = collect([
-            (object) ['authorised_value' => 'DOSEN', 'lib' => 'Dosen'],
-            (object) ['authorised_value' => 'STAFF', 'lib' => 'Tenaga Kependidikan (Staff)'],
+            (object) ['authorised_value' => 'semua', 'lib' => 'Semua Program Studi & Unit'],
+            (object) ['authorised_value' => 'ALL_MAHASISWA', 'lib' => 'Seluruh Mahasiswa'],
+            (object) ['authorised_value' => 'DOSEN', 'lib' => 'Dosen & Pengajar'],
+            (object) ['authorised_value' => 'TENDIK', 'lib' => 'Tenaga Kependidikan'],
         ]);
 
         return $staticOptions->concat($prodiFromDb);

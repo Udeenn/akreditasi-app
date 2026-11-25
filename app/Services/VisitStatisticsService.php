@@ -128,7 +128,7 @@ class VisitStatisticsService
         $allProdiListObj = \App\Models\M_Auv::getCachedProdiList();
         $prodiNameMap = $this->prodiService->getFullProdiList();
 
-        $cacheKey = 'kunj_prodi_v5_' . md5(json_encode([
+        $cacheKey = 'kunj_prodi_v6_' . md5(json_encode([
             'ft' => $filterType, 'kp' => $kodeProdiFilter,
             'dt' => ($filterType == 'yearly') ? "$startYear-$endYear" : "$startDate-$endDate",
         ]));
@@ -146,11 +146,14 @@ class VisitStatisticsService
                 $dateFormatPHP = 'Y-m-d';
             }
 
-            // Pengelompokan Data per Tanggal dan Prodi
+            // Pengelompokan Data per Tanggal, Prodi, dan Mahasiswa
             $periodeData = [];
             $prodiTotals = [];
+            $studentCounts = [];
+            $studentMeta = [];
+            $nonStudents = ['DOSEN', 'TENDIK', 'KSP', 'KSPMBKM', 'KSPBIPA', 'XA', 'LB', 'XC', 'UMUM'];
 
-            $processVisits = function ($visits) use (&$periodeData, &$prodiTotals, $dateFormatPHP, $kodeProdiFilter) {
+            $processVisits = function ($visits) use (&$periodeData, &$prodiTotals, &$studentCounts, &$studentMeta, $nonStudents, $dateFormatPHP, $kodeProdiFilter) {
                 $cardNumbers = collect($visits)->pluck('cardnumber');
                 $borrowerInfo = $this->borrowerService->getBorrowerInfoByCardnumbers($cardNumbers);
 
@@ -165,7 +168,6 @@ class VisitStatisticsService
                     // Filter by Prodi jika ada
                     if ($kodeProdiFilter) {
                         if ($kodeProdiFilter === 'ALL_MAHASISWA') {
-                            $nonStudents = ['DOSEN', 'TENDIK', 'KSP', 'KSPMBKM', 'KSPBIPA', 'XA', 'LB', 'XC'];
                             if (in_array($kode, $nonStudents)) {
                                 continue;
                             }
@@ -181,6 +183,18 @@ class VisitStatisticsService
                     
                     $periodeData[$tgl][$kode]++;
                     $prodiTotals[$kode] = ($prodiTotals[$kode] ?? 0) + 1;
+
+                    if ($cn !== '' && !in_array($kode, $nonStudents)) {
+                        $studentCounts[$cn] = ($studentCounts[$cn] ?? 0) + 1;
+                        if (!isset($studentMeta[$cn])) {
+                            $nama = trim(($info->firstname ?? '') . ' ' . ($info->surname ?? ''));
+                            $studentMeta[$cn] = [
+                                'cardnumber' => $cn,
+                                'nama'       => $nama !== '' ? $nama : 'Tanpa Nama',
+                                'prodi'      => $kode,
+                            ];
+                        }
+                    }
                 }
             };
 
@@ -238,7 +252,20 @@ class VisitStatisticsService
                 ];
             }
 
-            return compact('tableData', 'totalKeseluruhanKunjungan', 'rankingProdi');
+            arsort($studentCounts);
+            $rankingMahasiswa = [];
+            foreach (array_slice($studentCounts, 0, 200, true) as $cn => $total) {
+                $meta = $studentMeta[$cn];
+                $rankingMahasiswa[] = [
+                    'cardnumber' => $meta['cardnumber'],
+                    'nama'       => $meta['nama'],
+                    'prodi'      => $meta['prodi'],
+                    'prodi_name' => $prodiNameMap[$meta['prodi']] ?? $meta['prodi'],
+                    'total'      => $total,
+                ];
+            }
+
+            return compact('tableData', 'totalKeseluruhanKunjungan', 'rankingProdi', 'rankingMahasiswa');
         });
     }
 

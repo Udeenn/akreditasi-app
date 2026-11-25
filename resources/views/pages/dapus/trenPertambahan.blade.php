@@ -3,7 +3,7 @@
 @section('title', 'Pengadaan Koleksi')
 
 @section('content')
-<div class="container-fluid px-4 py-4">
+<div class="container-fluid px-3 px-md-4 pt-2 pb-4">
 
     <x-breadcrumb title="Pengadaan Koleksi" icon="fas fa-chart-line">
         <x-slot name="subtitle">
@@ -14,7 +14,7 @@
     {{-- Filter Data --}}
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card unified-card border-0 shadow-sm">
+            <div class="card unified-card border-0 shadow-sm filter-card">
                 <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
                     <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Rentang Tahun</h5>
                 </div>
@@ -37,8 +37,8 @@
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary w-100 shadow-sm fw-bold">
-                                <i class="fas fa-search me-1"></i> Terapkan
+                            <button type="submit" class="btn btn-primary w-100 shadow-sm">
+                                <i class="fas fa-search me-1"></i> Tampilkan
                             </button>
                         </div>
                     </form>
@@ -76,7 +76,7 @@
         <div class="col-lg-4">
             <div class="row g-4">
                 <div class="col-12">
-                    <div class="card unified-card border-0 shadow-sm overflow-hidden bg-primary text-white">
+                    <div class="card unified-card border-0 shadow-sm overflow-hidden bg-primary text-white hover-lift">
                         <div class="card-body p-4 position-relative">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div>
@@ -92,7 +92,7 @@
                     </div>
                 </div>
                 <div class="col-12">
-                    <div class="card unified-card border-0 shadow-sm overflow-hidden bg-info text-white">
+                    <div class="card unified-card border-0 shadow-sm overflow-hidden bg-info text-white hover-lift">
                         <div class="card-body p-4 position-relative">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div>
@@ -123,18 +123,18 @@
                             @csrf
                             <input type="hidden" name="start_year" value="{{ $startYear }}">
                             <input type="hidden" name="end_year" value="{{ $endYear }}">
-                            <button type="submit" class="btn btn-danger btn-sm shadow-sm fw-bold">
+                            <button type="submit" class="btn btn-danger btn-sm shadow-sm fw-bold px-3">
                                 <i class="fas fa-file-pdf me-1"></i> Export PDF
                             </button>
                         </form>
-                        <button type="submit" form="filterForm" name="export_csv" value="1" class="btn btn-success btn-sm shadow-sm fw-bold">
-                            <i class="fas fa-file-csv me-1"></i> Export CSV Rekap
+                        <button type="submit" form="filterForm" name="export_csv" value="1" class="btn btn-success btn-sm shadow-sm fw-bold px-3">
+                            <i class="fas fa-file-csv me-1"></i> Export CSV
                         </button>
                     </div>
                 </div>
                 <div class="card-body p-4">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle ">
+                        <table class="table table-hover align-middle mb-0 unified-table">
                             <thead>
                                 <tr>
                                     <th class="text-center" width="7%">No</th>

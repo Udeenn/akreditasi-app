@@ -43,25 +43,30 @@
     color: #4A69FF !important;
 }
 
-/* Soft background utility classes */
+/* Soft background & icon colors */
 .bg-primary-soft {
     background-color: var(--primary-soft) !important;
+    color: #4A69FF;
 }
 
 .bg-success-soft {
     background-color: var(--success-soft) !important;
+    color: #198754;
 }
 
 .bg-danger-soft {
     background-color: var(--danger-soft) !important;
+    color: #dc3545;
 }
 
 .bg-warning-soft {
     background-color: var(--warning-soft) !important;
+    color: #997404;
 }
 
 .bg-info-soft {
     background-color: var(--info-soft) !important;
+    color: #0891b2;
 }
 
 
@@ -76,12 +81,6 @@
     overflow: hidden !important;
 }
 
-.card:not(.no-hover):hover,
-.unified-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08) !important;
-}
-
 .card-header {
     background-color: #ffffff;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
@@ -94,10 +93,16 @@
 }
 
 
-/* --- HOVER LIFT EFFECT --- */
+/* --- HOVER LIFT EFFECT (opt-in via .hover-lift only) --- */
+.card.hover-lift:hover,
+.unified-card.hover-lift:hover,
 .hover-lift:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08) !important;
+}
+
+.modal-content {
+    border-radius: 12px !important;
 }
 
 
@@ -143,7 +148,7 @@
 
 /* --- GRADIENT HEADER BANNER --- */
 .page-header-banner {
-    border-radius: 15px !important;
+    border-radius: 12px !important;
     border: 0 !important;
     overflow: hidden;
 }
@@ -366,7 +371,33 @@ body.dark-mode .btn-close {
 
 /* Progress */
 body.dark-mode .progress {
-    background-color: #ffffff;
+    background-color: #334155;
+}
+
+/* Soft utilities in dark mode */
+body.dark-mode .bg-primary-soft {
+    color: #818cf8;
+}
+
+body.dark-mode .bg-success-soft {
+    color: #4ade80;
+}
+
+body.dark-mode .bg-danger-soft {
+    color: #f87171;
+}
+
+body.dark-mode .bg-warning-soft {
+    color: #fbbf24;
+}
+
+body.dark-mode .bg-info-soft {
+    color: #38bdf8;
+}
+
+body.dark-mode .card.hover-lift:hover,
+body.dark-mode .unified-card.hover-lift:hover {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35) !important;
 }
 
 /* List group items */

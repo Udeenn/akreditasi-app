@@ -27,7 +27,7 @@ class BorrowerRepository
 
         // 2. Cek Redis / Persistent Cache untuk yang belum ada di memory
         if ($missing->isNotEmpty()) {
-            $cacheKeys = $missing->mapWithKeys(fn($c) => ["bw_c_{$c}" => $c])->all();
+            $cacheKeys = $missing->mapWithKeys(fn($c) => ["bw_c2_{$c}" => $c])->all();
             try {
                 $fromCache = Cache::many(array_keys($cacheKeys));
                 foreach ($fromCache as $k => $val) {
@@ -55,13 +55,13 @@ class BorrowerRepository
                           ->where('ba.code', '=', 'PRODI');
                     })
                     ->whereIn('b.cardnumber', $chunk->all())
-                    ->select('b.cardnumber', 'b.categorycode', 'ba.attribute as prodi_code')
+                    ->select('b.cardnumber', 'b.firstname', 'b.surname', 'b.categorycode', 'ba.attribute as prodi_code')
                     ->get();
 
                 foreach ($rows as $r) {
                     $key = strtoupper(trim($r->cardnumber));
                     self::$cardCache[$key] = $r;
-                    $toCache["bw_c_{$key}"] = $r;
+                    $toCache["bw_c2_{$key}"] = $r;
                 }
             }
 
@@ -95,7 +95,7 @@ class BorrowerRepository
         $missing = $unique->reject(fn($id) => isset(self::$borrowerNumberCache[$id]))->values();
 
         if ($missing->isNotEmpty()) {
-            $cacheKeys = $missing->mapWithKeys(fn($id) => ["bw_id_{$id}" => $id])->all();
+            $cacheKeys = $missing->mapWithKeys(fn($id) => ["bw_id2_{$id}" => $id])->all();
             try {
                 $fromCache = Cache::many(array_keys($cacheKeys));
                 foreach ($fromCache as $k => $val) {
@@ -121,12 +121,12 @@ class BorrowerRepository
                             ->where('ba.code', '=', 'PRODI');
                     })
                     ->whereIn('b.borrowernumber', $chunk->all())
-                    ->select('b.borrowernumber', 'b.cardnumber', 'b.categorycode', 'ba.attribute as prodi_code')
+                    ->select('b.borrowernumber', 'b.cardnumber', 'b.firstname', 'b.surname', 'b.categorycode', 'ba.attribute as prodi_code')
                     ->get();
 
                 foreach ($rows as $r) {
                     self::$borrowerNumberCache[$r->borrowernumber] = $r;
-                    $toCache["bw_id_{$r->borrowernumber}"] = $r;
+                    $toCache["bw_id2_{$r->borrowernumber}"] = $r;
                 }
             }
 

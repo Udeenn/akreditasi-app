@@ -2,7 +2,7 @@
 @section('title', 'Statistik Kunjungan Per Fakultas')
 
 @section('content')
-    <div class="container-fluid px-4">
+    <div class="container-fluid px-3 px-md-4 pt-2 pb-4">
         <x-breadcrumb title="Statistik Kunjungan Fakultas" icon="fas fa-university">
             <x-slot name="subtitle">
                 Laporan analisis data pengunjung perpustakaan berdasarkan Fakultas dan Program Studi.
@@ -23,12 +23,12 @@
                             <div class="row g-3 align-items-end">
                                 {{-- Filter Tipe --}}
                                 <div class="col-md-2 col-6">
-                                    <label class="form-label small text-muted text-uppercase mb-1">Periode</label>
+                                    <label class="form-label small text-muted text-uppercase mb-1">Mode Tampilan</label>
                                     <select name="filter_type" id="filter_type" class="form-select shadow-none">
                                         <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>
                                             Harian</option>
                                         <option value="yearly" {{ ($filterType ?? '') == 'yearly' ? 'selected' : '' }}>
-                                            Tahunan (Bulanan)</option>
+                                            Bulanan</option>
                                     </select>
                                 </div>
 
@@ -93,11 +93,11 @@
                                 {{-- Tombol Action --}}
                                 <div class="col-md-auto col-12 d-flex gap-2">
                                     <button type="submit" class="btn btn-primary px-4 shadow-sm">
-                                        <i class="fas fa-search me-1"></i> Cari
+                                        <i class="fas fa-search me-1"></i> Tampilkan
                                     </button>
                                     <button type="button" id="btnExportCsv"
                                         class="btn btn-success px-4 shadow-sm">
-                                        <i class="fas fa-file-csv me-1"></i> CSV
+                                        <i class="fas fa-file-csv me-1"></i> Export CSV
                                     </button>
                                 </div>
                             </div>
@@ -214,7 +214,7 @@
                             </div>
                             <h4 class="fw-bold text-body">Mulai Pencarian</h4>
                             <p class="text-muted mb-0">Silakan atur filter di atas lalu klik tombol 
-                                <strong>"Cari"</strong> untuk menampilkan statistik.
+                                <strong>"Tampilkan"</strong> untuk menampilkan statistik.
                             </p>
                         </div>
                     </div>

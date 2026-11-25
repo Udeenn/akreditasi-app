@@ -81,13 +81,13 @@
         {{-- 2. FILTER --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card unified-card border-0 shadow-sm">
+                <div class="card unified-card border-0 shadow-sm filter-card">
                     <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
                         <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
                     </div>
                     <div class="card-body px-4 pb-4 pt-3">
                         <form method="GET" action="{{ route('peminjaman.peminjaman_fakultas') }}" class="row g-3 align-items-end" id="filterForm">
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label for="filter_type" class="form-label small text-muted text-uppercase">Mode Tampilan</label>
                                 <select name="filter_type" id="filter_type" class="form-select">
                                     <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>Harian</option>
@@ -112,7 +112,7 @@
                                             <option value="{{ $y }}" {{ $startYear == $y ? 'selected' : '' }}>{{ $y }}</option>
                                         @endfor
                                     </select>
-                                    <span class="input-group-text text-muted">s.d.</span>
+                                    <span class="input-group-text text-muted">s/d</span>
                                     <select name="end_year" id="end_year" class="form-select">
                                         @for ($y = date('Y'); $y >= date('Y') - 10; $y--)
                                             <option value="{{ $y }}" {{ $endYear == $y ? 'selected' : '' }}>{{ $y }}</option>
@@ -131,9 +131,9 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-1 ms-auto">
+                            <div class="col-md-2">
                                 <button type="submit" id="btnCari" class="btn btn-primary w-100 shadow-sm">
-                                    <i class="fas fa-search"></i> Cari
+                                    <i class="fas fa-search me-1"></i> Tampilkan
                                 </button>
                             </div>
                         </form>
@@ -255,7 +255,7 @@
                             <h6 class="fw-bold m-0 text-primary">
                                 <i class="fas fa-table me-2"></i>Rincian Data Sirkulasi
                             </h6>
-                            <button type="button" id="exportCsvBtn" class="btn btn-success  fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV
+                            <button type="button" id="exportCsvBtn" class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-1"></i> Export CSV
                             </button>
                         </div>
                         <div class="card-body p-0">

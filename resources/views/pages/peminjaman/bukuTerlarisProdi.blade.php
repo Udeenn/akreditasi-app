@@ -2,21 +2,21 @@
 @section('title', 'Buku Terlaris Berdasarkan Prodi')
 
 @section('content')
-    <div class="container-fluid px-4 pt-2 pb-4">
+    <div class="container-fluid px-3 px-md-4 pt-2 pb-4">
         <x-breadcrumb title="Buku Terlaris Berdasarkan Prodi" icon="fas fa-university">
             <x-slot name="subtitle">
                 Daftar buku yang paling sering dipinjam oleh civitas akademika pada program studi tertentu.
             </x-slot>
         </x-breadcrumb>
 
-        <div class="card unified-card border-0 shadow-sm mb-4">
+        <div class="card unified-card border-0 shadow-sm filter-card mb-4">
             <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
-                <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i>Filter Data</h5>
+                <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
             </div>
-            <div class="card-body px-4 py-3">
+            <div class="card-body px-4 pb-4 pt-3">
                 <form method="GET" action="{{ route('peminjaman.buku_terlaris_prodi') }}" class="row g-3 align-items-end">
                     <div class="col-md-3">
-                        <label class="form-label small text-muted text-uppercase text-uppercase">Program Studi</label>
+                        <label class="form-label small text-muted text-uppercase">Program Studi</label>
                         <select name="selected_prodi" class="form-select select2-prodi" required>
                             <option value="">Pilih Program Studi</option>
                             @foreach ($prodiList as $code => $name)
@@ -31,7 +31,7 @@
                         <label for="filter_type" class="form-label small text-muted text-uppercase">Mode Tampilan</label>
                         <select name="filter_type" id="filter_type" class="form-select">
                             <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>Harian</option>
-                            <option value="monthly" {{ ($filterType ?? '') == 'monthly' ? 'selected' : '' }}>Tahunan</option>
+                            <option value="monthly" {{ ($filterType ?? '') == 'monthly' ? 'selected' : '' }}>Bulanan</option>
                         </select>
                     </div>
 
@@ -57,7 +57,7 @@
                                     <option value="{{ $year }}" {{ ($startYear ?? $currentYear) == $year ? 'selected' : '' }}>{{ $year }}</option>
                                 @endfor
                             </select>
-                            <span class="input-group-text text-muted border-0">s.d.</span>
+                            <span class="input-group-text text-muted border-0">s/d</span>
                             <select name="end_year" id="end_year" class="form-select">
                                 @for ($year = $loopStartYear; $year <= $loopEndYear; $year++)
                                     <option value="{{ $year }}" {{ ($endYear ?? $currentYear) == $year ? 'selected' : '' }}>{{ $year }}</option>
@@ -67,7 +67,7 @@
                     </div>
 
                     <div class="col-md-2">
-                        <button type="submit" class="btn btn-primary w-100 shadow-sm"><i class="fas fa-search me-1"></i> Terapkan</button>
+                        <button type="submit" class="btn btn-primary w-100 shadow-sm"><i class="fas fa-search me-1"></i> Tampilkan</button>
                     </div>
                 </form>
             </div>
@@ -75,9 +75,9 @@
 
         @if($hasFilter)
         <div class="card unified-card border-0 shadow-sm">
-            <div class="card-header border-bottom-0 pt-4 pb-3 px-4 d-flex justify-content-between align-items-center">
+            <div class="card-header border-bottom-0 pt-4 pb-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <h5 class="mb-0 fw-bold"><i class="fas fa-book-open text-primary me-2"></i>Hasil Pencarian</h5>
-                <div class="d-flex gap-2 align-items-center">
+                <div class="d-flex flex-wrap gap-2 align-items-center">
                     <form method="GET" action="{{ route('peminjaman.buku_terlaris_prodi') }}" class="d-flex align-items-center mb-0">
                         <input type="hidden" name="selected_prodi" value="{{ $selectedProdi }}">
                         <input type="hidden" name="filter_type" value="{{ $filterType ?? 'daily' }}">
@@ -101,7 +101,7 @@
                         <input type="hidden" name="end_date" value="{{ $endDate ?? '' }}">
                         <input type="hidden" name="start_year" value="{{ $startYear ?? '' }}">
                         <input type="hidden" name="end_year" value="{{ $endYear ?? '' }}">
-                        <button type="submit" class="btn btn-danger  shadow-sm"><i class="fas fa-file-pdf me-1"></i> Cetak PDF</button>
+                        <button type="submit" class="btn btn-danger btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-pdf me-1"></i> Export PDF</button>
                     </form>
                     <form method="GET" action="{{ route('peminjaman.export_buku_terlaris_prodi') }}">
                         <input type="hidden" name="selected_prodi" value="{{ $selectedProdi }}">
@@ -110,7 +110,7 @@
                         <input type="hidden" name="end_date" value="{{ $endDate ?? '' }}">
                         <input type="hidden" name="start_year" value="{{ $startYear ?? '' }}">
                         <input type="hidden" name="end_year" value="{{ $endYear ?? '' }}">
-                        <button type="submit" class="btn btn-success  shadow-sm"><i class="fas fa-file-excel me-1"></i> Export CSV</button>
+                        <button type="submit" class="btn btn-success btn-sm fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-1"></i> Export CSV</button>
                     </form>
                 </div>
             </div>

@@ -159,7 +159,7 @@ class CollectionStatisticsService
 
             return [
                 'processedData' => $processedData,
-                'totalJudul' => $processedData->count(),
+                'totalJudul' => (int) ($totals->total_judul ?? $processedData->count()),
                 'totalEksemplar' => $totals->total_eksemplar ?? 0
             ];
         });
