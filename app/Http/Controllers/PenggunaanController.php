@@ -60,7 +60,7 @@ class PenggunaanController extends Controller
         $startDate = $request->input('start_date', \Carbon\Carbon::now()->subDays(29)->format('Y-m-d'));
         $endDate = $request->input('end_date', \Carbon\Carbon::now()->format('Y-m-d'));
         $usageType = $request->input('usage_type', 'all');
-        $chartImage = $request->input('chart_image_base64');
+        $chartImage = $this->sanitizeChartImage($request->input('chart_image_base64'));
 
         try {
             $data = $this->getKeterpakaianData($filterType, $startMonth, $endMonth, $startDate, $endDate, $usageType);

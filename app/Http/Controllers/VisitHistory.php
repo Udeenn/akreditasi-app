@@ -917,7 +917,7 @@ class VisitHistory extends Controller
         }
 
         $options = new Options();
-        $options->setIsRemoteEnabled(true);
+        $options->setIsRemoteEnabled(false);
         $options->setChroot(public_path());
         $options->setFontCache(storage_path('app/dompdf_font_cache'));
         $options->setTempDir(storage_path('app/dompdf_tmp'));
@@ -1132,7 +1132,7 @@ class VisitHistory extends Controller
         $startDate = $request->input('start_date', \Carbon\Carbon::now()->subDays(14)->format('Y-m-d'));
         $endDate = $request->input('end_date', \Carbon\Carbon::now()->format('Y-m-d'));
         $selectedLokasi = $request->input('lokasi');
-        $chartImage = $request->input('chart_image_base64');
+        $chartImage = $this->sanitizeChartImage($request->input('chart_image_base64'));
 
         $cached = $this->getKunjunganGabunganData($filterType, $startYear, $endYear, $startDate, $endDate, $selectedLokasi);
         $lokasiMapping = $cached['lokasiMapping'];

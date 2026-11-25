@@ -18,10 +18,19 @@ use OpenApi\Attributes as OA;
     securityScheme: "ApiKeyAuth",
     type: "apiKey",
     name: "X-API-KEY",
-    in: "header",
-    // description: "Gunakan API Key: akreditasi_secret_api_key_123"
+    in: "header"
 )]
 abstract class Controller
 {
-    //
+    /**
+     * Izinkan hanya data URI gambar raster base64 (mencegah SSRF/file read via Dompdf).
+     */
+    protected function sanitizeChartImage(?string $raw): ?string
+    {
+        if (!is_string($raw)) {
+            return null;
+        }
+        $raw = trim($raw);
+        return preg_match('/^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+\/=]+$/', $raw) ? $raw : null;
+    }
 }

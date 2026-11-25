@@ -300,7 +300,7 @@ class VisitStatisticsService
                 $sqlDateFormat = '%Y-%m-%d';
             }
 
-            $rawData = $this->visitRepository->getVisitDataUnionByDateRange($start, $end, $sqlDateFormat, $selectedLokasi);
+            $rawData = $this->visitRepository->getVisitTotalsByDateRange($start, $end, $sqlDateFormat, $selectedLokasi);
 
             $grouped = [];
             foreach ($rawData as $row) {

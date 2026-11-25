@@ -47,10 +47,10 @@ class CollectionRepository
         $query->whereIn('items.itype', $config['itypes']);
 
         if ($config['isCcodeR']) {
-            $query->whereRaw('LEFT(items.ccode, 1) = ?', ['R']);
+            $query->where('items.ccode', 'like', 'R%');
         }
         if ($config['isNotCcodeR']) {
-            $query->whereRaw('LEFT(items.ccode, 1) <> "R"');
+            $query->where('items.ccode', 'not like', 'R%');
         }
         if ($config['isBarcodeJE']) {
             $query->where('items.barcode', 'like', 'JE%');

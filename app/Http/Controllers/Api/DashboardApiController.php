@@ -29,36 +29,34 @@ class DashboardApiController extends Controller
     public function index(): JsonResponse
     {
         try {
+            $todayStart = Carbon::today()->startOfDay();
+            $todayEnd   = Carbon::today()->endOfDay();
+
             // Kunjungan Harian - Cache 5 menit
-            $kunjunganHarian = Cache::remember('dashboard_kunjungan_harian_' . Carbon::today()->toDateString(), 300, function() {
-                return M_vishistory::whereDate('visittime', Carbon::today())->count();
+            $kunjunganHarian = Cache::remember('dashboard_kunjungan_harian_' . Carbon::today()->toDateString(), 300, function() use ($todayStart, $todayEnd) {
+                return M_vishistory::whereBetween('visittime', [$todayStart, $todayEnd])->count();
             });
 
-            // Total Judul Buku - Cache 1 jam
-            $totalJudulBuku = Cache::remember('dashboard_total_judul_buku', 3600, function() {
-                return M_items::on('mysql2')
-                    ->select(DB::raw("COUNT(DISTINCT items.biblionumber) AS total_judul_buku"))
-                    ->leftJoin('biblioitems', 'biblioitems.biblioitemnumber', '=', 'items.biblioitemnumber')
-                    ->leftJoin('biblio', 'biblio.biblionumber', '=', 'items.biblionumber')
+            // Total Judul & Eksemplar Buku (1 query tanpa unused joins) - Cache 1 jam
+            $bkTotals = Cache::remember('dashboard_api_bk_totals_v1', 3600, function() {
+                $row = M_items::on('mysql2')
+                    ->selectRaw("
+                        COUNT(DISTINCT items.biblionumber) AS total_judul_buku,
+                        COUNT(items.biblionumber) AS total_eksemplar
+                    ")
                     ->where('items.damaged', 0)
                     ->where('items.itemlost', 0)
                     ->where('items.withdrawn', 0)
-                    ->where(DB::raw('LEFT(items.itype, 2)'), 'BK')
-                    ->value('total_judul_buku');
-            });
+                    ->where('items.itype', 'LIKE', 'BK%')
+                    ->first();
 
-            // Total Eksemplar - Cache 1 jam
-            $totalEksemplar = Cache::remember('dashboard_total_eksemplar', 3600, function() {
-                return M_items::on('mysql2')
-                    ->select(DB::raw("COUNT(items.biblionumber) AS total_eksemplar"))
-                    ->leftJoin('biblioitems', 'biblioitems.biblioitemnumber', '=', 'items.biblioitemnumber')
-                    ->leftJoin('biblio', 'biblio.biblionumber', '=', 'items.biblionumber')
-                    ->where('items.damaged', 0)
-                    ->where('items.itemlost', 0)
-                    ->where('items.withdrawn', 0)
-                    ->where(DB::raw('LEFT(items.itype, 2)'), 'BK')
-                    ->value('total_eksemplar');
+                return [
+                    'judul'     => (int) ($row->total_judul_buku ?? 0),
+                    'eksemplar' => (int) ($row->total_eksemplar ?? 0),
+                ];
             });
+            $totalJudulBuku = $bkTotals['judul'];
+            $totalEksemplar = $bkTotals['eksemplar'];
 
             // Anggota Aktif - Cache 1 jam
             $totalAnggotaAktif = Cache::remember('dashboard_total_anggota', 3600, function() {
@@ -74,17 +72,15 @@ class DashboardApiController extends Controller
             });
 
             // Peminjaman Hari Ini - Cache 5 menit
-            $totalSirkulasi = Cache::remember('dashboard_sirkulasi_harian_' . Carbon::today()->toDateString(), 300, function() {
-                $todayStr = Carbon::today()->toDateString();
-                
+            $totalSirkulasi = Cache::remember('dashboard_sirkulasi_harian_' . Carbon::today()->toDateString(), 300, function() use ($todayStart, $todayEnd) {
                 $issuesToday = M_issues::on('mysql2')
-                    ->whereDate('issuedate', $todayStr)
+                    ->whereBetween('issuedate', [$todayStart, $todayEnd])
                     ->count();
-                    
+
                 $oldIssuesToday = M_oldissues::on('mysql2')
-                    ->whereDate('issuedate', $todayStr)
+                    ->whereBetween('issuedate', [$todayStart, $todayEnd])
                     ->count();
-                    
+
                 return $issuesToday + $oldIssuesToday;
             });
 

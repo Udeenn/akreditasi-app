@@ -19,8 +19,7 @@ class ApiKeyMiddleware
             ?? $request->header('x-api-key')
             ?? $request->header('X_API_KEY')
             ?? $request->header('HTTP_X_API_KEY')
-            ?? $request->input('api_key')
-            ?? $request->input('apiKey');
+            ?? $request->bearerToken();
 
         $validKey = config('app.api_key');
 

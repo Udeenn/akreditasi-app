@@ -108,7 +108,7 @@
                                         <td>{{ $row->Jenis_Item_Tipe }}</td>
                                         <td>{{ $row->Lokasi }}</td>
                                         <td>
-                                            @if (!empty($row->Link_Ejurnal))
+                                            @if (!empty($row->Link_Ejurnal) && preg_match('#^https?://#i', $row->Link_Ejurnal))
                                                 <a href="{{ $row->Link_Ejurnal }}" target="_blank"
                                                     class="btn btn-primary btn-sm" rel="noopener noreferrer">Link</a>
                                             @else

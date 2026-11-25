@@ -24,4 +24,7 @@ return [
 
     // Kode kategori yang dianggap librarian (pisahkan dengan koma jika lebih dari satu)
     'librarian_categorycodes' => env('KOHA_LIBRARIAN_CATEGORIES', 'LIBRARIAN'),
+
+    // Nonaktifkan validasi SSL hanya untuk development lokal / self-signed cert
+    'disable_ssl_validation' => env('KOHA_DISABLE_SSL_VALIDATION', false),
 ];

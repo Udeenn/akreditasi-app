@@ -148,7 +148,7 @@ public function pertanggal(Request $request)
         $startYear = $request->input('start_year', \Carbon\Carbon::now()->year);
         $endYear   = $request->input('end_year', \Carbon\Carbon::now()->year);
         
-        $chartImage = $request->input('chart_image_base64');
+        $chartImage = $this->sanitizeChartImage($request->input('chart_image_base64'));
 
         $totalBooks = 0; $totalReturns = 0; $totalBorrowers = 0; $totalCirculation = 0; $rerataPeminjaman = 0;
         $fullStatisticsForChart = collect();
@@ -692,13 +692,16 @@ public function pertanggal(Request $request)
         })
         ->whereIn('s.type', ['issue', 'renew', 'return']);
 
-    // Filter Tanggal
+    // Filter Tanggal (sargable range agar index statistics.datetime terpakai)
     if ($filterType === 'daily') {
-        $query->whereDate('s.datetime', $periode);
+        $start = \Carbon\Carbon::parse($periode)->startOfDay();
+        $end   = \Carbon\Carbon::parse($periode)->endOfDay();
     } else {
         $periodeYm = substr($periode, 0, 7);
-        $query->where(DB::raw('DATE_FORMAT(s.datetime, "%Y-%m")'), $periodeYm);
+        $start = \Carbon\Carbon::createFromFormat('Y-m', $periodeYm)->startOfMonth();
+        $end   = \Carbon\Carbon::createFromFormat('Y-m', $periodeYm)->endOfMonth();
     }
+    $query->whereBetween('s.datetime', [$start, $end]);
 
     // Ambil Data Mentah (LazyCollection)
     $rawData = $query

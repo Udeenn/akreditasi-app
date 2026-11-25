@@ -48,100 +48,23 @@ class StatistikKoleksi extends Controller
             
             $rekapData = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($prodiToFacultyMap, $selectedFaculty, $prodiCodeToNameMap, $tahunTerakhir) {
                 $targetProdiCodes = array_keys($prodiToFacultyMap, $selectedFaculty);
-                
-                $combinedRules = [];
-                foreach ($targetProdiCodes as $prodiCode) {
-                    $rules = CnClassHelperr::getCnClassByProdi($prodiCode);
-                    if ($rules) {
-                        $combinedRules = array_merge($combinedRules, $rules);
-                    }
-                }
-                $combinedRules = array_unique($combinedRules, SORT_REGULAR);
-                
-                $countsPerProdi = [];
-                foreach ($targetProdiCodes as $prodiCode) {
-                    $countsPerProdi[$prodiCode] = [
-                        'Jurnal'    => ['judul' => [], 'eksemplar' => 0],
-                        'E-Jurnal'  => ['judul' => [], 'eksemplar' => 0],
-                        'Textbook'  => ['judul' => [], 'eksemplar' => 0],
-                        'E-Book'    => ['judul' => [], 'eksemplar' => 0],
-                        'Prosiding' => ['judul' => [], 'eksemplar' => 0],
-                        'Referensi' => ['judul' => [], 'eksemplar' => 0],
-                    ];
-                }
-
-                $processCategory = function($category, $itypes, $isSerial = false, $isCcodeR = false, $isBarcodeJE = false, $isNotBarcodeJE = false) use (&$countsPerProdi, $targetProdiCodes, $tahunTerakhir, $combinedRules) {
-                    $q = M_items::query()
-                        ->from('items')
-                        ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                        ->join('biblio as b', 'items.biblionumber', '=', 'b.biblionumber')
-                        ->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'items.biblionumber')
-                        ->select('items.biblionumber', 'items.enumchron', 'bi.cn_class', 'items.itemcallnumber')
-                        ->where('items.itemlost', 0)
-                        ->where('items.withdrawn', 0);
-
-                    if (is_array($itypes)) $q->whereIn('items.itype', $itypes);
-                    else $q->where('items.itype', $itypes);
-
-                    if ($isCcodeR) $q->whereRaw('LEFT(items.ccode, 1) = ?', ['R']);
-                    else if ($itypes == ['BKS', 'BKSA', 'BKSCA', 'BKSC']) $q->whereRaw('LEFT(items.ccode, 1) <> "R"');
-
-                    if (in_array('JR', (array)$itypes)) $q->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
-
-                    if ($isBarcodeJE) $q->where('items.barcode', 'like', 'JE%');
-                    if ($isNotBarcodeJE) $q->where('items.barcode', 'not like', 'JE%');
-
-                    if ($tahunTerakhir !== 'all') {
-                        if (in_array('JR', (array)$itypes)) {
-                            $q->whereRaw('RIGHT(items.enumchron, 4) >= ?', [date('Y') - (int)$tahunTerakhir]);
-                        } else {
-                            $q->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
-                        }
-                    }
-
-                    if (!empty($combinedRules)) {
-                        QueryHelper::applyCnClassRules($q, $combinedRules);
-                    }
-
-                    foreach ($q->cursor() as $row) {
-                        $actualClass = !empty($row->cn_class) ? $row->cn_class : $row->itemcallnumber;
-                        if (empty($actualClass)) continue;
-
-                        $key = $isSerial ? $row->biblionumber . '_' . $row->enumchron : $row->biblionumber;
-
-                        foreach ($targetProdiCodes as $prodiCode) {
-                            if (CnClassHelperr::isValidCnClass($prodiCode, $actualClass)) {
-                                $countsPerProdi[$prodiCode][$category]['judul'][$key] = true;
-                                $countsPerProdi[$prodiCode][$category]['eksemplar']++;
-                            }
-                        }
-                    }
-                };
-
-                $processCategory('Jurnal', ['JR', 'JRA', 'JRT', 'EJ'], true, false, false, true);
-                $processCategory('E-Jurnal', ['JR', 'JRA', 'JRT', 'EJ'], true, false, true, false);
-                $processCategory('Textbook', ['BKS', 'BKSA', 'BKSCA', 'BKSC'], false, false, false, false);
-                $processCategory('E-Book', 'EB', false, false, false, false);
-                $processCategory('Prosiding', ['PR', 'EPR'], true, false, false, false);
-                $processCategory('Referensi', ['BKS', 'BKSA', 'BKSCA', 'BKSC'], false, true, false, false);
+                $countsPerProdi = $this->collectionService->getRekapFakultasCounts($targetProdiCodes, $tahunTerakhir);
 
                 $rekapDataPerProdi = [];
+                $order = ['Textbook' => 1, 'E-Book' => 2, 'Jurnal' => 3, 'E-Jurnal' => 4, 'Prosiding' => 5, 'Referensi' => 6];
+
                 foreach ($targetProdiCodes as $prodiCode) {
                     $namaProdi = $prodiCodeToNameMap->get($prodiCode, 'Prodi Tidak Dikenal');
                     $finalCounts = [];
-                    
-                    foreach ($countsPerProdi[$prodiCode] as $cat => $data) {
-                        $jCount = count($data['judul']);
-                        $eCount = $data['eksemplar'];
-                        if ($jCount > 0 || $eCount > 0) {
-                            $finalCounts[$cat] = ['judul' => $jCount, 'eksemplar' => $eCount];
+
+                    foreach (($countsPerProdi[$prodiCode] ?? []) as $cat => $data) {
+                        if ($data['judul'] > 0 || $data['eksemplar'] > 0) {
+                            $finalCounts[$cat] = $data;
                         }
                     }
 
                     if (!empty($finalCounts)) {
-                        $order = ['Textbook' => 1, 'E-Book' => 2, 'Jurnal' => 3, 'E-Jurnal' => 4, 'Prosiding' => 5, 'Referensi' => 6];
                         uksort($finalCounts, fn($a, $b) => ($order[$a] ?? 99) <=> ($order[$b] ?? 99));
-
                         $rekapDataPerProdi[] = ['prodi_code' => $prodiCode, 'nama_prodi' => $namaProdi, 'counts' => $finalCounts];
                     }
                 }
@@ -259,7 +182,7 @@ class StatistikKoleksi extends Controller
             $query = DB::connection('mysql2')
                 ->table('items')
                 ->whereNotNull('dateaccessioned')
-                ->whereRaw('DATE(dateaccessioned) BETWEEN ? AND ?', [$startDate, $endDate]);
+                ->whereBetween('dateaccessioned', [$startDate, $endDate . ' 23:59:59']);
 
             if ($groupBy === 'stage') {
                 $rows = $query
@@ -433,9 +356,9 @@ class StatistikKoleksi extends Controller
             ->where('items.withdrawn', 0);
 
         if ($hasDateRange) {
-            $query->whereRaw('DATE(items.dateaccessioned) BETWEEN ? AND ?', [$startDate, $endDate]);
+            $query->whereBetween('items.dateaccessioned', [$startDate, $endDate . ' 23:59:59']);
         } else {
-            $query->whereRaw('YEAR(items.dateaccessioned) = ?', [$year]);
+            $query->whereBetween('items.dateaccessioned', ["{$year}-01-01", "{$year}-12-31 23:59:59"]);
         }
 
         // Filter jenis koleksi — mapping nama group ke itype DB sesuai sistem

@@ -41,6 +41,26 @@ class VisitRepository
     }
 
     /**
+     * Agregasi jumlah kunjungan langsung per periode tanpa memuat cardnumber ke PHP.
+     */
+    public function getVisitTotalsByDateRange(Carbon $start, Carbon $end, string $sqlDateFormat, ?string $selectedLokasi = null): \Illuminate\Support\Collection
+    {
+        $qHistory = DB::connection('mysql')->table('visitorhistory')
+            ->select(DB::raw("DATE_FORMAT(visittime, '$sqlDateFormat') as periode"), DB::raw('COUNT(*) as cnt'))
+            ->whereBetween('visittime', [$start, $end])
+            ->groupBy('periode');
+
+        $qCorner = DB::connection('mysql')->table('visitorcorner')
+            ->select(DB::raw("DATE_FORMAT(visittime, '$sqlDateFormat') as periode"), DB::raw('COUNT(*) as cnt'))
+            ->whereBetween('visittime', [$start, $end])
+            ->groupBy('periode');
+
+        $this->applyLocationFilter($qHistory, $qCorner, $selectedLokasi);
+
+        return $qHistory->unionAll($qCorner)->get();
+    }
+
+    /**
      * Membangun base query untuk union visitorhistory dan visitorcorner tanpa dieksekusi (mengembalikan Builder).
      * Digunakan oleh Service untuk menambahkan select kustom, groupBy, atau klausa lainnya.
      */

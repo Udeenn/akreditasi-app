@@ -98,14 +98,14 @@
                                 @foreach ($data as $row)
                                     <tr>
                                         <td></td>
-                                        <td>{!! $row->Judul !!}</td>
+                                        <td>{{ $row->Judul }}</td>
                                         <td>{{ $row->Pengarang }}</td>
                                         <td>{{ $row->Kota_Terbit }}</td>
                                         <td>{{ $row->Penerbit }}</td>
                                         <td>{{ $row->TahunTerbit ?? $row->Tahun_Terbit ?? '-' }}</td>
                                         <td>{{ $row->Eksemplar }}</td>
                                         <td>
-                                            @if (!empty($row->Link_Ebook))
+                                            @if (!empty($row->Link_Ebook) && preg_match('#^https?://#i', $row->Link_Ebook))
                                                 <a href="{{ $row->Link_Ebook }}" target="_blank"
                                                     class="btn btn-primary btn-sm" rel="noopener noreferrer">Link</a>
                                             @else

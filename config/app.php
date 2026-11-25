@@ -57,7 +57,7 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
-    'api_key' => env('APP_API_KEY', 'akreditasi_secret_api_key_123'),
+    'api_key' => env('APP_API_KEY'),
 
     /*
     |--------------------------------------------------------------------------

@@ -15,7 +15,7 @@ use App\Http\Controllers\Api\RewardApiController;
 |--------------------------------------------------------------------------
 */
 
-Route::prefix('v1')->middleware('api.key')->group(function () {
+Route::prefix('v1')->middleware(['throttle:api', 'api.key'])->group(function () {
     
     // Dashboard
     Route::get('/dashboard', [DashboardApiController::class, 'index']);

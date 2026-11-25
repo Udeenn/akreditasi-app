@@ -99,100 +99,25 @@ class KoleksiApiController extends Controller
                 
                 $rekapData = Cache::remember($cacheKey, 3600, function () use ($prodiToFacultyMap, $selectedFaculty, $prodiCodeToNameMap, $tahunTerakhir) {
                     $targetProdiCodes = array_keys($prodiToFacultyMap, $selectedFaculty);
-                    
-                    $combinedRules = [];
-                    foreach ($targetProdiCodes as $prodiCode) {
-                        $rules = CnClassHelperr::getCnClassByProdi($prodiCode);
-                        if ($rules) {
-                            $combinedRules = array_merge($combinedRules, $rules);
-                        }
-                    }
-                    $combinedRules = array_unique($combinedRules, SORT_REGULAR);
-                    
-                    $countsPerProdi = [];
-                    foreach ($targetProdiCodes as $prodiCode) {
-                        $countsPerProdi[$prodiCode] = [
-                            'Jurnal'    => ['judul' => [], 'eksemplar' => 0],
-                            'E-Jurnal'  => ['judul' => [], 'eksemplar' => 0],
-                            'Textbook'  => ['judul' => [], 'eksemplar' => 0],
-                            'E-Book'    => ['judul' => [], 'eksemplar' => 0],
-                            'Prosiding' => ['judul' => [], 'eksemplar' => 0],
-                            'Referensi' => ['judul' => [], 'eksemplar' => 0],
-                        ];
-                    }
-
-                    $processCategory = function($category, $itypes, $isSerial = false, $isCcodeR = false, $isBarcodeJE = false, $isNotBarcodeJE = false) use (&$countsPerProdi, $targetProdiCodes, $tahunTerakhir, $combinedRules) {
-                        $q = M_items::query()
-                            ->from('items')
-                            ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-                            ->join('biblio as b', 'items.biblionumber', '=', 'b.biblionumber')
-                            ->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'items.biblionumber')
-                            ->select('items.biblionumber', 'items.enumchron', 'bi.cn_class', 'items.itemcallnumber')
-                            ->where('items.itemlost', 0)
-                            ->where('items.withdrawn', 0);
-
-                        if (is_array($itypes)) $q->whereIn('items.itype', $itypes);
-                        else $q->where('items.itype', $itypes);
-
-                        if ($isCcodeR) $q->whereRaw('LEFT(items.ccode, 1) = ?', ['R']);
-                        else if ($itypes == ['BKS', 'BKSA', 'BKSCA', 'BKSC']) $q->whereRaw('LEFT(items.ccode, 1) <> "R"');
-
-                        if (in_array('JR', (array)$itypes)) $q->whereRaw("TRIM(items.enumchron) REGEXP '[0-9]{4}$'");
-
-                        if ($isBarcodeJE) $q->where('items.barcode', 'like', 'JE%');
-                        if ($isNotBarcodeJE) $q->where('items.barcode', 'not like', 'JE%');
-
-                        if ($tahunTerakhir !== 'all') {
-                            if (in_array('JR', (array)$itypes)) {
-                                $q->whereRaw('RIGHT(items.enumchron, 4) >= ?', [date('Y') - (int)$tahunTerakhir]);
-                            } else {
-                                $q->whereRaw('CAST(ExtractValue(bm.metadata, \'//datafield[@tag="260"]/subfield[@code="c"]\') AS UNSIGNED) >= YEAR(CURDATE()) - ?', [(int)$tahunTerakhir]);
-                            }
-                        }
-
-                        if (!empty($combinedRules)) {
-                            \App\Helpers\QueryHelper::applyCnClassRules($q, $combinedRules);
-                        }
-
-                        foreach ($q->cursor() as $row) {
-                            $actualClass = !empty($row->cn_class) ? $row->cn_class : $row->itemcallnumber;
-                            if (empty($actualClass)) continue;
-
-                            $key = $isSerial ? $row->biblionumber . '_' . $row->enumchron : $row->biblionumber;
-
-                            foreach ($targetProdiCodes as $prodiCode) {
-                                if (CnClassHelperr::isValidCnClass($prodiCode, $actualClass)) {
-                                    $countsPerProdi[$prodiCode][$category]['judul'][$key] = true;
-                                    $countsPerProdi[$prodiCode][$category]['eksemplar']++;
-                                }
-                            }
-                        }
-                    };
-
-                    $processCategory('Jurnal', ['JR', 'JRA', 'JRT', 'EJ'], true, false, false, true);
-                    $processCategory('E-Jurnal', ['JR', 'JRA', 'JRT', 'EJ'], true, false, true, false);
-                    $processCategory('Textbook', ['BKS', 'BKSA', 'BKSCA', 'BKSC']);
-                    $processCategory('E-Book', 'EB');
-                    $processCategory('Prosiding', ['PR', 'EPR'], true);
-                    $processCategory('Referensi', ['BKS', 'BKSA', 'BKSCA', 'BKSC'], false, true);
+                    $countsPerProdi = $this->collectionService->getRekapFakultasCounts($targetProdiCodes, $tahunTerakhir);
 
                     $resultData = [];
                     foreach ($countsPerProdi as $prodiCode => $categories) {
                         $prodiName = $prodiCodeToNameMap[$prodiCode] ?? $prodiCode;
-                        
+
                         $row = [
                             'prodi_code' => $prodiCode,
                             'prodi_name' => $prodiName
                         ];
-                        
+
                         foreach ($categories as $catName => $data) {
-                            $row[strtolower(str_replace('-', '', $catName)) . '_judul'] = count($data['judul']);
+                            $row[strtolower(str_replace('-', '', $catName)) . '_judul'] = $data['judul'];
                             $row[strtolower(str_replace('-', '', $catName)) . '_eksemplar'] = $data['eksemplar'];
                         }
-                        
+
                         $resultData[] = $row;
                     }
-                    
+
                     return collect($resultData)->sortBy('prodi_name')->values();
                 });
             }

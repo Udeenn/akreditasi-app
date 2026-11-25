@@ -99,9 +99,9 @@
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
                                         <td>
-                                            {!! $row->Judul_a !!}
+                                            {{ $row->Judul_a }}
                                             @if (!empty($row->Judul_b))
-                                                : {!! $row->Judul_b !!}
+                                                : {{ $row->Judul_b }}
                                             @endif
                                         </td>
                                         <td>{{ $row->Pengarang }}
@@ -114,7 +114,7 @@
                                         <td>{{ $row->Eksemplar }}</td>
                                         <td>{{ $row->Lokasi }}</td>
                                         <td>
-                                            @if (!empty($row->Link_Prosiding))
+                                            @if (!empty($row->Link_Prosiding) && preg_match('#^https?://#i', $row->Link_Prosiding))
                                                 <a href="{{ $row->Link_Prosiding }}" target="_blank"
                                                     class="btn btn-primary btn-sm" rel="noopener noreferrer">Link</a>
                                             @else

@@ -34,7 +34,7 @@ class KohaService
 
             Log::info('Koha: Requesting OAuth2 token', ['url' => $tokenUrl]);
 
-            $response = Http::withOptions(['verify' => false, 'timeout' => 10])
+            $response = Http::withOptions(['verify' => !config('koha.disable_ssl_validation', false), 'timeout' => 10])
                 ->asForm()
                 ->post($tokenUrl, [
                     'grant_type'    => 'client_credentials',
@@ -63,7 +63,7 @@ class KohaService
     public function client()
     {
         $http = Http::baseUrl($this->baseUrl)
-            ->withOptions(['verify' => false, 'timeout' => 15])
+            ->withOptions(['verify' => !config('koha.disable_ssl_validation', false), 'timeout' => 15])
             ->acceptJson();
 
         // Try OAuth2 first
