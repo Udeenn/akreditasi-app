@@ -24,18 +24,6 @@ class CollectionRepository
         return $this->applyCommonFilters($query, $prodi, $withdrawn);
     }
 
-    /**
-     * Get Base Collection Query WITHOUT biblio/metadata for fast counting.
-     */
-    public function getBaseTotalQuery(string $prodi, string $tahunTerakhir = 'all', string $withdrawn = '0'): Builder
-    {
-        $query = M_items::query()
-            ->from('items')
-            ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber');
-
-        return $this->applyCommonFilters($query, $prodi, $withdrawn);
-    }
-
     private function applyCommonFilters(Builder $query, string $prodi, string $withdrawn): Builder
     {
         $query->where('items.itemlost', 0);
@@ -86,6 +74,7 @@ class CollectionRepository
     public function getSelectRawString(string $type): string
     {
         $base = "
+            items.biblionumber,
             MAX(bi.cn_class) as Kelas,
             MAX(b.title) as Judul_a,
             MAX(EXTRACTVALUE(bm.metadata,'//datafield[@tag=\"245\"]/subfield[@code=\"b\"]')) as Judul_b,

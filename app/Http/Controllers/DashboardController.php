@@ -20,24 +20,46 @@ class DashboardController extends Controller
 {
     public function __construct(
         private ProdiService $prodiService,
-        private BorrowerService $borrowerService
+        private BorrowerService $borrowerService,
+        private \App\Repositories\BorrowerRepository $borrowerRepository
     ) {}
 
-    private function safeCacheCount(string $cacheKey, callable $filter, string $selectExpr): int
+    private function getCachedItemTotals(): array
     {
         try {
-            return (int) Cache::remember($cacheKey, 3600, function () use ($filter, $selectExpr) {
-                $q = M_items::on('mysql2')
-                    ->select(DB::raw("{$selectExpr} AS total"))
+            return Cache::remember('dashboard_item_totals_v1', 3600, function () {
+                $row = M_items::on('mysql2')
+                    ->selectRaw("
+                        COUNT(DISTINCT CASE WHEN items.itype LIKE 'BK%' THEN items.biblionumber END) AS total_judul_buku,
+                        COUNT(CASE WHEN items.itype LIKE 'BK%' THEN items.biblionumber END) AS total_eksemplar,
+                        COUNT(CASE WHEN items.itype LIKE 'EB%' THEN items.biblionumber END) AS total_ebooks,
+                        COUNT(CASE WHEN items.itype IN ('EJ', 'JRA', 'JR', 'JRT') THEN items.biblionumber END) AS total_jurnal
+                    ")
                     ->where('items.damaged', 0)
                     ->where('items.itemlost', 0)
-                    ->where('items.withdrawn', 0);
-                $filter($q);
-                return $q->value('total') ?? 0;
+                    ->where('items.withdrawn', 0)
+                    ->where(function ($q) {
+                        $q->where('items.itype', 'LIKE', 'BK%')
+                          ->orWhere('items.itype', 'LIKE', 'EB%')
+                          ->orWhereIn('items.itype', ['EJ', 'JRA', 'JR', 'JRT']);
+                    })
+                    ->first();
+
+                return [
+                    'totalJudulBuku' => (int) ($row->total_judul_buku ?? 0),
+                    'totalEksemplar' => (int) ($row->total_eksemplar ?? 0),
+                    'totalEbooks'    => (int) ($row->total_ebooks ?? 0),
+                    'totalJurnal'    => (int) ($row->total_jurnal ?? 0),
+                ];
             });
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error("Dashboard count error [{$cacheKey}]: " . $e->getMessage());
-            return 0;
+            \Illuminate\Support\Facades\Log::error('Dashboard item totals error: ' . $e->getMessage());
+            return [
+                'totalJudulBuku' => 0,
+                'totalEksemplar' => 0,
+                'totalEbooks'    => 0,
+                'totalJurnal'    => 0,
+            ];
         }
     }
 
@@ -45,33 +67,21 @@ class DashboardController extends Controller
     {
         try {
             $kunjunganHarian = Cache::remember('dashboard_kunjungan_harian_' . Carbon::today()->toDateString(), 300, function() {
-                return M_vishistory::whereDate('visittime', Carbon::today())->count();
+                return M_vishistory::whereBetween('visittime', [
+                    Carbon::today()->startOfDay(),
+                    Carbon::today()->endOfDay(),
+                ])->count();
             });
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Dashboard kunjungan harian error: ' . $e->getMessage());
             $kunjunganHarian = 0;
         }
 
-        $totalJudulBuku = $this->safeCacheCount(
-            'dashboard_total_judul_buku',
-            fn($q) => $q->where(DB::raw('LEFT(items.itype, 2)'), 'BK'),
-            'COUNT(DISTINCT items.biblionumber)'
-        );
-        $totalEksemplar = $this->safeCacheCount(
-            'dashboard_total_eksemplar',
-            fn($q) => $q->where(DB::raw('LEFT(items.itype, 2)'), 'BK'),
-            'COUNT(items.biblionumber)'
-        );
-        $totalEbooks = $this->safeCacheCount(
-            'dashboard_total_ebooks',
-            fn($q) => $q->where(DB::raw('LEFT(items.itype, 2)'), 'EB'),
-            'COUNT(items.biblionumber)'
-        );
-        $totalJurnal = $this->safeCacheCount(
-            'dashboard_total_jurnal',
-            fn($q) => $q->whereIn('items.itype', ['EJ', 'JRA', 'JR', 'JRT']),
-            'COUNT(items.biblionumber)'
-        );
+        $itemTotals = $this->getCachedItemTotals();
+        $totalJudulBuku = $itemTotals['totalJudulBuku'];
+        $totalEksemplar = $itemTotals['totalEksemplar'];
+        $totalEbooks    = $itemTotals['totalEbooks'];
+        $totalJurnal    = $itemTotals['totalJurnal'];
 
         $formatTotalJudulBuku = number_format($totalJudulBuku, 0, ',', '.');
         $formatTotalEksemplar = number_format($totalEksemplar, 0, ',', '.');
@@ -135,32 +145,34 @@ class DashboardController extends Controller
             $start = Carbon::createFromDate($currentYear, 1, 1)->startOfDay();
             $end = Carbon::createFromDate($currentYear, 12, 31)->endOfDay();
 
+            // Agregasi per borrowernumber terlebih dahulu agar tidak men-join borrower_attributes saat scan statistics
             $rawData = DB::connection('mysql2')->table('statistics as s')
-                ->leftJoin('borrowers as b', 'b.borrowernumber', '=', 's.borrowernumber')
-                ->leftJoin('borrower_attributes as ba', function ($join) {
-                    $join->on('ba.borrowernumber', '=', 'b.borrowernumber')
-                        ->where('ba.code', '=', 'PRODI');
-                })
                 ->whereIn('s.type', ['issue', 'renew'])
                 ->whereBetween('s.datetime', [$start, $end])
-                ->select('b.cardnumber', 'b.categorycode', 'ba.attribute as prodi_code', DB::raw('COUNT(*) as cnt'))
-                ->groupBy('b.cardnumber', 'b.categorycode', 'ba.attribute')
+                ->select('s.borrowernumber', DB::raw('COUNT(*) as cnt'))
+                ->groupBy('s.borrowernumber')
                 ->get();
 
             $fakultasCount = [];
-            foreach ($rawData as $row) {
-                $catCode = $row->categorycode ?? '';
-                $cardnumber = $row->cardnumber ?? '';
-                $prodiCode = $row->prodi_code ?? '';
+            $blacklist = ['Lainnya', 'Dosen', 'Dosen & Pengajar', 'Tendik', 'Tenaga Kependidikan'];
 
-                $kode = $this->prodiService->identifyProdiCode($cardnumber, $catCode, $prodiCode);
-                $fakultas = FacultyHelper::mapCodeToFaculty($kode);
+            foreach ($rawData->chunk(5000) as $chunk) {
+                $borrowerNumbers = $chunk->pluck('borrowernumber')->filter()->unique()->values();
+                $borrowerInfo = $this->borrowerRepository->getBorrowerInfoByBorrowerNumbers($borrowerNumbers);
 
-                $blacklist = ['Lainnya', 'Dosen', 'Dosen & Pengajar', 'Tendik', 'Tenaga Kependidikan'];
-                if (in_array($fakultas, $blacklist)) continue;
+                foreach ($chunk as $row) {
+                    $info = $borrowerInfo[$row->borrowernumber] ?? null;
+                    $catCode = $info->categorycode ?? '';
+                    $cardnumber = $info->cardnumber ?? '';
+                    $prodiCode = $info->prodi_code ?? '';
 
-                if (!isset($fakultasCount[$fakultas])) $fakultasCount[$fakultas] = 0;
-                $fakultasCount[$fakultas] += (int) $row->cnt;
+                    $kode = $this->prodiService->identifyProdiCode($cardnumber, $catCode, $prodiCode);
+                    $fakultas = FacultyHelper::mapCodeToFaculty($kode);
+
+                    if (in_array($fakultas, $blacklist)) continue;
+
+                    $fakultasCount[$fakultas] = ($fakultasCount[$fakultas] ?? 0) + (int) $row->cnt;
+                }
             }
 
             arsort($fakultasCount);

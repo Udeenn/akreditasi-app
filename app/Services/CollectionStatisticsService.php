@@ -97,22 +97,10 @@ class CollectionStatisticsService
     {
         $withdrawn = in_array($withdrawn, ['0', '1', 'all'], true) ? $withdrawn : '0';
         $config = $this->getCollectionTypeConfig($type);
-        $cacheKey = "stats_collection_generic_v3_{$type}_{$prodi}_{$tahunTerakhir}_w{$withdrawn}";
+        $cacheKey = "stats_collection_generic_v4_{$type}_{$prodi}_{$tahunTerakhir}_w{$withdrawn}";
 
         return Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir, $withdrawn, $config, $type) {
-            // 1. Total Query (join biblio_metadata hanya jika filter tahun membutuhkannya)
-            $totalQuery = $this->collectionRepository->getBaseTotalQuery($prodi, $tahunTerakhir, $withdrawn);
-            if ($tahunTerakhir !== 'all' && !$config['enumchronEndWithYear']) {
-                $totalQuery->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'items.biblionumber');
-            }
-            $this->collectionRepository->applyConfigFilters($totalQuery, $config, $tahunTerakhir);
-            
-            $totals = $totalQuery->selectRaw("
-                COUNT(DISTINCT items.biblionumber) as total_judul,
-                COUNT(items.itemnumber) as total_eksemplar
-            ")->first();
-
-            // 2. Main Query
+            // Single Main Query (total judul & eksemplar dihitung dari hasil agregasi agar tidak scan tabel 2x)
             $query = $this->collectionRepository->getBaseQuery($prodi, $tahunTerakhir, $withdrawn);
             $this->collectionRepository->applyConfigFilters($query, $config, $tahunTerakhir);
 
@@ -157,10 +145,14 @@ class CollectionStatisticsService
                 return $row;
             });
 
+            $isSerialGrouped = $config['enumchronEndWithYear'] || in_array($type, ['periodikal', 'prosiding']);
+
             return [
                 'processedData' => $processedData,
-                'totalJudul' => (int) ($totals->total_judul ?? $processedData->count()),
-                'totalEksemplar' => $totals->total_eksemplar ?? 0
+                'totalJudul' => $isSerialGrouped
+                    ? $processedData->pluck('biblionumber')->unique()->count()
+                    : $processedData->count(),
+                'totalEksemplar' => (int) $processedData->sum('Eksemplar'),
             ];
         });
     }
