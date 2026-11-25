@@ -103,6 +103,7 @@ class ProdiService
         // Overrides untuk kategori khusus yang bukan fakultas
         $map['DOSEN']  = 'Dosen';
         $map['TENDIK'] = 'Tendik';
+        $map['LB']     = 'Lainnya';
 
         return $map;
     }

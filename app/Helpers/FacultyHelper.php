@@ -65,6 +65,11 @@ class FacultyHelper
                 }
             }
 
+            // Anggota Luar Biasa (LB) jangan ikut ter-capture wildcard FKI (L*)
+            if ($prodiCode === 'LB') {
+                return 'Lainnya';
+            }
+
             // B. Cek Wildcard / Prefix Match (Urutkan prefix terpanjang lebih dahulu)
             $prefixMatches = [];
             foreach ($mappings as $map) {
@@ -144,7 +149,7 @@ class FacultyHelper
             return 'FF - Fakultas Farmasi';
         }
 
-        if (str_starts_with($prodiCode, 'KSP') || $prodiCode === 'KSP' || str_contains($prodiCode, 'BIPA')) {
+        if ($prodiCode === 'LB' || str_starts_with($prodiCode, 'KSP') || $prodiCode === 'KSP' || str_contains($prodiCode, 'BIPA')) {
             return 'Lainnya'; 
         }
 

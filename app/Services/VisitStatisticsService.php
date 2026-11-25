@@ -24,7 +24,7 @@ class VisitStatisticsService
         $prodiToFacultyMap = $this->prodiService->getProdiToFacultyMap($allProdiListObj);
         $prodiNameMap = $this->prodiService->getFullProdiList();
 
-        $cacheKey = 'kunjungan_fak_v5_' . md5(json_encode([
+        $cacheKey = 'kunjungan_fak_v6_' . md5(json_encode([
             'ft' => $filterType, 'fk' => $selectedFakultas, 'lok' => $selectedLokasi,
             'dt' => ($filterType == 'yearly') ? "$startYear-$endYear" : "$startDate-$endDate",
         ]));

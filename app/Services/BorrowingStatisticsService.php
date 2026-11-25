@@ -19,7 +19,7 @@ class BorrowingStatisticsService
      */
     public function getPeminjamanFakultas(string $filterType, string $startDate, string $endDate, int $startYear, int $endYear, string $selectedFakultas): array
     {
-        $cacheKey = 'peminjaman_fakultas_v5_' . md5(json_encode([
+        $cacheKey = 'peminjaman_fakultas_v6_' . md5(json_encode([
             'filterType' => $filterType,
             'start' => (in_array($filterType, ['yearly', 'monthly'])) ? "$startYear-01-01" : $startDate,
             'end' => (in_array($filterType, ['yearly', 'monthly'])) ? "$endYear-12-31" : $endDate,

@@ -81,7 +81,7 @@ class DashboardController extends Controller
         // === KUNJUNGAN PER FAKULTAS TAHUN INI ===
         $currentYear = Carbon::now()->year;
         try {
-        $kunjunganFakultas = Cache::remember("dashboard_kunjungan_fakultas_{$currentYear}", 3600, function () use ($currentYear) {
+        $kunjunganFakultas = Cache::remember("dashboard_kunjungan_fakultas_v2_{$currentYear}", 3600, function () use ($currentYear) {
             $start = Carbon::createFromDate($currentYear, 1, 1)->startOfDay();
             $end = Carbon::createFromDate($currentYear, 12, 31)->endOfDay();
 
@@ -131,7 +131,7 @@ class DashboardController extends Controller
 
         // === PEMINJAMAN PER FAKULTAS TAHUN INI ===
         try {
-        $peminjamanFakultas = Cache::remember("dashboard_peminjaman_fakultas_{$currentYear}", 3600, function () use ($currentYear) {
+        $peminjamanFakultas = Cache::remember("dashboard_peminjaman_fakultas_v2_{$currentYear}", 3600, function () use ($currentYear) {
             $start = Carbon::createFromDate($currentYear, 1, 1)->startOfDay();
             $end = Carbon::createFromDate($currentYear, 12, 31)->endOfDay();
 

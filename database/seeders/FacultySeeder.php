@@ -57,7 +57,7 @@ class FacultySeeder extends Seeder
                 'J*'
             ],
             'Lainnya' => [
-                'KSP*', 'BIPA*'
+                'KSP*', 'BIPA*', 'LB'
             ],
         ];
 
