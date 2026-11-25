@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Laporan Pengadaan Koleksi {{ $startYear }}-{{ $endYear }}</title>
+    <title>Laporan Pengadaan Koleksi {{ $periodText }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -98,9 +98,9 @@
             <div class="doc-sub">Perpustakaan Universitas Muhammadiyah Surakarta</div>
         </td>
         <td class="meta-cell">
-            Periode: <b>{{ $startYear }} &ndash; {{ $endYear }}</b><br>
-            Dicetak: {{ now()->locale('id')->isoFormat('D MMMM YYYY') }}<br>
-            Pukul: {{ now()->format('H:i') }} WIB
+            Periode: <b>{{ $periodText }}</b><br>
+            Tampilan: {{ $groupByLabel }}<br>
+            Dicetak: {{ now()->locale('id')->isoFormat('D MMMM YYYY') }} ({{ now()->format('H:i') }} WIB)
         </td>
     </tr>
 </table>
@@ -110,7 +110,7 @@
     <tr>
         <td>Total Judul Baru: <b>{{ number_format($data->sum('total_titles'), 0, ',', '.') }}</b></td>
         <td>Total Eksemplar Baru: <b>{{ number_format($data->sum('total_items'), 0, ',', '.') }}</b></td>
-        <td style="text-align:right; color:#999;">{{ $endYear - $startYear + 1 }} tahun data</td>
+        <td style="text-align:right; color:#999;">{{ $data->count() }} periode data</td>
     </tr>
 </table>
 
@@ -119,9 +119,9 @@
     <thead>
         <tr>
             <th style="width:6%;">No</th>
-            <th style="width:20%;">Tahun Masuk</th>
-            <th style="width:24%;">Judul Baru</th>
-            <th style="width:24%;">Eksemplar Baru</th>
+            <th style="width:24%;">Periode Masuk</th>
+            <th style="width:22%;">Judul Baru</th>
+            <th style="width:22%;">Eksemplar Baru</th>
             <th style="width:26%;">Tren Pengadaan</th>
         </tr>
     </thead>
@@ -136,12 +136,12 @@
         @endphp
         <tr>
             <td class="no">{{ $index + 1 }}</td>
-            <td class="year">{{ $row->year }}</td>
+            <td class="year">{{ $row->period_label }}</td>
             <td>{{ number_format($row->total_titles, 0, ',', '.') }}</td>
             <td>{{ number_format($row->total_items, 0, ',', '.') }}</td>
             <td>
                 @if($growthTitles === null)
-                    <span class="trend-na">— tahun pertama</span>
+                    <span class="trend-na">— periode pertama</span>
                 @elseif($growthTitles > 0)
                     <span class="trend-up">&#9650; +{{ $growthTitles }}%</span>
                 @elseif($growthTitles < 0)

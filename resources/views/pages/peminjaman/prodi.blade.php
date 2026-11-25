@@ -107,7 +107,8 @@
 
                             <div class="col-md-4">
                                 <label for="selected_prodi" class="form-label small text-muted text-uppercase">Program Studi / Unit</label>
-                                <select name="selected_prodi" id="selected_prodi" class="form-select">
+                                <select name="selected_prodi" id="selected_prodi" class="form-select" required>
+                                    <option value="" disabled {{ empty($selectedProdiCode) ? 'selected' : '' }}>-- Pilih Program Studi / Unit --</option>
                                     @foreach ($prodiOptions as $prodi)
                                         <option value="{{ $prodi->authorised_value }}" {{ $selectedProdiCode == $prodi->authorised_value ? 'selected' : '' }}>
                                             {{ $prodi->authorised_value }} - {{ $prodi->lib }} 
@@ -352,6 +353,21 @@
                     </div>
                 </div>
             </div>
+        @elseif (!$hasFilter)
+            {{-- INITIAL STATE (BELUM FILTER) --}}
+            <div class="row justify-content-center mt-5">
+                <div class="col-12 col-md-6">
+                    <div class="card border-0 shadow-sm text-center p-5 rounded-4">
+                        <div class="card-body">
+                            <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-4 mb-3">
+                                <i class="fas fa-filter fa-3x text-primary"></i>
+                            </div>
+                            <h5 class="fw-bold text-body">Silakan Pilih Program Studi / Unit</h5>
+                            <p class="text-muted mb-0">Pilih Program Studi / Unit dan rentang waktu di atas, lalu klik <strong>Tampilkan</strong> untuk melihat data peminjaman.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         @else
             {{-- EMPTY STATE --}}
             <div class="row justify-content-center mt-5">
@@ -435,7 +451,8 @@
 
     <script>
         // --- LOADING ON FORM SUBMIT ---
-        document.getElementById('filterForm')?.addEventListener('submit', function() {
+        document.getElementById('filterForm')?.addEventListener('submit', function(e) {
+            if (!this.checkValidity()) return;
             document.getElementById('loadingOverlay').style.display = 'block';
             const btn = document.getElementById('btnTampilkan');
             const icon = document.getElementById('btnTampilkanIcon');
@@ -449,7 +466,8 @@
             // Select2 Init
             $('#selected_prodi').select2({
                 theme: 'bootstrap-5',
-                width: '100%'
+                width: '100%',
+                placeholder: '-- Pilih Program Studi / Unit --'
             });
 
             // Filter Toggle Logic

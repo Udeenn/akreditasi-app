@@ -393,13 +393,13 @@ public function pertanggal(Request $request)
     {
         $prodiOptions = $this->prodiService->getProdiDropdownOptions();
 
-        $hasFilter = $request->hasAny(['filter_type', 'start_year', 'end_year', 'start_date', 'end_date', 'selected_prodi']);
+        $hasFilter = $request->filled('selected_prodi');
         $filterType = $request->input('filter_type', 'yearly');
         $startYear = $request->input('start_year', \Carbon\Carbon::now()->year);
         $endYear = $request->input('end_year', \Carbon\Carbon::now()->year);
         $startDate = $request->input('start_date', \Carbon\Carbon::now()->subDays(30)->format('Y-m-d'));
         $endDate = $request->input('end_date', \Carbon\Carbon::now()->format('Y-m-d'));
-        $selectedProdiCode = $request->input('selected_prodi', 'DOSEN');
+        $selectedProdiCode = $request->input('selected_prodi', '');
         if (strtoupper(trim((string) $selectedProdiCode)) === 'STAFF') {
             $selectedProdiCode = 'TENDIK';
         }

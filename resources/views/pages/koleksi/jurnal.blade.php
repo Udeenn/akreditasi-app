@@ -34,7 +34,8 @@
                             id="filterFormJurnal">
                             <div class="col-12 col-md-4">
                                 <label for="prodi" class="form-label small text-muted text-uppercase">Pilih Prodi</label>
-                                <select name="prodi" id="prodi" class="form-select">
+                                <select name="prodi" id="prodi" class="form-select" required>
+                                    <option value="" disabled {{ empty($prodi) || $prodi === 'initial' ? 'selected' : '' }}>-- Pilih Program Studi --</option>
                                     @foreach ($listprodi as $p)
                                         <option value="{{ $p->authorised_value }}"
                                             {{ $prodi == $p->authorised_value ? 'selected' : '' }}>

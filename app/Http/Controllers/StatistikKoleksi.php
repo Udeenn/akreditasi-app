@@ -203,19 +203,131 @@ class StatistikKoleksi extends Controller
     public function periodikal(Request $request) { return $this->handleCollectionRequest($request, 'periodikal', 'pages.koleksi.periodikal', 'Periodikal'); }
     public function referensi(Request $request) { return $this->handleCollectionRequest($request, 'referensi', 'pages.koleksi.referensi', 'Referensi'); }
 
-    public function trenPertambahan(Request $request)
-    {
-        $startYear = (int) $request->input('start_year', date('Y') - 10);
-        $endYear   = (int) $request->input('end_year', date('Y'));
+    private const MONTH_NAMES_ID = [
+        1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+        5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+        9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+    ];
 
-        // Swap otomatis jika start_year lebih besar dari end_year
+    private const MONTH_SHORT_ID = [
+        1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr',
+        5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Agu',
+        9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des',
+    ];
+
+    private function parseTrenPertambahanParams(Request $request): array
+    {
+        $startYear  = (int) $request->input('start_year', date('Y') - 10);
+        $endYear    = (int) $request->input('end_year', date('Y'));
+        $startMonth = max(1, min(12, (int) $request->input('start_month', 1)));
+        $endMonth   = max(1, min(12, (int) $request->input('end_month', 12)));
+        $groupBy    = $request->input('group_by', 'yearly');
+        if (!in_array($groupBy, ['yearly', 'stage', 'monthly'], true)) {
+            $groupBy = 'yearly';
+        }
+
+        // Swap otomatis jika periode awal lebih besar dari periode akhir
         $yearSwapped = false;
-        if ($startYear > $endYear) {
+        if (($startYear * 100 + $startMonth) > ($endYear * 100 + $endMonth)) {
             [$startYear, $endYear] = [$endYear, $startYear];
+            [$startMonth, $endMonth] = [$endMonth, $startMonth];
             $yearSwapped = true;
         }
 
-        // Fix 5: Ambil tahun tertua dari DB untuk filter dropdown
+        $startDate = sprintf('%04d-%02d-01', $startYear, $startMonth);
+        $endDate   = \Carbon\Carbon::create($endYear, $endMonth, 1)->endOfMonth()->format('Y-m-d');
+
+        $startLabel = self::MONTH_NAMES_ID[$startMonth] . ' ' . $startYear;
+        $endLabel   = self::MONTH_NAMES_ID[$endMonth] . ' ' . $endYear;
+        $periodText = ($startYear === $endYear && $startMonth === $endMonth)
+            ? $startLabel
+            : "{$startLabel} - {$endLabel}";
+
+        return compact(
+            'startYear', 'endYear', 'startMonth', 'endMonth',
+            'groupBy', 'yearSwapped', 'startDate', 'endDate', 'periodText'
+        );
+    }
+
+    private function getTrenPertambahanData(string $startDate, string $endDate, string $groupBy): \Illuminate\Support\Collection
+    {
+        $cacheKey = "statistik_koleksi_tren_pertambahan_{$groupBy}_{$startDate}_{$endDate}";
+
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $groupBy) {
+            $query = DB::connection('mysql2')
+                ->table('items')
+                ->whereNotNull('dateaccessioned')
+                ->whereRaw('DATE(dateaccessioned) BETWEEN ? AND ?', [$startDate, $endDate]);
+
+            if ($groupBy === 'stage') {
+                $rows = $query
+                    ->selectRaw('YEAR(dateaccessioned) as year, (FLOOR((MONTH(dateaccessioned) - 1) / 4) + 1) as stage_num, COUNT(itemnumber) as total_items, COUNT(DISTINCT biblionumber) as total_titles')
+                    ->groupByRaw('YEAR(dateaccessioned), FLOOR((MONTH(dateaccessioned) - 1) / 4) + 1')
+                    ->orderByRaw('YEAR(dateaccessioned) ASC, stage_num ASC')
+                    ->get();
+
+                $stageMeta = [
+                    1 => ['01-01', '04-30', 'Tahap 1 (Jan–Apr)'],
+                    2 => ['05-01', '08-31', 'Tahap 2 (Mei–Agu)'],
+                    3 => ['09-01', '12-31', 'Tahap 3 (Sep–Des)'],
+                ];
+
+                return $rows->map(function ($row) use ($stageMeta, $startDate, $endDate) {
+                    $stage = (int) $row->stage_num;
+                    [$startSuffix, $endSuffix, $stageLabel] = $stageMeta[$stage] ?? ['01-01', '12-31', "Tahap {$stage}"];
+                    $row->period_label = "{$row->year} - {$stageLabel}";
+                    $row->start_date = max($startDate, "{$row->year}-{$startSuffix}");
+                    $row->end_date   = min($endDate, "{$row->year}-{$endSuffix}");
+                    return $row;
+                });
+            }
+
+            if ($groupBy === 'monthly') {
+                $rows = $query
+                    ->selectRaw('YEAR(dateaccessioned) as year, MONTH(dateaccessioned) as month, COUNT(itemnumber) as total_items, COUNT(DISTINCT biblionumber) as total_titles')
+                    ->groupByRaw('YEAR(dateaccessioned), MONTH(dateaccessioned)')
+                    ->orderByRaw('YEAR(dateaccessioned) ASC, MONTH(dateaccessioned) ASC')
+                    ->get();
+
+                return $rows->map(function ($row) use ($startDate, $endDate) {
+                    $m = (int) $row->month;
+                    $monthStart = sprintf('%04d-%02d-01', $row->year, $m);
+                    $monthEnd   = \Carbon\Carbon::create($row->year, $m, 1)->endOfMonth()->format('Y-m-d');
+                    $row->period_label = (self::MONTH_SHORT_ID[$m] ?? $m) . ' ' . $row->year;
+                    $row->start_date   = max($startDate, $monthStart);
+                    $row->end_date     = min($endDate, $monthEnd);
+                    return $row;
+                });
+            }
+
+            $rows = $query
+                ->selectRaw('YEAR(dateaccessioned) as year, COUNT(itemnumber) as total_items, COUNT(DISTINCT biblionumber) as total_titles')
+                ->groupByRaw('YEAR(dateaccessioned)')
+                ->orderByRaw('YEAR(dateaccessioned) ASC')
+                ->get();
+
+            return $rows->map(function ($row) use ($startDate, $endDate) {
+                $rowStart = max($startDate, "{$row->year}-01-01");
+                $rowEnd   = min($endDate, "{$row->year}-12-31");
+                $startM   = (int) substr($rowStart, 5, 2);
+                $endM     = (int) substr($rowEnd, 5, 2);
+
+                $row->period_label = ($startM === 1 && $endM === 12)
+                    ? (string) $row->year
+                    : $row->year . ' (' . (self::MONTH_SHORT_ID[$startM] ?? $startM) . '–' . (self::MONTH_SHORT_ID[$endM] ?? $endM) . ')';
+                $row->start_date = $rowStart;
+                $row->end_date   = $rowEnd;
+                return $row;
+            });
+        });
+    }
+
+    public function trenPertambahan(Request $request)
+    {
+        $params = $this->parseTrenPertambahanParams($request);
+        extract($params);
+
+        // Ambil tahun tertua dari DB untuk filter dropdown
         $minYear = (int) \Illuminate\Support\Facades\Cache::remember('tren_pertambahan_min_year', 86400, function () {
             return DB::connection('mysql2')
                 ->table('items')
@@ -224,21 +336,10 @@ class StatistikKoleksi extends Controller
                 ->value('min_year') ?? 2000;
         });
 
-        $cacheKey = "statistik_koleksi_tren_pertambahan_{$startYear}_{$endYear}";
-        $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startYear, $endYear) {
-            return DB::connection('mysql2')
-                ->table('items')
-                ->selectRaw('YEAR(dateaccessioned) as year, COUNT(itemnumber) as total_items, COUNT(DISTINCT biblionumber) as total_titles')
-                ->whereNotNull('dateaccessioned')
-                ->whereRaw('YEAR(dateaccessioned) >= ?', [$startYear])
-                ->whereRaw('YEAR(dateaccessioned) <= ?', [$endYear])
-                ->groupByRaw('YEAR(dateaccessioned)')
-                ->orderByRaw('YEAR(dateaccessioned) ASC')
-                ->get();
-        });
+        $data = $this->getTrenPertambahanData($startDate, $endDate, $groupBy);
 
         if ($request->has('export_csv')) {
-            $filename = "Tren_Pertambahan_Koleksi_{$startYear}_{$endYear}.csv";
+            $filename = "Tren_Pertambahan_Koleksi_{$startDate}_sd_{$endDate}_{$groupBy}.csv";
             $headers = [
                 "Content-type"        => "text/csv",
                 "Content-Disposition" => "attachment; filename=$filename",
@@ -247,55 +348,46 @@ class StatistikKoleksi extends Controller
                 "Expires"             => "0"
             ];
 
-            $callback = function() use($data, $startYear, $endYear) {
+            $callback = function () use ($data, $periodText) {
                 $file = fopen('php://output', 'w');
-                
-                fputcsv($file, ["Data Pengadaan Koleksi ($startYear - $endYear)"]);
+
+                fputcsv($file, ["Data Pengadaan Koleksi ($periodText)"]);
                 fputcsv($file, []);
-                
-                fputcsv($file, ['No', 'Tahun Masuk (Accessioned)', 'Judul Baru', 'Eksemplar Baru']);
-                
+                fputcsv($file, ['No', 'Periode Masuk (Accessioned)', 'Judul Baru', 'Eksemplar Baru']);
+
                 $i = 1;
                 foreach ($data as $row) {
                     fputcsv($file, [
                         $i++,
-                        $row->year,
+                        $row->period_label,
                         $row->total_titles,
                         $row->total_items
                     ]);
                 }
-                
+
                 fputcsv($file, [
                     '', 'TOTAL', $data->sum('total_titles'), $data->sum('total_items')
                 ]);
-                
+
                 fclose($file);
             };
 
             return response()->stream($callback, 200, $headers);
         }
 
-        return view('pages.koleksi.tren-pertambahan', compact('data', 'startYear', 'endYear', 'yearSwapped', 'minYear'));
+        $months = self::MONTH_NAMES_ID;
+        return view('pages.koleksi.tren-pertambahan', compact(
+            'data', 'startYear', 'endYear', 'startMonth', 'endMonth',
+            'groupBy', 'yearSwapped', 'minYear', 'months', 'periodText'
+        ));
     }
 
     public function exportPdfTrenPertambahan(Request $request)
     {
-        $startYear = (int) $request->input('start_year', date('Y') - 10);
-        $endYear   = (int) $request->input('end_year', date('Y'));
-        if ($startYear > $endYear) [$startYear, $endYear] = [$endYear, $startYear];
+        $params = $this->parseTrenPertambahanParams($request);
+        extract($params);
 
-        $cacheKey = "statistik_koleksi_tren_pertambahan_{$startYear}_{$endYear}";
-        $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startYear, $endYear) {
-            return DB::connection('mysql2')
-                ->table('items')
-                ->selectRaw('YEAR(dateaccessioned) as year, COUNT(itemnumber) as total_items, COUNT(DISTINCT biblionumber) as total_titles')
-                ->whereNotNull('dateaccessioned')
-                ->whereRaw('YEAR(dateaccessioned) >= ?', [$startYear])
-                ->whereRaw('YEAR(dateaccessioned) <= ?', [$endYear])
-                ->groupByRaw('YEAR(dateaccessioned)')
-                ->orderByRaw('YEAR(dateaccessioned) ASC')
-                ->get();
-        });
+        $data = $this->getTrenPertambahanData($startDate, $endDate, $groupBy);
 
         $logoPath = public_path('img/ums.png');
         $logoBase64 = '';
@@ -303,16 +395,38 @@ class StatistikKoleksi extends Controller
             $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
         }
 
+        $groupByLabel = match ($groupBy) {
+            'stage'   => 'Per Tahap (3x Setahun)',
+            'monthly' => 'Per Bulan',
+            default   => 'Per Tahun',
+        };
+
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.koleksi.pdf.tren-pertambahan', compact(
-            'data', 'startYear', 'endYear', 'logoBase64'
+            'data', 'startYear', 'endYear', 'periodText', 'groupByLabel', 'logoBase64'
         ))->setPaper('a4', 'portrait');
 
-        return $pdf->download("Tren_Pertambahan_Koleksi_{$startYear}_{$endYear}.pdf");
+        return $pdf->download("Tren_Pertambahan_Koleksi_{$startDate}_sd_{$endDate}.pdf");
     }
 
     public function detailPertambahan(Request $request)
     {
-        $year   = (int)$request->input('year', date('Y'));
+        $startDate = trim((string) $request->input('start_date', ''));
+        $endDate   = trim((string) $request->input('end_date', ''));
+        $isValidDate = fn(string $d): bool => (bool) preg_match('/^\d{4}-\d{2}-\d{2}$/', $d) && strtotime($d) !== false;
+        $hasDateRange = $isValidDate($startDate) && $isValidDate($endDate);
+
+        if ($hasDateRange && $startDate > $endDate) {
+            [$startDate, $endDate] = [$endDate, $startDate];
+        }
+
+        $year        = $hasDateRange ? (int) substr($startDate, 0, 4) : (int) $request->input('year', date('Y'));
+        $periodLabel = trim((string) $request->input('label', ''));
+        if ($periodLabel === '') {
+            $periodLabel = $hasDateRange
+                ? \Carbon\Carbon::parse($startDate)->locale('id')->isoFormat('D MMM YYYY') . ' - ' . \Carbon\Carbon::parse($endDate)->locale('id')->isoFormat('D MMM YYYY')
+                : "Tahun {$year}";
+        }
+
         $search = trim($request->input('search', ''));
         $itype  = trim($request->input('itype', ''));
         $export = $request->has('export_csv');
@@ -339,9 +453,14 @@ class StatistikKoleksi extends Controller
                 DB::raw('MIN(DATE(items.dateaccessioned)) as tgl_masuk')
             )
             ->whereNotNull('items.dateaccessioned')
-            ->whereRaw('YEAR(items.dateaccessioned) = ?', [$year])
             ->where('items.itemlost', 0)
             ->where('items.withdrawn', 0);
+
+        if ($hasDateRange) {
+            $query->whereRaw('DATE(items.dateaccessioned) BETWEEN ? AND ?', [$startDate, $endDate]);
+        } else {
+            $query->whereRaw('YEAR(items.dateaccessioned) = ?', [$year]);
+        }
 
         // Filter jenis koleksi — mapping nama group ke itype DB sesuai sistem
         if ($itype !== '') {
@@ -383,13 +502,15 @@ class StatistikKoleksi extends Controller
 
         // Cache hanya saat tidak ada filter search atau itype (filter dinamis = no cache)
         $useCache = ($search === '' && $itype === '');
-        $cacheKeyDetail = "detail_pertambahan_{$year}";
+        $cacheKeyDetail = $hasDateRange ? "detail_pertambahan_{$startDate}_{$endDate}" : "detail_pertambahan_{$year}";
 
         if ($export) {
             $data = $useCache
                 ? \Illuminate\Support\Facades\Cache::remember($cacheKeyDetail, 3600, fn() => $query->get())
                 : $query->get();
-            $filename = "Detail_Pertambahan_Buku_Tahun_{$year}.csv";
+            $filename = $hasDateRange
+                ? "Detail_Pertambahan_Buku_{$startDate}_sd_{$endDate}.csv"
+                : "Detail_Pertambahan_Buku_Tahun_{$year}.csv";
             $headers = [
                 "Content-type"        => "text/csv",
                 "Content-Disposition" => "attachment; filename=$filename",
@@ -398,9 +519,9 @@ class StatistikKoleksi extends Controller
                 "Expires"             => "0"
             ];
 
-            $callback = function() use($data, $year) {
+            $callback = function() use($data, $periodLabel) {
                 $file = fopen('php://output', 'w');
-                fputcsv($file, ["Detail Pengadaan Koleksi - Tahun Pengadaan: $year"]);
+                fputcsv($file, ["Detail Pengadaan Koleksi - Periode: $periodLabel"]);
                 fputcsv($file, []);
                 fputcsv($file, ['No', 'Judul Buku', 'Pengarang', 'Penerbit', 'Tahun Terbit', 'Call Number', 'Jumlah Eksemplar', 'Tanggal Masuk']);
                 $i = 1;
@@ -447,13 +568,16 @@ class StatistikKoleksi extends Controller
             return response()->json([
                 'status' => 'success',
                 'year' => $year,
+                'period_label' => $periodLabel,
                 'html' => view('pages.koleksi.partials.detail-pertambahan-table', compact('details', 'year', 'search'))->render(),
                 'total_titles' => $details->total(),
                 'total_items' => $totalEksemplarAll
             ]);
         }
 
-        return view('pages.koleksi.detail-pertambahan', compact('details', 'year', 'search', 'itype'));
+        return view('pages.koleksi.detail-pertambahan', compact(
+            'details', 'year', 'search', 'itype', 'startDate', 'endDate', 'hasDateRange', 'periodLabel'
+        ));
     }
 
     private function getCsvHeaders(string $type): array
