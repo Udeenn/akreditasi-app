@@ -113,10 +113,10 @@ class ProdiService
      */
     public function getFullProdiList(): array
     {
-        return Cache::remember('prodi_full_list_v4', 3600, function () {
+        return Cache::remember('prodi_full_list_v5', 3600, function () {
             $allProdiListObj = M_Auv::getCachedProdiList();
             $facultyMap = $this->getProdiToFacultyMap($allProdiListObj);
-            $prodiNameMap = $allProdiListObj->pluck('lib', 'authorised_value')->toArray();
+            $prodiNameMap = M_Auv::getCachedAllProdiNameMap() + $allProdiListObj->pluck('lib', 'authorised_value')->toArray();
 
             $list = [];
             foreach ($prodiNameMap as $code => $name) {
@@ -125,7 +125,7 @@ class ProdiService
                     continue;
                 }
 
-                $facultyString = $facultyMap[$code] ?? '';
+                $facultyString = $facultyMap[$code] ?? FacultyHelper::mapCodeToFaculty($code);
                 $parts = explode(' - ', $facultyString);
                 $acronym = isset($parts[0]) ? trim($parts[0]) : '';
 

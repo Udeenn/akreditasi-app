@@ -131,7 +131,7 @@ public function pertanggal(Request $request)
         }
     }
 
-    return view('pages.peminjaman.peminjamanRentangTanggal', compact(
+    return view('pages.peminjaman.keseluruhan', compact(
         'statistics', 'fullStatisticsForChart', 'startDate', 'endDate',
         'startYear', 'endYear', 'filterType', 'totalBooks', 'totalReturns',
         'totalBorrowers', 'totalCirculation', 'rerataPeminjaman'
@@ -234,7 +234,7 @@ public function pertanggal(Request $request)
         }
 
         // To generate PDF
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.peminjaman.pdf.peminjamanKeseluruhan', compact(
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.peminjaman.pdf.peminjaman-keseluruhan', compact(
             'fullStatisticsForChart', 'filterType', 'periodeText', 'totalBooks', 'totalReturns',
             'totalBorrowers', 'totalCirculation', 'rerataPeminjaman', 'chartImage', 'logoBase64'
         ))->setPaper('a4', 'landscape');
@@ -474,7 +474,7 @@ public function pertanggal(Request $request)
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
 
-        return view('pages.peminjaman.prodiChart', compact(
+        return view('pages.peminjaman.prodi', compact(
             'prodiOptions', 'startYear', 'endYear', 'selectedProdiCode',
             'filterType', 'startDate', 'endDate', 'statistics',
             'chartLabels', 'chartDatasets', 'dataExists',
@@ -543,7 +543,11 @@ public function pertanggal(Request $request)
                 $borrowersQuery->where(function ($q) {
                     $q->where('b.categorycode', 'like', 'STAF%')
                         ->orWhere('b.categorycode', 'like', '%LIB%')
-                        ->orWhere('b.categorycode', '=', 'LIBRARIAN');
+                        ->orWhere('b.categorycode', '=', 'LIBRARIAN')
+                        ->orWhere(function ($sub) {
+                            $sub->whereRaw("CHAR_LENGTH(TRIM(b.cardnumber)) <= 9")
+                                ->whereRaw("UPPER(TRIM(b.cardnumber)) NOT REGEXP '^[A-Z][0-9]{3}'");
+                        });
                 });
             } elseif ($code === 'ALL_MAHASISWA') {
                 $borrowersQuery->where(function ($q) {
@@ -563,7 +567,8 @@ public function pertanggal(Request $request)
                 })->where(function ($q) use ($code) {
                     $q->where('ba.attribute', '=', $code)
                         ->orWhere(function ($sub) use ($code) {
-                            $sub->whereNull('ba.attribute')->where('b.cardnumber', 'like', $code . '%');
+                            $sub->whereRaw("TRIM(COALESCE(ba.attribute, '')) = ''")
+                                ->where('b.cardnumber', 'like', $code . '%');
                         });
                 });
             }
@@ -965,7 +970,7 @@ public function pertanggal(Request $request)
             }
         }
 
-        return view('pages.peminjaman.cekPeminjaman', [
+        return view('pages.peminjaman.cek-pinjaman', [
             'cardnumber' => $cardnumber,
             'tahun' => $tahun,
             'borrower' => $borrower,
@@ -1097,7 +1102,7 @@ public function pertanggal(Request $request)
             else $namaProdiFilter = $listProdi[$fc] ?? $fc;
         }
 
-        return view('pages.peminjaman.peminjamanBerlangsung', compact(
+        return view('pages.peminjaman.berlangsung', compact(
             'listProdi',
             'selectedProdiCode',
             'namaProdiFilter'
@@ -1354,7 +1359,7 @@ public function pertanggal(Request $request)
             return back()->with('error', 'Terjadi kesalahan saat memproses data: ' . $e->getMessage());
         }
 
-        return view('pages.peminjaman.peminjamanFakultas', compact(
+        return view('pages.peminjaman.fakultas', compact(
             'listFakultas', 'selectedFakultas',
             'startDate', 'endDate', 'startYear', 'endYear',
             'filterType', 'hasFilter', 'dataExists',
@@ -1530,7 +1535,7 @@ public function pertanggal(Request $request)
             );
         }
 
-        return view('pages.peminjaman.bukuTerlarisProdi', compact(
+        return view('pages.peminjaman.buku-terlaris-prodi', compact(
             'prodiList', 'selectedProdi', 'filterType', 'startDate', 'endDate', 'startYear', 'endYear', 'paginator', 'hasFilter', 'perPage', 'top10Buku'
         ));
     }
@@ -1708,7 +1713,7 @@ public function pertanggal(Request $request)
             $logoBase64 = 'data:image/png;base64,' . base64_encode($logoData);
         }
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.peminjaman.pdf.bukuTerlarisProdi', compact(
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.peminjaman.pdf.buku-terlaris-prodi', compact(
             'data', 'namaProdi', 'periodeText', 'logoBase64'
         ))->setPaper('a4', 'portrait');
 

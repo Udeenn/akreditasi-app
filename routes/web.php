@@ -76,7 +76,6 @@ Route::middleware('auth')->group(function () {
     // Statistik Kunjungan
     // =============================================
     Route::prefix('kunjungan')->name('kunjungan.')->group(function () {
-        Route::get('/prodi-chart', [VisitHistory::class, 'kunjunganProdiChart'])->name('prodiChartData');
         Route::get('/prodi-data', [VisitHistory::class, 'getProdiDataJSON'])->name('prodiData');
         Route::get('/prodi', [VisitHistory::class, 'kunjunganProdiTable'])->name('prodi');
         Route::get('/prodi/data', [VisitHistory::class, 'getProdiData'])->name('prodi.data');
@@ -154,11 +153,18 @@ Route::middleware('auth')->group(function () {
     // =============================================
     // Statistik Penggunaan
     // =============================================
-    Route::get('/statistik/keterpakaian-koleksi', [PenggunaanController::class, 'keterpakaianKoleksi'])->name('penggunaan.keterpakaian_koleksi');
-    Route::post('/statistik/keterpakaian-koleksi/export-pdf', [PenggunaanController::class, 'exportPdfKeterpakaianKoleksi'])->name('penggunaan.keterpakaian_koleksi.export_pdf')->middleware('throttle:exports');
-    Route::get('/statistik/keterpakaian-koleksi/detail', [PenggunaanController::class, 'getKeterpakaianDetail'])->name('statistik.keterpakaian_koleksi.detail');
-    Route::get('/statistik/cek-histori-buku', [PenggunaanController::class, 'cekBuku'])->name('penggunaan.cek_histori_buku_buku');
-    Route::get('/statistik/sering-dibaca', [PenggunaanController::class, 'seringDibaca'])->name('penggunaan.sering_dibaca');
+    Route::prefix('penggunaan')->name('penggunaan.')->group(function () {
+        Route::get('/keterpakaian-koleksi', [PenggunaanController::class, 'keterpakaianKoleksi'])->name('keterpakaian_koleksi');
+        Route::post('/keterpakaian-koleksi/export-pdf', [PenggunaanController::class, 'exportPdfKeterpakaianKoleksi'])->name('keterpakaian_koleksi.export_pdf')->middleware('throttle:exports');
+        Route::get('/keterpakaian-koleksi/detail', [PenggunaanController::class, 'getKeterpakaianDetail'])->name('keterpakaian_koleksi.detail');
+        Route::get('/cek-histori-buku', [PenggunaanController::class, 'cekBuku'])->name('cek_histori_buku');
+        Route::get('/buku-terlaris', [PenggunaanController::class, 'seringDibaca'])->name('buku_terlaris');
+    });
+
+    // Redirect URL lama /statistik/* agar bookmark lama tetap berjalan
+    Route::redirect('/statistik/keterpakaian-koleksi', '/penggunaan/keterpakaian-koleksi', 301);
+    Route::redirect('/statistik/cek-histori-buku', '/penggunaan/cek-histori-buku', 301);
+    Route::redirect('/statistik/sering-dibaca', '/penggunaan/buku-terlaris', 301);
 
     // =============================================
     // Reward
@@ -184,6 +190,11 @@ Route::middleware('auth')->group(function () {
 
         // Pengaturan Fakultas & Prodi Mapping
         Route::resource('pengaturan/fakultas', \App\Http\Controllers\FacultyController::class);
+
+        // Pengaturan Whitelist Prodi Tampil
+        Route::get('/pengaturan/prodi-whitelist', [\App\Http\Controllers\ProdiWhitelistController::class, 'index'])->name('prodi-whitelist.index');
+        Route::post('/pengaturan/prodi-whitelist', [\App\Http\Controllers\ProdiWhitelistController::class, 'update'])->name('prodi-whitelist.update');
+        Route::post('/pengaturan/prodi-whitelist/reset', [\App\Http\Controllers\ProdiWhitelistController::class, 'reset'])->name('prodi-whitelist.reset');
 
         // Audit Trail — Activity Log
         Route::get('/admin/activity-log', [\App\Http\Controllers\ActivityLogController::class, 'index'])

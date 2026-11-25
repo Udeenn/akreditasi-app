@@ -76,10 +76,11 @@
             box-sizing: border-box;
         }
         #btnTerapkanFilter {
-            display: inline-flex;
+            display: flex;
+            width: 100%;
             align-items: center;
             justify-content: center;
-            font-weight: 600;
+            font-weight: 400;
             font-size: var(--font-form);
             letter-spacing: 0.025em;
             transition: all 0.2s ease;
@@ -134,7 +135,7 @@
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <button type="button" id="btnTerapkanFilter" class="btn btn-primary w-100 shadow-sm">
+                                <button type="button" id="btnTerapkanFilter" class="btn btn-primary w-100 fw-normal shadow-sm">
                                     <x-icon name="search" class="me-2" /> Terapkan Filter
                                 </button>
                             </div>
@@ -158,7 +159,7 @@
                 </div>
 
                 <button type="button" id="exportCsvBtn"
-                    class="btn btn-success btn-modern shadow-sm"><x-icon name="file-excel" class="me-2" /> Export Data
+                    class="btn btn-success px-3 shadow-sm text-nowrap"><x-icon name="file-excel" class="me-2" /> Export CSV
                 </button>
             </div>
 

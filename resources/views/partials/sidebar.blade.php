@@ -163,11 +163,11 @@
             <li><a class="nav-link {{ request()->routeIs('penggunaan.keterpakaian_koleksi') ? 'active' : '' }}"
                     href="{{ route('penggunaan.keterpakaian_koleksi') }}">Keterpakaian Koleksi</a>
             </li>
-            <li><a class="nav-link {{ request()->routeIs('penggunaan.cek_histori_buku_buku') ? 'active' : '' }}"
-                    href="{{ route('penggunaan.cek_histori_buku_buku') }}">Cek Histori Buku</a>
+            <li><a class="nav-link {{ request()->routeIs('penggunaan.cek_histori_buku') ? 'active' : '' }}"
+                    href="{{ route('penggunaan.cek_histori_buku') }}">Cek Histori Buku</a>
             </li>
-            <li><a class="nav-link {{ request()->routeIs('penggunaan.sering_dibaca') ? 'active' : '' }}"
-                    href="{{ route('penggunaan.sering_dibaca') }}">Buku Terlaris</a>
+            <li><a class="nav-link {{ request()->routeIs('penggunaan.buku_terlaris') ? 'active' : '' }}"
+                    href="{{ route('penggunaan.buku_terlaris') }}">Buku Terlaris</a>
             </li>
         </ul>
     </div>
@@ -219,6 +219,13 @@
         href="{{ route('fakultas.index') }}">
         <x-icon name="gear-fill" class="nav-icon" />
         <span class="nav-text">Setting Fakultas</span>
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link {{ request()->routeIs('prodi-whitelist.*') ? 'active' : '' }}"
+        href="{{ route('prodi-whitelist.index') }}">
+        <x-icon name="user-check" class="nav-icon" />
+        <span class="nav-text">Setting Prodi Tampil</span>
     </a>
 </li>
 @endif

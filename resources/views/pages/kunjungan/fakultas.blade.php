@@ -20,9 +20,9 @@
                         <form method="GET" action="{{ route('kunjungan.fakultasTable') }}" id="filterForm">
                             <input type="hidden" name="search" id="hiddenSearchInput" value="{{ request('search') }}">
 
-                            <div class="row g-3 align-items-end">
+                            <div class="d-flex flex-wrap flex-xl-nowrap align-items-end gap-2">
                                 {{-- Filter Tipe --}}
-                                <div class="col-md-2 col-6">
+                                <div style="min-width: 115px; flex: 1 1 115px;">
                                     <label class="form-label small text-muted text-uppercase mb-1">Mode Tampilan</label>
                                     <select name="filter_type" id="filter_type" class="form-select shadow-none">
                                         <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>
@@ -33,7 +33,7 @@
                                 </div>
 
                                 {{-- Filter Lokasi --}}
-                                <div class="col-md-2 col-12">
+                                <div style="min-width: 145px; flex: 1.3 1 145px;">
                                     <label class="form-label small text-muted text-uppercase mb-1">Lokasi</label>
                                     <select name="lokasi" id="lokasi" class="form-select shadow-none">
                                         <option value="">Semua Lokasi </option>
@@ -47,7 +47,7 @@
                                 </div>
 
                                 {{-- Filter Fakultas --}}
-                                <div class="col-md-2 col-12">
+                                <div style="min-width: 145px; flex: 1.3 1 145px;">
                                     <label class="form-label small text-muted text-uppercase mb-1">Fakultas</label>
                                     <select name="fakultas" id="fakultas" class="form-select shadow-none">
                                         <option value="semua" {{ request('fakultas') == 'semua' ? 'selected' : '' }}>
@@ -62,41 +62,39 @@
                                 </div>
 
                                 {{-- Filter Tanggal (Daily) --}}
-                                <div class="col-md-2 col-6 daily-filter"
-                                    style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
-                                    <label class="form-label small text-muted text-uppercase mb-1">Dari Tanggal</label>
-                                    <input type="date" name="tanggal_awal"
-                                        class="form-control shadow-none" value="{{ $tanggalAwal }}">
-                                </div>
-                                <div class="col-md-2 col-6 daily-filter"
-                                    style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
-                                    <label class="form-label small text-muted text-uppercase mb-1">Sampai Tanggal</label>
-                                    <input type="date" name="tanggal_akhir"
-                                        class="form-control shadow-none" value="{{ $tanggalAkhir }}">
+                                <div class="daily-filter"
+                                    style="min-width: 270px; flex: 2.2 1 270px; {{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
+                                    <label class="form-label small text-muted text-uppercase mb-1">Rentang Tanggal</label>
+                                    <div class="input-group">
+                                        <input type="date" name="tanggal_awal"
+                                            class="form-control shadow-none" value="{{ $tanggalAwal }}">
+                                        <span class="input-group-text text-muted">s/d</span>
+                                        <input type="date" name="tanggal_akhir"
+                                            class="form-control shadow-none" value="{{ $tanggalAkhir }}">
+                                    </div>
                                 </div>
 
                                 {{-- Filter Tahun (Yearly) --}}
-                                <div class="col-md-2 col-6 yearly-filter"
-                                    style="{{ ($filterType ?? '') == 'yearly' ? '' : 'display: none;' }}">
-                                    <label class="form-label small text-muted text-uppercase mb-1">Dari Tahun</label>
-                                    <input type="number" name="tahun_awal" class="form-control shadow-none"
-                                        value="{{ $tahunAwal }}" placeholder="2020">
-                                </div>
-                                <div class="col-md-2 col-6 yearly-filter"
-                                    style="{{ ($filterType ?? '') == 'yearly' ? '' : 'display: none;' }}">
-                                    <label class="form-label small text-muted text-uppercase mb-1">Sampai Tahun</label>
-                                    <input type="number" name="tahun_akhir"
-                                        class="form-control shadow-none" value="{{ $tahunAkhir }}"
-                                        placeholder="{{ date('Y') }}">
+                                <div class="yearly-filter"
+                                    style="min-width: 190px; flex: 2.2 1 190px; {{ ($filterType ?? '') == 'yearly' ? '' : 'display: none;' }}">
+                                    <label class="form-label small text-muted text-uppercase mb-1">Rentang Tahun</label>
+                                    <div class="input-group">
+                                        <input type="number" name="tahun_awal" class="form-control shadow-none"
+                                            value="{{ $tahunAwal }}" placeholder="2020">
+                                        <span class="input-group-text text-muted">s/d</span>
+                                        <input type="number" name="tahun_akhir"
+                                            class="form-control shadow-none" value="{{ $tahunAkhir }}"
+                                            placeholder="{{ date('Y') }}">
+                                    </div>
                                 </div>
 
                                 {{-- Tombol Action --}}
-                                <div class="col-md-auto col-12 d-flex gap-2">
-                                    <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                                <div class="d-flex gap-2 flex-shrink-0">
+                                    <button type="submit" class="btn btn-primary px-3 shadow-sm text-nowrap">
                                         <i class="fas fa-search me-1"></i> Tampilkan
                                     </button>
                                     <button type="button" id="btnExportCsv"
-                                        class="btn btn-success px-4 shadow-sm">
+                                        class="btn btn-success px-3 shadow-sm text-nowrap">
                                         <i class="fas fa-file-csv me-1"></i> Export CSV
                                     </button>
                                 </div>
@@ -128,12 +126,13 @@
                                         <i class="fas fa-chart-line me-1"></i> Tren Waktu
                                     </button>
                                     <button type="button" class="btn btn-outline-primary" id="btnModeRanking" onclick="toggleKunjunganChart('ranking')">
-                                        <i class="fas fa-trophy me-1"></i> Ranking Terbanyak
+                                        <i class="fas fa-list-ol me-1"></i> Urutan Prodi
                                     </button>
                                 </div>
                                 <div id="rankingRangeGroup" class="btn-group btn-group-sm d-none" role="group">
                                     <button type="button" class="btn btn-sm btn-outline-secondary active" onclick="setRankingRange(10, this)">Top 10</button>
                                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setRankingRange(20, this)">Top 20</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setRankingRange(50, this)">Top 50</button>
                                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setRankingRange(0, this)">Semua</button>
                                 </div>
                             </div>
@@ -141,7 +140,7 @@
                         <div class="card-body px-4 pb-4">
                               <div style="min-height: 350px; position: relative;">
                                   <div id="kunjunganChart" style="min-height: 350px; width: 100%;"></div>
-                                  <div id="kunjunganRankingChart" style="min-height: 350px; width: 100%; display: none;"></div>
+                                  <div id="kunjunganUrutanProdiChart" style="min-height: 350px; width: 100%; display: none;"></div>
                               </div>
                         </div>
                     </div>
@@ -340,10 +339,8 @@
 @endpush
 
 @push('scripts')
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
     <script>
         $(document).ready(function() {
@@ -529,29 +526,25 @@
                 var trendChart = new ApexCharts(document.querySelector("#kunjunganChart"), options);
                 trendChart.render();
 
-                // --- RANKING CHART SETUP ---
-                const rankingFakultas = @json($rankingFakultas ?? []);
+                // --- URUTAN PRODI CHART SETUP ---
                 const rankingProdi = @json($rankingProdi ?? []);
-                const selectedFakultas = "{{ $selectedFakultas ?? 'semua' }}";
-                const activeRankingData = (selectedFakultas && selectedFakultas !== 'semua') ? rankingProdi : rankingFakultas;
-                const isProdiRanking = (selectedFakultas && selectedFakultas !== 'semua');
-                let rankingChartInstance = null;
-                let currentRankingLimit = isProdiRanking ? 10 : 0;
+                let urutanProdiChartInstance = null;
+                let currentRankingLimit = 10;
 
                 window.renderKunjunganRanking = function(limit) {
-                    const dataToDisplay = (limit > 0) ? activeRankingData.slice(0, limit) : activeRankingData;
+                    const dataToDisplay = (limit > 0) ? rankingProdi.slice(0, limit) : rankingProdi;
                     const categories = dataToDisplay.map(i => i.name);
                     const seriesData = dataToDisplay.map(i => i.total);
                     const dynamicHeight = Math.max(350, categories.length * 32 + 50);
 
-                    const rankingOpts = {
+                    const chartOpts = {
                         series: [{ name: 'Total Kunjungan', data: seriesData }],
                         chart: {
-                            type: 'bar',
                             height: dynamicHeight,
+                            type: 'bar',
                             fontFamily: 'Inter, Helvetica, Arial, sans-serif',
                             toolbar: { show: false },
-                            animations: { enabled: true }
+                            animations: { enabled: true, easing: 'easeinout', speed: 600 }
                         },
                         plotOptions: {
                             bar: {
@@ -565,8 +558,8 @@
                         dataLabels: {
                             enabled: true,
                             offsetX: 25,
-                            style: { fontSize: '11px', fontWeight: 600, colors: ['#495057'] },
-                            formatter: val => val.toLocaleString('id-ID')
+                            style: { fontSize: '11px', fontWeight: 600, colors: ['#6c757d'] },
+                            formatter: val => Number(val).toLocaleString('id-ID')
                         },
                         xaxis: {
                             categories: categories,
@@ -577,8 +570,8 @@
                         },
                         yaxis: {
                             labels: {
-                                style: { colors: '#495057', fontSize: '12px', fontWeight: 500 },
-                                maxWidth: 260
+                                style: { colors: '#6c757d', fontSize: '12px', fontWeight: 500 },
+                                maxWidth: 280
                             }
                         },
                         grid: {
@@ -588,15 +581,15 @@
                         },
                         tooltip: {
                             theme: 'dark',
-                            y: { formatter: val => val.toLocaleString('id-ID') + " Kunjungan" }
+                            y: { formatter: val => Number(val).toLocaleString('id-ID') + ' Kunjungan' }
                         }
                     };
 
-                    if (rankingChartInstance) {
-                        rankingChartInstance.destroy();
+                    if (urutanProdiChartInstance) {
+                        urutanProdiChartInstance.destroy();
                     }
-                    rankingChartInstance = new ApexCharts(document.querySelector("#kunjunganRankingChart"), rankingOpts);
-                    rankingChartInstance.render();
+                    urutanProdiChartInstance = new ApexCharts(document.querySelector('#kunjunganUrutanProdiChart'), chartOpts);
+                    urutanProdiChartInstance.render();
                 };
 
                 window.toggleKunjunganChart = function(mode) {
@@ -604,18 +597,16 @@
                         $('#btnModeTrend').addClass('active');
                         $('#btnModeRanking').removeClass('active');
                         $('#kunjunganChart').show();
-                        $('#kunjunganRankingChart').hide();
+                        $('#kunjunganUrutanProdiChart').hide();
                         $('#rankingRangeGroup').addClass('d-none');
-                        $('#chartHeadingText').text('Tren Kunjungan');
+                        $('#chartHeadingText').text('Grafik Kunjungan');
                     } else {
                         $('#btnModeRanking').addClass('active');
                         $('#btnModeTrend').removeClass('active');
                         $('#kunjunganChart').hide();
-                        $('#kunjunganRankingChart').show();
-                        if (activeRankingData.length > 15) {
-                            $('#rankingRangeGroup').removeClass('d-none');
-                        }
-                        $('#chartHeadingText').text('Ranking Kunjungan Terbanyak');
+                        $('#kunjunganUrutanProdiChart').show();
+                        $('#rankingRangeGroup').removeClass('d-none');
+                        $('#chartHeadingText').text('Urutan Kunjungan Prodi');
                         renderKunjunganRanking(currentRankingLimit);
                     }
                 };

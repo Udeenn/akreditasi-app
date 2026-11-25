@@ -73,8 +73,8 @@ class VisitHistory extends Controller
                 'fk' => 'Perpustakaan Kedokteran', 'ref' => 'Referensi Perpustakaan Pusat',
             ];
 
-            return view('pages.kunjungan.fakultasTable', compact(
-                'listFakultas', 'tanggalAwal', 'tanggalAkhir', 'tahunAwal', 'tahunAkhir',
+            return view('pages.kunjungan.fakultas', compact(
+                'listFakultas', 'selectedFakultas', 'tanggalAwal', 'tanggalAkhir', 'tahunAwal', 'tahunAkhir',
                 'chartData', 'rankingFakultas', 'rankingProdi', 'totalKeseluruhanKunjungan', 'hasFilter', 'filterType',
                 'displayPeriod', 'lokasiMapping', 'tableData'
             ));
@@ -239,7 +239,7 @@ class VisitHistory extends Controller
             $data->appends($request->all());
         }
 
-        return view('pages.kunjungan.tanggalTable', compact('data', 'totalKeseluruhanKunjungan', 'filterType', 'tanggalAwal', 'tanggalAkhir', 'tahunAwal', 'tahunAkhir', 'chartData', 'perPage', 'hasFilter'));
+        return view('pages.kunjungan.harian', compact('data', 'totalKeseluruhanKunjungan', 'filterType', 'tanggalAwal', 'tanggalAkhir', 'tahunAwal', 'tahunAkhir', 'chartData', 'perPage', 'hasFilter'));
     }
 
 
@@ -311,7 +311,7 @@ class VisitHistory extends Controller
 
         $listProdi = $this->prodiService->getFullProdiList();
 
-        return view('pages.kunjungan.prodiTable', [
+        return view('pages.kunjungan.prodi', [
             'data'           => $paginatedData,
             'listProdi'      => $listProdi,
             'tanggalAwal'    => $tanggalAwal,
@@ -352,7 +352,7 @@ class VisitHistory extends Controller
             $end   = \Carbon\Carbon::parse($tanggal)->endOfDay()->toDateTimeString();
         }
 
-        $cacheKey = 'detail_pengunjung_' . md5($start . $end . $targetKode);
+        $cacheKey = 'detail_pengunjung_v2_' . md5($start . $end . $targetKode);
 
         // 3. Main Data Fetching (Use identical logic to kunjunganProdiTable for consistency)
         $paginatedData = Cache::remember($cacheKey, 3600, function() use ($start, $end, $targetKode) {
@@ -372,32 +372,21 @@ class VisitHistory extends Controller
                 return collect([]);
             }
 
-            // B. Borrowers Lookup (Robust Case Handling)
+            // B. Borrowers Lookup via BorrowerRepository (menyertakan prodi_code dari borrower_attributes + Redis cache)
             $cardNumbers = $rawVisits->pluck('cardnumber')
-                ->map(fn($id) => strtoupper(trim($id)))
+                ->map(fn($id) => strtoupper(trim((string) $id)))
+                ->filter()
                 ->unique()
-                ->values()
-                ->all();
+                ->values();
 
-            $borrowers = collect();
-            if (!empty($cardNumbers)) {
-                foreach (array_chunk($cardNumbers, 1000) as $chunk) {
-                    $chunkBorrowers = DB::connection('mysql2')->table('borrowers')
-                        ->select('cardnumber', 'surname', 'firstname', 'categorycode')
-                        ->whereIn('cardnumber', $chunk)
-                        ->get()
-                        ->mapWithKeys(function ($item) {
-                            return [strtoupper(trim($item->cardnumber)) => $item];
-                        });
-                    $borrowers = $borrowers->merge($chunkBorrowers);
-                }
-            }
+            $borrowers = app(\App\Repositories\BorrowerRepository::class)->getBorrowerInfoByCardnumbers($cardNumbers);
 
             // C. Identification & Filtering
             $filteredVisits = $rawVisits->map(function ($visit) use ($borrowers) {
-                $cardnumber = strtoupper(trim($visit->cardnumber));
+                $cardnumber = strtoupper(trim((string) $visit->cardnumber));
                 $borrower = $borrowers[$cardnumber] ?? null;
-                $catCode  = $borrower ? strtoupper($borrower->categorycode) : null;
+                $catCode  = $borrower ? strtoupper((string) ($borrower->categorycode ?? '')) : '';
+                $prodiAttr = $borrower->prodi_code ?? '';
 
                 $nama = 'Tanpa Nama';
                 if ($borrower) {
@@ -405,7 +394,7 @@ class VisitHistory extends Controller
                     if (empty($nama)) $nama = 'Tanpa Nama';
                 }
 
-                $kodeIdentifikasi = $this->prodiService->identifyProdiCode($cardnumber, $catCode ?? '');
+                $kodeIdentifikasi = $this->prodiService->identifyProdiCode($cardnumber, $catCode, $prodiAttr);
 
                 return [
                     'cardnumber'  => strtoupper(trim($visit->cardnumber)),
@@ -803,7 +792,7 @@ class VisitHistory extends Controller
             }
         }
 
-        return view('pages.kunjungan.cekKehadiran', compact('dataKunjungan', 'fullBorrowerDetails', 'pesan', 'cardnumber', 'tahun', 'totalKunjunganSum'));
+        return view('pages.kunjungan.cek-kehadiran', compact('dataKunjungan', 'fullBorrowerDetails', 'pesan', 'cardnumber', 'tahun', 'totalKunjunganSum'));
     }
 
     public function getLokasiDetail(Request $request)
@@ -965,7 +954,7 @@ class VisitHistory extends Controller
         $printedDate = \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM YYYY');
         $periodeText = $tahun ? "Tahun {$tahun}" : "Semua Periode";
 
-        $html = view('pages.kunjungan.laporan_kehadiran_pdf', [
+        $html = view('pages.kunjungan.pdf.laporan-kehadiran', [
             'fullBorrowerDetails'    => $fullBorrowerDetails,
             'dataKunjungan'          => $dataKunjungan,
             'barcodeBase64'          => $barcodeBase64,
@@ -1133,7 +1122,7 @@ class VisitHistory extends Controller
             $topLokasi       = $cached['topLokasi'];
         }
 
-        return view('pages.kunjungan.kunjungan_gabungan', compact('filterType', 'rerataKunjungan', 'startYear', 'endYear', 'startDate', 'endDate', 'selectedLokasi', 'dataHasil', 'lokasiMapping', 'lokasiOptions', 'chartData', 'totalKunjungan', 'maxKunjungan', 'topLokasi'));
+        return view('pages.kunjungan.keseluruhan', compact('filterType', 'rerataKunjungan', 'startYear', 'endYear', 'startDate', 'endDate', 'selectedLokasi', 'dataHasil', 'lokasiMapping', 'lokasiOptions', 'chartData', 'totalKunjungan', 'maxKunjungan', 'topLokasi'));
     }
 
     public function exportPdfKunjunganGabungan(Request $request)
@@ -1192,7 +1181,7 @@ class VisitHistory extends Controller
             }
         }
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.kunjungan.pdf.kunjunganGabungan', compact(
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.kunjungan.pdf.kunjungan-keseluruhan', compact(
             'dataToExport', 'filterType', 'periodeText', 'displayLokasi',
             'totalKunjungan', 'rerataKunjungan', 'chartImage', 'logoBase64',
             'currentUser', 'librarianBarcodeBase64'

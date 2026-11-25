@@ -126,11 +126,11 @@ $breadcrumbMap = [
         ['Statistik Sirkulasi', null],
         ['Keterpakaian Koleksi', null],
     ],
-    'penggunaan.cek_histori_buku_buku' => [
+    'penggunaan.cek_histori_buku' => [
         ['Statistik Sirkulasi', null],
         ['Cek Histori Buku', null],
     ],
-    'penggunaan.sering_dibaca' => [
+    'penggunaan.buku_terlaris' => [
         ['Statistik Sirkulasi', null],
         ['Buku Terlaris', null],
     ],
@@ -162,6 +162,10 @@ $breadcrumbMap = [
     'fakultas.index' => [
         ['Admin', null],
         ['Pengaturan Fakultas', null],
+    ],
+    'prodi-whitelist.index' => [
+        ['Admin', null],
+        ['Pengaturan Prodi Tampil', null],
     ],
 ];
 

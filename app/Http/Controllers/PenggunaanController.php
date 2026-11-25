@@ -33,7 +33,7 @@ class PenggunaanController extends Controller
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
 
-        return view('pages.penggunaan.keterpakaian', compact(
+        return view('pages.penggunaan.keterpakaian-koleksi', compact(
             'dataTabel',
             'listKategori',
             'ccodeDescriptions',
@@ -86,7 +86,7 @@ class PenggunaanController extends Controller
             $logoBase64 = 'data:image/png;base64,' . base64_encode($logoData);
         }
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.penggunaan.pdf.keterpakaianKoleksi', compact(
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.penggunaan.pdf.keterpakaian-koleksi', compact(
             'dataTabel', 'listKategori', 'ccodeDescriptions', 'filterType', 'periodeText',
             'totalPenggunaan', 'kategoriPopuler', 'rerataPenggunaan', 'chartImage', 'logoBase64'
         ))->setPaper('a4', 'landscape');
@@ -107,52 +107,46 @@ class PenggunaanController extends Controller
         $filterType = $request->input('filter_type');
         $usageType = $request->input('usage_type', 'all');
 
-        $query = \App\Models\Koha\Statistic::with(['item.biblio'])
-            ->select('statistics.*') // Ensure we select the columns for distinct to work safely
-            ->distinct() // Prevent duplicate transactions in the same second from showing up twice
-            ->where(function($q) {
-                $q->where('type', '!=', 'return')
-                  ->orWhere(function($sub) {
-                      $sub->where('type', 'return')
-                          ->whereNotNull('borrowernumber');
+        $query = DB::connection('mysql2')->table('statistics as s')
+            ->leftJoin('items as i', 's.itemnumber', '=', 'i.itemnumber')
+            ->leftJoin('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
+            ->select(
+                DB::raw("COALESCE(b.title, 'Tanpa Judul') as judul_buku"),
+                DB::raw("COALESCE(i.barcode, '-') as barcode"),
+                's.datetime as waktu_transaksi',
+                's.type as tipe_transaksi'
+            )
+            ->where(function ($q) {
+                $q->where('s.type', '!=', 'return')
+                  ->orWhere(function ($sub) {
+                      $sub->where('s.type', 'return')
+                          ->whereNotNull('s.borrowernumber');
                   });
             })
-            ->when($usageType === 'all', fn($q) => $q->whereIn('type', ['issue', 'return', 'localuse', 'renew']))
-            ->when($usageType !== 'all', fn($q) => $q->where('type', $usageType))
-            ->whereNotNull('ccode')
-            ->where('ccode', '!=', '');
+            ->when($usageType === 'all', fn($q) => $q->whereIn('s.type', ['issue', 'return', 'localuse', 'renew']))
+            ->when($usageType !== 'all', fn($q) => $q->where('s.type', $usageType))
+            ->whereNotNull('s.ccode')
+            ->where('s.ccode', '!=', '');
 
         if ($filterType == 'daily') {
             $startOfDay = Carbon::parse($periode)->startOfDay();
             $endOfDay = Carbon::parse($periode)->endOfDay();
-            $query->whereBetween('datetime', [$startOfDay, $endOfDay]);
+            $query->whereBetween('s.datetime', [$startOfDay, $endOfDay]);
         } else { // 'monthly'
             $startOfMonth = Carbon::parse($periode)->startOfMonth();
             $endOfMonth = Carbon::parse($periode)->endOfMonth();
-            $query->whereBetween('datetime', [$startOfMonth, $endOfMonth]);
+            $query->whereBetween('s.datetime', [$startOfMonth, $endOfMonth]);
         }
 
         if ($kategori == 'Referensi') {
-            $query->where('ccode', 'LIKE', 'R%');
+            $query->where('s.ccode', 'LIKE', 'R%');
         } else {
-            $query->where('ccode', '=', $kategori);
+            $query->where('s.ccode', '=', $kategori);
         }
 
-        $paginator = $query->orderBy('datetime', 'desc')
+        return $query->orderBy('s.datetime', 'desc')
             ->paginate(10)
             ->withQueryString();
-
-        // Format data untuk output JSON agar kompatibel dengan view lama (jika memanggil API ini)
-        $paginator->getCollection()->transform(function ($stat) {
-            return [
-                'judul_buku' => $stat->item->biblio->title ?? 'Tanpa Judul',
-                'barcode' => $stat->item->barcode ?? '-',
-                'waktu_transaksi' => $stat->datetime,
-                'tipe_transaksi' => $stat->type,
-            ];
-        });
-
-        return $paginator;
     }
 
 
@@ -229,17 +223,22 @@ class PenggunaanController extends Controller
 
         if ($barcode) {
             try {
-                // 1. Ambil Data Buku via Eloquent
-                $item = \App\Models\Koha\Item::with('biblio')->where('barcode', $barcode)->first();
+                // 1. Ambil Data Buku langsung dari mysql2
+                $item = DB::connection('mysql2')->table('items as i')
+                    ->join('biblio as b', 'i.biblionumber', '=', 'b.biblionumber')
+                    ->select('i.itemnumber', 'b.title', 'b.author')
+                    ->where('i.barcode', $barcode)
+                    ->first();
 
-                if ($item && $item->biblio) {
+                if ($item) {
                     $book = (object) [
-                        'Judul' => $item->biblio->title,
-                        'Pengarang' => $item->biblio->author,
+                        'Judul' => $item->title,
+                        'Pengarang' => $item->author,
                     ];
 
-                    // 2. Query Statistik via Eloquent
-                    $statsQuery = \App\Models\Koha\Statistic::where('itemnumber', $item->itemnumber)
+                    // 2. Query Statistik
+                    $statsQuery = DB::connection('mysql2')->table('statistics')
+                        ->where('itemnumber', $item->itemnumber)
                         ->where(function($q) {
                             $q->where('type', '!=', 'return')
                               ->orWhere(function($sub) {
@@ -282,7 +281,7 @@ class PenggunaanController extends Controller
             }
         }
 
-        return view('pages.penggunaan.cekBuku', [
+        return view('pages.penggunaan.cek-histori-buku', [
             'barcode' => $barcode,
             'history' => $history,
             'book' => $book,
@@ -400,7 +399,7 @@ class PenggunaanController extends Controller
         }
 
         // Kirim data ke view
-        return view('pages.penggunaan.sering_dibaca', compact(
+        return view('pages.penggunaan.buku-terlaris', compact(
             'dataFiksi',
             'dataNonFiksi',
             'tahun',

@@ -28,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
             return "<?php echo \App\Helpers\SvgHelper::render($expression); ?>";
         });
         error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+        \Carbon\Carbon::setLocale('id');
         Paginator::useBootstrapFive();
         Gate::define('admin-action', function ($user) {
             return $user->role === 'admin';

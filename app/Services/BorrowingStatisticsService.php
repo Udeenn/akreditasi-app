@@ -46,7 +46,7 @@ class BorrowingStatisticsService
 
             $rawData = $this->statisticsRepository->getBorrowingStatisticsByDateRange($start, $end, $sqlDateFormat);
 
-            $prodiListMap = \App\Models\M_Auv::getCachedProdiList()->pluck('lib', 'authorised_value')->toArray();
+            $prodiListMap = \App\Models\M_Auv::getCachedAllProdiNameMap();
             $aggregatedData = [];
             $allBorrowers = [];
             $facultyTotals = [];
@@ -148,7 +148,7 @@ class BorrowingStatisticsService
             $selectedProdi = 'TENDIK';
         }
 
-        $cacheKey = 'peminjaman_prodi_v6_' . md5(json_encode([
+        $cacheKey = 'peminjaman_prodi_v7_' . md5(json_encode([
             'filterType' => $filterType,
             'start' => (in_array($filterType, ['yearly', 'monthly'])) ? "$startYear-01-01" : $startDate,
             'end' => (in_array($filterType, ['yearly', 'monthly'])) ? "$endYear-12-31" : $endDate,
@@ -175,7 +175,7 @@ class BorrowingStatisticsService
 
             $rawData = $this->statisticsRepository->getBorrowingStatisticsByDateRange($start, $end, $sqlDateFormat);
             
-            $prodiListMap = \App\Models\M_Auv::getCachedProdiList()->pluck('lib', 'authorised_value')->toArray();
+            $prodiListMap = \App\Models\M_Auv::getCachedAllProdiNameMap();
             $aggregatedData = [];
             $allBorrowers = [];
             $prodiTotals = [];

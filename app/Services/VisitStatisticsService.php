@@ -24,7 +24,7 @@ class VisitStatisticsService
         $prodiToFacultyMap = $this->prodiService->getProdiToFacultyMap($allProdiListObj);
         $prodiNameMap = $this->prodiService->getFullProdiList();
 
-        $cacheKey = 'kunjungan_fak_v4_' . md5(json_encode([
+        $cacheKey = 'kunjungan_fak_v5_' . md5(json_encode([
             'ft' => $filterType, 'fk' => $selectedFakultas, 'lok' => $selectedLokasi,
             'dt' => ($filterType == 'yearly') ? "$startYear-$endYear" : "$startDate-$endDate",
         ]));
@@ -88,7 +88,7 @@ class VisitStatisticsService
                 $details = [];
                 foreach ($prodiCounts as $code => $jumlah) {
                     $details[] = [
-                        'prodi' => $code . ' - ' . ($prodiNameMap[$code] ?? 'Tidak Dikenal'),
+                        'prodi' => $code . ' - ' . $this->resolveProdiName($code, $prodiNameMap),
                         'kode' => $code, 'jumlah' => $jumlah,
                     ];
                 }
@@ -110,7 +110,7 @@ class VisitStatisticsService
             $rankingProdi = [];
             foreach ($prodiTotals as $code => $total) {
                 $rankingProdi[] = [
-                    'name' => $code . ' - ' . ($prodiNameMap[$code] ?? 'Tidak Dikenal'),
+                    'name' => $code . ' - ' . $this->resolveProdiName($code, $prodiNameMap),
                     'kode' => $code,
                     'total' => $total
                 ];
@@ -128,7 +128,7 @@ class VisitStatisticsService
         $allProdiListObj = \App\Models\M_Auv::getCachedProdiList();
         $prodiNameMap = $this->prodiService->getFullProdiList();
 
-        $cacheKey = 'kunj_prodi_v6_' . md5(json_encode([
+        $cacheKey = 'kunj_prodi_v7_' . md5(json_encode([
             'ft' => $filterType, 'kp' => $kodeProdiFilter,
             'dt' => ($filterType == 'yearly') ? "$startYear-$endYear" : "$startDate-$endDate",
         ]));
@@ -229,7 +229,7 @@ class VisitStatisticsService
                 $details = [];
                 foreach ($prodiCounts as $code => $jumlah) {
                     $details[] = [
-                        'prodi' => $code . ' - ' . ($prodiNameMap[$code] ?? 'Tidak Dikenal'),
+                        'prodi' => $code . ' - ' . $this->resolveProdiName($code, $prodiNameMap),
                         'kode' => $code,
                         'jumlah' => $jumlah,
                     ];
@@ -246,7 +246,7 @@ class VisitStatisticsService
             $rankingProdi = [];
             foreach ($prodiTotals as $code => $total) {
                 $rankingProdi[] = [
-                    'name' => $code . ' - ' . ($prodiNameMap[$code] ?? 'Tidak Dikenal'),
+                    'name' => $code . ' - ' . $this->resolveProdiName($code, $prodiNameMap),
                     'kode' => $code,
                     'total' => $total
                 ];
@@ -260,13 +260,22 @@ class VisitStatisticsService
                     'cardnumber' => $meta['cardnumber'],
                     'nama'       => $meta['nama'],
                     'prodi'      => $meta['prodi'],
-                    'prodi_name' => $prodiNameMap[$meta['prodi']] ?? $meta['prodi'],
+                    'prodi_name' => $this->resolveProdiName($meta['prodi'], $prodiNameMap),
                     'total'      => $total,
                 ];
             }
 
             return compact('tableData', 'totalKeseluruhanKunjungan', 'rankingProdi', 'rankingMahasiswa');
         });
+    }
+
+    private function resolveProdiName(string $code, array $prodiNameMap): string
+    {
+        if (!empty($prodiNameMap[$code])) {
+            return $prodiNameMap[$code];
+        }
+        $fakName = \App\Helpers\FacultyHelper::mapCodeToFaculty($code);
+        return $fakName !== 'Lainnya' ? $fakName : 'Tidak Dikenal';
     }
 
     /**

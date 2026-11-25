@@ -18,7 +18,7 @@
             <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
         </div>
         <div class="card-body px-4 pb-4 pt-3">
-            <form method="GET" action="{{ route('penggunaan.sering_dibaca') }}" class="row g-3 align-items-end">
+            <form method="GET" action="{{ route('penggunaan.buku_terlaris') }}" class="row g-3 align-items-end">
                 <div class="col-md-5">
                     <label for="tahun" class="form-label small text-muted text-uppercase">Tahun:</label>
                     <select name="tahun" id="tahun" class="form-select">

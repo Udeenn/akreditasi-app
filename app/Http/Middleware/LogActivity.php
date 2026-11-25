@@ -23,12 +23,11 @@ class LogActivity
         '*.data',
         '*.detail',
         '*.prodiData',
-        '*.prodiChartData',
         '*.export*',
         '*.get_*',
         'kunjungan.get_*',
         'peminjaman.berlangsung_data',
-        'statistik.keterpakaian_koleksi.detail',
+        'penggunaan.keterpakaian_koleksi.detail',
     ];
 
     /**

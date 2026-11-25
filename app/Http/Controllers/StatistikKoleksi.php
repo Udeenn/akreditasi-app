@@ -147,7 +147,7 @@ class StatistikKoleksi extends Controller
             });
         }
 
-        return view('pages.dapus.rekap_fakultas', compact('faculties', 'selectedFaculty', 'rekapData'));
+        return view('pages.koleksi.rekap-fakultas', compact('faculties', 'selectedFaculty', 'rekapData'));
     }
 
     private function handleCollectionRequest(Request $request, string $type, string $viewName, string $title)
@@ -195,13 +195,13 @@ class StatistikKoleksi extends Controller
         return view($viewName, compact('data', 'prodi', 'listprodi', 'namaProdi', 'tahunTerakhir', 'withdrawn', 'dataExists', 'totalJudul', 'totalEksemplar'));
     }
 
-    public function prosiding(Request $request) { return $this->handleCollectionRequest($request, 'prosiding', 'pages.dapus.prosiding', 'Prosiding'); }
-    public function jurnal(Request $request) { return $this->handleCollectionRequest($request, 'jurnal', 'pages.dapus.jurnal', 'Jurnal'); }
-    public function ejurnal(Request $request) { return $this->handleCollectionRequest($request, 'ejurnal', 'pages.dapus.ejurnal', 'E-Jurnal'); }
-    public function ebook(Request $request) { return $this->handleCollectionRequest($request, 'ebook', 'pages.dapus.ebook', 'E-Book'); }
-    public function textbook(Request $request) { return $this->handleCollectionRequest($request, 'textbook', 'pages.dapus.textbook', 'Textbook'); }
-    public function periodikal(Request $request) { return $this->handleCollectionRequest($request, 'periodikal', 'pages.dapus.periodikal', 'Periodikal'); }
-    public function referensi(Request $request) { return $this->handleCollectionRequest($request, 'referensi', 'pages.dapus.referensi', 'Referensi'); }
+    public function prosiding(Request $request) { return $this->handleCollectionRequest($request, 'prosiding', 'pages.koleksi.prosiding', 'Prosiding'); }
+    public function jurnal(Request $request) { return $this->handleCollectionRequest($request, 'jurnal', 'pages.koleksi.jurnal', 'Jurnal'); }
+    public function ejurnal(Request $request) { return $this->handleCollectionRequest($request, 'ejurnal', 'pages.koleksi.ejurnal', 'E-Jurnal'); }
+    public function ebook(Request $request) { return $this->handleCollectionRequest($request, 'ebook', 'pages.koleksi.ebook', 'E-Book'); }
+    public function textbook(Request $request) { return $this->handleCollectionRequest($request, 'textbook', 'pages.koleksi.textbook', 'Textbook'); }
+    public function periodikal(Request $request) { return $this->handleCollectionRequest($request, 'periodikal', 'pages.koleksi.periodikal', 'Periodikal'); }
+    public function referensi(Request $request) { return $this->handleCollectionRequest($request, 'referensi', 'pages.koleksi.referensi', 'Referensi'); }
 
     public function trenPertambahan(Request $request)
     {
@@ -275,7 +275,7 @@ class StatistikKoleksi extends Controller
             return response()->stream($callback, 200, $headers);
         }
 
-        return view('pages.dapus.trenPertambahan', compact('data', 'startYear', 'endYear', 'yearSwapped', 'minYear'));
+        return view('pages.koleksi.tren-pertambahan', compact('data', 'startYear', 'endYear', 'yearSwapped', 'minYear'));
     }
 
     public function exportPdfTrenPertambahan(Request $request)
@@ -303,7 +303,7 @@ class StatistikKoleksi extends Controller
             $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
         }
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.dapus.pdf.tren_pertambahan', compact(
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.koleksi.pdf.tren-pertambahan', compact(
             'data', 'startYear', 'endYear', 'logoBase64'
         ))->setPaper('a4', 'portrait');
 
@@ -447,13 +447,13 @@ class StatistikKoleksi extends Controller
             return response()->json([
                 'status' => 'success',
                 'year' => $year,
-                'html' => view('pages.dapus.partials.detail_pertambahan_table', compact('details', 'year', 'search'))->render(),
+                'html' => view('pages.koleksi.partials.detail-pertambahan-table', compact('details', 'year', 'search'))->render(),
                 'total_titles' => $details->total(),
                 'total_items' => $totalEksemplarAll
             ]);
         }
 
-        return view('pages.dapus.detailPertambahan', compact('details', 'year', 'search', 'itype'));
+        return view('pages.koleksi.detail-pertambahan', compact('details', 'year', 'search', 'itype'));
     }
 
     private function getCsvHeaders(string $type): array
@@ -551,7 +551,7 @@ class StatistikKoleksi extends Controller
             $chartData = $cachedResult['chartData'];
         }
 
-        return view('pages.dapus.prodi', compact('namaProdi', 'listprodi', 'data', 'prodi', 'tahunTerakhir', 'chartData'));
+        return view('pages.koleksi.prodi', compact('namaProdi', 'listprodi', 'data', 'prodi', 'tahunTerakhir', 'chartData'));
     }
 
     public function getDetailKoleksi(Request $request)
@@ -599,7 +599,7 @@ class StatistikKoleksi extends Controller
 
     public function eresource(Request $request)
     {
-        return view('pages.dapus.eresource');
+        return view('pages.koleksi.eresource');
     }
 
     public function searchScopus(Request $request)

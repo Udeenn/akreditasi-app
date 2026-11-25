@@ -253,10 +253,10 @@
             <a href="{{ route('penggunaan.keterpakaian_koleksi') }}" class="panel-nav-link {{ request()->routeIs('penggunaan.keterpakaian_koleksi') ? 'active' : '' }}">
                 <x-icon name="barcode" class="me-2" /> Keterpakaian Koleksi
             </a>
-            <a href="{{ route('penggunaan.cek_histori_buku_buku') }}" class="panel-nav-link {{ request()->routeIs('penggunaan.cek_histori_buku_buku') ? 'active' : '' }}">
+            <a href="{{ route('penggunaan.cek_histori_buku') }}" class="panel-nav-link {{ request()->routeIs('penggunaan.cek_histori_buku') ? 'active' : '' }}">
                 <x-icon name="history" class="me-2" /> Cek Histori Buku
             </a>
-            <a href="{{ route('penggunaan.sering_dibaca') }}" class="panel-nav-link {{ request()->routeIs('penggunaan.sering_dibaca') ? 'active' : '' }}">
+            <a href="{{ route('penggunaan.buku_terlaris') }}" class="panel-nav-link {{ request()->routeIs('penggunaan.buku_terlaris') ? 'active' : '' }}">
                 <x-icon name="trophy" class="me-2" /> Buku Terlaris
             </a>
         </div>

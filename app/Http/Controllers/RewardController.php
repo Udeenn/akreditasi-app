@@ -163,7 +163,7 @@ class RewardController extends Controller
             }
         }
 
-        return view('pages.reward.pemustaka_teraktif', compact('pengunjungTeraktif', 'peminjamTeraktif', 'tahun', 'hasFilter', 'limit'));
+        return view('pages.reward.pemustaka-teraktif', compact('pengunjungTeraktif', 'peminjamTeraktif', 'tahun', 'hasFilter', 'limit'));
     }
 
 

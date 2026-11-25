@@ -84,8 +84,8 @@
                 <div class="card unified-card border-0 shadow-sm hover-lift">
                     <div class="card-body d-flex justify-content-between align-items-center p-4">
                         <div>
-                            <div class="text-muted small fw-bold text-uppercase mb-1">Total Kunjungan Offline —
-                                {{ \Carbon\Carbon::now()->isoFormat('dddd, D MMMM YYYY') }}</div>
+                            <div class="text-muted small fw-bold text-uppercase mb-1">Total Kunjungan Hari Ini —
+                                {{ \Carbon\Carbon::now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</div>
                             <h3 class="fw-bold mb-0">{{ number_format($kunjunganHarian) }}</h3>
                         </div>
                         <div class="icon-box bg-primary text-white" style="width: 50px; height: 50px;">

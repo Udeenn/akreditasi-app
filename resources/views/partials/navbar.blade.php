@@ -70,10 +70,8 @@
                     <i class="fas fa-users me-1"></i> Data Kunjungan
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark">
-                    <li><a class="dropdown-item" href="{{ route('kunjungan.prodiChart') }}"><i
-                                class="fas fa-chart-bar me-2"></i>Chart</a></li>
-                    <li><a class="dropdown-item" href="{{ route('kunjungan.prodiTable') }}"><i
-                                class="fas fa-table me-2"></i>Table</a></li>
+                    <li><a class="dropdown-item" href="{{ route('kunjungan.prodi') }}"><i
+                                class="fas fa-table me-2"></i>Per Prodi</a></li>
                 </ul>
             </li>
         </ul>

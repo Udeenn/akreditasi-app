@@ -17,7 +17,7 @@
                 <div class="card-header bg-transparent border-bottom-0 pt-4 pb-0 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h5 class="mb-0 fw-bold"><i class="fas fa-search text-primary me-2"></i> Cari Buku Tahun {{ $year }}</h5>
                     <div class="d-flex gap-2">
-                        <a href="{{ route('koleksi.tren_pertambahan_detail', ['year' => $year, 'export_csv' => 1, 'search' => $search]) }}" class="btn btn-success btn-sm shadow-sm fw-bold">
+                        <a href="{{ route('koleksi.tren_pertambahan_detail', ['year' => $year, 'export_csv' => 1, 'search' => $search, 'itype' => $itype]) }}" class="btn btn-success btn-sm shadow-sm fw-bold">
                             <i class="fas fa-file-csv me-1"></i> Export CSV
                         </a>
                         <a href="{{ route('koleksi.tren_pertambahan') }}" class="btn btn-outline-secondary btn-sm fw-bold">
@@ -28,6 +28,9 @@
                 <div class="card-body p-4">
                     <form method="GET" action="{{ route('koleksi.tren_pertambahan_detail') }}" class="row g-3">
                         <input type="hidden" name="year" value="{{ $year }}">
+                        @if(!empty($itype))
+                            <input type="hidden" name="itype" value="{{ $itype }}">
+                        @endif
                         <div class="col-md-10">
                             <div class="input-group">
                                 <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
@@ -49,7 +52,7 @@
         <div class="col-12">
             <div class="card unified-card border-0 shadow-sm">
                 <div class="card-body p-4">
-                    @include('pages.dapus.partials.detail_pertambahan_table', ['details' => $details])
+                    @include('pages.koleksi.partials.detail-pertambahan-table', ['details' => $details])
                 </div>
             </div>
         </div>

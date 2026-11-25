@@ -309,7 +309,7 @@
                         moment(periode).format('D MMM YYYY') : moment(periode).format('MMM YYYY');
 
                     const url =
-                        `{{ route('statistik.keterpakaian_koleksi.detail') }}?periode=${periode}&kategori=${kategori}&filter_type=${filterType}&usage_type=${usageType}`;
+                        `{{ route('penggunaan.keterpakaian_koleksi.detail') }}?periode=${periode}&kategori=${kategori}&filter_type=${filterType}&usage_type=${usageType}`;
                     fetchDetailBuku(url);
                 }
             });

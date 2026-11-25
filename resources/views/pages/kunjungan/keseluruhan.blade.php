@@ -28,7 +28,7 @@
                             class="row g-3 align-items-end">
                             {{-- Tipe Filter --}}
                             <div class="col-md-2">
-                                <label for="filter_type" class="form-label small text-muted text-uppercase">Tipe Laporan</label>
+                                <label for="filter_type" class="form-label small text-muted text-uppercase">Mode Tampilan</label>
                                 <select name="filter_type" id="filter_type" class="form-select">
                                     <option value="yearly" {{ $filterType == 'yearly' ? 'selected' : '' }}>Bulanan
                                     </option>
