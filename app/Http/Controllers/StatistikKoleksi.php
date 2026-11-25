@@ -15,6 +15,8 @@ use App\Services\ProdiService;
 
 class StatistikKoleksi extends Controller
 {
+    use \App\Traits\CsvExportable;
+
     public function __construct(
         private CollectionStatisticsService $collectionService,
         private ProdiService $prodiService
@@ -183,7 +185,7 @@ class StatistikKoleksi extends Controller
 
             if ($request->has('export_csv')) {
                 $headers = $this->getCsvHeaders($type);
-                return $this->streamCsvExport($processedData, $namaProdi, $tahunTerakhir, $type, $title, $headers, function($row, &$i, &$previousJudul) use ($type) {
+                return $this->streamCollectionCsv($processedData, $namaProdi, $tahunTerakhir, $type, $title, $headers, function($row, &$i, &$previousJudul) use ($type) {
                     return $this->mapCsvRow($row, $i, $type, $previousJudul);
                 }, $withdrawn);
             } else {
@@ -339,40 +341,14 @@ class StatistikKoleksi extends Controller
         $data = $this->getTrenPertambahanData($startDate, $endDate, $groupBy);
 
         if ($request->has('export_csv')) {
-            $filename = "Tren_Pertambahan_Koleksi_{$startDate}_sd_{$endDate}_{$groupBy}.csv";
-            $headers = [
-                "Content-type"        => "text/csv",
-                "Content-Disposition" => "attachment; filename=$filename",
-                "Pragma"              => "no-cache",
-                "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-                "Expires"             => "0"
-            ];
-
-            $callback = function () use ($data, $periodText) {
-                $file = fopen('php://output', 'w');
-
-                fputcsv($file, ["Data Pengadaan Koleksi ($periodText)"]);
-                fputcsv($file, []);
-                fputcsv($file, ['No', 'Periode Masuk (Accessioned)', 'Judul Baru', 'Eksemplar Baru']);
-
-                $i = 1;
-                foreach ($data as $row) {
-                    fputcsv($file, [
-                        $i++,
-                        $row->period_label,
-                        $row->total_titles,
-                        $row->total_items
-                    ]);
-                }
-
-                fputcsv($file, [
-                    '', 'TOTAL', $data->sum('total_titles'), $data->sum('total_items')
-                ]);
-
-                fclose($file);
-            };
-
-            return response()->stream($callback, 200, $headers);
+            return $this->streamCsvExport(
+                $data,
+                "Tren_Pertambahan_Koleksi_{$startDate}_sd_{$endDate}_{$groupBy}.csv",
+                ['No', 'Periode Masuk (Accessioned)', 'Judul Baru', 'Eksemplar Baru'],
+                fn($row, $index) => [$index, $row->period_label, $row->total_titles, $row->total_items],
+                ["Data Pengadaan Koleksi ($periodText)"],
+                ['', 'TOTAL', $data->sum('total_titles'), $data->sum('total_items')]
+            );
         }
 
         $months = self::MONTH_NAMES_ID;
@@ -511,37 +487,18 @@ class StatistikKoleksi extends Controller
             $filename = $hasDateRange
                 ? "Detail_Pertambahan_Buku_{$startDate}_sd_{$endDate}.csv"
                 : "Detail_Pertambahan_Buku_Tahun_{$year}.csv";
-            $headers = [
-                "Content-type"        => "text/csv",
-                "Content-Disposition" => "attachment; filename=$filename",
-                "Pragma"              => "no-cache",
-                "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-                "Expires"             => "0"
-            ];
 
-            $callback = function() use($data, $periodLabel) {
-                $file = fopen('php://output', 'w');
-                fputcsv($file, ["Detail Pengadaan Koleksi - Periode: $periodLabel"]);
-                fputcsv($file, []);
-                fputcsv($file, ['No', 'Judul Buku', 'Pengarang', 'Penerbit', 'Tahun Terbit', 'Call Number', 'Jumlah Eksemplar', 'Tanggal Masuk']);
-                $i = 1;
-                foreach ($data as $row) {
-                    fputcsv($file, [
-                        $i++,
-                        $row->title,
-                        $row->author,
-                        $row->publishercode,
-                        $row->publicationyear,
-                        $row->itemcallnumber,
-                        $row->total_eksemplar,
-                        $row->tgl_masuk
-                    ]);
-                }
-                fputcsv($file, ['', '', '', '', '', 'TOTAL EKSEMPLAR', $data->sum('total_eksemplar'), '']);
-                fclose($file);
-            };
-
-            return response()->stream($callback, 200, $headers);
+            return $this->streamCsvExport(
+                $data,
+                $filename,
+                ['No', 'Judul Buku', 'Pengarang', 'Penerbit', 'Tahun Terbit', 'Call Number', 'Jumlah Eksemplar', 'Tanggal Masuk'],
+                fn($row, $index) => [
+                    $index, $row->title, $row->author, $row->publishercode,
+                    $row->publicationyear, $row->itemcallnumber, $row->total_eksemplar, $row->tgl_masuk
+                ],
+                ["Detail Pengadaan Koleksi - Periode: $periodLabel"],
+                ['', '', '', '', '', 'TOTAL EKSEMPLAR', $data->sum('total_eksemplar'), '']
+            );
         }
 
         // Cache full result saat search & itype kosong, lalu paginate dari Collection di memori
@@ -758,7 +715,7 @@ class StatistikKoleksi extends Controller
         }
     }
 
-    private function streamCsvExport($data, $namaProdi, $tahunTerakhir, $filePrefix, $titleText, $headers, $rowMapper, string $withdrawn = '0')
+    private function streamCollectionCsv($data, $namaProdi, $tahunTerakhir, $filePrefix, $titleText, $headers, $rowMapper, string $withdrawn = '0')
     {
         $filename = "koleksi_" . $filePrefix;
         if ($namaProdi && $namaProdi !== 'Pilih Program Studi' && $namaProdi !== 'Semua Program Studi') {

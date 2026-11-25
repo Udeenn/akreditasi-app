@@ -19,10 +19,10 @@
                     <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Periode Pengadaan</h5>
                     <div class="d-flex flex-wrap align-items-center gap-1">
                         <span class="text-muted small me-1">Preset 1 Tahun:</span>
-                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill preset-tahap-btn" data-start="1" data-end="4">Tahap 1 (Jan–Apr)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill preset-tahap-btn" data-start="5" data-end="8">Tahap 2 (Mei–Agu)</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill preset-tahap-btn" data-start="9" data-end="12">Tahap 3 (Sep–Des)</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill preset-tahap-btn" data-start="1" data-end="12">Setahun Penuh</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary preset-tahap-btn" data-start="1" data-end="4">Tahap 1 (Jan–Apr)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary preset-tahap-btn" data-start="5" data-end="8">Tahap 2 (Mei–Agu)</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary preset-tahap-btn" data-start="9" data-end="12">Tahap 3 (Sep–Des)</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary preset-tahap-btn" data-start="1" data-end="12">Setahun Penuh</button>
                     </div>
                 </div>
                 <div class="card-body px-4 pb-4 pt-3">

@@ -174,7 +174,7 @@
                                                                 ? \Carbon\Carbon::createFromFormat(
                                                                     'Ym',
                                                                     $dateString,
-                                                                )->format('F Y')
+                                                                )->locale('id')->isoFormat('MMMM YYYY')
                                                                 : '-';
                                                         } catch (\Exception $e) {
                                                             echo $row->tahun_bulan ?? '-';

@@ -26,11 +26,11 @@
                         <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
                     </div>
                     <div class="card-body px-4 pb-4 pt-3">
-                        <form method="GET" action="{{ route('kunjungan.prodi') }}" class="row g-3 align-items-end" id="filterForm">
+                        <form method="GET" action="{{ route('kunjungan.prodi') }}" class="d-flex flex-wrap flex-xl-nowrap align-items-end gap-2" id="filterForm">
                             
                             {{-- Tipe --}}
-                            <div class="col-md-2">
-                                <label for="filter_type" class="form-label small text-muted text-uppercase">Mode Tampilan</label>
+                            <div style="min-width: 120px; flex: 1 1 120px;">
+                                <label for="filter_type" class="form-label small text-muted text-uppercase mb-1">Mode Tampilan</label>
                                 <select name="filter_type" id="filter_type" class="form-select">
                                     <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>Harian</option>
                                     <option value="yearly" {{ ($filterType ?? '') == 'yearly' ? 'selected' : '' }}>Bulanan</option>
@@ -38,8 +38,8 @@
                             </div>
 
                             {{-- Tanggal (Harian) --}}
-                            <div class="col-md-4 daily-filter" style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
-                                <label class="form-label small text-muted text-uppercase">Rentang Tanggal</label>
+                            <div class="daily-filter" style="min-width: 270px; flex: 2 1 270px; {{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
+                                <label class="form-label small text-muted text-uppercase mb-1">Rentang Tanggal</label>
                                 <div class="input-group">
                                     <input type="date" name="tanggal_awal" class="form-control"
                                         value="{{ $tanggalAwal ?? date('Y-m-d') }}">
@@ -50,8 +50,8 @@
                             </div>
 
                             {{-- Tahun (Bulanan) --}}
-                            <div class="col-md-4 yearly-filter" style="{{ ($filterType ?? '') == 'yearly' ? '' : 'display: none;' }}">
-                                <label class="form-label small text-muted text-uppercase">Rentang Tahun</label>
+                            <div class="yearly-filter" style="min-width: 200px; flex: 2 1 200px; {{ ($filterType ?? '') == 'yearly' ? '' : 'display: none;' }}">
+                                <label class="form-label small text-muted text-uppercase mb-1">Rentang Tahun</label>
                                 <div class="input-group">
                                     <select name="tahun_awal" class="form-select">
                                         @for ($y = date('Y'); $y >= 2020; $y--)
@@ -68,8 +68,8 @@
                             </div>
 
                             {{-- Prodi --}}
-                            <div class="col-md-4">
-                                <label for="prodi" class="form-label small text-muted text-uppercase">Program Studi / Unit</label>
+                            <div style="min-width: 220px; flex: 2.2 1 220px;">
+                                <label for="prodi" class="form-label small text-muted text-uppercase mb-1">Program Studi / Unit</label>
                                 <select name="prodi" id="prodi" class="form-select select2">
                                     <option value="">Semua Kategori</option>
                                     @foreach($listProdi as $code => $name)
@@ -82,8 +82,8 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-auto ms-auto">
-                                <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                            <div style="flex: 0 0 auto;">
+                                <button type="submit" class="btn btn-primary px-4 shadow-sm text-nowrap">
                                     <i class="fas fa-search me-1"></i> Tampilkan
                                 </button>
                             </div>

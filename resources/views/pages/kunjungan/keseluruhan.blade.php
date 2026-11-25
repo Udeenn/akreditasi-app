@@ -25,10 +25,10 @@
                     </div>
                     <div class="card-body px-4 pb-4 pt-3">
                         <form method="GET" action="{{ route('kunjungan.keseluruhan') }}"
-                            class="row g-3 align-items-end">
+                            class="d-flex flex-wrap flex-xl-nowrap align-items-end gap-2">
                             {{-- Tipe Filter --}}
-                            <div class="col-md-2">
-                                <label for="filter_type" class="form-label small text-muted text-uppercase">Mode Tampilan</label>
+                            <div style="min-width: 120px; flex: 1 1 120px;">
+                                <label for="filter_type" class="form-label small text-muted text-uppercase mb-1">Mode Tampilan</label>
                                 <select name="filter_type" id="filter_type" class="form-select">
                                     <option value="yearly" {{ $filterType == 'yearly' ? 'selected' : '' }}>Bulanan
                                     </option>
@@ -37,8 +37,8 @@
                             </div>
 
                             {{-- Filter Tahunan --}}
-                            <div class="col-md-4 filter-input" id="yearlyFilter" style="display: none;">
-                                <label class="form-label small text-muted text-uppercase">Rentang Tahun</label>
+                            <div class="filter-input" id="yearlyFilter" style="min-width: 200px; flex: 2 1 200px; display: none;">
+                                <label class="form-label small text-muted text-uppercase mb-1">Rentang Tahun</label>
                                 <div class="input-group">
                                     <select name="start_year" class="form-select">
                                         @for ($y = date('Y'); $y >= date('Y') - 10; $y--)
@@ -57,8 +57,8 @@
                             </div>
 
                             {{-- Filter Harian --}}
-                            <div class="col-md-4 filter-input" id="date_rangeFilter" style="display: none;">
-                                <label class="form-label small text-muted text-uppercase">Rentang Tanggal</label>
+                            <div class="filter-input" id="date_rangeFilter" style="min-width: 270px; flex: 2 1 270px; display: none;">
+                                <label class="form-label small text-muted text-uppercase mb-1">Rentang Tanggal</label>
                                 <div class="input-group">
                                     <input type="date" name="start_date" class="form-control"
                                         value="{{ $startDate }}">
@@ -69,8 +69,8 @@
                             </div>
 
                             {{-- Filter Lokasi --}}
-                            <div class="col-md-3">
-                                <label for="lokasi" class="form-label small text-muted text-uppercase">Lokasi</label>
+                            <div style="min-width: 170px; flex: 1.5 1 170px;">
+                                <label for="lokasi" class="form-label small text-muted text-uppercase mb-1">Lokasi</label>
                                 <select name="lokasi" id="lokasi" class="form-select">
                                     <option value="">Semua Lokasi</option>
                                     @foreach ($lokasiMapping as $lokasi)
@@ -81,8 +81,8 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-auto ms-auto">
-                                <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                            <div style="flex: 0 0 auto;">
+                                <button type="submit" class="btn btn-primary px-4 shadow-sm text-nowrap">
                                     <i class="fas fa-search me-1"></i> Tampilkan
                                 </button>
                             </div>

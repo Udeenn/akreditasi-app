@@ -26,17 +26,17 @@
                         <h5 class="mb-0 fw-bold"><i class="fas fa-filter text-primary me-2"></i> Filter Data</h5>
                     </div>
                     <div class="card-body px-4 pb-4 pt-3">
-                        <form method="GET" action="{{ route('peminjaman.keseluruhan') }}" class="row g-3 align-items-end" id="filterForm">
-                            <div class="col-md-4">
-                                <label for="filter_type" class="form-label small text-muted text-uppercase">Mode Tampilan</label>
+                        <form method="GET" action="{{ route('peminjaman.keseluruhan') }}" class="d-flex flex-wrap flex-xl-nowrap align-items-end gap-2" id="filterForm">
+                            <div style="min-width: 140px; flex: 1 1 140px;">
+                                <label for="filter_type" class="form-label small text-muted text-uppercase mb-1">Mode Tampilan</label>
                                 <select name="filter_type" id="filter_type" class="form-select">
                                     <option value="daily" {{ ($filterType ?? 'daily') == 'daily' ? 'selected' : '' }}>Harian</option>
                                     <option value="monthly" {{ ($filterType ?? '') == 'monthly' ? 'selected' : '' }}>Bulanan</option>
                                 </select>
                             </div>
 
-                            <div class="col-md-6" id="dailyFilter" style="{{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
-                                <label class="form-label small text-muted text-uppercase">Rentang Tanggal</label>
+                            <div id="dailyFilter" style="min-width: 280px; flex: 2.5 1 280px; {{ ($filterType ?? 'daily') == 'daily' ? '' : 'display: none;' }}">
+                                <label class="form-label small text-muted text-uppercase mb-1">Rentang Tanggal</label>
                                 <div class="input-group">
                                     <input type="date" name="start_date" id="start_date" class="form-control" value="{{ $startDate ?? \Carbon\Carbon::now()->subDays(30)->format('Y-m-d') }}">
                                     <span class="input-group-text text-muted">s/d</span>
@@ -44,8 +44,8 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-6" id="monthlyFilter" style="{{ ($filterType ?? '') == 'monthly' ? '' : 'display: none;' }}">
-                                <label class="form-label small text-muted text-uppercase">Rentang Tahun</label>
+                            <div id="monthlyFilter" style="min-width: 220px; flex: 2.5 1 220px; {{ ($filterType ?? '') == 'monthly' ? '' : 'display: none;' }}">
+                                <label class="form-label small text-muted text-uppercase mb-1">Rentang Tahun</label>
                                 <div class="input-group">
                                     @php
                                         $currentYear = date('Y');
@@ -66,8 +66,8 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-2">
-                                <button type="submit" class="btn btn-primary w-100 shadow-sm">
+                            <div style="flex: 0 0 auto;">
+                                <button type="submit" class="btn btn-primary px-4 shadow-sm text-nowrap">
                                     <i class="fas fa-search me-1"></i> Tampilkan
                                 </button>
                             </div>
@@ -214,14 +214,14 @@
                                                     @if (($filterType ?? 'daily') == 'daily')
                                                         @if ($stat->periode)
                                                             <i
-                                                                class="far fa-calendar-alt me-2 text-muted"></i>{{ \Carbon\Carbon::parse($stat->periode)->format('d F Y') }}
+                                                                class="far fa-calendar-alt me-2 text-muted"></i>{{ \Carbon\Carbon::parse($stat->periode)->locale('id')->isoFormat('D MMMM YYYY') }}
                                                         @else
                                                             -
                                                         @endif
                                                     @else
                                                         @if ($stat->periode)
                                                             <i
-                                                                class="far fa-calendar me-2 text-muted"></i>{{ \Carbon\Carbon::createFromFormat('Y-m', $stat->periode)->format('F Y') }}
+                                                                class="far fa-calendar me-2 text-muted"></i>{{ \Carbon\Carbon::createFromFormat('Y-m', $stat->periode)->locale('id')->isoFormat('MMMM YYYY') }}
                                                         @else
                                                             -
                                                         @endif

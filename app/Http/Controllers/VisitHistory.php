@@ -12,7 +12,6 @@ use App\Models\M_Auv;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\Cache;
 use App\Services\VisitStatisticsService;
 use App\Services\DateFilterService;
