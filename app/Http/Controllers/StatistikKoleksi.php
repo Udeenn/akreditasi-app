@@ -161,6 +161,10 @@ class StatistikKoleksi extends Controller
 
         $prodi = $request->input('prodi', 'initial');
         $tahunTerakhir = $request->input('tahun', 'all');
+        $withdrawn = $type === 'textbook' ? (string) $request->input('withdrawn', '0') : '0';
+        if (!in_array($withdrawn, ['0', '1', 'all'], true)) {
+            $withdrawn = '0';
+        }
 
         $data = collect();
         $namaProdi = '';
@@ -172,7 +176,7 @@ class StatistikKoleksi extends Controller
             $prodiMapping = $listprodi->pluck('lib', 'authorised_value')->toArray();
             $namaProdi = $prodiMapping[$prodi] ?? 'Tidak Ditemukan';
 
-            $result = $this->collectionService->getCollectionData($type, $prodi, $tahunTerakhir);
+            $result = $this->collectionService->getCollectionData($type, $prodi, $tahunTerakhir, $withdrawn);
             $processedData = $result['processedData'];
             $totalJudul = $result['totalJudul'];
             $totalEksemplar = $result['totalEksemplar'];
@@ -188,7 +192,7 @@ class StatistikKoleksi extends Controller
             }
         }
 
-        return view($viewName, compact('data', 'prodi', 'listprodi', 'namaProdi', 'tahunTerakhir', 'dataExists', 'totalJudul', 'totalEksemplar'));
+        return view($viewName, compact('data', 'prodi', 'listprodi', 'namaProdi', 'tahunTerakhir', 'withdrawn', 'dataExists', 'totalJudul', 'totalEksemplar'));
     }
 
     public function prosiding(Request $request) { return $this->handleCollectionRequest($request, 'prosiding', 'pages.dapus.prosiding', 'Prosiding'); }

@@ -56,6 +56,14 @@
                                     @endfor
                                 </select>
                             </div>
+                            <div class="col-12 col-md-3">
+                                <label for="withdrawn" class="form-label small text-muted text-uppercase">Status Withdrawn</label>
+                                <select name="withdrawn" id="withdrawn" class="form-select">
+                                    <option value="0" {{ ($withdrawn ?? '0') === '0' ? 'selected' : '' }}>Tidak (Aktif)</option>
+                                    <option value="1" {{ ($withdrawn ?? '0') === '1' ? 'selected' : '' }}>Ya (Withdrawn)</option>
+                                    <option value="all" {{ ($withdrawn ?? '0') === 'all' ? 'selected' : '' }}>Semua</option>
+                                </select>
+                            </div>
                             <div class="col-12 col-md-2">
                                 <button type="submit" class="btn btn-primary w-100">
                                     <i class="fas fa-search me-1"></i> Tampilkan
@@ -111,6 +119,11 @@
                         @endif
                         @if ($tahunTerakhir !== 'all')
                             - {{ $tahunTerakhir }} Tahun Terakhir
+                        @endif
+                        @if (($withdrawn ?? '0') === '1')
+                            <span class="badge bg-warning text-dark ms-1">Withdrawn</span>
+                        @elseif (($withdrawn ?? '0') === 'all')
+                            <span class="badge bg-secondary ms-1">Semua Status Withdrawn</span>
                         @endif
                     </h6>
                     <button type="submit" form="filterFormTextbook" name="export_csv" value="1"

@@ -93,14 +93,15 @@ class CollectionStatisticsService
     /**
      * Ambil data koleksi secara generic berdasarkan tipe
      */
-    public function getCollectionData(string $type, string $prodi, string $tahunTerakhir): array
+    public function getCollectionData(string $type, string $prodi, string $tahunTerakhir, string $withdrawn = '0'): array
     {
+        $withdrawn = in_array($withdrawn, ['0', '1', 'all'], true) ? $withdrawn : '0';
         $config = $this->getCollectionTypeConfig($type);
-        $cacheKey = "stats_collection_generic_v3_{$type}_{$prodi}_{$tahunTerakhir}";
+        $cacheKey = "stats_collection_generic_v3_{$type}_{$prodi}_{$tahunTerakhir}_w{$withdrawn}";
 
-        return Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir, $config, $type) {
+        return Cache::remember($cacheKey, 3600, function () use ($prodi, $tahunTerakhir, $withdrawn, $config, $type) {
             // 1. Total Query (join biblio_metadata hanya jika filter tahun membutuhkannya)
-            $totalQuery = $this->collectionRepository->getBaseTotalQuery($prodi, $tahunTerakhir);
+            $totalQuery = $this->collectionRepository->getBaseTotalQuery($prodi, $tahunTerakhir, $withdrawn);
             if ($tahunTerakhir !== 'all' && !$config['enumchronEndWithYear']) {
                 $totalQuery->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'items.biblionumber');
             }
@@ -112,7 +113,7 @@ class CollectionStatisticsService
             ")->first();
 
             // 2. Main Query
-            $query = $this->collectionRepository->getBaseQuery($prodi, $tahunTerakhir);
+            $query = $this->collectionRepository->getBaseQuery($prodi, $tahunTerakhir, $withdrawn);
             $this->collectionRepository->applyConfigFilters($query, $config, $tahunTerakhir);
 
             // Special join needed for some types like periodikal

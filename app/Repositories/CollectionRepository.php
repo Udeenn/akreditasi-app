@@ -13,34 +13,38 @@ class CollectionRepository
     /**
      * Get Base Collection Query
      */
-    public function getBaseQuery(string $prodi, string $tahunTerakhir = 'all'): Builder
+    public function getBaseQuery(string $prodi, string $tahunTerakhir = 'all', string $withdrawn = '0'): Builder
     {
         $query = M_items::query()
             ->from('items')
             ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
             ->join('biblio as b', 'b.biblionumber', '=', 'items.biblionumber')
-            ->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'items.biblionumber')
-            ->where('items.itemlost', 0)
-            ->where('items.withdrawn', 0);
+            ->join('biblio_metadata as bm', 'bm.biblionumber', '=', 'items.biblionumber');
 
-        if ($prodi !== 'all') {
-            $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
-            QueryHelper::applyCnClassRules($query, $cnClasses);
-        }
-
-        return $query;
+        return $this->applyCommonFilters($query, $prodi, $withdrawn);
     }
 
     /**
      * Get Base Collection Query WITHOUT biblio/metadata for fast counting.
      */
-    public function getBaseTotalQuery(string $prodi, string $tahunTerakhir = 'all'): Builder
+    public function getBaseTotalQuery(string $prodi, string $tahunTerakhir = 'all', string $withdrawn = '0'): Builder
     {
         $query = M_items::query()
             ->from('items')
-            ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber')
-            ->where('items.itemlost', 0)
-            ->where('items.withdrawn', 0);
+            ->join('biblioitems as bi', 'items.biblionumber', '=', 'bi.biblionumber');
+
+        return $this->applyCommonFilters($query, $prodi, $withdrawn);
+    }
+
+    private function applyCommonFilters(Builder $query, string $prodi, string $withdrawn): Builder
+    {
+        $query->where('items.itemlost', 0);
+
+        if ($withdrawn === '0') {
+            $query->where('items.withdrawn', 0);
+        } elseif ($withdrawn === '1') {
+            $query->where('items.withdrawn', '>', 0);
+        }
 
         if ($prodi !== 'all') {
             $cnClasses = CnClassHelperr::getCnClassByProdi($prodi);
