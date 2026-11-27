@@ -336,9 +336,12 @@ class AiSafeQueryService
 
             if ($prodi !== '') {
                 $upperProdi = strtoupper($prodi);
-                $bQuery->where(function ($q) use ($upperProdi) {
-                    $q->where('ba.attribute', '=', $upperProdi)
-                      ->orWhere('b.cardnumber', 'like', $upperProdi . '%');
+                $prodiCodes = array_values(array_unique(array_merge([$upperProdi], $this->resolveProdiCodes($prodi))));
+                $bQuery->where(function ($q) use ($prodiCodes) {
+                    $q->whereIn('ba.attribute', $prodiCodes);
+                    foreach ($prodiCodes as $code) {
+                        $q->orWhere('b.cardnumber', 'like', $code . '%');
+                    }
                 });
             }
 
@@ -528,9 +531,10 @@ class AiSafeQueryService
 
         $stripped = preg_replace("/'(?:\\\\.|[^'\\\\])*'|\"(?:\\\\.|[^\"\\\\])*\"/", "''", $sql);
 
-        $forbiddenPattern = '/\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|REPLACE|GRANT|REVOKE|CALL|EXECUTE|EXEC|PREPARE|DEALLOCATE|OUTFILE|DUMPFILE|LOAD_FILE|SLEEP|BENCHMARK|GET_LOCK|INTO|SET|SHOW|DESCRIBE|EXPLAIN|USE|HANDLER|LOCK|UNLOCK)\b/i';
+        $forbiddenPattern = '/\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|REPLACE|GRANT|REVOKE|CALL|EXECUTE|EXEC|PREPARE|DEALLOCATE|OUTFILE|DUMPFILE|LOAD_FILE|SLEEP|BENCHMARK|GET_LOCK|INTO|SET|SHOW|DESCRIBE|EXPLAIN|USE|HANDLER|LOCK|UNLOCK)\b|\b(?:DATABASE|VERSION|SCHEMA|CURRENT_USER|SESSION_USER|SYSTEM_USER)\s*\(/i';
         if (preg_match($forbiddenPattern, $stripped, $m)) {
-            throw new InvalidArgumentException("Kata kunci '{$m[1]}' dilarang dalam query read-only.");
+            $token = trim($m[0]);
+            throw new InvalidArgumentException("Kata kunci/fungsi '{$token}' dilarang dalam query read-only.");
         }
 
         $forbiddenColsRegex = '/\b(' . implode('|', self::FORBIDDEN_COLUMNS) . ')\b/i';
@@ -574,6 +578,25 @@ Catatan: Kunjungan(mysql) & Anggota(mysql2) terpisah; ranking pengunjung per kat
 SCHEMA;
     }
 
+    private function resolveProdiCodes(string $prodi): array
+    {
+        $upper = strtoupper(trim($prodi));
+        if ($upper === '') {
+            return [];
+        }
+
+        return DB::connection('mysql2')->table('authorised_values')
+            ->where('category', 'PRODI')
+            ->where(function ($q) use ($prodi, $upper) {
+                $q->where('authorised_value', $upper)
+                  ->orWhere('lib', 'like', '%' . trim($prodi) . '%');
+            })
+            ->orderByRaw('LENGTH(lib) ASC')
+            ->pluck('authorised_value')
+            ->map(fn($c) => strtoupper((string) $c))
+            ->all();
+    }
+
     private function resolveProdiCnRules(string $prodi, string &$resolvedCode): array
     {
         $upper = strtoupper($prodi);
@@ -583,19 +606,10 @@ SCHEMA;
             return $rules;
         }
 
-        $codes = DB::connection('mysql2')->table('authorised_values')
-            ->where('category', 'PRODI')
-            ->where(function ($q) use ($prodi, $upper) {
-                $q->where('authorised_value', $upper)
-                  ->orWhere('lib', 'like', '%' . $prodi . '%');
-            })
-            ->orderByRaw('LENGTH(lib) ASC')
-            ->pluck('authorised_value');
-
-        foreach ($codes as $code) {
-            $rules = CnClassHelperr::getCnClassByProdi((string) $code);
+        foreach ($this->resolveProdiCodes($prodi) as $code) {
+            $rules = CnClassHelperr::getCnClassByProdi($code);
             if (!empty($rules)) {
-                $resolvedCode = (string) $code;
+                $resolvedCode = $code;
                 return $rules;
             }
         }

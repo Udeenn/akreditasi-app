@@ -367,6 +367,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (loader) loader.classList.remove('show');
         }
 
+        let safetyTimer = null;
+        function scheduleSafetyHide() {
+            clearTimeout(safetyTimer);
+            safetyTimer = setTimeout(hideLoader, 8000);
+        }
+
         document.addEventListener('click', function (e) {
             const anchor = e.target.closest('a');
             if (!anchor) return;
@@ -374,47 +380,44 @@ document.addEventListener('DOMContentLoaded', function() {
             const href = anchor.getAttribute('href');
             if (!href) return;
 
-            const isExternal  = anchor.hostname && anchor.hostname !== window.location.hostname;
-            const isHash      = href.startsWith('#');
-            const isJs        = href.startsWith('javascript');
-            const isSkip      = anchor.hasAttribute('data-no-loader');
-            const isBlank     = anchor.target === '_blank';
-            const isDownload  = anchor.hasAttribute('download');
+            const isExternal = anchor.hostname && anchor.hostname !== window.location.hostname;
+            const isHash     = href.startsWith('#');
+            const isJs       = href.startsWith('javascript');
+            const isSkip     = anchor.hasAttribute('data-no-loader');
+            const isBlank    = anchor.target === '_blank';
+            const isDownload = anchor.hasAttribute('download') || anchor.pathname.includes('/export');
 
             if (isExternal || isHash || isJs || isSkip || isBlank || isDownload) return;
 
-            if (anchor.hasAttribute('data-heavy')) {
-                showLoader();
-            } else {
-                if (typeof NProgress !== 'undefined') NProgress.start();
-            }
-        }, true);
+            setTimeout(() => {
+                if (e.defaultPrevented) return;
+                if (anchor.hasAttribute('data-heavy')) {
+                    showLoader();
+                } else if (typeof NProgress !== 'undefined') {
+                    NProgress.start();
+                }
+                scheduleSafetyHide();
+            }, 0);
+        });
 
         document.addEventListener('submit', function (e) {
             const form = e.target;
             if (!form || form.hasAttribute('data-no-loader')) return;
-            if (form.hasAttribute('data-heavy')) {
-                showLoader();
-            } else {
-                if (typeof NProgress !== 'undefined') NProgress.start();
-            }
-        }, true);
 
-        window.addEventListener('pageshow', function (e) {
-            hideLoader();
+            setTimeout(() => {
+                if (e.defaultPrevented) return;
+                if (form.hasAttribute('data-heavy')) {
+                    showLoader();
+                } else if (typeof NProgress !== 'undefined') {
+                    NProgress.start();
+                }
+                scheduleSafetyHide();
+            }, 0);
         });
 
-        window.addEventListener('popstate', function () {
-            hideLoader();
-        });
-
-        let safetyTimer = null;
-        document.addEventListener('click', function (e) {
-            const anchor = e.target.closest('a[href]');
-            if (!anchor) return;
-            clearTimeout(safetyTimer);
-            safetyTimer = setTimeout(hideLoader, 10000);
-        }, true);
+        window.addEventListener('pageshow', hideLoader);
+        window.addEventListener('load', hideLoader);
+        window.addEventListener('popstate', hideLoader);
 
     })();
 

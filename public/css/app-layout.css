@@ -358,8 +358,22 @@
         }
 
         body.sidebar-collapsed .sidebar .nav-text,
-        body.sidebar-collapsed .sidebar .nav-arrow-small {
+        body.sidebar-collapsed .sidebar .nav-arrow-small,
+        body.sidebar-collapsed .sidebar .badge {
             display: none !important;
+        }
+
+        .sidebar .ai-beta-badge {
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 0.18em 0.5em;
+            background: rgba(74, 105, 255, 0.14);
+            color: var(--primary-color, #4A69FF);
+        }
+
+        .sidebar .nav-link.active .ai-beta-badge {
+            background: rgba(255, 255, 255, 0.22);
+            color: #ffffff;
         }
 
         body.sidebar-collapsed .sidebar .collapse,

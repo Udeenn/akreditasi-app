@@ -47,9 +47,9 @@ class AiAssistantController extends Controller
             if (!empty($result['rows']) && !empty($result['columns'])) {
                 $exportId = Str::random(24);
                 $exports = session('ai_exports', []);
-                // Simpan maksimal 10 riwayat export terbaru di session agar tidak membengkak
-                if (count($exports) >= 10) {
-                    $exports = array_slice($exports, -9, 9, true);
+                // Simpan maksimal 15 riwayat agar sinkron dengan sessionStorage UI
+                if (count($exports) >= 15) {
+                    $exports = array_slice($exports, -14, 14, true);
                 }
                 $exports[$exportId] = [
                     'question' => trim($validated['question']),
@@ -74,6 +74,7 @@ class AiAssistantController extends Controller
                 'query_summary' => $result['query_summary'],
                 'contains_pii'  => $result['contains_pii'],
                 'cached'        => $result['cached'] ?? false,
+                'tokens_used'   => $result['tokens_used'] ?? 0,
                 'export_url'    => $exportUrl,
                 'page_url'      => $pageUrl,
             ]);

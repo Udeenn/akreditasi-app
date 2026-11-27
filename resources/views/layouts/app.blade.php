@@ -201,9 +201,6 @@
             <a href="{{ route('koleksi.referensi') }}" class="panel-nav-link {{ request()->routeIs('koleksi.referensi') ? 'active' : '' }}">
                 <x-icon name="bookmark" class="me-2" /> Referensi
             </a>
-            <a href="{{ route('koleksi.eresource') }}" class="panel-nav-link {{ request()->routeIs('koleksi.eresource') ? 'active' : '' }}">
-                <x-icon name="database" class="me-2" /> E-Resource
-            </a>
             @if(auth()->check() && auth()->user()->role === 'librarian')
             <a href="{{ route('koleksi.tren_pertambahan') }}" class="panel-nav-link {{ request()->routeIs('koleksi.tren_pertambahan') ? 'active' : '' }}">
                 <x-icon name="chart-line" class="me-2" /> Pengadaan Koleksi

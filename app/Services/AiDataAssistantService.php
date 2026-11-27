@@ -50,6 +50,7 @@ class AiDataAssistantService
         ], throwOnError: true);
 
         $candidate = $data['candidates'][0]['content'] ?? [];
+        $tokens    = (int) ($data['usageMetadata']['totalTokenCount'] ?? 0);
         $funcCalls = [];
         $textParts = [];
 
@@ -65,7 +66,8 @@ class AiDataAssistantService
         if (empty($funcCalls)) {
             $textAnswer = trim(implode("\n", $textParts)) ?: 'Silakan ajukan pertanyaan yang lebih spesifik terkait data anggota, koleksi, kunjungan, atau peminjaman.';
             Cache::put($cacheKey, ['type' => 'text', 'answer' => $textAnswer], now()->endOfDay());
-            return $this->emptyResult($textAnswer);
+            Log::info('AI Assistant query', ['cached' => false, 'tokens' => $tokens, 'tools' => []]);
+            return $this->emptyResult($textAnswer, tokensUsed: $tokens);
         }
 
         try {
@@ -73,7 +75,8 @@ class AiDataAssistantService
         } catch (\Throwable $e) {
             return $this->emptyResult(
                 'Query yang disusun tidak dapat dijalankan karena alasan keamanan/validasi: ' . $e->getMessage() . '. Coba perjelas pertanyaan Anda.',
-                implode(' | ', array_map(fn($c) => (string) ($c['name'] ?? ''), $funcCalls))
+                implode(' | ', array_map(fn($c) => (string) ($c['name'] ?? ''), $funcCalls)),
+                tokensUsed: $tokens
             );
         }
 
@@ -81,7 +84,8 @@ class AiDataAssistantService
         $onlySimpleListing = count($calls) === 1 && in_array($calls[0]['name'], ['find_members', 'top_visitors', 'search_catalog'], true);
         if (!empty($merged['contains_pii']) || $onlySimpleListing) {
             Cache::put($cacheKey, ['type' => 'tools', 'calls' => $calls], now()->endOfDay());
-            return $this->formatResult($merged, $this->buildLocalNarrative($calls[0]['name'], $calls[0]['args'], $merged), calls: $calls);
+            Log::info('AI Assistant query', ['cached' => false, 'tokens' => $tokens, 'tools' => array_column($calls, 'name')]);
+            return $this->formatResult($merged, $this->buildLocalNarrative($calls[0]['name'], $calls[0]['args'], $merged), calls: $calls, tokensUsed: $tokens);
         }
 
         $contents[] = $candidate;
@@ -91,6 +95,7 @@ class AiDataAssistantService
             'contents'         => $contents,
             'generationConfig' => ['temperature' => 0.3],
         ]);
+        $tokens += (int) ($followUp['usageMetadata']['totalTokenCount'] ?? 0);
 
         $answerText = '';
         foreach ($followUp['candidates'][0]['content']['parts'] ?? [] as $p) {
@@ -105,7 +110,8 @@ class AiDataAssistantService
             'rows_hash' => sha1((string) json_encode($merged['rows'])),
         ], now()->endOfDay());
 
-        return $this->formatResult($merged, $finalAnswer, calls: $calls);
+        Log::info('AI Assistant query', ['cached' => false, 'tokens' => $tokens, 'tools' => array_column($calls, 'name')]);
+        return $this->formatResult($merged, $finalAnswer, calls: $calls, tokensUsed: $tokens);
     }
 
     private function callGemini(string $url, string $apiKey, int $timeout, array $body, bool $throwOnError = false): array
@@ -137,7 +143,7 @@ class AiDataAssistantService
         return 'ai_plan:v4:' . date('Y-m-d') . ':' . sha1(json_encode(['q' => $normQ, 'h' => $normH]));
     }
 
-    private function emptyResult(string $answer, ?string $querySummary = null, bool $cached = false): array
+    private function emptyResult(string $answer, ?string $querySummary = null, bool $cached = false, int $tokensUsed = 0): array
     {
         return [
             'answer'        => $answer,
@@ -147,10 +153,11 @@ class AiDataAssistantService
             'query_summary' => $querySummary,
             'contains_pii'  => false,
             'cached'        => $cached,
+            'tokens_used'   => $tokensUsed,
         ];
     }
 
-    private function formatResult(array $result, string $answer, bool $cached = false, array $calls = []): array
+    private function formatResult(array $result, string $answer, bool $cached = false, array $calls = [], int $tokensUsed = 0): array
     {
         return [
             'answer'        => $answer,
@@ -160,6 +167,7 @@ class AiDataAssistantService
             'query_summary' => $result['query_summary'],
             'contains_pii'  => $result['contains_pii'],
             'cached'        => $cached,
+            'tokens_used'   => $tokensUsed,
             'calls'         => $calls,
         ];
     }

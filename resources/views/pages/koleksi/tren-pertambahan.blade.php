@@ -163,11 +163,11 @@
                             <input type="hidden" name="start_month" value="{{ $startMonth }}">
                             <input type="hidden" name="end_month" value="{{ $endMonth }}">
                             <input type="hidden" name="group_by" value="{{ $groupBy }}">
-                            <button type="submit" class="btn btn-danger btn-sm shadow-sm fw-bold px-3">
+                            <button type="submit" class="btn btn-danger btn-sm shadow-sm px-3">
                                 <i class="fas fa-file-pdf me-1"></i> Export PDF
                             </button>
                         </form>
-                        <button type="submit" form="filterForm" name="export_csv" value="1" class="btn btn-success btn-sm shadow-sm fw-bold px-3">
+                        <button type="submit" form="filterForm" name="export_csv" value="1" class="btn btn-success btn-sm shadow-sm px-3">
                             <i class="fas fa-file-csv me-1"></i> Export CSV
                         </button>
                     </div>

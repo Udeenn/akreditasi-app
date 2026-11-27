@@ -79,10 +79,7 @@
                             href="{{ route('koleksi.prosiding') }}">Prosiding</a></li>
                     <li><a class="nav-link {{ request()->routeIs('koleksi.referensi') ? 'active' : '' }}"
                             href="{{ route('koleksi.referensi') }}">Referensi</a></li>
-                    
-                    <li><a class="nav-link {{ request()->routeIs('koleksi.eresource') ? 'active' : '' }}"
-                            href="{{ route('koleksi.eresource') }}">E-Resource</a></li>
-                            @if(auth()->check() && auth()->user()->role === 'librarian')
+                    @if(auth()->check() && auth()->user()->role === 'librarian')
                     <li><a class="nav-link {{ request()->routeIs('koleksi.tren_pertambahan') ? 'active' : '' }}"
                             href="{{ route('koleksi.tren_pertambahan') }}">Pengadaan Koleksi</a></li>
                     @endif
@@ -230,9 +227,9 @@
 </li>
 <li class="nav-item">
     <a class="nav-link {{ request()->routeIs('admin.ai-assistant*') ? 'active' : '' }}"
-        href="{{ route('admin.ai-assistant') }}">
+        href="{{ route('admin.ai-assistant') }}" title="Asisten Data AI (Beta)">
         <x-icon name="rocket" class="nav-icon" />
-        <span class="nav-text">Asisten AI</span>&nbsp;<span class="badge bg-secondary">Beta</span>
+        <span class="nav-text d-inline-flex align-items-center gap-2">Asisten AI <span class="badge rounded-pill ai-beta-badge">Beta</span></span>
     </a>
 </li>
 @endif

@@ -71,7 +71,7 @@
                         @endif
                     </h6>
                     <button type="submit" form="filterFormReferensi" name="export_csv" value="1"
-                        class="btn btn-success  fw-bold shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV</button>
+                        class="btn btn-success shadow-sm px-3"><i class="fas fa-file-csv me-2"></i> Export CSV</button>
                 </div>
             @endif
             <div class="card-body">

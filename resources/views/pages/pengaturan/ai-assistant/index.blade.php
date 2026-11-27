@@ -348,7 +348,7 @@
 
         {{-- Form Input --}}
         <div class="card-footer ai-chat-footer px-3 py-2">
-            <form id="aiChatForm" class="ai-composer">
+            <form id="aiChatForm" class="ai-composer" data-no-loader>
                 <input type="text"
                     id="aiQuestionInput"
                     class="form-control"
@@ -434,6 +434,7 @@ document.addEventListener('DOMContentLoaded', function () {
         safe = safe.replace(/^-{3,}$/gm, '<hr class="my-2 opacity-25">');
         safe = safe.replace(/^\s*[\*-]\s+(.+)$/gm, '<div class="ps-2 mb-1">&bull; $1</div>');
         safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        safe = safe.replace(/(^|[^\*])\*([^\s*][^*]*?)\*(?!\*)/g, '$1<em>$2</em>');
         safe = safe.replace(/`([^`]+)`/g, '<code>$1</code>');
         return safe.replace(/(<\/(?:strong|div)>|<hr[^>]*>)\n/g, '$1').replace(/\n/g, '<br>');
     }
@@ -485,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function () {
             ).join('');
 
             const exportBtn = payload.export_url
-                ? `<a href="${escapeHtml(payload.export_url)}" class="btn btn-success btn-sm l px-2 py-1 d-inline-flex align-items-center gap-1 text-nowrap" style="font-size: 0.74rem;">${csvIconHtml}<span>Export CSV</span></a>`
+                ? `<a href="${escapeHtml(payload.export_url)}" data-no-loader download class="btn btn-success btn-sm rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1 text-nowrap" style="font-size: 0.74rem;">${csvIconHtml}<span>Export CSV</span></a>`
                 : '';
 
             tableHtml = `
@@ -509,7 +510,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const cachedPill = payload.cached
             ? `<span class="badge bg-success-soft text-success ms-1" style="font-size:0.68rem;">Cache &middot; 0 token</span>`
-            : '';
+            : (payload.tokens_used > 0
+                ? `<span class="badge bg-primary-soft ms-1" style="font-size:0.68rem;">${Number(payload.tokens_used)} token</span>`
+                : '');
 
         const queryToggleHtml = payload.query_summary
             ? `<details class="mt-2 small text-muted">
@@ -544,13 +547,23 @@ document.addEventListener('DOMContentLoaded', function () {
         const total = Number(payload.total_count ?? initialRows.length);
         const state = {
             rows: [...initialRows],
-            page: 1,
-            perPage: [25, 50, 100].includes(initialRows.length) ? initialRows.length : Math.min(50, Math.max(25, initialRows.length)),
+            page: Number(payload.page || 1),
+            perPage: Number(payload.per_page || ([25, 50, 100].includes(initialRows.length) ? initialRows.length : Math.min(50, Math.max(25, initialRows.length)))),
             totalCount: total,
-            sortBy: '',
-            sortDir: 'asc',
+            sortBy: payload.sort_by || '',
+            sortDir: payload.sort_dir || 'asc',
             loading: false,
         };
+
+        function syncPayloadState() {
+            payload.rows = state.rows;
+            payload.page = state.page;
+            payload.per_page = state.perPage;
+            payload.sort_by = state.sortBy;
+            payload.sort_dir = state.sortDir;
+            payload.total_count = state.totalCount;
+            saveChatState();
+        }
 
         const canServerPage = Boolean(payload.page_url) && total > initialRows.length;
 
@@ -614,6 +627,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     state.rows = json.rows;
                     state.page = json.page;
                     state.totalCount = json.total_count;
+                    syncPayloadState();
                 } else if (res.status === 404) {
                     infoEl.textContent = 'Sesi halaman kadaluarsa — kirim ulang pertanyaan.';
                 }
@@ -637,6 +651,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         const r = coll.compare(String(a[col] ?? ''), String(b[col] ?? ''));
                         return state.sortDir === 'asc' ? r : -r;
                     });
+                    syncPayloadState();
                     renderRows();
                 }
             });

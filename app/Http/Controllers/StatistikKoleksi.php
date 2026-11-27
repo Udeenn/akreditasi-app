@@ -601,43 +601,6 @@ class StatistikKoleksi extends Controller
         return response()->json($detailData);
     }
 
-    public function eresource(Request $request)
-    {
-        return view('pages.koleksi.eresource');
-    }
-
-    public function searchScopus(Request $request)
-    {
-        $query = $request->input('query', '');
-        if (empty($query)) return response()->json(['error' => 'Query tidak boleh kosong'], 400);
-
-        $apiKey = config('services.scopus.api_key');
-        $baseUrl = config('services.scopus.url', 'https://api.elsevier.com/content/search/scopus');
-
-        if (empty($apiKey)) return response()->json(['error' => 'API Key Scopus belum dikonfigurasi'], 500);
-
-        $count = max(1, min(100, (int) $request->input('count', 10)));
-        $start = max(0, (int) $request->input('start', 0));
-
-        try {
-            $response = \Illuminate\Support\Facades\Http::timeout(15)->withHeaders([
-                'X-ELS-APIKey' => $apiKey,
-                'Accept' => 'application/json'
-            ])->get($baseUrl, [
-                'query' => $query,
-                'count' => $count,
-                'start' => $start,
-            ]);
-
-            if ($response->successful()) return response()->json($response->json());
-            return response()->json(['error' => 'Gagal mengambil data dari Scopus', 'details' => $response->json()], $response->status());
-
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Scopus search error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return response()->json(['error' => 'Terjadi kesalahan internal: ' . $e->getMessage()], 500);
-        }
-    }
-
     private function streamCollectionCsv($data, $namaProdi, $tahunTerakhir, $filePrefix, $titleText, $headers, $rowMapper, string $withdrawn = '0')
     {
         $filename = "koleksi_" . $filePrefix;

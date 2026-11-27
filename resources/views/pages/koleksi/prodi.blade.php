@@ -73,7 +73,7 @@
                             <i class="fas fa-table me-1 text-primary"></i>
                             Koleksi Per Prodi
                         </h6>
-                        <button id="downloadExcelPerProdi" class="btn btn-success btn-sm fw-bold shadow-sm px-3">
+                        <button id="downloadExcelPerProdi" class="btn btn-success btn-sm shadow-sm px-3">
                             <i class="fas fa-file-csv me-1"></i> Export CSV
                         </button>
                     </div>
