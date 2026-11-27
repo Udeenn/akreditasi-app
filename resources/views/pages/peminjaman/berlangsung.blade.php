@@ -272,18 +272,18 @@
                             if (isOverdue) {
                                 const diff = now.diff(dueDate, 'days');
                                 return '<div class="d-flex flex-column align-items-start">' +
-                                    '<span class="badge bg-red-soft rounded-pill px-3 py-2 mb-1 shadow-sm">' +
+                                    '<span class="badge bg-red-soft l px-3 py-2 mb-1 shadow-sm">' +
                                     '<i class="fas fa-exclamation-triangle me-1"></i> Terlambat ' + diff + ' Hari</span>' +
                                     '<small class="text-danger fw-bold"><i class="fas fa-flag me-1"></i> Batas: ' + dueDate.format('DD MMM YYYY') + '</small></div>';
                             } else if (isToday) {
                                 return '<div class="d-flex flex-column align-items-start">' +
-                                    '<span class="badge bg-yellow-soft text-warning rounded-pill px-3 py-2 mb-1 shadow-sm">' +
+                                    '<span class="badge bg-yellow-soft text-warning l px-3 py-2 mb-1 shadow-sm">' +
                                     '<i class="fas fa-clock me-1"></i> Hari Ini</span>' +
                                     '<small class="text-warning fw-bold"><i class="fas fa-flag me-1"></i> Batas: ' + dueDate.format('HH:mm') + ' WIB</small></div>';
                             } else {
                                 const diff = dueDate.diff(now, 'days');
                                 return '<div class="d-flex flex-column align-items-start">' +
-                                    '<span class="badge bg-green-soft text-success rounded-pill px-3 py-2 mb-1 shadow-sm">' +
+                                    '<span class="badge bg-green-soft text-success l px-3 py-2 mb-1 shadow-sm">' +
                                     '<i class="fas fa-check-circle me-1"></i> Dipinjam</span>' +
                                     '<small class="text-success fw-bold"><i class="fas fa-hourglass-half me-1"></i> Sisa ' + diff + ' hari</small></div>';
                             }

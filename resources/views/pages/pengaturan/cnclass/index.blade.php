@@ -250,8 +250,8 @@
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4 btn-sm" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 btn-sm shadow-sm">Simpan Perubahan</button>
+                    <button type="button" class="btn btn-light l px-4 btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary l px-4 btn-sm shadow-sm">Simpan Perubahan</button>
                 </div>
             </form>
         </div>
@@ -287,7 +287,7 @@
                 <p class="text-muted small mt-3 mb-0"><strong>Catatan:</strong> Jika Anda memiliki beberapa aturan sekaligus untuk satu Prodi, pisahkan masing-masing aturan dengan tanda koma (<code>,</code>).<br>Contoh: <code>005*, 100-102, 330.1</code></p>
             </div>
             <div class="modal-footer border-0">
-                <button type="button" class="btn btn-secondary rounded-pill px-4 btn-sm" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-secondary l px-4 btn-sm" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -319,8 +319,8 @@
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4 btn-sm" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 btn-sm shadow-sm">Simpan Ruleset</button>
+                    <button type="button" class="btn btn-light l px-4 btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary l px-4 btn-sm shadow-sm">Simpan Ruleset</button>
                 </div>
             </form>
         </div>

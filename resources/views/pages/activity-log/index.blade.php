@@ -391,13 +391,13 @@
                                         </td>
                                         <td>
                                             @if($log->user_role === 'librarian')
-                                                <span class="badge badge-librarian rounded-pill">Pustakawan</span>
+                                                <span class="badge badge-librarian l">Pustakawan</span>
                                             @else
-                                                <span class="badge badge-patron rounded-pill">Pengguna</span>
+                                                <span class="badge badge-patron l">Pengguna</span>
                                             @endif
                                         </td>
                                         <td>
-                                            <span class="badge bg-{{ $log->method_badge }}-subtle text-{{ $log->method_badge }} rounded-pill px-2">
+                                            <span class="badge bg-{{ $log->method_badge }}-subtle text-{{ $log->method_badge }} l px-2">
                                                 {{ $log->method }}
                                             </span>
                                         </td>
@@ -419,7 +419,7 @@
                                                 $sc = $log->status_code;
                                                 $scColor = $sc >= 500 ? 'danger' : ($sc >= 400 ? 'warning' : 'success');
                                             @endphp
-                                            <span class="badge bg-{{ $scColor }}-subtle text-{{ $scColor }} rounded-pill">
+                                            <span class="badge bg-{{ $scColor }}-subtle text-{{ $scColor }} l">
                                                 {{ $sc ?? '-' }}
                                             </span>
                                         </td>
@@ -449,9 +449,9 @@
                                 <div>
                                     <span class="fw-semibold" style="font-size:0.85rem; color: var(--text-dark);">{{ $log->username ?? '-' }}</span>
                                     @if($log->user_role === 'librarian')
-                                        <span class="badge badge-librarian rounded-pill ms-1" style="font-size:0.65rem;">Pustakawan</span>
+                                        <span class="badge badge-librarian l ms-1" style="font-size:0.65rem;">Pustakawan</span>
                                     @else
-                                        <span class="badge badge-patron rounded-pill ms-1" style="font-size:0.65rem;">Pengguna</span>
+                                        <span class="badge badge-patron l ms-1" style="font-size:0.65rem;">Pengguna</span>
                                     @endif
                                 </div>
                                 <div class="d-flex align-items-center gap-1">
@@ -459,8 +459,8 @@
                                         $sc = $log->status_code;
                                         $scColor = $sc >= 500 ? 'danger' : ($sc >= 400 ? 'warning' : 'success');
                                     @endphp
-                                    <span class="badge bg-{{ $log->method_badge }}-subtle text-{{ $log->method_badge }} rounded-pill" style="font-size:0.65rem;">{{ $log->method }}</span>
-                                    <span class="badge bg-{{ $scColor }}-subtle text-{{ $scColor }} rounded-pill" style="font-size:0.65rem;">{{ $sc ?? '-' }}</span>
+                                    <span class="badge bg-{{ $log->method_badge }}-subtle text-{{ $log->method_badge }} l" style="font-size:0.65rem;">{{ $log->method }}</span>
+                                    <span class="badge bg-{{ $scColor }}-subtle text-{{ $scColor }} l" style="font-size:0.65rem;">{{ $sc ?? '-' }}</span>
                                 </div>
                             </div>
                             <div class="log-card-row">
@@ -506,7 +506,7 @@
                                 <span class="fw-medium" style="font-size:0.82rem; color: var(--text-dark);">
                                     {{ $page->route_name ?? basename($page->url) }}
                                 </span>
-                                <span class="badge bg-primary-subtle text-primary rounded-pill ms-2">
+                                <span class="badge bg-primary-subtle text-primary l ms-2">
                                     {{ $page->hits }}x
                                 </span>
                             </div>

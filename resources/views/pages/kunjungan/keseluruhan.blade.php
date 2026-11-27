@@ -169,7 +169,7 @@
                                                 {{ \Illuminate\Support\Str::limit($lokasiMapping[$lokasi] ?? $lokasi, 25) }}
                                             </span>
                                             <span
-                                                class="badge border rounded-pill text-body fw-normal px-3">{{ number_format($jumlah) }}</span>
+                                                class="badge border l text-body fw-normal px-3">{{ number_format($jumlah) }}</span>
                                         </div>
                                     @empty
                                         <span class="text-muted fst-italic small">Data lokasi tidak tersedia</span>
@@ -263,7 +263,7 @@
                                                     </td>
                                                     <td class="px-4 text-center">
                                                         <span
-                                                            class="badge bg-primary-soft text-primary px-3 py-2 rounded-pill">{{ number_format($rekap->jumlah) }}</span>
+                                                            class="badge bg-primary-soft text-primary px-3 py-2 l">{{ number_format($rekap->jumlah) }}</span>
                                                     </td>
                                                     <td class="px-4">
                                                         <div class="d-flex align-items-center">

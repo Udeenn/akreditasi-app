@@ -163,7 +163,7 @@
                         <td class="text-center">
                             <span class="badge ' .
                             $badgeClass .
-                            ' rounded-pill px-3 fw-normal">' .
+                            ' l px-3 fw-normal">' .
                             e($p->kategori) .
                             '</span>
                         </td>

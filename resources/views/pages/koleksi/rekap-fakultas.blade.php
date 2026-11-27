@@ -90,7 +90,7 @@
                                                         <i class="fas fa-book text-info me-1 opacity-75"></i> Judul
                                                     </span>
                                                     <span
-                                                        class="badge bg-secondary rounded-pill">{{ number_format($counts['judul']) }}</span>
+                                                        class="badge bg-secondary l">{{ number_format($counts['judul']) }}</span>
                                                 </div>
                                                 <div
                                                     class="d-flex justify-content-between align-items-center text-muted small mt-1">
@@ -98,7 +98,7 @@
                                                         <i class="fas fa-copy text-success me-1 opacity-75"></i> Eksemplar
                                                     </span>
                                                     <span
-                                                        class="badge bg-success rounded-pill">{{ number_format($counts['eksemplar']) }}</span>
+                                                        class="badge bg-success l">{{ number_format($counts['eksemplar']) }}</span>
                                                 </div>
                                             </li>
                                         @empty

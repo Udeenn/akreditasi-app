@@ -203,12 +203,12 @@
                                     <td class="text-center">{{ $index + 1 }}</td>
                                     <td class="text-center fw-bold">{{ $row->period_label }}</td>
                                     <td class="text-center">
-                                        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill ">
+                                        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 l ">
                                             {{ number_format($row->total_titles, 0, ',', '.') }} Judul
                                         </span>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill ">
+                                        <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 l ">
                                             {{ number_format($row->total_items, 0, ',', '.') }} Eks
                                         </span>
                                     </td>
@@ -216,20 +216,20 @@
                                         @if($growthTitles === null)
                                             <span class="text-muted small">—</span>
                                         @elseif($growthTitles > 0)
-                                            <span class="badge bg-success bg-opacity-10 text-success px-2 py-1 rounded-pill fw-bold">
+                                            <span class="badge bg-success bg-opacity-10 text-success px-2 py-1 l fw-bold">
                                                 <i class="fas fa-arrow-up me-1"></i>+{{ $growthTitles }}%
                                             </span>
                                         @elseif($growthTitles < 0)
-                                            <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1 rounded-pill fw-bold">
+                                            <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1 l fw-bold">
                                                 <i class="fas fa-arrow-down me-1"></i>{{ $growthTitles }}%
                                             </span>
                                         @else
-                                            <span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1 rounded-pill fw-bold">0%</span>
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1 l fw-bold">0%</span>
                                         @endif
                                     </td>
                                     <td class="text-center">
                                         <button type="button"
-                                            class="btn btn-sm btn-outline-primary fw-bold rounded-pill px-3 btn-detail-pertambahan"
+                                            class="btn btn-sm btn-outline-primary fw-bold l px-3 btn-detail-pertambahan"
                                             data-start-date="{{ $row->start_date }}"
                                             data-end-date="{{ $row->end_date }}"
                                             data-label="{{ $row->period_label }}">
@@ -259,11 +259,11 @@
                             Rumus: <code class="text-primary">((Judul Periode Ini &minus; Judul Periode Lalu) &divide; Judul Periode Lalu) &times; 100%</code>
                         </div>
                         <div class="d-flex flex-wrap gap-2 align-items-center small">
-                            <span class="badge bg-success bg-opacity-10 text-success px-2 py-1 rounded-pill fw-bold">
+                            <span class="badge bg-success bg-opacity-10 text-success px-2 py-1 l fw-bold">
                                 <i class="fas fa-arrow-up me-1"></i>+X%
                             </span>
                             <span class="text-muted">Judul bertambah</span>
-                            <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1 rounded-pill fw-bold ms-2">
+                            <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1 l fw-bold ms-2">
                                 <i class="fas fa-arrow-down me-1"></i>-X%
                             </span>
                             <span class="text-muted">Judul berkurang</span>

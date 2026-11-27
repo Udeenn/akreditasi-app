@@ -275,6 +275,9 @@
             <a href="{{ route('admin.activity-log') }}" class="panel-nav-link {{ request()->routeIs('admin.activity-log') ? 'active' : '' }}">
                 <x-icon name="shield-halved" class="me-2" /> Audit Trail
             </a>
+            <a href="{{ route('admin.ai-assistant') }}" class="panel-nav-link {{ request()->routeIs('admin.ai-assistant*') ? 'active' : '' }}">
+                <x-icon name="rocket" class="me-2" /> Asisten Data AI
+            </a>
             @endif
             @endauth
         </div>

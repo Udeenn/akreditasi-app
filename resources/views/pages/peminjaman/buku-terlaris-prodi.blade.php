@@ -240,7 +240,7 @@
                                                 <span class="placeholder col-9 rounded bg-secondary opacity-25" style="height: 15px;"></span>
                                             </td>
                                             <td class="text-center" style="width: 120px;">
-                                                <span class="placeholder col-12 rounded-pill bg-secondary opacity-25" style="height: 25px;"></span>
+                                                <span class="placeholder col-12 l bg-secondary opacity-25" style="height: 25px;"></span>
                                             </td>
                                         </tr>
                                     @endfor

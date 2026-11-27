@@ -167,6 +167,10 @@ $breadcrumbMap = [
         ['Admin', null],
         ['Pengaturan Prodi Tampil', null],
     ],
+    'admin.ai-assistant' => [
+        ['Admin', null],
+        ['Asisten Data AI', null],
+    ],
 ];
 
 $crumbs = $breadcrumbMap[$currentRoute] ?? null;

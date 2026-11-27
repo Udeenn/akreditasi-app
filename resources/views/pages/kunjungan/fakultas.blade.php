@@ -155,7 +155,7 @@
                                 <i class="fas fa-table text-success me-2"></i>Detail Data
                             </h5>
                             <div
-                                class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fs-6 border border-primary border-opacity-25">
+                                class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 l fs-6 border border-primary border-opacity-25">
                                 <i class="fas fa-users me-1"></i> Total:
                                 <span id="totalBadge"
                                     class="fw-extrabold">{{ number_format($totalKeseluruhanKunjungan ?? 0, 0, ',', '.') }}</span>
@@ -192,7 +192,7 @@
                                                     @endif
                                                 </td>
                                                 <td class="text-center">
-                                                    <span class="badge bg-primary-soft text-primary rounded-pill px-3 fw-bold">{{ number_format($stat->total_kunjungan) }}</span>
+                                                    <span class="badge bg-primary-soft text-primary l px-3 fw-bold">{{ number_format($stat->total_kunjungan) }}</span>
                                                 </td>
                                             </tr>
                                         @endforeach

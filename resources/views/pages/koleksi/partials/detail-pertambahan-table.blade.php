@@ -34,7 +34,7 @@
                 </td>
                 <td class="small font-monospace">{{ $row->itemcallnumber ?? '-' }}</td>
                 <td class="text-center">
-                    <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill fw-bold">
+                    <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 l fw-bold">
                         <i class="fas fa-copy me-1"></i> {{ number_format($row->total_eksemplar, 0, ',', '.') }} Eks
                     </span>
                 </td>

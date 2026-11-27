@@ -177,8 +177,8 @@
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4 btn-sm" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 btn-sm shadow-sm">Simpan Fakultas</button>
+                    <button type="button" class="btn btn-light l px-4 btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary l px-4 btn-sm shadow-sm">Simpan Fakultas</button>
                 </div>
             </form>
         </div>
@@ -208,8 +208,8 @@
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4 btn-sm" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 btn-sm shadow-sm">Simpan Perubahan</button>
+                    <button type="button" class="btn btn-light l px-4 btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary l px-4 btn-sm shadow-sm">Simpan Perubahan</button>
                 </div>
             </form>
         </div>

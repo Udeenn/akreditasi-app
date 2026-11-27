@@ -249,7 +249,7 @@
                                                 <td class="text-center"><span class="badge border text-body">{{ $item->kode_identifikasi }}</span></td>
                                                 <td class="px-4">{{ $item->nama_prodi }}</td>
                                                 <td class="px-4 text-center">
-                                                    <span class="badge bg-primary-soft text-primary px-3 py-2 rounded-pill">{{ number_format($item->jumlah_kunjungan_harian, 0, ',', '.') }}</span>
+                                                    <span class="badge bg-primary-soft text-primary px-3 py-2 l">{{ number_format($item->jumlah_kunjungan_harian, 0, ',', '.') }}</span>
                                                 </td>
                                                 <td class="px-4 text-center">
                                                     <button class="btn btn-sm btn-primary shadow-sm view-detail-btn"
@@ -608,7 +608,7 @@
                               <td class="px-3"><code>${escHtml(item.cardnumber)}</code></td>
                               <td class="px-3 fw-medium">${escHtml(item.nama)}</td>
                               <td class="px-3 text-center"><span class="badge border text-body">${escHtml(item.prodi)}</span></td>
-                              <td class="px-3 text-center"><span class="badge bg-primary-soft text-primary px-3 py-2 rounded-pill">${Number(item.total || 0).toLocaleString('id-ID')}</span></td>
+                              <td class="px-3 text-center"><span class="badge bg-primary-soft text-primary px-3 py-2 l">${Number(item.total || 0).toLocaleString('id-ID')}</span></td>
                           </tr>
                       `).join('');
                   };

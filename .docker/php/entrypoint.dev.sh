@@ -11,9 +11,13 @@ echo "=========================================="
 echo "  Akreditasi App - Local Development"
 echo "=========================================="
 
-# 1. Install/update Composer dependencies
-echo "[1/5] Installing Composer dependencies..."
-composer install --no-interaction --optimize-autoloader 2>/dev/null
+# 1. Install/update Composer dependencies hanya jika vendor belum ada
+echo "[1/5] Checking Composer dependencies..."
+if [ ! -f "vendor/autoload.php" ] || [ "${FORCE_COMPOSER_INSTALL:-0}" = "1" ]; then
+    composer install --no-interaction --optimize-autoloader
+else
+    echo "Vendor already exists, skipping composer install."
+fi
 
 # 2. Generate APP_KEY jika belum ada
 if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "" ]; then

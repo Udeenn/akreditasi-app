@@ -22,7 +22,7 @@
                         Pencarian <strong>E-Resource</strong> saat ini sedang dalam tahap pengembangan (Coming Soon). 
                         <br>Silakan nantikan pembaruan berikutnya!
                     </p>
-                    <a href="{{ route('dashboard') }}" class="btn btn-primary px-4 py-2 rounded-pill fw-medium" style="background: linear-gradient(135deg, #4A69FF, #6366f1); border: none; box-shadow: 0 4px 12px rgba(74,105,255,0.25);">
+                    <a href="{{ route('dashboard') }}" class="btn btn-primary px-4 py-2 l fw-medium" style="background: linear-gradient(135deg, #4A69FF, #6366f1); border: none; box-shadow: 0 4px 12px rgba(74,105,255,0.25);">
                         <i class="fas fa-arrow-left me-2"></i>Kembali ke Beranda
                     </a>
                 </div>

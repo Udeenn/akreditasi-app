@@ -521,7 +521,7 @@
                         <td>${(result.from || 0) + index}</td>
                         <td>${pengunjung.nama}</td>
                         <td>${pengunjung.cardnumber}</td>
-                        <td><span class="badge bg-secondary rounded-pill">${pengunjung.visit_count}x</span></td>
+                        <td><span class="badge bg-secondary l">${pengunjung.visit_count}x</span></td>
                     `;
                                 tbodyDetailPengunjung.appendChild(tr);
                             });

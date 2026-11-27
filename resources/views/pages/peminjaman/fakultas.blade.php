@@ -310,19 +310,19 @@
                                                     @endif
                                                 </td>
                                                 <td class="text-center">
-                                                    <span class="badge bg-primary-soft text-primary rounded-pill px-3">{{ number_format($stat->jumlah_issue) }}</span>
+                                                    <span class="badge bg-primary-soft text-primary l px-3">{{ number_format($stat->jumlah_issue) }}</span>
                                                 </td>
                                                 <td class="text-center">
-                                                    <span class="badge bg-info-soft text-info rounded-pill px-3">{{ number_format($stat->jumlah_renew) }}</span>
+                                                    <span class="badge bg-info-soft text-info l px-3">{{ number_format($stat->jumlah_renew) }}</span>
                                                 </td>
                                                 <td class="text-center">
-                                                    <span class="badge bg-warning-soft text-warning rounded-pill px-3">{{ number_format($stat->jumlah_buku_kembali) }}</span>
+                                                    <span class="badge bg-warning-soft text-warning l px-3">{{ number_format($stat->jumlah_buku_kembali) }}</span>
                                                 </td>
                                                 <td class="text-center">
-                                                    <span class="badge border text-body rounded-pill px-3 fw-bold">{{ number_format($stat->total_sirkulasi) }}</span>
+                                                    <span class="badge border text-body l px-3 fw-bold">{{ number_format($stat->total_sirkulasi) }}</span>
                                                 </td>
                                                 <td class="text-center">
-                                                    <span class="badge bg-info-soft text-info rounded-pill px-3">{{ number_format($stat->jumlah_peminjam_unik) }}</span>
+                                                    <span class="badge bg-info-soft text-info l px-3">{{ number_format($stat->jumlah_peminjam_unik) }}</span>
                                                 </td>
                                             </tr>
                                         @endforeach

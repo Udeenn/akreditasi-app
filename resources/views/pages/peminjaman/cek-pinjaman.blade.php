@@ -75,15 +75,15 @@
                                     width="100">
                             </div>
                             <h5 class="fw-bold mb-1">{{ $borrower->firstname }} {{ $borrower->surname }}</h5>
-                            <span class="badge border px-3 py-2 rounded-pill mb-3">{{ $borrower->cardnumber }}</span>
+                            <span class="badge border px-3 py-2 l mb-3">{{ $borrower->cardnumber }}</span>
 
                             <div class="d-flex justify-content-center gap-2 mb-4">
                                 @if ($borrower->email)
                                     <a href="mailto:{{ $borrower->email }}"
-                                        class="btn btn-sm btn-outline-primary rounded-pill"><i
+                                        class="btn btn-sm btn-outline-primary l"><i
                                             class="fas fa-envelope me-1"></i> Email</a>
                                 @endif
-                                {{-- <a href="#" class="btn btn-sm btn-outline-secondary rounded-pill"><i class="fas fa-phone me-1"></i> Hubungi</a> --}}
+                                {{-- <a href="#" class="btn btn-sm btn-outline-secondary l"><i class="fas fa-phone me-1"></i> Hubungi</a> --}}
                             </div>
 
                             <div class="row g-2 mt-2">
@@ -122,7 +122,7 @@
                             </h6>
                             @if ($borrowingHistory->isNotEmpty())
                                 <button type="button" id="exportBorrowingHistory"
-                                    class="btn  btn-success rounded-pill px-3 shadow-sm">
+                                    class="btn  btn-success l px-3 shadow-sm">
                                     <i class="fas fa-file-csv me-1"></i> Export
                                 </button>
                             @endif
@@ -163,11 +163,11 @@
                                                     <td>
                                                         @if (strtolower($history->type) == 'issue')
                                                             <span
-                                                                class="badge bg-success-soft text-success rounded-pill px-3"><i
+                                                                class="badge bg-success-soft text-success l px-3"><i
                                                                     class="fas fa-arrow-down me-1"></i> Pinjam</span>
                                                         @else
                                                             <span
-                                                                class="badge bg-warning-soft text-warning rounded-pill px-3"><i
+                                                                class="badge bg-warning-soft text-warning l px-3"><i
                                                                     class="fas fa-redo me-1"></i> Perpanjang</span>
                                                         @endif
                                                     </td>
@@ -199,7 +199,7 @@
                             </h6>
                             @if ($returnHistory->isNotEmpty())
                                 <button type="button" id="exportReturnHistory"
-                                    class="btn  btn-danger rounded-pill px-3 shadow-sm">
+                                    class="btn  btn-danger l px-3 shadow-sm">
                                     <i class="fas fa-file-csv me-1"></i> Export
                                 </button>
                             @endif
@@ -238,7 +238,7 @@
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        <span class="badge bg-danger-soft text-danger rounded-pill px-3"><i
+                                                        <span class="badge bg-danger-soft text-danger l px-3"><i
                                                                 class="fas fa-arrow-up me-1"></i> Kembali</span>
                                                     </td>
                                                     <td class="text-muted small px-4">

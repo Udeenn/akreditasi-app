@@ -229,19 +229,19 @@
                                                 </td>
                                                 <td class="text-center">
                                                     <span
-                                                        class="badge bg-primary-soft text-primary rounded-pill px-3">{{ $stat->jumlah_issue }}</span>
+                                                        class="badge bg-primary-soft text-primary l px-3">{{ $stat->jumlah_issue }}</span>
                                                 </td>
                                                 <td class="text-center">
                                                     <span
-                                                        class="badge bg-info-soft text-info rounded-pill px-3">{{ $stat->jumlah_renew }}</span>
+                                                        class="badge bg-info-soft text-info l px-3">{{ $stat->jumlah_renew }}</span>
                                                 </td>
                                                 <td class="text-center">
                                                     <span
-                                                        class="badge bg-success-soft text-success rounded-pill px-3">{{ $stat->jumlah_pengembalian }}</span>
+                                                        class="badge bg-success-soft text-success l px-3">{{ $stat->jumlah_pengembalian }}</span>
                                                 </td>
                                                 <td class="text-center">
                                                     <span
-                                                        class="badge border text-body rounded-pill px-3">{{ number_format($stat->total_sirkulasi) }}</span>
+                                                        class="badge border text-body l px-3">{{ number_format($stat->total_sirkulasi) }}</span>
                                                 </td>
                                                 <td class="text-center">
                                                     <button type="button"

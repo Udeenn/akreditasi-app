@@ -201,6 +201,16 @@ Route::middleware('auth')->group(function () {
             ->name('admin.activity-log');
         Route::get('/admin/activity-log/export', [\App\Http\Controllers\ActivityLogController::class, 'export'])
             ->name('admin.activity-log.export')->middleware('throttle:exports');
+
+        // Asisten Data AI
+        Route::get('/admin/ai-assistant', [\App\Http\Controllers\AiAssistantController::class, 'index'])
+            ->name('admin.ai-assistant');
+        Route::post('/admin/ai-assistant/query', [\App\Http\Controllers\AiAssistantController::class, 'query'])
+            ->name('admin.ai-assistant.query')->middleware('throttle:30,1');
+        Route::get('/admin/ai-assistant/page/{id}', [\App\Http\Controllers\AiAssistantController::class, 'paginate'])
+            ->name('admin.ai-assistant.page')->middleware('throttle:60,1');
+        Route::get('/admin/ai-assistant/export/{id}', [\App\Http\Controllers\AiAssistantController::class, 'exportCsv'])
+            ->name('admin.ai-assistant.export')->middleware('throttle:exports');
     });
 
 });

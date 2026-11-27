@@ -114,7 +114,7 @@
                                 @foreach ($kunjunganFakultas as $fakultas => $jumlah)
                                     <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 list-group-item-action">
                                         <span class="text-body-emphasis small">{{ $fakultas }}</span>
-                                        <span class="badge bg-primary rounded-pill px-2 py-1">{{ number_format($jumlah) }}</span>
+                                        <span class="badge bg-primary l px-2 py-1">{{ number_format($jumlah) }}</span>
                                     </li>
                                 @endforeach
                             </ul>
@@ -150,7 +150,7 @@
                                 @foreach ($peminjamanFakultas as $fakultas => $jumlah)
                                     <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 list-group-item-action">
                                         <span class="text-body-emphasis small">{{ $fakultas }}</span>
-                                        <span class="badge bg-danger rounded-pill px-2 py-1">{{ number_format($jumlah) }}</span>
+                                        <span class="badge bg-danger l px-2 py-1">{{ number_format($jumlah) }}</span>
                                     </li>
                                 @endforeach
                             </ul>
@@ -257,7 +257,7 @@
                                             class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 list-group-item-action">
                                             <span class="text-body-emphasis">{{ $bulan }}</span>
                                             <span
-                                                class="badge bg-primary rounded-pill px-2 py-1">{{ number_format($jumlah) }}</span>
+                                                class="badge bg-primary l px-2 py-1">{{ number_format($jumlah) }}</span>
                                         </li>
                                     @endforeach
                                 </ul>
@@ -269,7 +269,7 @@
                                             class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 list-group-item-action">
                                             <span class="text-body-emphasis">{{ $bulan }}</span>
                                             <span
-                                                class="badge bg-primary rounded-pill px-2 py-1">{{ number_format($jumlah) }}</span>
+                                                class="badge bg-primary l px-2 py-1">{{ number_format($jumlah) }}</span>
                                         </li>
                                     @endforeach
                                 </ul>
@@ -311,7 +311,7 @@
                                             class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 list-group-item-action">
                                             <span class="text-body-emphasis">{{ $bulan }}</span>
                                             <span
-                                                class="badge bg-success rounded-pill px-2 py-1">{{ number_format($jumlah) }}</span>
+                                                class="badge bg-success l px-2 py-1">{{ number_format($jumlah) }}</span>
                                         </li>
                                     @endforeach
                                 </ul>
@@ -323,7 +323,7 @@
                                             class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 list-group-item-action">
                                             <span class="text-body-emphasis">{{ $bulan }}</span>
                                             <span
-                                                class="badge bg-success rounded-pill px-2 py-1">{{ number_format($jumlah) }}</span>
+                                                class="badge bg-success l px-2 py-1">{{ number_format($jumlah) }}</span>
                                         </li>
                                     @endforeach
                                 </ul>

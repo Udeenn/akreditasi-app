@@ -322,19 +322,19 @@
                                                 </td>
                                                 <td class="text-center">
                                                     <span
-                                                        class="badge bg-primary-soft text-primary rounded-pill px-3">{{ number_format($stat->jumlah_issue) }}</span>
+                                                        class="badge bg-primary-soft text-primary l px-3">{{ number_format($stat->jumlah_issue) }}</span>
                                                 </td>
                                                 <td class="text-center">
                                                     <span
-                                                        class="badge bg-info-soft text-info rounded-pill px-3">{{ number_format($stat->jumlah_renew) }}</span>
+                                                        class="badge bg-info-soft text-info l px-3">{{ number_format($stat->jumlah_renew) }}</span>
                                                 </td>
                                                 <td class="text-center">
                                                     <span
-                                                        class="badge bg-success-soft text-success rounded-pill px-3">{{ number_format($stat->jumlah_pengembalian) }}</span>
+                                                        class="badge bg-success-soft text-success l px-3">{{ number_format($stat->jumlah_pengembalian) }}</span>
                                                 </td>
                                                 <td class="text-center">
                                                     <span
-                                                        class="badge border text-body rounded-pill px-3 fw-bold">{{ number_format($stat->total_sirkulasi) }}</span>
+                                                        class="badge border text-body l px-3 fw-bold">{{ number_format($stat->total_sirkulasi) }}</span>
                                                 </td>
                                                 <td class="text-center">
                                                     <button type="button"
@@ -625,10 +625,10 @@
                               <td class="px-3"><code>${escHtml(item.cardnumber)}</code></td>
                               <td class="px-3 fw-medium">${escHtml(item.nama)}</td>
                               <td class="px-3 text-center"><span class="badge border text-body">${escHtml(item.prodi)}</span></td>
-                              <td class="px-3 text-center"><span class="badge bg-primary-soft text-primary rounded-pill px-3">${Number(item.issue || 0).toLocaleString('id-ID')}</span></td>
-                              <td class="px-3 text-center"><span class="badge bg-info-soft text-info rounded-pill px-3">${Number(item.renew || 0).toLocaleString('id-ID')}</span></td>
-                              <td class="px-3 text-center"><span class="badge bg-success-soft text-success rounded-pill px-3">${Number(item.return || 0).toLocaleString('id-ID')}</span></td>
-                              <td class="px-3 text-center"><span class="badge border text-body rounded-pill px-3 fw-bold">${Number(item.total || 0).toLocaleString('id-ID')}</span></td>
+                              <td class="px-3 text-center"><span class="badge bg-primary-soft text-primary l px-3">${Number(item.issue || 0).toLocaleString('id-ID')}</span></td>
+                              <td class="px-3 text-center"><span class="badge bg-info-soft text-info l px-3">${Number(item.renew || 0).toLocaleString('id-ID')}</span></td>
+                              <td class="px-3 text-center"><span class="badge bg-success-soft text-success l px-3">${Number(item.return || 0).toLocaleString('id-ID')}</span></td>
+                              <td class="px-3 text-center"><span class="badge border text-body l px-3 fw-bold">${Number(item.total || 0).toLocaleString('id-ID')}</span></td>
                           </tr>
                       `).join('');
                   };

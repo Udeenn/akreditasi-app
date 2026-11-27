@@ -134,7 +134,7 @@
                                     class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-3">
                                     <span class="text-muted small fw-bold text-uppercase">Kategori</span>
                                     <span
-                                        class="badge bg-primary-soft text-primary rounded-pill px-3">{{ $fullBorrowerDetails->categorycode ?? 'UMUM' }}</span>
+                                        class="badge bg-primary-soft text-primary l px-3">{{ $fullBorrowerDetails->categorycode ?? 'UMUM' }}</span>
                                 </div>
                             </div>
                         </div>
@@ -146,7 +146,7 @@
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
                             <h5 class="fw-bold m-0 text-body">Riwayat Kunjungan Bulanan</h5>
-                            <span class="badge bg-primary rounded-pill px-3">Total: {{ $dataKunjungan->total() }}</span>
+                            <span class="badge bg-primary l px-3">Total: {{ $dataKunjungan->total() }}</span>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
@@ -183,13 +183,13 @@
                                                 </td>
                                                 <td class="px-4 text-center">
                                                     <span
-                                                        class="badge bg-primary-soft text-primary px-3 py-1 rounded-pill fw-bold">
+                                                        class="badge bg-primary-soft text-primary px-3 py-1 l fw-bold">
                                                         {{ $row->jumlah_kunjungan }}
                                                     </span>
                                                 </td>
                                                 <td class="px-4 text-end">
                                                     <button type="button"
-                                                        class="btn btn-sm btn-outline-primary rounded-pill px-3 btn-modal-lokasi shadow-sm"
+                                                        class="btn btn-sm btn-outline-primary l px-3 btn-modal-lokasi shadow-sm"
                                                         data-tahun-bulan="{{ $row->tahun_bulan }}"
                                                         data-cardnumber="{{ $cardnumber }}">
                                                         <i class="fas fa-map-marker-alt me-1"></i> Lokasi
@@ -277,7 +277,7 @@
                     <div id="paginationLinks" class="d-flex justify-content-center py-3"></div>
                 </div>
                 <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4"
+                    <button type="button" class="btn btn-secondary btn-sm l px-4"
                         data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
@@ -496,7 +496,7 @@
                                     tr.innerHTML = `
                                     <td class="text-center text-muted small">${startCount + index + 1}</td>
                                     <td class="text-body fw-medium">${dateFormatted}</td>
-                                    <td><span class="badge bg-primary-soft text-primary rounded-pill border border-info border-opacity-25">${lokasi.visit_location}</span></td>
+                                    <td><span class="badge bg-primary-soft text-primary l border border-info border-opacity-25">${lokasi.visit_location}</span></td>
                                 `;
                                     lokasiTableBody.appendChild(tr);
                                 });

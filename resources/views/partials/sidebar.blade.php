@@ -228,6 +228,13 @@
         <span class="nav-text">Setting Prodi Tampil</span>
     </a>
 </li>
+<li class="nav-item">
+    <a class="nav-link {{ request()->routeIs('admin.ai-assistant*') ? 'active' : '' }}"
+        href="{{ route('admin.ai-assistant') }}">
+        <x-icon name="rocket" class="nav-icon" />
+        <span class="nav-text">Asisten AI</span>&nbsp;<span class="badge bg-secondary">Beta</span>
+    </a>
+</li>
 @endif
 @endauth
 </ul>

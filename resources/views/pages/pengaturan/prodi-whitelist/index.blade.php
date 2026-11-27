@@ -36,13 +36,13 @@
             <div class="card-header border-bottom py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <div class="d-flex align-items-center flex-wrap gap-2">
                     <h6 class="fw-bold mb-0"><i class="fas fa-list-check me-2 text-primary"></i>Daftar Kode PRODI Koha</h6>
-                    <span class="badge bg-primary-soft rounded-pill px-3" id="activeCounterBadge">
+                    <span class="badge bg-primary-soft l px-3" id="activeCounterBadge">
                         Aktif: <span id="selectedCount">{{ count($activeCodes) }}</span> / {{ $kohaProdis->count() }}
                     </span>
                     @if($isCustom)
-                        <span class="badge bg-info-soft rounded-pill px-3">Mode: Kustom</span>
+                        <span class="badge bg-info-soft l px-3">Mode: Kustom</span>
                     @else
-                        <span class="badge bg-success-soft rounded-pill px-3">Mode: Default ({{ $defaultCount }})</span>
+                        <span class="badge bg-success-soft l px-3">Mode: Default ({{ $defaultCount }})</span>
                     @endif
                 </div>
                 <div class="d-flex flex-wrap gap-2">
@@ -119,9 +119,9 @@
                                     </td>
                                     <td class="text-center status-cell">
                                         @if($isChecked)
-                                            <span class="badge bg-success-soft rounded-pill px-3">Tampil</span>
+                                            <span class="badge bg-success-soft l px-3">Tampil</span>
                                         @else
-                                            <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3">Disembunyikan</span>
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary l px-3">Disembunyikan</span>
                                         @endif
                                     </td>
                                 </tr>
@@ -173,8 +173,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const cell = cb.closest('tr')?.querySelector('.status-cell');
         if (!cell) return;
         cell.innerHTML = cb.checked
-            ? '<span class="badge bg-success-soft rounded-pill px-3">Tampil</span>'
-            : '<span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3">Disembunyikan</span>';
+            ? '<span class="badge bg-success-soft l px-3">Tampil</span>'
+            : '<span class="badge bg-secondary bg-opacity-10 text-secondary l px-3">Disembunyikan</span>';
     }
 
     rows.forEach(row => {
